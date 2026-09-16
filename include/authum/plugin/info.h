@@ -11,6 +11,7 @@
 #define AUTHUM_PLUGIN_INFO_H
 
 #include <authum/plugin/info/view/fields.h>
+#include <lh/compiler/extern/c.h>
 #include <lh/str/ptr.h>
 #include <lh/version.h>
 
@@ -30,5 +31,14 @@ struct authum_plugin_info
  * @brief Alias for `struct authum_plugin_info`.
  */
 typedef struct authum_plugin_info authum_plugin_info_t;
+
+LH_COMPILER_EXTERN_C_BEGIN
+
+/**
+ * @brief Process-wide plugin identity.
+ */
+extern authum_plugin_info_t authum_plugin_info;
+
+LH_COMPILER_EXTERN_C_END
 
 #endif /* AUTHUM_PLUGIN_INFO_H */

@@ -1,0 +1,88 @@
+# Build
+build/
+build-*/
+out/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+CTestTestfile.cmake
+Testing/
+install_manifest.txt
+
+# Binaries / objects
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.so.*
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.exp
+*.idb
+*.map
+*.out
+
+# Compilers / coverage
+*.gch
+*.pch
+*.gcno
+*.gcda
+*.gcov
+*.profraw
+*.profdata
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.sln.docstates
+*.VC.db
+*.VC.opendb
+ipch/
+x64/
+Win32/
+Debug/
+Release/
+MinSizeRel/
+RelWithDebInfo/
+
+# VS Code / Cursor
+.vscode/
+.cursor/
+
+# JetBrains (CLion, IDEA)
+.idea/
+*.iml
+
+# Other IDEs
+*.code-workspace
+.project
+.cproject
+.settings/
+.classpath
+.metadata/
+nbproject/
+*.nbm
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+$RECYCLE.BIN/
+
+# Misc local
+.cache/
+.clangd/
+.claude/
+*.log

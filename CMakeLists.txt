@@ -14,7 +14,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # GoldSrc / original HLDS loads 32-bit modules.
 option(AUTHUM_FORCE_32BIT "Build for 32-bit HLDS" ON)
 
-set(AUTHUM_HLSDK_DIR "${CMAKE_SOURCE_DIR}/lib/hlsdk" CACHE PATH
+set(AUTHUM_HLSDK_DIR "${CMAKE_SOURCE_DIR}/lib/metamod-p/hlsdk" CACHE PATH
         "Half-Life SDK root (engine/, common/, dlls/, pm_shared/)")
 
 if (AUTHUM_FORCE_32BIT)
