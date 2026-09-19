@@ -34,6 +34,7 @@ set(LH_BUILD_SHARED OFF CACHE BOOL "Build lh as a shared library" FORCE)
 set(LH_BUILD_TESTS OFF CACHE BOOL "Build lh tests" FORCE)
 set(LH_BUILD_DOCS OFF CACHE BOOL "Build lh documentation" FORCE)
 set(LH_BUILD_BENCH OFF CACHE BOOL "Build lh benchmarks" FORCE)
+set(LH_LIBRARY_OPTION_OS ON CACHE BOOL "lh OS backends (shared libraries, sockets)" FORCE)
 add_subdirectory(lib/lh)
 
 add_library(metamod-p INTERFACE)
@@ -89,7 +90,7 @@ if (WIN32)
     target_compile_definitions(authum PRIVATE WIN32 _WINDOWS)
 else ()
     target_compile_definitions(authum PRIVATE linux LINUX)
-    target_link_libraries(authum PRIVATE dl m)
+    target_link_libraries(authum PRIVATE m)
     if (NOT MSVC)
         target_compile_options(authum PRIVATE
                 -fno-exceptions

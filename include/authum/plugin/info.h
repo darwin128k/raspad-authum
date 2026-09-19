@@ -2,16 +2,17 @@
  * @file info.h
  * @brief Plugin identity (::authum_plugin_info_t).
  *
- * Authum's own description of the plugin — name, SemVer, date, author, URL,
+ * Authum's own description of the plugin — name, SemVer, datetime, author, URL,
  * logtag. This is not Metamod's `plugin_info_t`; that table is filled later
- * from this one (`version` formatted via ::lh_version_format).
+ * from this one (`version` via ::lh_version_format, date via ::lh_date_format).
  */
 
 #ifndef AUTHUM_PLUGIN_INFO_H
 #define AUTHUM_PLUGIN_INFO_H
 
-#include <authum/plugin/info/view/fields.h>
+#include <authum/plugin/info/fields.h>
 #include <lh/compiler/extern/c.h>
+#include <lh/datetime.h>
 #include <lh/str/ptr.h>
 #include <lh/version.h>
 
@@ -23,7 +24,7 @@
  */
 struct authum_plugin_info
 {
-    authum_plugin_info_fields(lh_str_cptr, lh_version_t);
+    authum_plugin_info_fields(lh_str_cptr, lh_version_t, lh_datetime_t);
 };
 
 /**
