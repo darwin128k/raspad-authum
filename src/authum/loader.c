@@ -1,63 +1,70 @@
 #include <authum/loader.h>
 #include <lh/assert.h>
 #include <lh/cast/const.h>
-#include <lh/compiler/os.h>
-#include <lh/foreach.h>
 #include <lh/null.h>
 #include <lh/os/fs.h>
+#include <lh/os/shared.h>
+#include <lh/os/shared/module.h>
 #include <lh/util/addr.h>
+#include <lh/util/ptr.h>
 #include <lh/util/str/ptr.h>
 
-authum_loader_t authum_loader;
+#define AUTHUM_PATH_MAX 4096U
+#define AUTHUM_MODULE_SELF_STEM "authum_mm"
+
+static lh_os_shared_module_t *
+authum_loader_shared(authum_module_t *self)
+{
+    return lh_ptr_cast(lh_os_shared_module_t, self);
+}
+
+static const lh_os_shared_module_t *
+authum_loader_shared_c(const authum_module_t *self)
+{
+    return lh_ptr_ccast(lh_os_shared_module_t, self);
+}
 
 void
 authum_loader_init(void)
 {
-    lh_vector_init(lh_addr_of(authum_loader.modules), sizeof(authum_module_t));
+    authum_module_init(&authum);
+    (void)authum_module_bind(&authum, &authum_module_info);
 }
 
 void
 authum_loader_deinit(void)
 {
-    authum_loader_unload_all(&authum_loader);
-    lh_vector_deinit(lh_addr_of(authum_loader.modules));
+    authum_module_deinit(&authum);
 }
 
 lh_bool_t
-authum_loader_load(authum_loader_t *self, lh_str_cptr path)
+authum_loader_load(authum_module_t *self, lh_str_cptr path)
 {
-    authum_module_t module;
+    authum_module_t child;
 
     lh_assert_runtime_ref(self);
-    authum_module_init(&module);
-    if (!authum_module_load(&module, path))
+    authum_module_init(&child);
+    if (!authum_module_load(&child, path))
     {
+        authum_module_deinit(&child);
         return lh_bool_false;
     }
-    lh_vector_push_back(lh_addr_of(self->modules), lh_addr_of(module));
+    lh_os_shared_module_push(authum_loader_shared(self), authum_loader_shared(&child));
     return lh_bool_true;
 }
-
-#define AUTHUM_PATH_MAX 4096U
-
-#if LH_COMPILER_OS == LH_COMPILER_OS_WINDOWS
-#    define AUTHUM_MODULE_EXT ".dll"
-#    define AUTHUM_MODULE_SELF "authum_mm.dll"
-#else
-#    define AUTHUM_MODULE_EXT ".so"
-#    define AUTHUM_MODULE_SELF "authum_mm.so"
-#endif
 
 static lh_bool_t
 authum_loader_is_module_name(lh_str_cptr name)
 {
-    lh_str_ptr text = lh_cast_const(lh_str_ptr, name);
+    lh_str_ptr text;
 
-    if (!lh_str_ptr_ends_with(text, AUTHUM_MODULE_EXT, lh_bool_true))
+    if (!lh_os_shared_is(name))
     {
         return lh_bool_false;
     }
-    if (lh_str_ptr_ends_with(text, AUTHUM_MODULE_SELF, lh_bool_true))
+    text = lh_cast_const(lh_str_ptr, name);
+    if (lh_str_ptr_ends_with(text, AUTHUM_MODULE_SELF_STEM ".dll", lh_bool_true) ||
+        lh_str_ptr_ends_with(text, AUTHUM_MODULE_SELF_STEM ".so", lh_bool_true))
     {
         return lh_bool_false;
     }
@@ -65,7 +72,7 @@ authum_loader_is_module_name(lh_str_cptr name)
 }
 
 lh_bool_t
-authum_loader_load_dir(authum_loader_t *self, lh_str_cptr dir)
+authum_loader_load_dir(authum_module_t *self, lh_str_cptr dir)
 {
     lh_os_fs_dir_t listing;
     lh_char_t name[LH_OS_FS_DIR_NAME_MAX + 1U];
@@ -109,9 +116,7 @@ authum_loader_load_dir(authum_loader_t *self, lh_str_cptr dir)
         {
             continue;
         }
-        if (lh_os_fs_path_is(full, lh_os_fs_kind_dir) ||
-            lh_os_fs_path_is(full, lh_os_fs_kind_shortcut) ||
-            !lh_os_fs_path_is(full, lh_os_fs_kind_file))
+        if (!lh_os_shared_path_is(full))
         {
             continue;
         }
@@ -123,7 +128,7 @@ authum_loader_load_dir(authum_loader_t *self, lh_str_cptr dir)
 }
 
 lh_bool_t
-authum_loader_load_modules(authum_loader_t *self, lh_str_cptr plugin_path)
+authum_loader_load_modules(authum_module_t *self, lh_str_cptr plugin_path)
 {
     lh_char_t plugin_dir[AUTHUM_PATH_MAX];
     lh_char_t modules_dir[AUTHUM_PATH_MAX];
@@ -142,31 +147,20 @@ authum_loader_load_modules(authum_loader_t *self, lh_str_cptr plugin_path)
 }
 
 void
-authum_loader_unload_all(authum_loader_t *self)
+authum_loader_unload_all(authum_module_t *self)
 {
-    lh_assert_runtime_ref(self);
-    lh_foreach(authum_module_t, module, lh_vector_get_data(lh_addr_of(self->modules)),
-               lh_vector_get_size(lh_addr_of(self->modules)))
-    {
-        authum_module_unload(module);
-    }
-    lh_vector_clear(lh_addr_of(self->modules));
+    lh_os_shared_module_unload_all(authum_loader_shared(self));
 }
 
 lh_usize_t
-authum_loader_get_loaded(const authum_loader_t *self)
+authum_loader_get_loaded(const authum_module_t *self)
 {
-    lh_assert_runtime_ref(self);
-    return lh_vector_get_size(lh_addr_of(self->modules));
+    return lh_os_shared_module_get_loaded(authum_loader_shared_c(self));
 }
 
 authum_module_t *
-authum_loader_get(authum_loader_t *self, lh_uindex_t index)
+authum_loader_get(authum_module_t *self, lh_uindex_t index)
 {
-    lh_assert_runtime_ref(self);
-    if (!lh_vector_is_valid_index(lh_addr_of(self->modules), index))
-    {
-        return lh_null;
-    }
-    return lh_ptr_cast(authum_module_t, lh_vector_get_ptr(lh_addr_of(self->modules), index));
+    return lh_ptr_cast(authum_module_t,
+                       lh_os_shared_module_get(authum_loader_shared(self), index));
 }

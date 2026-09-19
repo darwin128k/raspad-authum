@@ -2,10 +2,11 @@
  * @file info.h
  * @brief Loaded-module identity (::authum_module_info_t).
  *
- * Each Authum module exports one ::authum_module_info_t named
- * ::AUTHUM_MODULE_INFO_SYM (`authum_module_info`). The loader looks it up
- * after ::lh_os_shared_open. This is not Metamod's `plugin_info_t` and not
- * ::authum_plugin_info_t — those describe the host plugin.
+ * Each Authum module — including this host image — exports one
+ * ::authum_module_info_t named ::AUTHUM_MODULE_INFO_SYM (`authum_module_info`).
+ * Child modules are looked up after ::lh_os_shared_open. The host binds the
+ * same symbol in-process via ::authum_module_bind. This is not Metamod's
+ * `plugin_info_t`; that table is filled from this one.
  *
  * `abi` is the loader contract the module was built against (::AUTHUM_MODULE_ABI).
  * `version` is the module's own SemVer.
@@ -51,5 +52,14 @@ struct authum_module_info
  * @brief Alias for `struct authum_module_info`.
  */
 typedef struct authum_module_info authum_module_info_t;
+
+LH_COMPILER_EXTERN_C_BEGIN
+
+/**
+ * @brief Identity this image exports as ::AUTHUM_MODULE_INFO_SYM.
+ */
+extern authum_module_info_t authum_module_info;
+
+LH_COMPILER_EXTERN_C_END
 
 #endif /* AUTHUM_MODULE_INFO_H */

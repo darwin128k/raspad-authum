@@ -44,21 +44,21 @@ C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Query(char * /* ifvers */, plugin_info_t 
         return FALSE;
     }
 
-    n = lh_version_format(lh_addr_of(authum_plugin_info.version), g_version_text,
+    n = lh_version_format(lh_addr_of(authum_module_info.version), g_version_text,
                           LH_VERSION_TEXT_MAX);
     g_version_text[n] = '\0';
 
-    n = lh_datetime_format(lh_addr_of(authum_plugin_info.datetime), g_datetime_text,
+    n = lh_datetime_format(lh_addr_of(authum_module_info.datetime), g_datetime_text,
                            LH_DATETIME_TEXT_MAX);
     g_datetime_text[n] = '\0';
 
     Plugin_info.ifvers = const_cast<char *>(META_INTERFACE_VERSION);
-    Plugin_info.name = const_cast<char *>(authum_plugin_info.name);
+    Plugin_info.name = const_cast<char *>(authum_module_info.name);
     Plugin_info.version = g_version_text;
     Plugin_info.date = g_datetime_text;
-    Plugin_info.author = const_cast<char *>(authum_plugin_info.author);
-    Plugin_info.url = const_cast<char *>(authum_plugin_info.url);
-    Plugin_info.logtag = const_cast<char *>(authum_plugin_info.logtag);
+    Plugin_info.author = const_cast<char *>(authum_module_info.author);
+    Plugin_info.url = const_cast<char *>(authum_module_info.url);
+    Plugin_info.logtag = const_cast<char *>(authum_module_info.logtag);
     Plugin_info.loadable = PT_ANYTIME;
     Plugin_info.unloadable = PT_ANYPAUSE;
 
@@ -86,10 +86,10 @@ C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Attach(PLUG_LOADTIME /* now */, META_FUNC
 
         if (plugin_path != nullptr && plugin_path[0] != '\0')
         {
-            (void)authum_loader_load_modules(&authum_loader, plugin_path);
+            (void)authum_loader_load_modules(&authum, plugin_path);
         }
         LOG_MESSAGE(PLID, "modules loaded: %u",
-                    static_cast<unsigned>(authum_loader_get_loaded(&authum_loader)));
+                    static_cast<unsigned>(authum_loader_get_loaded(&authum)));
     }
     return TRUE;
 }
