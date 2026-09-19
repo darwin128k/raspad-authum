@@ -1,9 +1,11 @@
 #include <authum/module.h>
 #include <lh/assert.h>
+#include <lh/cast/static.h>
 #include <lh/null.h>
 #include <lh/os.h>
 #include <lh/os/shared.h>
 #include <lh/util/addr.h>
+#include <lh/util/ptr.h>
 #include <lh/version.h>
 
 void
@@ -18,7 +20,7 @@ lh_bool_t
 authum_module_is_loaded(const authum_module_t *self)
 {
     lh_assert_runtime_ref(self);
-    return lh_null_ne(self->handle) ? lh_bool_true : lh_bool_false;
+    return lh_cast_static(lh_bool_t, lh_null_ne(self->handle));
 }
 
 lh_bool_t
@@ -49,7 +51,7 @@ authum_module_load(authum_module_t *self, lh_str_cptr path)
         return lh_bool_false;
     }
 
-    info = (const authum_module_info_t *)sym;
+    info = lh_ptr_ccast(authum_module_info_t, sym);
     if (lh_null_eq(info->name))
     {
         (void)lh_os_shared_close(handle);
@@ -99,7 +101,12 @@ authum_module_get_sym(const authum_module_t *self, lh_str_cptr name)
 lh_bool_t
 authum_module_has_sym(const authum_module_t *self, lh_str_cptr name)
 {
-    return lh_null_ne(authum_module_get_sym(self, name)) ? lh_bool_true : lh_bool_false;
+    if (!authum_module_is_loaded(self))
+    {
+        lh_os_set_last_error(1, lh_os_error_desc_lit("not loaded"));
+        return lh_bool_false;
+    }
+    return lh_os_shared_has_sym(self->handle, name);
 }
 
 const authum_module_info_t *

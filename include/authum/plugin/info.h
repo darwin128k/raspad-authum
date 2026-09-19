@@ -4,7 +4,7 @@
  *
  * Authum's own description of the plugin — name, SemVer, datetime, author, URL,
  * logtag. This is not Metamod's `plugin_info_t`; that table is filled later
- * from this one (`version` via ::lh_version_format, date via ::lh_date_format).
+ * from this one (`version` via ::lh_version_format, date via ::lh_datetime_format).
  */
 
 #ifndef AUTHUM_PLUGIN_INFO_H

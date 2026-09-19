@@ -6,22 +6,24 @@
 #include <engine_api.h>
 #include <meta_api.h>
 
-#include <lh/date.h>
+#include <lh/char.h>
 #include <lh/datetime.h>
+#include <lh/memory.h>
+#include <lh/null.h>
 #include <lh/util/addr.h>
+#include <lh/util/ptr.h>
 #include <lh/version.h>
-
-#include <string.h>
+#include <lh/void.h>
 
 static META_FUNCTIONS g_meta_functions = {
-    NULL,
-    NULL,
+    nullptr,
+    nullptr,
     GetEntityAPI2,
-    NULL,
-    NULL,
-    NULL,
+    nullptr,
+    nullptr,
+    nullptr,
     GetEngineFunctions,
-    NULL,
+    nullptr,
 };
 
 plugin_info_t Plugin_info;
@@ -29,15 +31,15 @@ meta_globals_t *gpMetaGlobals;
 gamedll_funcs_t *gpGamedllFuncs;
 mutil_funcs_t *gpMetaUtilFuncs;
 
-static char g_version_text[LH_VERSION_TEXT_MAX + 1];
-static char g_date_text[LH_DATE_TEXT_MAX + 1];
+static lh_char_t g_version_text[LH_VERSION_TEXT_MAX + 1];
+static lh_char_t g_datetime_text[LH_DATETIME_TEXT_MAX + 1];
 
 C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Query(char * /* ifvers */, plugin_info_t **pPlugInfo,
                                              mutil_funcs_t *pMetaUtilFuncs)
 {
     lh_usize_t n;
 
-    if (!pPlugInfo)
+    if (lh_null_eq(lh_ptr_cast(lh_void, pPlugInfo)))
     {
         return FALSE;
     }
@@ -46,16 +48,14 @@ C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Query(char * /* ifvers */, plugin_info_t 
                           LH_VERSION_TEXT_MAX);
     g_version_text[n] = '\0';
 
-    {
-        const lh_date_t date = lh_datetime_get_date(lh_addr_of(authum_plugin_info.datetime));
-        n = lh_date_format(lh_addr_of(date), g_date_text, LH_DATE_TEXT_MAX);
-        g_date_text[n] = '\0';
-    }
+    n = lh_datetime_format(lh_addr_of(authum_plugin_info.datetime), g_datetime_text,
+                           LH_DATETIME_TEXT_MAX);
+    g_datetime_text[n] = '\0';
 
     Plugin_info.ifvers = const_cast<char *>(META_INTERFACE_VERSION);
     Plugin_info.name = const_cast<char *>(authum_plugin_info.name);
     Plugin_info.version = g_version_text;
-    Plugin_info.date = g_date_text;
+    Plugin_info.date = g_datetime_text;
     Plugin_info.author = const_cast<char *>(authum_plugin_info.author);
     Plugin_info.url = const_cast<char *>(authum_plugin_info.url);
     Plugin_info.logtag = const_cast<char *>(authum_plugin_info.logtag);
@@ -71,12 +71,14 @@ C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Attach(PLUG_LOADTIME /* now */, META_FUNC
                                               meta_globals_t *pMGlobals,
                                               gamedll_funcs_t *pGamedllFuncs)
 {
-    if (!pMGlobals || !pFunctionTable)
+    if (lh_null_eq(lh_ptr_cast(lh_void, pMGlobals)) ||
+        lh_null_eq(lh_ptr_cast(lh_void, pFunctionTable)))
     {
         return FALSE;
     }
     gpMetaGlobals = pMGlobals;
-    memcpy(pFunctionTable, &g_meta_functions, sizeof(META_FUNCTIONS));
+    lh_memory_copy(pFunctionTable, sizeof(META_FUNCTIONS), lh_addr_of(g_meta_functions),
+                   sizeof(META_FUNCTIONS));
     gpGamedllFuncs = pGamedllFuncs;
     authum_loader_init();
     return TRUE;

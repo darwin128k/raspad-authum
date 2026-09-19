@@ -1,5 +1,6 @@
 #include <authum/loader.h>
 #include <lh/assert.h>
+#include <lh/foreach.h>
 #include <lh/null.h>
 #include <lh/util/addr.h>
 
@@ -36,14 +37,10 @@ authum_loader_load(authum_loader_t *self, lh_str_cptr path)
 void
 authum_loader_unload_all(authum_loader_t *self)
 {
-    lh_usize_t i;
-    lh_usize_t n;
-
     lh_assert_runtime_ref(self);
-    n = lh_vector_get_size(lh_addr_of(self->modules));
-    for (i = 0; i < n; i++)
+    lh_foreach(authum_module_t, module, lh_vector_get_data(lh_addr_of(self->modules)),
+               lh_vector_get_size(lh_addr_of(self->modules)))
     {
-        authum_module_t *module = (authum_module_t *)lh_vector_get_ptr(lh_addr_of(self->modules), i);
         authum_module_unload(module);
     }
     lh_vector_clear(lh_addr_of(self->modules));
@@ -64,5 +61,5 @@ authum_loader_get(authum_loader_t *self, lh_uindex_t index)
     {
         return lh_null;
     }
-    return (authum_module_t *)lh_vector_get_ptr(lh_addr_of(self->modules), index);
+    return lh_ptr_cast(authum_module_t, lh_vector_get_ptr(lh_addr_of(self->modules), index));
 }
