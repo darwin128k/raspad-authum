@@ -15,6 +15,12 @@
 #include <lh/vector.h>
 
 /**
+ * @def AUTHUM_MODULES_DIR
+ * @brief Directory name beside the host plugin that holds extra modules.
+ */
+#define AUTHUM_MODULES_DIR "modules"
+
+/**
  * @struct authum_loader
  * @brief Owns a growable list of loaded modules.
  *
@@ -61,6 +67,34 @@ authum_loader_deinit(void);
  */
 lh_bool_t
 authum_loader_load(authum_loader_t *self, lh_str_cptr path);
+
+/**
+ * @brief Load every Authum module from @p dir (one level, not recursive).
+ *
+ * Skips directories, shortcuts, and the host plugin (`authum_mm`). Only
+ * shared libraries (`.dll` / `.so`) are opened; a library without
+ * ::AUTHUM_MODULE_INFO_SYM is skipped. A missing @p dir succeeds with
+ * nothing loaded.
+ *
+ * @param self Loader that owns the module table.
+ * @param dir  Directory to list. ::lh_null or empty is an error.
+ * @return ::lh_bool_true if the directory was scanned or did not exist.
+ */
+lh_bool_t
+authum_loader_load_dir(authum_loader_t *self, lh_str_cptr dir);
+
+/**
+ * @brief Load modules from `modules` next to the host plugin DLL.
+ *
+ * ::lh_os_fs_path_dir of @p plugin_path, then ::lh_os_fs_path_join
+ * `modules`, then ::authum_loader_load_dir.
+ *
+ * @param self        Loader that owns the module table.
+ * @param plugin_path Path from Metamod `GET_PLUGIN_PATH` (the `.dll` / `.so`).
+ * @return ::lh_bool_true if the sibling directory was scanned or did not exist.
+ */
+lh_bool_t
+authum_loader_load_modules(authum_loader_t *self, lh_str_cptr plugin_path);
 
 /**
  * @brief Unload every stored module and clear the vector (capacity kept).

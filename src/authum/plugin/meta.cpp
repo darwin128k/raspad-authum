@@ -81,6 +81,16 @@ C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Attach(PLUG_LOADTIME /* now */, META_FUNC
                    sizeof(META_FUNCTIONS));
     gpGamedllFuncs = pGamedllFuncs;
     authum_loader_init();
+    {
+        const char *plugin_path = GET_PLUGIN_PATH(PLID);
+
+        if (plugin_path != nullptr && plugin_path[0] != '\0')
+        {
+            (void)authum_loader_load_modules(&authum_loader, plugin_path);
+        }
+        LOG_MESSAGE(PLID, "modules loaded: %u",
+                    static_cast<unsigned>(authum_loader_get_loaded(&authum_loader)));
+    }
     return TRUE;
 }
 
