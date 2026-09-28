@@ -4,9 +4,9 @@
  *
  * Each Authum module — including this host image — exports one
  * ::authum_module_info_t named ::AUTHUM_MODULE_INFO_SYM (`authum_module_info`).
- * Child modules are looked up after ::lh_os_shared_open. The host binds the
- * same symbol in-process via ::authum_module_bind. This is not Metamod's
- * `plugin_info_t`; that table is filled from this one.
+ * ::authum_module_start reads it after the image is open and keeps the
+ * pointer on the module. This is not Metamod's `plugin_info_t`; that table
+ * is filled from this one.
  *
  * `abi` is the loader contract the module was built against (::AUTHUM_MODULE_ABI).
  * `version` is the module's own SemVer.

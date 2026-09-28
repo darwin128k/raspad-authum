@@ -8,6 +8,7 @@
 
 #include <lh/char.h>
 #include <lh/datetime.h>
+#include <lh/index.h>
 #include <lh/memory.h>
 #include <lh/null.h>
 #include <lh/util/addr.h>
@@ -80,16 +81,33 @@ C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Attach(PLUG_LOADTIME /* now */, META_FUNC
     lh_memory_copy(pFunctionTable, sizeof(META_FUNCTIONS), lh_addr_of(g_meta_functions),
                    sizeof(META_FUNCTIONS));
     gpGamedllFuncs = pGamedllFuncs;
-    authum_loader_init();
+    if (authum_loader_init() != lh_bool_true)
     {
-        const char *plugin_path = GET_PLUGIN_PATH(PLID);
+        return FALSE;
+    }
+    (void)authum_loader_load_modules(&authum);
+    {
+        lh_usize_t loaded;
+        lh_char_t version_text[LH_VERSION_TEXT_MAX + 1];
+        authum_module_t *child;
 
-        if (plugin_path != nullptr && plugin_path[0] != '\0')
+        loaded = authum_loader_get_loaded(&authum);
+        for (child = authum_loader_get_first(&authum); child != nullptr;
+             child = authum_loader_get_next(&authum, child))
         {
-            (void)authum_loader_load_modules(&authum, plugin_path);
+            const authum_module_info_t *info;
+            lh_usize_t n;
+
+            info = authum_module_get_info(child);
+            if (lh_null_eq(info))
+            {
+                continue;
+            }
+            n = lh_version_format(lh_addr_of(info->version), version_text, LH_VERSION_TEXT_MAX);
+            version_text[n] = '\0';
+            LOG_MESSAGE(PLID, "loaded %s %s", info->name, version_text);
         }
-        LOG_MESSAGE(PLID, "modules loaded: %u",
-                    static_cast<unsigned>(authum_loader_get_loaded(&authum)));
+        LOG_MESSAGE(PLID, "modules loaded: %u", static_cast<unsigned>(loaded));
     }
     return TRUE;
 }

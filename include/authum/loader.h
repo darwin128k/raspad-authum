@@ -1,9 +1,11 @@
 /**
  * @file loader.h
- * @brief Loader capability on ::authum_module_t (PHP trait / LoaderInterface).
+ * @brief Authum's policy on top of ::lh_os_loader_t.
  *
- * Any module may load children into its table. Scan policy (`modules/`,
- * skip `authum_mm`) is Authum; the image itself is ::lh_os_shared_module_t.
+ * The mechanism (open, method table, start, unload children) is lh.
+ * Authum decides which paths: `modules/` beside the image, shared
+ * libraries only, skip `authum_mm`. One rejected child does not fail
+ * the scan. A missing directory succeeds with nothing loaded.
  */
 
 #ifndef AUTHUM_LOADER_H
@@ -12,8 +14,9 @@
 #include <authum/module.h>
 #include <lh/bool.h>
 #include <lh/compiler/extern/c.h>
+#include <lh/fs/path.h>
+#include <lh/index.h>
 #include <lh/size.h>
-#include <lh/str/ptr.h>
 
 /**
  * @def AUTHUM_MODULES_DIR
@@ -24,52 +27,51 @@
 LH_COMPILER_EXTERN_C_BEGIN
 
 /**
- * @brief Initialize this image's ::authum (bind ::authum_module_info).
+ * @brief Bind this image, hand it ::authum_module_ops, and start it.
+ *
+ * @return ::lh_bool_true if the image was bound and ::authum_module_start
+ *         accepted it.
  */
-void
+lh_bool_t
 authum_loader_init(void);
 
 /**
- * @brief Unload children of ::authum and release its table.
+ * @brief Stop ::authum (children first) and release it.
  */
 void
 authum_loader_deinit(void);
 
 /**
- * @brief Open @p path and append a child to @p self.
+ * @brief Load @p path as a child of @p self.
  *
- * On false, ::lh_os_get_last_error. The path is still the caller's — log both.
+ * @p self must already hold the loader privilege. The host plugin file
+ * (`authum_mm`) is rejected without opening. On false, the reason is in
+ * ::lh_os_last_error or ::lh_os_system_last_error.
  *
- * @param self Module that owns the child table.
- * @param path Filesystem path for ::authum_module_load.
- * @return ::lh_bool_true if the library opened, identity was accepted, and stored.
+ * @return ::lh_bool_true if the child was kept.
  */
 lh_bool_t
-authum_loader_load(authum_module_t *self, lh_str_cptr path);
+authum_loader_load(authum_module_t *self, const lh_fs_path_t *path);
 
 /**
- * @brief Load every Authum module from @p dir (one level, not recursive).
+ * @brief Load every shared image in @p dir (one level).
  *
- * Skips directories, shortcuts, and the host plugin (`authum_mm`). Only
- * shared libraries are opened; a library without ::AUTHUM_MODULE_INFO_SYM
- * is skipped. A missing @p dir succeeds with nothing loaded.
+ * A missing @p dir or a path that is not a directory succeeds with nothing
+ * loaded. Empty @p dir is an error.
  *
- * @param self Module that owns the child table.
- * @param dir  Directory to list. ::lh_null or empty is an error.
  * @return ::lh_bool_true if the directory was scanned or did not exist.
  */
 lh_bool_t
-authum_loader_load_dir(authum_module_t *self, lh_str_cptr dir);
+authum_loader_load_dir(authum_module_t *self, const lh_fs_path_t *dir);
 
 /**
- * @brief Load modules from `modules` next to @p plugin_path.
+ * @brief Load shared images from `modules` beside @p self's image.
  *
- * @param self        Module that owns the child table.
- * @param plugin_path Path of that module's image (`.dll` / `.so`).
- * @return ::lh_bool_true if the sibling directory was scanned or did not exist.
+ * The image file itself is skipped. A missing directory succeeds with
+ * nothing loaded.
  */
 lh_bool_t
-authum_loader_load_modules(authum_module_t *self, lh_str_cptr plugin_path);
+authum_loader_load_modules(authum_module_t *self);
 
 /**
  * @brief Unload every child of @p self. @p self stays loaded.
@@ -84,7 +86,21 @@ lh_usize_t
 authum_loader_get_loaded(const authum_module_t *self);
 
 /**
- * @brief Child at @p index, or ::lh_null if out of range.
+ * @brief First child in load order, or ::lh_null if there is none.
+ */
+authum_module_t *
+authum_loader_get_first(const authum_module_t *self);
+
+/**
+ * @brief Child loaded after @p child, or ::lh_null if @p child is the last.
+ */
+authum_module_t *
+authum_loader_get_next(const authum_module_t *self, authum_module_t *child);
+
+/**
+ * @brief Child number @p index in load order, or ::lh_null if there are not that many.
+ *
+ * Walk every child with ::authum_loader_get_first and ::authum_loader_get_next.
  */
 authum_module_t *
 authum_loader_get(authum_module_t *self, lh_uindex_t index);
