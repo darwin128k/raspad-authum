@@ -25,8 +25,8 @@ projects dropped under `modules/`.
 
 - Loads modules from `modules.list` (Authum line format) or scans `modules/`
 - Connect gate scaffolding for children
-- Host facade for modules (`authum/host.h`: log, engfuncs, globals) — one
-  runtime in `authum_mm`; modules may still link private lh / other libs
+- Client modules: `authum/client.h` (ABI 0.2, no liblh); host passes
+  `authum_host_t` into `start`; optional private lh / other libs allowed
 - Server command `authum` — list loaded modules
 - Static `lh` inside the host only (`AUTHUM_LH_LINK_MODE=needed|whole`)
 

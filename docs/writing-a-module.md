@@ -4,68 +4,58 @@ An Authum module is a shared library (`.so` / `.dll`) that the host
 `authum_mm` loads. It is **not** a Metamod plugin. Metamod only loads
 Authum once; everything else hangs under Authum.
 
-Authum does not ship production child modules in the host binary. A minimal
-working sample is [`examples/hello`](../examples/hello/). Ship your own
-`.so` / `.dll` under `addons/authum/modules/<name>/` (see qproto as a
-separate repo for a full auth example).
+See [architecture.md](architecture.md). Sample: [`examples/hello`](../examples/hello/).
 
 ---
 
-## 1. What you export
+## 1. What you export (ABI 0.2)
 
-Exactly two **unmangled C** symbols (`AUTHUM_MODULE_EXPORT`,
-`visibility("default")` on Linux):
+Include **`#include <authum/client.h>`** only. Do **not** include lh or link
+`liblh` unless you opt into the escape hatch.
 
 | Symbol | Type | Role |
 |--------|------|------|
-| `authum_module_info` | `authum_module_info_t` | Name, SemVer, ABI, author, … |
-| `authum_module_ops` | `lh_os_module_ops_t` | `.start` / `.stop` |
+| `authum_module_info` | `authum_module_info_t` | Name, SemVer, ABI, … |
+| `authum_module_api` | `authum_module_api_t` | `.start(host)` / `.stop()` |
 
-Without `authum_module_ops`, the image is opened and discarded.
-Without a valid `authum_module_info` (or wrong ABI), `start` fails and
-the module is unloaded.
-
-ABI today: `AUTHUM_MODULE_ABI` = `0.1.0`
-(`lh_version_is_compatible` against the host).
-
-Minimal skeleton:
+ABI: `AUTHUM_MODULE_ABI` = `0.2.0`.
 
 ```c
-#include <authum/module.h>
-#include <authum/module/info.h>
-#include <lh/version/initializer.h>
+#include <authum/client.h>
+
+static authum_host_t g_host;
 
 AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
     .abi = AUTHUM_MODULE_ABI,
     .name = "example",
-    .version = lh_version_initializer(0, 1, 0),
+    .version = AUTHUM_VERSION(0, 1, 0),
+    .date = "2026-10-19",
     .author = "you",
+    .url = "",
     .logtag = "EXAMPLE",
 };
 
-static lh_bool_t
-example_start(authum_module_t *self)
+static authum_bool_t
+example_start(authum_host_t *host)
 {
-    (void)self;
-    /* take info, bind host APIs, do work */
-    return lh_bool_true;
+    if (host == 0)
+        return AUTHUM_FALSE;
+    g_host = *host;
+    authum_host_log_line(&g_host, 0, "[example] start");
+    return AUTHUM_TRUE;
 }
 
 static void
-example_stop(authum_module_t *self)
+example_stop(void)
 {
-    (void)self;
+    authum_host_log_line(&g_host, 0, "[example] stop");
 }
 
-AUTHUM_MODULE_EXPORT const lh_os_module_ops_t authum_module_ops = {
+AUTHUM_MODULE_EXPORT const authum_module_api_t authum_module_api = {
     .start = example_start,
     .stop = example_stop,
 };
 ```
-
-You may point `.start` / `.stop` at the host’s `authum_module_start` /
-`authum_module_stop` if you only need identity + nested `modules/` and
-no custom work.
 
 ---
 
@@ -76,96 +66,58 @@ cstrike/addons/authum/
   authum_mm.so
   modules.list                 # one path per line, e.g. example
   modules/example/
-    example.so                 # or example.dll — Authum appends the OS suffix
-    example.cfg                # optional, your format
+    example.so
+    example.cfg                # optional
 ```
 
-`modules.list` dialect (not INI): see [modules.md](modules.md). Relative
-entries resolve under `modules/`. Folder name `example` →
-`modules/example/example.so`.
-
-List the module:
-
-```
-example
-```
-
-Restart HLDS (or reload Authum). Console: `authum`. Host log:
-`addons/authum/authum.log` (and Metamod server log).
+`modules.list`: see [modules.md](modules.md). Console: `authum`. Log:
+`addons/authum/authum.log`.
 
 ---
 
-## 3. Talking to the host
+## 3. Host facade
 
-Children do **not** get `GiveFnptrsToDll`. Use the host facade
-([`authum/host.h`](../include/authum/host.h)) — see [architecture.md](architecture.md).
+Children do **not** get `GiveFnptrsToDll`. The host passes `authum_host_t`
+into `start` (valid until `stop`):
 
-```c
-#include <authum/host.h>
+| Field | Purpose |
+|-------|---------|
+| `log` | → `authum.log` |
+| `engine_funcs` | `void *` → `enginefuncs_t *` |
+| `globals` | `void *` → `globalvars_t *` |
 
-static authum_host_t g_host;
+Copy the struct (or the function pointers) if you need them after `start` returns.
 
-static lh_bool_t
-example_start(authum_module_t *self)
-{
-    if (!authum_host_bind(self, &g_host))
-        return lh_bool_false;
-    authum_host_log_line(&g_host, 0, "[example] start");
-    /* engfuncs: (enginefuncs_t *)g_host.engine_funcs(); */
-    return lh_bool_true;
-}
-```
-
-| Host symbol | Purpose |
-|-------------|---------|
-| `authum_host_log` | line → `authum.log` |
-| `authum_engine_funcs` | `void *` → `enginefuncs_t *` |
-| `authum_globals` | `void *` → `globalvars_t *` |
-
-Do not call sibling modules by name. There is no shared plugin table
-between children — only the parent facade.
-
-**Escape hatch:** link your own static lh (Authum’s `lib/lh`) or any other
-library into *your* `.so` for private code. That is not the host runtime.
+**Escape hatch:** link your own lh / other library into *your* `.so` for
+private utilities. Not the host runtime.
 
 ---
 
-## 4. Logging (what you should do)
+## 4. Logging
 
-**Write lines through the host; do not pick the sink.**
-
-- Use `authum_host_log_line` (or `g_host.log`). Never assume
-  `lh_runtime_logger()` in the module is `authum.log`.
-- Optional: your own file under **your** package (e.g.
-  `modules/example/logs/…`) if the module needs a private transcript.
-- Whether those lines also appear in `authum.log` is **Authum policy**
-  (see [logging.md](logging.md): off / host-only / full).
-
-qproto 1.0.0 (Metamod-only release) keeps its own `qproto.log` +
-`LoggingMode`. The Authum-hosted line should feed the host logger so
-Metamod vs Authum is invisible to you.
+Use `authum_host_log_line` / `host->log`. Never assume a process-wide
+`lh_runtime_logger()` is `authum.log`. Optional private file under your
+package is fine. Policy: [logging.md](logging.md).
 
 ---
 
 ## 5. Build notes
 
-- Target: **32-bit** HLDS (`-m32` on Linux).
-- Link against Authum headers (`include/authum/…`) and lh (Authum’s
-  `lib/lh` submodule, branch `0.4.0`).
-- HLSDK / Metamod headers only if you call engfuncs types.
-- Export visibility: use `AUTHUM_MODULE_EXPORT` on both symbols.
+- **32-bit** HLDS (`-m32` on Linux).
+- Include path: Authum’s `include/` only (for a pure client).
+- Do **not** link `liblh` unless you choose the escape hatch.
+- Export visibility: `AUTHUM_MODULE_EXPORT` on both symbols.
 
 ---
 
-## 6. Checklist before shipping
+## 6. Checklist
 
-- [ ] `authum_module_info.name` non-null, `abi` = `0.1.0`
-- [ ] `authum_module_ops` exported; `start` returns false only on hard failure
-- [ ] Listed in `modules.list` (or discoverable under `modules/`)
-- [ ] Native name: folder `foo` → `foo.so` / `foo.dll` inside
-- [ ] No dependency on being a Metamod `plugins.ini` entry
-- [ ] Logs go through host API (plus optional private file)
-- [ ] Configs and data live beside the module image, not in `cstrike/` root
+- [ ] `#include <authum/client.h>` (no lh in a pure client)
+- [ ] `authum_module_info.abi` = `0.2.0`, non-null `name`
+- [ ] `authum_module_api` exported; `start` returns `AUTHUM_FALSE` only on hard failure
+- [ ] Listed in `modules.list` / under `modules/`
+- [ ] Folder `foo` → `foo.so` / `foo.dll`
+- [ ] Not a Metamod `plugins.ini` entry
+- [ ] Logs via host facade
 
-Deeper loader semantics: [modules.md](modules.md). Connect/auth gate:
-[gate.md](gate.md).
+Loader details: [modules.md](modules.md). Gate: [gate.md](gate.md).

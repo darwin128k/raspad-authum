@@ -13,10 +13,10 @@ chooses sinks.
 | Host | `addons/authum/authum.log` via `lh_runtime_logger` + Metamod `LOG_*` mirror |
 | qproto (Authum package) | `modules/qproto/qproto.log` + lines mirrored to host through `authum_host_log` |
 
-Policy: [architecture.md](architecture.md) (host facade; no shared `lh.so`).
-`lh_runtime_logger()` inside a child is **not** the host’s logger even if
-the module links its own lh. Children use `authum_host_log` /
-`authum_host_log_line` (`authum/host.h`).
+Policy: [architecture.md](architecture.md). Pure clients (ABI 0.2) get
+`authum_host_t` in `start` and call `authum_host_log_line` — no lh.
+If a module optionally links its own lh, `lh_runtime_logger()` there is
+still **not** `authum.log`.
 
 There is **no** `logs/` directory yet; files sit next to the image.
 
