@@ -22,6 +22,16 @@
 #include <lh/version.h>
 #include <lh/version/initializer.h>
 
+#ifndef AUTHUM_MODULE_EXPORT
+#    if defined(_WIN32) || defined(__CYGWIN__)
+#        define AUTHUM_MODULE_EXPORT __declspec(dllexport)
+#    elif defined(__GNUC__)
+#        define AUTHUM_MODULE_EXPORT __attribute__((visibility("default")))
+#    else
+#        define AUTHUM_MODULE_EXPORT
+#    endif
+#endif
+
 /**
  * @def AUTHUM_MODULE_INFO_SYM
  * @brief Exported symbol name of ::authum_module_info_t (unmangled C).
@@ -58,7 +68,7 @@ LH_COMPILER_EXTERN_C_BEGIN
 /**
  * @brief Identity this image exports as ::AUTHUM_MODULE_INFO_SYM.
  */
-extern authum_module_info_t authum_module_info;
+AUTHUM_MODULE_EXPORT extern authum_module_info_t authum_module_info;
 
 LH_COMPILER_EXTERN_C_END
 

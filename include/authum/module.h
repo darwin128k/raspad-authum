@@ -17,10 +17,14 @@
 #include <lh/compiler/extern/c.h>
 #include <lh/os/module.h>
 
-#if defined(_WIN32) || defined(__CYGWIN__)
-#    define AUTHUM_MODULE_EXPORT __declspec(dllexport)
-#else
-#    define AUTHUM_MODULE_EXPORT
+#ifndef AUTHUM_MODULE_EXPORT
+#    if defined(_WIN32) || defined(__CYGWIN__)
+#        define AUTHUM_MODULE_EXPORT __declspec(dllexport)
+#    elif defined(__GNUC__)
+#        define AUTHUM_MODULE_EXPORT __attribute__((visibility("default")))
+#    else
+#        define AUTHUM_MODULE_EXPORT
+#    endif
 #endif
 
 /**

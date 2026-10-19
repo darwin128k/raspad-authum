@@ -42,6 +42,12 @@
 #define authum_error_code_attach_failed 0x23
 
 /**
+ * @def authum_error_code_bad_modules_ini
+ * @brief ::AUTHUM_MODULES_INI could not be parsed (::lh_ini_parser_t).
+ */
+#define authum_error_code_bad_modules_ini 0x24
+
+/**
  * @typedef authum_error_code_t
  * @brief Same representation as ::lh_error_code_t for Authum last-error codes.
  */
