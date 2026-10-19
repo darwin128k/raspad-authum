@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   host-filled `authum_host_t`; example [`examples/hello`](examples/hello/) links
   **no** liblh
 - `authum_host_t.module_dir` — module image directory for cfg/data
-- Authum-packaged qproto module (`src/modules/qproto`, ABI 0.2)
+- Authum-packaged qproto module (`src/modules/qproto`, ABI 0.2); core
+  sources vendored under `src/modules/qproto/core/` (no external `QPROTO_SRC_DIR`)
 - Architecture doc: host facade (B) + optional private deps
 
 ### Changed
