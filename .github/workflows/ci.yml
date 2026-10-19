@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux32:
+    name: Linux i386 Release
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Metamod-P + HLSDK (local lib/, not in repo)
+        run: |
+          git clone --depth 1 --branch v1.21p37 \
+            https://github.com/Bots-United/metamod-p.git lib/metamod-p
+
+      - name: Install i386 toolchain
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gcc-multilib g++-multilib cmake ninja-build \
+            libc6-dev-i386 libstdc++-12-dev-i386
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DAUTHUM_LH_LINK_MODE=needed
+
+      - name: Build
+        run: cmake --build build --target authum -j"$(nproc)"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: authum_mm.so
+          path: build/authum_mm.so
+          if-no-files-found: error

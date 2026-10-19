@@ -25,6 +25,10 @@ cstrike/addons/authum/
 ```
 
 Build artifact: `build-linux32/authum_mm.so`.
+Ready Linux binary: download `authum_mm.so` from
+[Releases](https://github.com/darwin128k/rapad-authum/releases)
+(CI builds on every `master` push; tag `v*` attaches the `.so`).
+
 Console: `authum` lists modules; load OK/FAIL goes to the server log
 and `addons/authum/authum.log`.
 
