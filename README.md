@@ -1,6 +1,5 @@
 <p align="center">
-  <img src="assets/logo-light.png#gh-light-mode-only" alt="Authum" width="280">
-  <img src="assets/logo-dark.png#gh-dark-mode-only" alt="Authum" width="280">
+  <img src="assets/logo.png" alt="Authum" width="280">
 </p>
 
 <h1 align="center">Authum</h1>
