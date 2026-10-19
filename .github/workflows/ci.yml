@@ -21,7 +21,8 @@ jobs:
 
       - name: Metamod-P + HLSDK (local lib/, not in repo)
         run: |
-          git clone --depth 1 --branch v1.21p37 \
+          # Same pin as local lib/metamod-p (FORCE_STACK_ALIGN lives here; p37 lacks it).
+          git clone --depth 1 --branch v1.21p109 \
             https://github.com/Bots-United/metamod-p.git lib/metamod-p
 
       - name: Install i386 toolchain
