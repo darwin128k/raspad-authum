@@ -35,6 +35,8 @@ set(LH_BUILD_TESTS OFF CACHE BOOL "Build lh tests" FORCE)
 set(LH_BUILD_DOCS OFF CACHE BOOL "Build lh documentation" FORCE)
 set(LH_BUILD_BENCH OFF CACHE BOOL "Build lh benchmarks" FORCE)
 set(LH_LIBRARY_OPTION_OS ON CACHE BOOL "lh OS backends (shared libraries, sockets)" FORCE)
+# HLDS ships an old libgcc_s; bake the runtime into authum_mm.so.
+set(LH_STATIC_LIBGCC ON CACHE BOOL "static-libgcc for HLDS" FORCE)
 add_subdirectory(lib/lh)
 
 add_library(metamod-p INTERFACE)
