@@ -158,3 +158,7 @@ endif ()
 
 # Child modules (qproto, …) are separate projects. Authum only builds authum_mm
 # and loads whatever is listed in modules.list / modules/ at runtime.
+option(AUTHUM_BUILD_EXAMPLES "Build example Authum modules under examples/" ON)
+if (AUTHUM_BUILD_EXAMPLES)
+    add_subdirectory(examples/hello)
+endif ()

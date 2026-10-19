@@ -13,11 +13,10 @@ chooses sinks.
 | Host | `addons/authum/authum.log` via `lh_runtime_logger` + Metamod `LOG_*` mirror |
 | qproto (Authum package) | `modules/qproto/qproto.log` + lines mirrored to host through `authum_host_log` |
 
-Each `.so` has its **own** copy of lh if linked statically, so
-`lh_runtime_logger()` inside a child is **not** the host’s logger.
-That is why children must call an exported host symbol
-(`authum_host_log`) or a future shared sink API — not assume one process-wide
-logger instance by accident.
+Policy: [architecture.md](architecture.md) (host facade; no shared `lh.so`).
+`lh_runtime_logger()` inside a child is **not** the host’s logger even if
+the module links its own lh. Children use `authum_host_log` /
+`authum_host_log_line` (`authum/host.h`).
 
 There is **no** `logs/` directory yet; files sit next to the image.
 

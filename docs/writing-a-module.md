@@ -4,9 +4,10 @@ An Authum module is a shared library (`.so` / `.dll`) that the host
 `authum_mm` loads. It is **not** a Metamod plugin. Metamod only loads
 Authum once; everything else hangs under Authum.
 
-Authum does not compile child modules. Ship your `.so` / `.dll` under
-`addons/authum/modules/<name>/` yourself (see qproto as a separate repo
-for a full auth example).
+Authum does not ship production child modules in the host binary. A minimal
+working sample is [`examples/hello`](../examples/hello/). Ship your own
+`.so` / `.dll` under `addons/authum/modules/<name>/` (see qproto as a
+separate repo for a full auth example).
 
 ---
 
@@ -96,42 +97,53 @@ Restart HLDS (or reload Authum). Console: `authum`. Host log:
 
 ## 3. Talking to the host
 
-Children do **not** get `GiveFnptrsToDll`. Take what you need from the
-**parent** image (`lh_os_module_get_parent`):
-
-| Symbol on host | Purpose |
-|----------------|---------|
-| `authum_engine_funcs` | `void *` → cast to `enginefuncs_t *` |
-| `authum_globals` | `void *` → cast to `globalvars_t *` |
-| `authum_host_log` | `(int is_error, const char *line)` → host `authum.log` |
-
-Example (same idea as qproto’s bridge):
+Children do **not** get `GiveFnptrsToDll`. Use the host facade
+([`authum/host.h`](../include/authum/host.h)) — see [architecture.md](architecture.md).
 
 ```c
-authum_module_t *parent = lh_os_module_get_parent(self);
-void *(*get_ef)(void) = lh_os_module_get_sym(parent, "authum_engine_funcs");
+#include <authum/host.h>
+
+static authum_host_t g_host;
+
+static lh_bool_t
+example_start(authum_module_t *self)
+{
+    if (!authum_host_bind(self, &g_host))
+        return lh_bool_false;
+    authum_host_log_line(&g_host, 0, "[example] start");
+    /* engfuncs: (enginefuncs_t *)g_host.engine_funcs(); */
+    return lh_bool_true;
+}
 ```
 
+| Host symbol | Purpose |
+|-------------|---------|
+| `authum_host_log` | line → `authum.log` |
+| `authum_engine_funcs` | `void *` → `enginefuncs_t *` |
+| `authum_globals` | `void *` → `globalvars_t *` |
+
 Do not call sibling modules by name. There is no shared plugin table
-between children — only parent link and whatever the host exports.
+between children — only the parent facade.
+
+**Escape hatch:** link your own static lh (Authum’s `lib/lh`) or any other
+library into *your* `.so` for private code. That is not the host runtime.
 
 ---
 
 ## 4. Logging (what you should do)
 
-**Write lines; do not pick the sink.**
+**Write lines through the host; do not pick the sink.**
 
-- Prefer the host channel (`authum_host_log` or, when wired, the shared
-  runtime logger the host configured).
+- Use `authum_host_log_line` (or `g_host.log`). Never assume
+  `lh_runtime_logger()` in the module is `authum.log`.
 - Optional: your own file under **your** package (e.g.
   `modules/example/logs/…`) if the module needs a private transcript.
 - Whether those lines also appear in `authum.log` is **Authum policy**
-  (see [logging.md](logging.md): off / host-only / full). Your module
-  should not special-case “Am I under Metamod or Authum?”
+  (see [logging.md](logging.md): off / host-only / full).
 
 qproto 1.0.0 (Metamod-only release) keeps its own `qproto.log` +
-`LoggingMode`. The Authum-hosted line should use the same *author*
-code but feed the host logger so Metamod vs Authum is invisible to you.
+`LoggingMode`. The Authum-hosted line should feed the host logger so
+Metamod vs Authum is invisible to you.
 
 ---
 
