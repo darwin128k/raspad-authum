@@ -25,10 +25,10 @@ projects dropped under `modules/`.
 
 - Loads modules from `modules.list` (Authum line format) or scans `modules/`
 - Connect gate scaffolding for children
-- Host log → `authum.log`; children can use `authum_host_log`
+- Host facade for modules (`authum/host.h`: log, engfuncs, globals) — one
+  runtime in `authum_mm`; modules may still link private lh / other libs
 - Server command `authum` — list loaded modules
-- Exports `authum_engine_funcs` / `authum_globals` for modules
-- Static `lh` embed (`AUTHUM_LH_LINK_MODE=needed|whole`)
+- Static `lh` inside the host only (`AUTHUM_LH_LINK_MODE=needed|whole`)
 
 ## Branches
 
@@ -72,6 +72,8 @@ cstrike/addons/authum/
 | Doc | |
 |-----|--|
 | [CHANGELOG.md](CHANGELOG.md) | Releases |
+| [docs/architecture.md](docs/architecture.md) | Host facade + optional private deps |
+| [examples/](examples/) | `hello` module |
 | [docs/README.md](docs/README.md) | Index |
 | [docs/writing-a-module.md](docs/writing-a-module.md) | Write your own module |
 | [docs/modules.md](docs/modules.md) | Loader / `modules.list` |

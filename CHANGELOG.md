@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Architecture doc: host facade (B) + optional private deps; `authum/host.h`
+  (`authum_host_bind` / `authum_host_log_line`) for modules
+- Example module [`examples/hello`](examples/hello/)
+
 ## [1.0.0] - 2026-10-19
 
 ### Added
