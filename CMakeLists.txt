@@ -29,7 +29,37 @@ if (AUTHUM_FORCE_32BIT)
     endif ()
 endif ()
 
+# Authum is locked to lh 0.4.0 (INI + LH_STATIC_LIBGCC). Clone with
+# --recurse-submodules; .gitmodules tracks branch 0.4.0. Refuse any other VERSION.
+set(AUTHUM_LH_REQUIRED_VERSION "0.4.0")
+set(_authum_lh_version_file "${CMAKE_SOURCE_DIR}/lib/lh/VERSION")
+if (NOT EXISTS "${_authum_lh_version_file}")
+    message(FATAL_ERROR
+            "lib/lh is missing (no VERSION). Run:\n"
+            "  git submodule update --init --recursive\n"
+            "Authum requires lh ${AUTHUM_LH_REQUIRED_VERSION} (branch 0.4.0).")
+endif ()
+file(READ "${_authum_lh_version_file}" _authum_lh_version)
+string(STRIP "${_authum_lh_version}" _authum_lh_version)
+if (NOT _authum_lh_version STREQUAL AUTHUM_LH_REQUIRED_VERSION)
+    message(FATAL_ERROR
+            "lib/lh VERSION is '${_authum_lh_version}', Authum requires "
+            "${AUTHUM_LH_REQUIRED_VERSION} (git branch 0.4.0).\n"
+            "Fix with:\n"
+            "  git -C lib/lh fetch origin\n"
+            "  git -C lib/lh checkout 0.4.0\n"
+            "  git submodule update --init lib/lh")
+endif ()
+
 # Embed lh into the plugin; skip its own tests/docs.
+#
+# AUTHUM_LH_LINK_MODE — how dependents pull static lh (lh has no shared build):
+#   needed  (default) — liblh.a, only referenced .o (+ --gc-sections)
+#   whole             — -Wl,--whole-archive liblh.a (every lh object)
+set(AUTHUM_LH_LINK_MODE "needed" CACHE STRING
+        "How Authum targets link lh: needed | whole")
+set_property(CACHE AUTHUM_LH_LINK_MODE PROPERTY STRINGS needed whole)
+
 set(LH_BUILD_SHARED OFF CACHE BOOL "Build lh as a shared library" FORCE)
 set(LH_BUILD_TESTS OFF CACHE BOOL "Build lh tests" FORCE)
 set(LH_BUILD_DOCS OFF CACHE BOOL "Build lh documentation" FORCE)
@@ -38,6 +68,32 @@ set(LH_LIBRARY_OPTION_OS ON CACHE BOOL "lh OS backends (shared libraries, socket
 # HLDS ships an old libgcc_s; bake the runtime into authum_mm.so.
 set(LH_STATIC_LIBGCC ON CACHE BOOL "static-libgcc for HLDS" FORCE)
 add_subdirectory(lib/lh)
+
+# Link lh per AUTHUM_LH_LINK_MODE, then gc-sections + strip on Release.
+function(authum_link_lh target)
+    if (NOT TARGET ${target})
+        return()
+    endif ()
+    if (AUTHUM_LH_LINK_MODE STREQUAL "whole" AND NOT MSVC)
+        message(STATUS "${target}: AUTHUM_LH_LINK_MODE=whole (--whole-archive liblh.a)")
+        target_link_libraries(${target} PRIVATE
+                "-Wl,--whole-archive" lh "-Wl,--no-whole-archive")
+    else ()
+        message(STATUS "${target}: AUTHUM_LH_LINK_MODE=needed (static, referenced .o only)")
+        target_link_libraries(${target} PRIVATE lh)
+    endif ()
+    if (NOT MSVC)
+        target_compile_options(${target} PRIVATE -ffunction-sections -fdata-sections)
+        target_link_options(${target} PRIVATE "LINKER:--gc-sections")
+    endif ()
+    if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+        if (CMAKE_STRIP)
+            add_custom_command(TARGET ${target} POST_BUILD
+                    COMMAND ${CMAKE_STRIP} --strip-unneeded "$<TARGET_FILE:${target}>"
+                    COMMENT "strip $<TARGET_FILE_NAME:${target}>")
+        endif ()
+    endif ()
+endfunction()
 
 add_library(metamod-p INTERFACE)
 target_include_directories(metamod-p INTERFACE
@@ -83,10 +139,8 @@ target_include_directories(authum PRIVATE
         "${CMAKE_SOURCE_DIR}/include"
 )
 
-target_link_libraries(authum PRIVATE
-        lh
-        metamod-p
-)
+target_link_libraries(authum PRIVATE metamod-p)
+authum_link_lh(authum)
 
 if (WIN32)
     target_compile_definitions(authum PRIVATE WIN32 _WINDOWS)
@@ -101,3 +155,6 @@ else ()
         )
     endif ()
 endif ()
+
+# Child modules (qproto, …) are separate projects. Authum only builds authum_mm
+# and loads whatever is listed in modules.list / modules/ at runtime.
