@@ -27,6 +27,9 @@ hello_start(authum_host_t *host)
     }
     g_host = *host;
     authum_host_log_line(&g_host, 0, "[hello] start");
+    if (g_host.module_dir != 0) {
+        authum_host_log_line(&g_host, 0, g_host.module_dir);
+    }
     return AUTHUM_TRUE;
 }
 
