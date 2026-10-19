@@ -1,36 +1,72 @@
-# Authum
+<p align="center">
+  <img src="assets/logo-light.png#gh-light-mode-only" alt="Authum" width="280">
+  <img src="assets/logo-dark.png#gh-dark-mode-only" alt="Authum" width="280">
+</p>
 
-Metamod-P plugin host for original (32-bit) HLDS. Loads child modules from
-`modules.list` beside the plugin image (or scans `modules/` if the file is
-missing). Authum builds **only** `authum_mm` — modules (e.g. qproto) are
-separate projects dropped under `modules/`.
+<h1 align="center">Authum</h1>
+
+<p align="center">
+  <b>1.0.0</b> — Metamod-P plugin host for classic HLDS<br>
+  loads child modules from <code>modules.list</code> / <code>modules/</code>
+</p>
+
+<p align="center">
+  <a href="LICENSE">Apache-2.0</a> ·
+  <a href="CHANGELOG.md">Changelog</a> ·
+  <a href="https://github.com/darwin128k/rapad-authum">GitHub</a>
+</p>
+
+---
+
+## What it is
+
+Metamod-P **host** for original (32-bit) HLDS. Builds only `authum_mm` — child
+modules (e.g. [qproto](https://github.com/darwin128k/raspad-qproto)) are separate
+projects dropped under `modules/`.
+
+- Loads modules from `modules.list` (Authum line format) or scans `modules/`
+- Connect gate scaffolding for children
+- Host log → `authum.log`; children can use `authum_host_log`
+- Server command `authum` — list loaded modules
+- Exports `authum_engine_funcs` / `authum_globals` for modules
+- Static `lh` embed (`AUTHUM_LH_LINK_MODE=needed|whole`)
 
 ## Branches
 
 | Branch | Meaning |
 |--------|---------|
-| `0.1.0` | Freeze — loader only |
-| `1.0.0` | Connect gate + host log + `modules.list` |
 | `master` | Mainline |
+| `1.0.0` | Freeze — gate + host log + `modules.list` |
+| `0.1.0` | Freeze — loader only |
 
-## Drop-in layout (HLDS)
+## Install
 
+Ready Linux binary: download `authum_mm.so` from
+[Releases](https://github.com/darwin128k/rapad-authum/releases).
+
+1. Put into `cstrike/addons/authum/`:
+   - `authum_mm.so`
+   - `modules.list` (one module path per line, e.g. `qproto`)
+   - `modules/<name>/<name>.so` (or `.dll` on Windows)
+2. In `addons/metamod/plugins.ini`:
+
+```text
+linux addons/authum/authum_mm.so
 ```
+
+3. `meta list` → `authum` RUN; console `authum` lists children
+
+Layout:
+
+```text
 cstrike/addons/metamod/plugins.ini   →  linux addons/authum/authum_mm.so
 cstrike/addons/authum/
   authum_mm.so
-  modules.list                       →  one path per line (e.g. qproto)
+  modules.list
   modules/<name>/
-    <name>.so                        ← Authum picks .so / .dll by OS
+    <name>.so
+  authum.log                         ← written at runtime
 ```
-
-Build artifact: `build-linux32/authum_mm.so`.
-Ready Linux binary: download `authum_mm.so` from
-[Releases](https://github.com/darwin128k/rapad-authum/releases)
-(CI builds on every `master` push; tag `v*` attaches the `.so`).
-
-Console: `authum` lists modules; load OK/FAIL goes to the server log
-and `addons/authum/authum.log`.
 
 ## Docs
 
@@ -42,12 +78,6 @@ and `addons/authum/authum.log`.
 | [docs/modules.md](docs/modules.md) | Loader / `modules.list` |
 | [docs/logging.md](docs/logging.md) | Logging policy (host vs module) |
 | [docs/gate.md](docs/gate.md) | Connect gate |
-
-## License
-
-Apache License 2.0 — use and redistribute freely. If you change the sources,
-say so in the modified files and keep the author attribution (`LICENSE`,
-`NOTICE`).
 
 ## Clone
 
@@ -62,13 +92,13 @@ git submodule update --init --recursive
 ```
 
 `lib/lh` is a **required** submodule on branch **`0.4.0`** of
-[darwin128K/lh](https://github.com/darwin128K/lh) (INI parser /
-`LH_STATIC_LIBGCC`). Not `main`. CMake refuses any other `lib/lh/VERSION`.
+[darwin128K/lh](https://github.com/darwin128K/lh). Not `main`. CMake refuses
+any other `lib/lh/VERSION`.
 
-You still need Half-Life SDK headers and Metamod-P under `lib/` (see
-`AUTHUM_HLSDK_DIR` in `CMakeLists.txt`).
+You still need Metamod-P (+ HLSDK headers) under `lib/metamod-p`
+(see `AUTHUM_HLSDK_DIR` in `CMakeLists.txt`).
 
-## Build (Linux 32-bit)
+## Build
 
 ```sh
 cmake -S . -B build-linux32 -G Ninja -DCMAKE_BUILD_TYPE=Release
@@ -78,3 +108,10 @@ cmake --build build-linux32
 Optional: `-DAUTHUM_LH_LINK_MODE=needed` (default) or `whole`.
 `LH_STATIC_LIBGCC` is forced on so the module does not depend on the host’s
 `libgcc_s` (HLDS).
+
+Linux CI builds `authum_mm.so` on `master` only. Tag `v*` publishes the `.so`
+as a release asset. Output: `build-linux32/authum_mm.so`.
+
+## License
+
+Apache License 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
