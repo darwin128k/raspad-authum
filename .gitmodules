@@ -1,0 +1,4 @@
+[submodule "lib/lh"]
+	path = lib/lh
+	url = https://github.com/darwin128K/lh.git
+	branch = 0.4.0
