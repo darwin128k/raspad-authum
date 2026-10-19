@@ -36,6 +36,7 @@ and `addons/authum/authum.log`.
 
 | Doc | |
 |-----|--|
+| [CHANGELOG.md](CHANGELOG.md) | Releases |
 | [docs/README.md](docs/README.md) | Index |
 | [docs/writing-a-module.md](docs/writing-a-module.md) | Write your own module |
 | [docs/modules.md](docs/modules.md) | Loader / `modules.list` |

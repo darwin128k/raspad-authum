@@ -1,6 +1,15 @@
 # Changelog
 
-## 1.0.0
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [1.0.0] - 2026-10-19
+
+### Added
 
 - Connect gate scaffolding (`authum_gate_init` / `deinit`) on the host
 - Module list file `modules.list` (Authum dialect via `lh_str_line_reader`; not INI)
@@ -10,11 +19,23 @@
 - Host exports `authum_engine_funcs` / `authum_globals` for child modules
 - `AUTHUM_LH_LINK_MODE`: `needed` (default) or `whole` (static lh only)
 - Docs: writing a module, logging policy, gate, loader
-- `lib/lh` submodule → https://github.com/darwin128K/lh.git branch `0.4.0`
-- Branch `0.1.0` freezes the loader-only line
+- Linux CI on `master` (i386 Release) and release workflow that attaches `authum_mm.so` to tag `v*`
+- Ready binary: [Releases](https://github.com/darwin128k/rapad-authum/releases) (`authum_mm.so`)
 
-## 0.1.0
+### Changed
+
+- Authum builds **only** `authum_mm`; child modules (e.g. qproto) are separate drop-ins under `modules/`
+- `lib/lh` submodule → https://github.com/darwin128K/lh.git branch `0.4.0`
+- Branch `0.1.0` freezes the loader-only line; `master` is mainline after this release
+
+## [0.1.0] - 2026-10-19
+
+### Added
 
 - Metamod-P host plugin `authum_mm`
 - Module loader (`modules.list` or `modules/` scan) on lh
 - Apache-2.0; `lib/lh` pinned to branch `0.4.0`
+
+[Unreleased]: https://github.com/darwin128k/rapad-authum/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/darwin128k/rapad-authum/releases/tag/v1.0.0
+[0.1.0]: https://github.com/darwin128k/rapad-authum/tree/0.1.0
