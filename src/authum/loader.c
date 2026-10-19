@@ -447,6 +447,10 @@ authum_loader_deinit(void)
     lh_os_module_deinit(lh_addr_of(authum));
 }
 
+/* child.c */
+lh_os_module_t *
+authum_child_load(lh_os_loader_t *loader, const lh_fs_path_t *path);
+
 lh_bool_t
 authum_loader_load(authum_module_t *self, const lh_fs_path_t *path)
 {
@@ -462,7 +466,7 @@ authum_loader_load(authum_module_t *self, const lh_fs_path_t *path)
     {
         return lh_bool_false;
     }
-    return lh_cast_static(lh_bool_t, lh_null_ne(lh_os_loader_load(loader, path)));
+    return lh_cast_static(lh_bool_t, lh_null_ne(authum_child_load(loader, path)));
 }
 
 lh_bool_t

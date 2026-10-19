@@ -9,9 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Architecture doc: host facade (B) + optional private deps; `authum/host.h`
-  (`authum_host_bind` / `authum_host_log_line`) for modules
-- Example module [`examples/hello`](examples/hello/)
+- **Module ABI 0.2.0** (lh-free clients): `authum/client.h`, `authum_module_api`,
+  host-filled `authum_host_t`; example [`examples/hello`](examples/hello/) links
+  **no** liblh
+- Architecture doc: host facade (B) + optional private deps
+
+### Changed
+
+- `authum_module_info` uses Authum `authum_version_t` / `date` string (not lh types)
+- Child load prefers `authum_module_api`; legacy `authum_module_ops` still accepted
 
 ## [1.0.0] - 2026-10-19
 

@@ -1,4 +1,4 @@
-# Example Authum module. Built from the Authum tree (shares lib/lh).
+# Client module: Authum headers only — does NOT link lh.
 add_library(hello MODULE hello.c)
 set_target_properties(hello PROPERTIES
         PREFIX ""
@@ -8,8 +8,6 @@ set_target_properties(hello PROPERTIES
 target_include_directories(hello PRIVATE
         "${CMAKE_SOURCE_DIR}/include"
 )
-
-authum_link_lh(hello)
 
 if (WIN32)
     target_compile_definitions(hello PRIVATE WIN32 _WINDOWS)

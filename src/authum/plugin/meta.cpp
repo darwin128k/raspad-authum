@@ -9,8 +9,9 @@
 #include <enginecallbacks.h>
 #include <meta_api.h>
 
+#include <cstdio>
+
 #include <lh/char.h>
-#include <lh/datetime.h>
 #include <lh/fs/path.h>
 #include <lh/index.h>
 #include <lh/memory.h>
@@ -18,7 +19,6 @@
 #include <lh/os/module.h>
 #include <lh/util/addr.h>
 #include <lh/util/ptr.h>
-#include <lh/version.h>
 #include <lh/void.h>
 
 static META_FUNCTIONS g_meta_functions = {
@@ -37,15 +37,20 @@ meta_globals_t *gpMetaGlobals;
 gamedll_funcs_t *gpGamedllFuncs;
 mutil_funcs_t *gpMetaUtilFuncs;
 
-static lh_char_t g_version_text[LH_VERSION_TEXT_MAX + 1];
-static lh_char_t g_datetime_text[LH_DATETIME_TEXT_MAX + 1];
+static char g_version_text[32];
+
+static void
+authum_format_version(const authum_version_t *v, char *buf, unsigned buf_size)
+{
+    std::snprintf(buf, buf_size, "%u.%u.%u", v->major, v->minor, v->patch);
+}
 
 static void
 authum_cmd_list(void)
 {
     authum_module_t *child;
     lh_usize_t loaded;
-    lh_char_t version_text[LH_VERSION_TEXT_MAX + 1];
+    char version_text[32];
 
     loaded = authum_loader_get_loaded(&authum);
     authum_log_info("=== Authum modules (%u) ===", static_cast<unsigned>(loaded));
@@ -53,7 +58,6 @@ authum_cmd_list(void)
          child = authum_loader_get_next(&authum, child))
     {
         const authum_module_info_t *info;
-        lh_usize_t n;
 
         info = authum_module_get_info(child);
         if (lh_null_eq(info))
@@ -61,8 +65,7 @@ authum_cmd_list(void)
             authum_log_info("  (unnamed module)");
             continue;
         }
-        n = lh_version_format(lh_addr_of(info->version), version_text, LH_VERSION_TEXT_MAX);
-        version_text[n] = '\0';
+        authum_format_version(&info->version, version_text, sizeof(version_text));
         authum_log_info("  OK  %s %s", info->name, version_text);
     }
     if (loaded == 0)
@@ -74,25 +77,19 @@ authum_cmd_list(void)
 C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Query(char * /* ifvers */, plugin_info_t **pPlugInfo,
                                              mutil_funcs_t *pMetaUtilFuncs)
 {
-    lh_usize_t n;
-
     if (lh_null_eq(lh_ptr_cast(lh_void, pPlugInfo)))
     {
         return FALSE;
     }
 
-    n = lh_version_format(lh_addr_of(authum_module_info.version), g_version_text,
-                          LH_VERSION_TEXT_MAX);
-    g_version_text[n] = '\0';
-
-    n = lh_datetime_format(lh_addr_of(authum_module_info.datetime), g_datetime_text,
-                           LH_DATETIME_TEXT_MAX);
-    g_datetime_text[n] = '\0';
+    authum_format_version(&authum_module_info.version, g_version_text, sizeof(g_version_text));
 
     Plugin_info.ifvers = const_cast<char *>(META_INTERFACE_VERSION);
     Plugin_info.name = const_cast<char *>(authum_module_info.name);
     Plugin_info.version = g_version_text;
-    Plugin_info.date = g_datetime_text;
+    Plugin_info.date = const_cast<char *>(authum_module_info.date != nullptr
+                                              ? authum_module_info.date
+                                              : "");
     Plugin_info.author = const_cast<char *>(authum_module_info.author);
     Plugin_info.url = const_cast<char *>(authum_module_info.url);
     Plugin_info.logtag = const_cast<char *>(authum_module_info.logtag);
