@@ -1,16 +1,21 @@
+#include <authum/gate.h>
 #include <authum/loader.h>
+#include <authum/log.h>
 #include <authum/plugin/info.h>
 
 #include <extdll.h>
 #include <dllapi.h>
 #include <engine_api.h>
+#include <enginecallbacks.h>
 #include <meta_api.h>
 
 #include <lh/char.h>
 #include <lh/datetime.h>
+#include <lh/fs/path.h>
 #include <lh/index.h>
 #include <lh/memory.h>
 #include <lh/null.h>
+#include <lh/os/module.h>
 #include <lh/util/addr.h>
 #include <lh/util/ptr.h>
 #include <lh/version.h>
@@ -34,6 +39,37 @@ mutil_funcs_t *gpMetaUtilFuncs;
 
 static lh_char_t g_version_text[LH_VERSION_TEXT_MAX + 1];
 static lh_char_t g_datetime_text[LH_DATETIME_TEXT_MAX + 1];
+
+static void
+authum_cmd_list(void)
+{
+    authum_module_t *child;
+    lh_usize_t loaded;
+    lh_char_t version_text[LH_VERSION_TEXT_MAX + 1];
+
+    loaded = authum_loader_get_loaded(&authum);
+    authum_log_info("=== Authum modules (%u) ===", static_cast<unsigned>(loaded));
+    for (child = authum_loader_get_first(&authum); child != nullptr;
+         child = authum_loader_get_next(&authum, child))
+    {
+        const authum_module_info_t *info;
+        lh_usize_t n;
+
+        info = authum_module_get_info(child);
+        if (lh_null_eq(info))
+        {
+            authum_log_info("  (unnamed module)");
+            continue;
+        }
+        n = lh_version_format(lh_addr_of(info->version), version_text, LH_VERSION_TEXT_MAX);
+        version_text[n] = '\0';
+        authum_log_info("  OK  %s %s", info->name, version_text);
+    }
+    if (loaded == 0)
+    {
+        authum_log_info("  (none — check modules.list beside authum_mm.so)");
+    }
+}
 
 C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Query(char * /* ifvers */, plugin_info_t **pPlugInfo,
                                              mutil_funcs_t *pMetaUtilFuncs)
@@ -81,39 +117,47 @@ C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Attach(PLUG_LOADTIME /* now */, META_FUNC
     lh_memory_copy(pFunctionTable, sizeof(META_FUNCTIONS), lh_addr_of(g_meta_functions),
                    sizeof(META_FUNCTIONS));
     gpGamedllFuncs = pGamedllFuncs;
+
     if (authum_loader_init() != lh_bool_true)
     {
+        authum_log_error("loader init failed");
         return FALSE;
     }
-    (void)authum_loader_load_modules(&authum);
     {
-        lh_usize_t loaded;
-        lh_char_t version_text[LH_VERSION_TEXT_MAX + 1];
-        authum_module_t *child;
+        const lh_fs_path_t *image;
+        lh_fs_path_t parent;
 
-        loaded = authum_loader_get_loaded(&authum);
-        for (child = authum_loader_get_first(&authum); child != nullptr;
-             child = authum_loader_get_next(&authum, child))
+        image = lh_os_module_get_path_as_const(&authum);
+        lh_fs_path_init(lh_addr_of(parent));
+        if (lh_null_ne(image) && lh_fs_path_parent(lh_addr_of(parent), image))
         {
-            const authum_module_info_t *info;
-            lh_usize_t n;
-
-            info = authum_module_get_info(child);
-            if (lh_null_eq(info))
-            {
-                continue;
-            }
-            n = lh_version_format(lh_addr_of(info->version), version_text, LH_VERSION_TEXT_MAX);
-            version_text[n] = '\0';
-            LOG_MESSAGE(PLID, "loaded %s %s", info->name, version_text);
+            (void)authum_log_init(lh_addr_of(parent));
         }
-        LOG_MESSAGE(PLID, "modules loaded: %u", static_cast<unsigned>(loaded));
+        lh_fs_path_deinit(lh_addr_of(parent));
     }
+
+    authum_log_info("Authum %s attaching", g_version_text);
+
+    (void)authum_loader_load_modules(&authum);
+    authum_cmd_list();
+
+    if (authum_gate_init() != lh_bool_true)
+    {
+        authum_log_error("connect gate init failed");
+        authum_loader_deinit();
+        authum_log_deinit();
+        return FALSE;
+    }
+
+    REG_SVR_COMMAND("authum", authum_cmd_list);
+    authum_log_info("server command: authum  (list modules)");
     return TRUE;
 }
 
 C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Detach(PLUG_LOADTIME /* now */, PL_UNLOAD_REASON /* reason */)
 {
+    authum_gate_deinit();
     authum_loader_deinit();
+    authum_log_deinit();
     return TRUE;
 }

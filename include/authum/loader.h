@@ -3,7 +3,7 @@
  * @brief Authum's policy on top of ::lh_os_loader_t.
  *
  * The mechanism (open, method table, start, unload children) is lh.
- * Authum decides which paths: `modules.ini` beside the image when present,
+ * Authum decides which paths: `modules.list` beside the image when present,
  * otherwise shared libraries in `modules/` beside the image; skip
  * `authum_mm`. One rejected child does not fail the list. A missing
  * directory succeeds with nothing loaded.
@@ -26,10 +26,13 @@
 #define AUTHUM_MODULES_DIR "modules"
 
 /**
- * @def AUTHUM_MODULES_INI
- * @brief Optional load list beside a module image (::lh_ini dialect).
+ * @def AUTHUM_MODULES_LIST
+ * @brief Optional load list beside a module image (Authum list dialect).
+ *
+ * One path per line; optional `[linux]` / `[win32]` / `[modules]` / `[any]`
+ * sections. Not INI — parsed with ::lh_str_line_reader_t in Authum.
  */
-#define AUTHUM_MODULES_INI "modules.ini"
+#define AUTHUM_MODULES_LIST "modules.list"
 
 LH_COMPILER_EXTERN_C_BEGIN
 
@@ -72,24 +75,25 @@ lh_bool_t
 authum_loader_load_dir(authum_module_t *self, const lh_fs_path_t *dir);
 
 /**
- * @brief Load module paths listed in @p path (::AUTHUM_MODULES_INI dialect).
+ * @brief Load module paths listed in @p path (::AUTHUM_MODULES_LIST dialect).
  *
- * Only the OS section (`win32` or `linux`) is used. Keys are ignored; each
- * value is a path. Relative values join under `modules/` beside @p self's
- * image; absolute values are used as-is. Empty values and the host image
- * are skipped. One rejected load does not fail the list. A parse error
- * returns false (::authum_error_code_bad_modules_ini).
+ * Lines before a section and under `[modules]` / `[any]` apply on every OS.
+ * `[linux]` / `[win32]` only on that OS. Each non-comment line is one path.
+ * Relative paths join under `modules/` beside @p self's image; absolute
+ * paths are used as-is. The host image is skipped. One rejected load does
+ * not fail the list. A parse error returns false
+ * (::authum_error_code_bad_modules_list).
  *
  * @return ::lh_bool_true if the file was read and parsed.
  */
 lh_bool_t
-authum_loader_load_ini(authum_module_t *self, const lh_fs_path_t *path);
+authum_loader_load_list(authum_module_t *self, const lh_fs_path_t *path);
 
 /**
- * @brief Load children for @p self: `modules.ini` beside the image, else
+ * @brief Load children for @p self: `modules.list` beside the image, else
  *        shared images from `modules/`.
  *
- * When `modules.ini` is present, only that list is used (an empty OS
+ * When `modules.list` is present, only that list is used (an empty matching
  * section loads nothing). When it is missing, the directory scan runs.
  * The image file itself is skipped.
  */

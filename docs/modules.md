@@ -29,7 +29,7 @@ Authum's part is the policy around that mechanism:
 
 - identity and ABI live in an exported `authum_module_info_t`;
 - the method-table symbol is `authum_module_ops`;
-- extra modules come from `modules.ini` beside the image when that file
+- extra modules come from `modules.list` beside the image when that file
   exists, otherwise from shared libraries in a directory named `modules`
   beside the image;
 - the host plugin file `authum_mm` is never opened as a child.
@@ -91,7 +91,7 @@ Refusal reasons Authum writes into the OS last-error slot:
 | `authum_error_code_missing_info` | `0x20` | `authum_module_info` is not exported. |
 | `authum_error_code_invalid_info` | `0x21` | The object has no name. |
 | `authum_error_code_incompatible_abi` | `0x22` | `abi` is not compatible with `0.1.0`. |
-| `authum_error_code_bad_modules_ini` | `0x24` | `modules.ini` is present but not valid lh_ini text. |
+| `authum_error_code_bad_modules_list` | `0x24` | `modules.list` is present but not valid Authum list text. |
 
 An open or filesystem failure stays in lh's own last-error
 (`lh_os_last_error` or `lh_os_system_last_error`).
@@ -104,36 +104,39 @@ The list does not invent paths. Authum finds paths and hands them over
 one at a time. `lh_os_loader_load` is what links a node.
 
 `authum_loader_load_modules` takes the image path, drops the last
-segment (`lh_fs_path_parent`), and looks for `modules.ini` beside the
-image. If that file exists, only the INI list is used. If it is missing,
+segment (`lh_fs_path_parent`), and looks for `modules.list` beside the
+image. If that file exists, only that list is used. If it is missing,
 the name `modules` is joined and the directory is scanned (one level).
 A missing directory, or a path that is not a directory, succeeds with
 nothing loaded. An empty path is an error.
 
-### 4.1 `modules.ini`
+### 4.1 `modules.list`
 
-Dialect is lh_ini: sections and `key = value` are required. Comments are
-whole lines starting with `;` or `#`.
+Authum’s own list dialect (not INI). Built on `lh_str_line_reader_t`:
+one path per line. Comments are whole lines starting with `;` or `#`.
+Blank lines are ignored. Optional sections filter by OS.
 
 ```
-; comments ; or #
+# comments ; or #
+qproto
+
 [linux]
-load = foo.so
-load = bar.so
+foo
+bar
+
 [win32]
-load = foo.dll
+foo
 ```
 
-Only the OS section is read: `win32` on Windows, `linux` otherwise
-(Metamod keywords). Other sections are ignored. Keys are ignored; each
-value is a path. Empty values are skipped. Relative values join under
-`modules/` beside the image; absolute paths (`lh_fs_path_is_absolute`)
-are used as-is. The host file `authum_mm` is rejected by
-`authum_loader_load` and not opened.
+Lines before any section, and under `[modules]` / `[any]`, apply on every
+OS. `[linux]` / `[win32]` only on that OS (Metamod keywords). Other
+section names are ignored. Relative paths join under `modules/` beside
+the image; absolute paths (`lh_fs_path_is_absolute`) are used as-is. The
+host file `authum_mm` is rejected by `authum_loader_load` and not opened.
 
-When the file is present, an empty matching section succeeds with nothing
-loaded — the directory is not also scanned. A parse error returns false
-(`authum_error_code_bad_modules_ini`).
+When the file is present, an empty matching set succeeds with nothing
+loaded — the directory is not also scanned. A bad section header returns
+false (`authum_error_code_bad_modules_list`).
 
 ### 4.2 Directory scan
 
@@ -156,7 +159,7 @@ For each entry in `modules/`:
    list.
 6. On success, `lh_list_push_back` links the module's node at the tail.
 
-One rejected file does not fail the list. A directory-read or INI parse
+One rejected file does not fail the list. A directory-read or list parse
 error does: children already linked stay linked.
 
 Order is load order. The tail is the last success. Unload walks backward
@@ -183,11 +186,12 @@ The host object is the global `authum`.
 `authum_loader_init` initializes it, binds the image that contains
 `authum_module_info` (`lh_os_module_bind`), sets `authum_module_ops`, and
 starts it. `Meta_Attach` then calls `authum_loader_load_modules` and logs
-each child's name and version.
+each child's name and version, then `authum_gate_init` (connect gate —
+see [gate.md](gate.md)).
 
-`authum_loader_deinit` is `lh_os_module_deinit`. Close stops first:
-children unload, then `authum_module_stop`, then the image reference is
-released. `Meta_Detach` calls this.
+`Meta_Detach` calls `authum_gate_deinit`, then `authum_loader_deinit`
+(`lh_os_module_deinit`). Close stops first: children unload, then
+`authum_module_stop`, then the image reference is released.
 
 `authum_loader_unload_all` unloads children and leaves the module itself
 loaded, so the same loader can be used again.
@@ -198,12 +202,29 @@ loaded, so the same loader can be used again.
 
 ```
 authum_mm.dll
-modules.ini                 # optional; if present, replaces the dir scan
+modules.list                # optional; if present, replaces the dir scan
 modules/
     one.dll
     two.dll
     two.dll's own modules/  # loaded from two's start, if its start does that
 ```
 
-`modules.ini` and `modules/` of the host are siblings of `authum_mm.dll`,
+`modules.list` and `modules/` of the host are siblings of `authum_mm.dll`,
 not children of the process working directory.
+
+Example (see `deploy/modules.list`):
+
+```
+qproto
+```
+
+That is the package folder `modules/qproto/`. Authum loads
+`qproto.so` or `qproto.dll` inside it for the current OS.
+
+No `.so` / `.dll` needed — Authum appends the native shared suffix. Use
+no section (or `[modules]` / `[any]`) for all OSes; `[linux]` / `[win32]`
+still filter by platform when you want different lists.
+
+On attach Authum logs every load attempt (`module OK:` / `module FAIL: …`)
+into the server log. Console command `authum` reprints the loaded list
+(no RCON `meta list` required for Authum children).
