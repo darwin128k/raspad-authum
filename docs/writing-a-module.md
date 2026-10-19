@@ -85,6 +85,7 @@ into `start` (valid until `stop`):
 | `log` | → `authum.log` |
 | `engine_funcs` | `void *` → `enginefuncs_t *` |
 | `globals` | `void *` → `globalvars_t *` |
+| `module_dir` | directory of this module's `.so` / `.dll` (cfg, logs, …) |
 
 Copy the struct (or the function pointers) if you need them after `start` returns.
 

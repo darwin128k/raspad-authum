@@ -21,6 +21,11 @@ typedef struct authum_host
     authum_host_log_fn log;
     authum_host_get_ptr_fn engine_funcs;
     authum_host_get_ptr_fn globals;
+    /**
+     * Directory that holds this module's image (e.g. `…/modules/qproto`).
+     * NUL-terminated; valid until `stop`. May be null if unknown.
+     */
+    const char *module_dir;
 } authum_host_t;
 
 static inline void

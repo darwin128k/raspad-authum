@@ -156,9 +156,13 @@ else ()
     endif ()
 endif ()
 
-# Child modules (qproto, …) are separate projects. Authum only builds authum_mm
-# and loads whatever is listed in modules.list / modules/ at runtime.
+# Child modules: examples always optional; qproto if QPROTO_SRC_DIR is found.
 option(AUTHUM_BUILD_EXAMPLES "Build example Authum modules under examples/" ON)
 if (AUTHUM_BUILD_EXAMPLES)
     add_subdirectory(examples/hello)
+endif ()
+
+option(AUTHUM_BUILD_QPROTO "Build Authum-packaged qproto module" ON)
+if (AUTHUM_BUILD_QPROTO)
+    add_subdirectory(src/modules/qproto)
 endif ()

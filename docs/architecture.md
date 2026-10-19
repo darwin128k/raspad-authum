@@ -12,7 +12,7 @@ not ship a process-wide `lh.so` for modules.
 
 | Layer | Who | Copies |
 |-------|-----|--------|
-| Host facade (`authum_host_t`: log, engfuncs, globals) | `authum_mm` | **One** — passed into `authum_module_api.start` |
+| Host facade (`authum_host_t`: log, engfuncs, globals, `module_dir`) | `authum_mm` | **One** — passed into `authum_module_api.start` |
 | lh inside Authum | linked into `authum_mm` | One (implementation detail) |
 | Full lh / other libs in a module | that module’s `.so` | Optional, **private** |
 
