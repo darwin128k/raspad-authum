@@ -83,9 +83,28 @@ into `start` (valid until `stop`):
 | Field | Purpose |
 |-------|---------|
 | `log` | → `authum.log` |
-| `engine_funcs` | `void *` → `enginefuncs_t *` |
-| `globals` | `void *` → `globalvars_t *` |
+| `engine` | `const authum_engine_t *` — game dir / server print / server command (no HLSDK) |
+| `engine_funcs` / `globals` | escape hatch: `void *` → `enginefuncs_t *` / `globalvars_t *` |
 | `module_dir` | directory of this module's `.so` / `.dll` (cfg, logs, …) |
+| `crypto` | `const authum_crypto_t *` — Rijndael + SHA session API (lh subset; see `<authum/crypto.h>`) |
+
+Crypto mirrors lh layout (`authum/crypto/rijndael.h`, `…/sha.h`, mode/kind leaves) but only the
+session surface is exposed. Engine likewise exposes only the subset modules need:
+
+```c
+char game_dir[256];
+authum_engine_get_game_dir(host->engine, game_dir, sizeof game_dir);
+authum_engine_server_print(host->engine, "[mod] hello\n");
+authum_engine_server_command(host->engine, "kick #1\n");
+
+authum_crypto_rijndael_t ctx;
+authum_crypto_rijndael_init(host->crypto, &ctx, key, 32, 0, 0, 32,
+                            authum_crypto_rijndael_mode_ecb);
+authum_crypto_rijndael_decrypt_block(host->crypto, &ctx, in, out);
+
+unsigned char dig[AUTHUM_CRYPTO_SHA256_DIGEST_SIZE];
+authum_crypto_sha_hash(host->crypto, authum_crypto_sha_kind_256, data, len, dig, sizeof dig);
+```
 
 Copy the struct (or the function pointers) if you need them after `start` returns.
 

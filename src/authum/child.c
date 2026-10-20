@@ -83,6 +83,10 @@ authum_child_fill_module_dir(authum_module_t *child, authum_child_data_t *data)
     lh_fs_path_deinit(lh_addr_of(parent));
 }
 
+/* Implemented in crypto.c / engine_server.cpp (linked into authum_mm). */
+const authum_crypto_t *authum_crypto(void);
+const authum_engine_t *authum_engine(void);
+
 static void
 authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
 {
@@ -93,6 +97,8 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     out->engine_funcs = lh_null;
     out->globals = lh_null;
     out->module_dir = lh_null;
+    out->crypto = authum_crypto();
+    out->engine = authum_engine();
 
     parent = lh_os_module_get_parent(child);
     if (!lh_null_eq(parent)) {
