@@ -96,24 +96,33 @@ cstrike/addons/authum/
 Children do **not** get `GiveFnptrsToDll`. The host passes `authum_host_t`
 into `start` (valid until `stop`):
 
-| Field | Purpose |
-|-------|---------|
-| `log` | → `authum.log` |
-| `engine` | `const authum_engine_t *` — game dir / server print / server command (no HLSDK) |
-| `engine_funcs` / `globals` | escape hatch: `void *` → `enginefuncs_t *` / `globalvars_t *` |
-| `env` | `const authum_env_t *` — `authum_path_t *` roots: game / models / sprites / addons / authum / modules / module |
-| `module_dir` | deprecated C string of `env->module` |
-| `crypto` | `const authum_crypto_t *` — Rijndael + SHA session API (lh subset; see `<authum/crypto.h>`) |
+| Accessor | Purpose |
+|----------|---------|
+| `authum_host_log_line` / logger sinks | → `authum.log` |
+| `authum_host_engine` / game dir / print / command | engine facade (no HLSDK) |
+| `authum_host_engine_funcs` / `authum_host_globals` | escape hatch → HLSDK types |
+| `authum_host_env` / `authum_host_env_module` / `_game` / … | `authum_path_t` roots |
+| `authum_host_env_module_cstr` | deprecated C string of module dir |
+| `authum_host_crypto` | Rijndael + SHA (`<authum/crypto.h>`) |
 
 Paths in `env` are absolute when the host can resolve them from the module image
 (current volume, native separators). Prefer `authum_host_env_module(host)` for
-cfg/logs; `authum_path_join` appends a leaf. Config: put defaults on your
-`g_mod_config = { … }`, then `authum_cfg_apply_items` from an
-`authum_cfg_item_t[]` (or call `authum_cfg_get_*` / `apply_*` by hand).
+cfg/logs; `authum_path_join` appends a leaf.
 
-Link Authum’s `authum_client` static library (see `client/CMakeLists.txt`):
-`add_subdirectory(<authum>/client …)` then `target_link_libraries(… authum_client)`.
-Do not compile Authum `.c` files into the module yourself.
+**Config:** defaults on `g_mod_config = { … }`, then
+`authum_cfg_apply_items` from an `authum_cfg_item_t[]`. Keys that need a custom
+parser or allow-list stay **outside** the table — see **[cfg.md](cfg.md)**
+(full dialect, `get_*` vs `apply_*`, custom-key recipes).
+
+**Linking:** put Authum under `lib/authum` (submodule), then:
+
+```cmake
+add_subdirectory(lib/authum/client)
+target_link_libraries(mymod PRIVATE authum_client)
+```
+
+Do not compile Authum `.c` files into the module. Do not invent
+`AUTHUM_SRC_DIR` heuristics that point at a sibling checkout.
 
 Never touch `host->…` fields — only `authum_host_*` getters/setters.
 
@@ -158,9 +167,10 @@ Policy: [logging.md](logging.md).
 - **Pure C** sources (`.c` / C headers with include guards); `project(... C)` is enough — no CXX.
 - **snake_case** for all C identifiers in the module.
 - **32-bit** HLDS (`-m32` on Linux).
-- Include path: Authum’s `include/` only (for a pure client).
+- **Submodule** Authum at `lib/authum`; link `authum_client` (PUBLIC includes).
 - Do **not** link `liblh` unless you choose the escape hatch.
 - Export visibility: `AUTHUM_MODULE_EXPORT` on both symbols.
+- Config API: [cfg.md](cfg.md).
 
 ---
 
@@ -176,5 +186,7 @@ Policy: [logging.md](logging.md).
 - [ ] Folder `foo` → `foo.so` / `foo.dll`
 - [ ] Not a Metamod `plugins.ini` entry
 - [ ] Logs via host facade
+- [ ] Config: defaults + `authum_cfg_apply_items`; custom keys after the table ([cfg.md](cfg.md))
+- [ ] Links `authum_client` from `lib/authum/client` (no Authum `.c` in the module)
 
-Loader details: [modules.md](modules.md). Gate: [gate.md](gate.md).
+Loader details: [modules.md](modules.md). Gate: [gate.md](gate.md). Config: [cfg.md](cfg.md).
