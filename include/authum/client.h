@@ -22,6 +22,7 @@
 #include <authum/events.h>
 #include <authum/export.h>
 #include <authum/host.h>
+#include <authum/json.h>
 #include <authum/logger.h>
 #include <authum/module/api.h>
 #include <authum/module/info.h>
@@ -30,6 +31,7 @@
 #include <authum/ptr.h>
 #include <authum/sandbox.h>
 #include <authum/size.h>
+#include <authum/sql.h>
 #include <authum/version.h>
 
 #endif /* AUTHUM_CLIENT_H */
