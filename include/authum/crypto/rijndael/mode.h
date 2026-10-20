@@ -8,6 +8,8 @@
 #ifndef AUTHUM_CRYPTO_RIJNDAEL_MODE_H
 #define AUTHUM_CRYPTO_RIJNDAEL_MODE_H
 
+#include <authum/byte.h>
+
 /**
  * @def authum_crypto_rijndael_mode_ecb
  * @brief Electronic Code Book: each block is encrypted independently.
@@ -30,6 +32,6 @@
  * @typedef authum_crypto_rijndael_mode_t
  * @brief One of the `authum_crypto_rijndael_mode_*` constants.
  */
-typedef unsigned char authum_crypto_rijndael_mode_t;
+typedef authum_byte_t authum_crypto_rijndael_mode_t;
 
 #endif /* AUTHUM_CRYPTO_RIJNDAEL_MODE_H */

@@ -13,6 +13,8 @@ not ship a process-wide `lh.so` for modules.
 | Layer | Who | Copies |
 |-------|-----|--------|
 | Host facade (`authum_host_t`: log, engfuncs, globals, `module_dir`, `crypto`, `engine`) | `authum_mm` | **One** — passed into `authum_module_api.start` |
+| Foundation types (`authum_byte_t`, `authum_usize_t`, `authum_bool_t`, …) | Authum headers only | Same idea as lh types; modules never include lh |
+| Module logger (`authum/logger.h` — levels + sinks) | Authum headers only | Prefer this over a private `mymod_log`; bricks = host/console/file |
 | Crypto facade (`authum/crypto/…`, same shape as lh, subset only) | headers + ops in `authum_mm` | Modules call Authum names; lh stays inside the host |
 | Engine facade (`authum/engine.h` — game dir / print / command) | ops in `authum_mm` | Modules need no HLSDK for the common subset |
 | lh + HLSDK inside Authum | linked / includes in `authum_mm` | Implementation detail of the host |

@@ -10,6 +10,7 @@
 #ifndef AUTHUM_LOG_H
 #define AUTHUM_LOG_H
 
+#include <authum/char.h>
 #include <lh/bool.h>
 #include <lh/compiler/extern/c.h>
 #include <lh/fs/path.h>
@@ -51,7 +52,7 @@ void authum_log_error(const char *fmt, ...);
 #endif
 
 AUTHUM_MODULE_EXPORT void
-authum_host_log(int is_error, const char *line);
+authum_host_log(int is_error, const authum_char_t *line);
 
 LH_COMPILER_EXTERN_C_END
 

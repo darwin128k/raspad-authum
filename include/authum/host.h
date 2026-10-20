@@ -9,15 +9,18 @@
 #ifndef AUTHUM_HOST_H
 #define AUTHUM_HOST_H
 
+#include <authum/char.h>
 #include <authum/crypto.h>
 #include <authum/engine.h>
+#include <authum/null.h>
+#include <authum/ptr.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef void (*authum_host_log_fn)(int is_error, const char *line);
-typedef void *(*authum_host_get_ptr_fn)(void);
+typedef void (*authum_host_log_fn)(int is_error, const authum_char_t *line);
+typedef authum_ptr (*authum_host_get_ptr_fn)(void);
 
 typedef struct authum_host
 {
@@ -32,7 +35,7 @@ typedef struct authum_host
      * Directory that holds this module's image (e.g. `…/modules/qproto`).
      * NUL-terminated; valid until `stop`. May be null if unknown.
      */
-    const char *module_dir;
+    const authum_char_t *module_dir;
     /**
      * Crypto ops (Rijndael + SHA subset from lh). Non-null on current hosts;
      * check before use if you support older `authum_mm`.
@@ -46,9 +49,9 @@ typedef struct authum_host
 } authum_host_t;
 
 static inline void
-authum_host_log_line(const authum_host_t *host, int is_error, const char *line)
+authum_host_log_line(const authum_host_t *host, int is_error, const authum_char_t *line)
 {
-    if (host != 0 && host->log != 0 && line != 0) {
+    if (!authum_null_eq(host) && host->log != 0 && !authum_null_eq(line)) {
         host->log(is_error, line);
     }
 }

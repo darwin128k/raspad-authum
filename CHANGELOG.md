@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `docs/module-style.md` — required naming / enum / Authum-type rules for child modules
+- `<authum/logger.h>` — standard module logger (PSR-3 levels like lh; sinks host/console/file)
+- Foundation types for modules (lh-shaped, no lh link): `authum_byte_t`, `authum_usize_t`,
+  `authum_char_t`, `authum_ptr`, `authum_null`, `authum_bool_false` / `authum_bool_true`
 - `authum/crypto/` — lh-shaped Rijndael + SHA facade for modules (`host->crypto` ops; not every lh symbol)
 - `authum/engine.h` — engfuncs subset for modules (`host->engine`: game dir / print / command; no HLSDK)
 

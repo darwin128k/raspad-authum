@@ -196,7 +196,7 @@ authum_log_error(const char *fmt, ...)
 }
 
 void
-authum_host_log(int is_error, const char *line)
+authum_host_log(int is_error, const authum_char_t *line)
 {
     if (line == nullptr)
     {

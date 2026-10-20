@@ -1,14 +1,35 @@
 /**
  * @file bool.h
- * @brief Module-facing boolean (no lh dependency).
+ * @brief Boolean type for Authum modules (no lh).
+ *
+ * Mirrors ::lh_bool_t / ::lh_bool_false / ::lh_bool_true.
  */
 
 #ifndef AUTHUM_BOOL_H
 #define AUTHUM_BOOL_H
 
-typedef int authum_bool_t;
+#include <authum/byte.h>
 
-#define AUTHUM_FALSE 0
-#define AUTHUM_TRUE 1
+/**
+ * @def authum_bool_false
+ * @brief Boolean false (0).
+ */
+#define authum_bool_false 0
+
+/**
+ * @def authum_bool_true
+ * @brief Boolean true (1).
+ */
+#define authum_bool_true 1
+
+/**
+ * @typedef authum_bool_t
+ * @brief Minimal boolean (::authum_byte_t); nonzero is true.
+ */
+typedef authum_byte_t authum_bool_t;
+
+/* Historical spellings — prefer authum_bool_*. */
+#define AUTHUM_FALSE authum_bool_false
+#define AUTHUM_TRUE authum_bool_true
 
 #endif /* AUTHUM_BOOL_H */
