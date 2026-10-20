@@ -40,7 +40,10 @@ jobs:
             -DAUTHUM_LH_LINK_MODE=needed
 
       - name: Build
-        run: cmake --build build --target authum -j"$(nproc)"
+        run: cmake --build build -j"$(nproc)"
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

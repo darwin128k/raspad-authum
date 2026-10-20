@@ -16,6 +16,9 @@ on the Authum surface. Sample: [`examples/hello`](../examples/hello/).
 | Includes | Only `#include <…>` — never `"qproto/foo.h"` / `"bridge.h"` |
 | Authum types | Paths → `authum_path_t`; cfg → defaults on the struct + `authum_cfg_apply_items` (or manual `get_*` / `apply_*`); no raw `atoi`/`strncpy`/`strcasecmp` |
 | Host access | Never `host->engine` / `host->env` / … — only `authum_host_*` getters/setters |
+| Bricks, not statics | No `static` functions and no `static inline` in headers: every function is a small, prefixed, linkable brick declared in a header (debuggable, testable). `static` stays only for file-local data |
+| Small modules | A module holds only its own logic. Engine access, memory lifetime, config parsing, inter-module talk, console commands are Authum's job (host facade, sandbox, cfg, events, commands) |
+| No engine commands | `authum <module> <name>` via [commands.md](commands.md); never `pfnAddServerCommand` (clashes with AMXX / others, crashes after unload) |
 
 Config *file* keys may keep historical spellings (`EnableRevEmu`, …).
 
@@ -111,8 +114,8 @@ Libc types remain OK for FILE*, `snprintf`, private buffers, etc.
 Host helpers:
 
 ```c
-authum_engine_get_game_dir(host->engine, buf, (authum_usize_t)sizeof buf);
-authum_crypto_sha_hash(host->crypto, authum_crypto_sha_kind_256,
+authum_host_get_game_dir(host, buf, (authum_usize_t)sizeof buf);
+authum_crypto_sha_hash(authum_host_crypto(host), authum_crypto_sha_kind_256,
                        (authum_ptr)data, (authum_usize_t)len,
                        (authum_ptr)out, (authum_usize_t)out_size);
 ```
@@ -127,8 +130,9 @@ authum_crypto_sha_hash(host->crypto, authum_crypto_sha_kind_256,
   Compound names are directories: `qproto/client/state.h`, not
   `qproto/client_state.h`. Symbols stay `qproto_*`; file names do not
   repeat the module folder.
-- Export only `authum_module_info` + `authum_module_api` to Authum; other
-  symbols for peer modules via your own stable C API if needed.
+- Export only `authum_module_info` + `authum_module_api`. Peer modules reach
+  you through events; publish their names and payload structs in a
+  types-only header (`qproto/event.h`). See [events.md](events.md).
 
 ---
 
@@ -141,5 +145,6 @@ authum_crypto_sha_hash(host->crypto, authum_crypto_sha_kind_256,
 - [ ] Authum types on Authum / public module ABI
 - [ ] Logging via `authum_logger_*` (or explicit bricks), not a bespoke clone
 - [ ] No `<lh/…>` in a pure client
+- [ ] No `static` functions; module-prefixed bricks declared in headers
 
 See also [writing-a-module.md](writing-a-module.md), [architecture.md](architecture.md).

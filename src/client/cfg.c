@@ -53,7 +53,7 @@ authum_cfg_adopt(authum_cfg_t *self, FILE *file)
     return authum_bool_true;
 }
 
-static authum_char_t *
+authum_char_t *
 authum_cfg_skip_spaces(authum_char_t *s)
 {
     while (!authum_null_eq(s) && (*s == ' ' || *s == '\t')) {
@@ -62,7 +62,7 @@ authum_cfg_skip_spaces(authum_char_t *s)
     return s;
 }
 
-static void
+void
 authum_cfg_rtrim(authum_char_t *s)
 {
     authum_usize_t n;

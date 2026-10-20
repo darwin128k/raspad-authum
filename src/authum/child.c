@@ -1,5 +1,8 @@
+#include <authum/commands/host.h>
 #include <authum/error/code.h>
+#include <authum/events/host.h>
 #include <authum/host.h>
+#include <authum/sandbox/host.h>
 #include <authum/module.h>
 #include <authum/module/api.h>
 #include <authum/path.h>
@@ -37,6 +40,9 @@ typedef struct authum_child_data
     authum_host_t host;
     authum_env_t env;
     authum_child_paths_t paths;
+    authum_sandbox_t sandbox;
+    authum_events_t events;
+    authum_commands_t commands;
 } authum_child_data_t;
 
 const authum_module_info_t *
@@ -48,7 +54,7 @@ authum_child_peek_info(const void *data)
     return lh_ptr_ccast(authum_child_data_t, data)->info;
 }
 
-static void
+void
 authum_child_bind_path(authum_path_t *slot, const authum_path_t **field, const char *text)
 {
     if (authum_path_set_cstr(slot, text) && !authum_path_is_empty(slot)) {
@@ -59,7 +65,7 @@ authum_child_bind_path(authum_path_t *slot, const authum_path_t **field, const c
     }
 }
 
-static void
+void
 authum_child_bind_lh_path(authum_path_t *slot, const authum_path_t **field, const lh_fs_path_t *path,
                           lh_fs_path_style_t style)
 {
@@ -74,7 +80,7 @@ authum_child_bind_lh_path(authum_path_t *slot, const authum_path_t **field, cons
     lh_str_deinit(lh_addr_of(scratch));
 }
 
-static void
+void
 authum_child_bind_join(authum_path_t *slot, const authum_path_t **field, const authum_path_t *dir,
                        const authum_char_t *leaf)
 {
@@ -91,7 +97,7 @@ authum_child_bind_join(authum_path_t *slot, const authum_path_t **field, const a
     }
 }
 
-static void
+void
 authum_child_fill_under_game(authum_child_data_t *data)
 {
     authum_env_t *env = &data->env;
@@ -123,7 +129,7 @@ authum_child_fill_under_game(authum_child_data_t *data)
  * sprites (and any missing middle dirs) from game. Engine game-dir is a
  * fallback when the walk cannot reach game.
  */
-static void
+void
 authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
 {
     const lh_fs_path_t *image;
@@ -181,7 +187,7 @@ authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
 const authum_crypto_t *authum_crypto(void);
 const authum_engine_t *authum_engine(void);
 
-static void
+void
 authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
 {
     authum_module_t *parent;
@@ -195,6 +201,19 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     out->crypto = authum_crypto();
     out->engine = authum_engine();
 
+    data->sandbox.ops = authum_sandbox_host_ops();
+    data->sandbox.root = authum_sandbox_host_root_create();
+    out->sandbox = &data->sandbox;
+
+    data->events.ops = authum_events_host_ops();
+    data->events.owner = data;
+    out->events = &data->events;
+
+    data->commands.ops = authum_commands_host_ops();
+    data->commands.owner = data;
+    data->commands.scope = data->info->name;
+    out->commands = &data->commands;
+
     parent = lh_os_module_get_parent(child);
     if (!lh_null_eq(parent)) {
         out->log = (authum_host_log_fn)lh_os_module_get_sym(parent, "authum_host_log");
@@ -206,7 +225,18 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     authum_child_fill_env(child, data);
 }
 
-static lh_bool_t
+/** After `stop` (or a failed `start`): drop the module's subscriptions and
+ *  commands, free its sandbox. */
+void
+authum_child_release(authum_child_data_t *data)
+{
+    authum_commands_host_drop_owner(data);
+    authum_events_host_drop_owner(data);
+    authum_sandbox_host_root_destroy(data->sandbox.root);
+    lh_runtime_allocator_free(data);
+}
+
+lh_bool_t
 authum_child_start(authum_module_t *self)
 {
     const authum_version_t required = AUTHUM_MODULE_ABI;
@@ -246,13 +276,13 @@ authum_child_start(authum_module_t *self)
 
     if (!data->api->start(&data->host)) {
         lh_os_module_set_data(self, lh_null);
-        lh_runtime_allocator_free(data);
+        authum_child_release(data);
         return lh_bool_false;
     }
     return lh_bool_true;
 }
 
-static void
+void
 authum_child_stop(authum_module_t *self)
 {
     authum_child_data_t *data;
@@ -265,7 +295,7 @@ authum_child_stop(authum_module_t *self)
         data->api->stop();
     }
     lh_os_module_set_data(self, lh_null);
-    lh_runtime_allocator_free(data);
+    authum_child_release(data);
 }
 
 static const lh_os_module_ops_t authum_child_ops = {

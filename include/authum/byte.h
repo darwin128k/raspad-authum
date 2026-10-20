@@ -33,4 +33,16 @@ typedef unsigned int authum_u32_t;
  */
 typedef int authum_i32_t;
 
+/**
+ * @typedef authum_u64_t
+ * @brief 64-bit unsigned.
+ */
+typedef unsigned long long authum_u64_t;
+
+/**
+ * @typedef authum_i64_t
+ * @brief 64-bit signed (unix timestamps, counters that must not wrap).
+ */
+typedef long long authum_i64_t;
+
 #endif /* AUTHUM_BYTE_H */

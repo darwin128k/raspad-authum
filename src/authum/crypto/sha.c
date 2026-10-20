@@ -15,7 +15,7 @@ _Static_assert(sizeof(lh_crypto_sha_t) <= AUTHUM_CRYPTO_SHA_STORAGE,
                "AUTHUM_CRYPTO_SHA_STORAGE too small for lh_crypto_sha_t");
 #endif
 
-static lh_crypto_sha_t *
+lh_crypto_sha_t *
 authum_crypto_sha_lh(authum_crypto_sha_t *self)
 {
     return (lh_crypto_sha_t *)(void *)self->storage;

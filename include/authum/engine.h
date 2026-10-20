@@ -11,6 +11,7 @@
 #ifndef AUTHUM_ENGINE_H
 #define AUTHUM_ENGINE_H
 
+#include <authum/byte.h>
 #include <authum/char.h>
 #include <authum/null.h>
 #include <authum/size.h>
@@ -36,31 +37,21 @@ typedef struct authum_engine
     void (*server_command)(const authum_char_t *cmd);
 } authum_engine_t;
 
-static inline void
-authum_engine_get_game_dir(const authum_engine_t *engine, authum_char_t *buf, authum_usize_t buf_size)
-{
-    if (!authum_null_eq(engine) && engine->get_game_dir != 0) {
-        engine->get_game_dir(buf, buf_size);
-    } else if (!authum_null_eq(buf) && buf_size > 0u) {
-        buf[0] = '\0';
-    }
-}
+void
+authum_engine_get_game_dir(const authum_engine_t *engine, authum_char_t *buf, authum_usize_t buf_size);
 
-static inline void
-authum_engine_server_print(const authum_engine_t *engine, const authum_char_t *text)
-{
-    if (!authum_null_eq(engine) && engine->server_print != 0 && !authum_null_eq(text)) {
-        engine->server_print(text);
-    }
-}
+void
+authum_engine_server_print(const authum_engine_t *engine, const authum_char_t *text);
 
-static inline void
-authum_engine_server_command(const authum_engine_t *engine, const authum_char_t *cmd)
-{
-    if (!authum_null_eq(engine) && engine->server_command != 0 && !authum_null_eq(cmd)) {
-        engine->server_command(cmd);
-    }
-}
+void
+authum_engine_server_command(const authum_engine_t *engine, const authum_char_t *cmd);
+
+/**
+ * Issue `kick #userid "reason"`. Quotes, `;` and line breaks in @p reason are
+ * replaced with spaces so the command cannot be split or injected.
+ */
+void
+authum_engine_kick(const authum_engine_t *engine, authum_i32_t userid, const authum_char_t *reason);
 
 #ifdef __cplusplus
 }

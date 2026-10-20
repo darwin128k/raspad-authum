@@ -34,8 +34,9 @@ Authum's part is the policy around that mechanism:
   beside the image;
 - the host plugin file `authum_mm` is never opened as a child.
 
-One module does not call another. There is no request by name and no
-shared function table between siblings. A child can see its parent
+One module does not call another directly. There is no `dlsym` into a
+sibling and no shared function table; modules talk through the host's
+event bus (forwards and queries by name, see [events.md](events.md)). A child can see its parent
 (`lh_os_module_get_parent`) because the loader records the owner before
 `start`. That is the whole link.
 
@@ -54,7 +55,7 @@ Every image that wants to be an Authum module exports two C symbols.
 
 | Field | Meaning |
 |-------|---------|
-| `abi` | Loader contract. Accepted when `lh_version_is_compatible` against the host's `AUTHUM_MODULE_ABI` (`0.1.0`). |
+| `abi` | Loader contract. Accepted when `lh_version_is_compatible` against the host's `AUTHUM_MODULE_ABI` (`0.3.0`). |
 | `name` | Required. A null name is rejected. |
 | `version` | The module's own SemVer. |
 | `datetime` | Build timestamp. |

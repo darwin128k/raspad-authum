@@ -81,6 +81,10 @@ authum_i32_t authum_cfg_get_i32(authum_cfg_t *self, const authum_char_t *key,
                                 authum_i32_t default_value);
 authum_u32_t authum_cfg_get_u32(authum_cfg_t *self, const authum_char_t *key,
                                 authum_u32_t default_value);
+/**
+ * @brief Copy the value of @p key into @p buf, or @p default_value when absent.
+ * @return ::authum_bool_true when the key was present (false → default copied).
+ */
 authum_bool_t authum_cfg_get_cstr(authum_cfg_t *self, const authum_char_t *key, authum_char_t *buf,
                                   authum_usize_t buf_size, const authum_char_t *default_value);
 
