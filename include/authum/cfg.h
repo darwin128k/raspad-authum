@@ -2,9 +2,9 @@
  * @file cfg.h
  * @brief Flat `key = value` config — get / apply by key (no lh).
  *
- * Implementation lives in `src/authum/cfg.c` (compile that TU into the module,
- * or link whatever Authum ships as the client helper). Not header-inline: one
- * place to fix and debug file reading for every plugin.
+ * Implementation lives in Authum’s `authum_client` static library
+ * (`src/client/cfg.c`). Modules `#include <authum/cfg.h>` and link
+ * `authum_client` — they do not compile Authum sources themselves.
  *
  * Dialect:
  * - Trim whitespace on line / key / value.

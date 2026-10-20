@@ -156,8 +156,11 @@ else ()
     endif ()
 endif ()
 
-# Authum builds only authum_mm (+ optional examples). Real modules are
-# separate projects dropped into modules/ at runtime.
+# Client-side helpers (cfg, …) for modules — static lib, no Metamod/lh.
+add_subdirectory(client)
+
+# Authum builds authum_mm + authum_client (+ optional examples). Real modules
+# are separate projects that link authum_client and drop into modules/ at runtime.
 option(AUTHUM_BUILD_EXAMPLES "Build example Authum modules under examples/" ON)
 if (AUTHUM_BUILD_EXAMPLES)
     add_subdirectory(examples/hello)
