@@ -118,7 +118,7 @@ Blank lines are ignored. Optional sections filter by OS.
 
 ```
 # comments ; or #
-qproto
+hello
 
 [linux]
 foo
@@ -215,11 +215,12 @@ not children of the process working directory.
 Example (see `deploy/modules.list`):
 
 ```
-qproto
+hello
 ```
 
-That is the package folder `modules/qproto/`. Authum loads
-`qproto.so` or `qproto.dll` inside it for the current OS.
+That is the package folder `modules/hello/`. Authum loads
+`hello.so` or `hello.dll` inside it for the current OS. Modules are
+built by their own projects — Authum only loads them.
 
 No `.so` / `.dll` needed — Authum appends the native shared suffix. Use
 no section (or `[modules]` / `[any]`) for all OSes; `[linux]` / `[win32]`
