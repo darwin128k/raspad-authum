@@ -17,27 +17,28 @@
 #include <authum/size.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-const authum_events_ops_t *
-authum_events_host_ops(void);
+    const authum_events_ops_t *
+    authum_events_host_ops(void);
 
-/** Publish as the host itself (`authum.*` events from engine hooks). */
-authum_event_result_t
-authum_events_host_publish(const authum_char_t *name, authum_ptr payload);
+    /** Publish as the host itself (`authum.*` events from engine hooks). */
+    authum_event_result_t
+    authum_events_host_publish(const authum_char_t *name, authum_ptr payload);
 
-/** Remove every subscription made by @p owner. */
-void
-authum_events_host_drop_owner(authum_ptr owner);
+    /** Remove every subscription made by @p owner. */
+    void
+    authum_events_host_drop_owner(authum_ptr owner);
 
-/** Live subscriptions (for diagnostics and tests). */
-authum_usize_t
-authum_events_host_count(void);
+    /** Live subscriptions (for diagnostics and tests). */
+    authum_usize_t
+    authum_events_host_count(void);
 
-/** Remove all subscriptions (host shutdown). */
-void
-authum_events_host_clear(void);
+    /** Remove all subscriptions (host shutdown). */
+    void
+    authum_events_host_clear(void);
 
 #ifdef __cplusplus
 }

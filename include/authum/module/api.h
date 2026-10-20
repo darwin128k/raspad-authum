@@ -14,23 +14,24 @@
 #include <authum/host.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 #define AUTHUM_MODULE_API_SYM "authum_module_api"
 
-/**
- * @struct authum_module_api
- * @brief Module entry points. `start` receives a host facade (copy what you need).
- */
-typedef struct authum_module_api
-{
-    /** @return ::AUTHUM_TRUE to stay loaded. */
-    authum_bool_t (*start)(authum_host_t *host);
-    void (*stop)(void);
-} authum_module_api_t;
+    /**
+     * @struct authum_module_api
+     * @brief Module entry points. `start` receives a host facade (copy what you need).
+     */
+    typedef struct authum_module_api
+    {
+        /** @return ::AUTHUM_TRUE to stay loaded. */
+        authum_bool_t (*start)(authum_host_t *host);
+        void (*stop)(void);
+    } authum_module_api_t;
 
-AUTHUM_MODULE_EXPORT extern const authum_module_api_t authum_module_api;
+    AUTHUM_MODULE_EXPORT extern const authum_module_api_t authum_module_api;
 
 #ifdef __cplusplus
 }

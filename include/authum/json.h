@@ -17,28 +17,32 @@
 #include <authum/size.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-/**
- * @brief Copy a string field @p key from a JSON object into @p out.
- * @return false when missing / not a string / bad args.
- */
-authum_bool_t authum_json_object_get_cstr(const authum_char_t *json, const authum_char_t *key,
-					  authum_char_t *out, authum_usize_t out_size);
+    /**
+     * @brief Copy a string field @p key from a JSON object into @p out.
+     * @return false when missing / not a string / bad args.
+     */
+    authum_bool_t
+    authum_json_object_get_cstr(const authum_char_t *json, const authum_char_t *key,
+                                authum_char_t *out, authum_usize_t out_size);
 
-/**
- * @brief Read an integer field @p key (optional leading `-`).
- * @return false when missing / not a number.
- */
-authum_bool_t authum_json_object_get_i32(const authum_char_t *json, const authum_char_t *key,
-					 authum_i32_t *out);
+    /**
+     * @brief Read an integer field @p key (optional leading `-`).
+     * @return false when missing / not a number.
+     */
+    authum_bool_t
+    authum_json_object_get_i32(const authum_char_t *json, const authum_char_t *key,
+                               authum_i32_t *out);
 
-/**
- * @brief Like ::authum_json_object_get_i32, or @p fallback when missing.
- */
-authum_i32_t authum_json_object_get_i32_or(const authum_char_t *json, const authum_char_t *key,
-					   authum_i32_t fallback);
+    /**
+     * @brief Like ::authum_json_object_get_i32, or @p fallback when missing.
+     */
+    authum_i32_t
+    authum_json_object_get_i32_or(const authum_char_t *json, const authum_char_t *key,
+                                  authum_i32_t fallback);
 
 #ifdef __cplusplus
 }

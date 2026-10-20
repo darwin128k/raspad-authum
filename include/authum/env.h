@@ -26,51 +26,52 @@
 #include <authum/path.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-/**
- * @struct authum_env
- * @brief Snapshot of well-known directories for one loaded module.
- *
- * Each field is null when unknown; otherwise points at a host-owned
- * ::authum_path_t valid until `stop`.
- */
-struct authum_env
-{
-    const authum_path_t *game; /**< Game dir (`cstrike`, …). */
-    const authum_path_t *models; /**< `game/models`. */
-    const authum_path_t *sprites; /**< `game/sprites`. */
-    const authum_path_t *addons; /**< `game/addons`. */
-    const authum_path_t *authum; /**< `addons/authum`. */
-    const authum_path_t *modules; /**< `authum/modules`. */
-    const authum_path_t *module; /**< This module’s directory. */
-};
-typedef struct authum_env authum_env_t;
+    /**
+     * @struct authum_env
+     * @brief Snapshot of well-known directories for one loaded module.
+     *
+     * Each field is null when unknown; otherwise points at a host-owned
+     * ::authum_path_t valid until `stop`.
+     */
+    struct authum_env
+    {
+        const authum_path_t *game;    /**< Game dir (`cstrike`, …). */
+        const authum_path_t *models;  /**< `game/models`. */
+        const authum_path_t *sprites; /**< `game/sprites`. */
+        const authum_path_t *addons;  /**< `game/addons`. */
+        const authum_path_t *authum;  /**< `addons/authum`. */
+        const authum_path_t *modules; /**< `authum/modules`. */
+        const authum_path_t *module;  /**< This module’s directory. */
+    };
+    typedef struct authum_env authum_env_t;
 
-const authum_path_t *
-authum_env_game(const authum_env_t *env);
+    const authum_path_t *
+    authum_env_game(const authum_env_t *env);
 
-const authum_path_t *
-authum_env_models(const authum_env_t *env);
+    const authum_path_t *
+    authum_env_models(const authum_env_t *env);
 
-const authum_path_t *
-authum_env_sprites(const authum_env_t *env);
+    const authum_path_t *
+    authum_env_sprites(const authum_env_t *env);
 
-const authum_path_t *
-authum_env_addons(const authum_env_t *env);
+    const authum_path_t *
+    authum_env_addons(const authum_env_t *env);
 
-const authum_path_t *
-authum_env_authum(const authum_env_t *env);
+    const authum_path_t *
+    authum_env_authum(const authum_env_t *env);
 
-const authum_path_t *
-authum_env_modules(const authum_env_t *env);
+    const authum_path_t *
+    authum_env_modules(const authum_env_t *env);
 
-const authum_path_t *
-authum_env_module(const authum_env_t *env);
+    const authum_path_t *
+    authum_env_module(const authum_env_t *env);
 
-const authum_char_t *
-authum_env_module_cstr(const authum_env_t *env);
+    const authum_char_t *
+    authum_env_module_cstr(const authum_env_t *env);
 
 #ifdef __cplusplus
 }

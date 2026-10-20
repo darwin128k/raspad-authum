@@ -15,7 +15,8 @@
 #include <authum/size.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /**
@@ -48,18 +49,18 @@ extern "C" {
  */
 #define AUTHUM_CRYPTO_RIJNDAEL_STORAGE 768u
 
-/**
- * @struct authum_crypto_rijndael
- * @brief Opaque Rijndael session. Treat as opaque; only use via crypto ops.
- */
-struct authum_crypto_rijndael
-{
-    /** Word-aligned storage large enough for the host lh session. */
-    authum_usize_t storage[(AUTHUM_CRYPTO_RIJNDAEL_STORAGE + sizeof(authum_usize_t) - 1u) /
-                           sizeof(authum_usize_t)];
-};
-/** @copybrief authum_crypto_rijndael */
-typedef struct authum_crypto_rijndael authum_crypto_rijndael_t;
+    /**
+     * @struct authum_crypto_rijndael
+     * @brief Opaque Rijndael session. Treat as opaque; only use via crypto ops.
+     */
+    struct authum_crypto_rijndael
+    {
+        /** Word-aligned storage large enough for the host lh session. */
+        authum_usize_t storage[(AUTHUM_CRYPTO_RIJNDAEL_STORAGE + sizeof(authum_usize_t) - 1u) /
+                               sizeof(authum_usize_t)];
+    };
+    /** @copybrief authum_crypto_rijndael */
+    typedef struct authum_crypto_rijndael authum_crypto_rijndael_t;
 
 #ifdef __cplusplus
 }

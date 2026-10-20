@@ -50,15 +50,20 @@ authum_events_sweep(void)
 {
     authum_events_sub_t **link = &authum_events_head;
 
-    if (authum_events_depth != 0u) {
+    if (authum_events_depth != 0u)
+    {
         return;
     }
-    while (!authum_null_eq(*link)) {
+    while (!authum_null_eq(*link))
+    {
         authum_events_sub_t *sub = *link;
-        if (sub->dead) {
+        if (sub->dead)
+        {
             *link = sub->next;
             lh_runtime_allocator_free(sub);
-        } else {
+        }
+        else
+        {
             link = &sub->next;
         }
     }
@@ -72,21 +77,26 @@ authum_events_host_subscribe(authum_ptr owner, const authum_char_t *name,
     authum_events_sub_t *sub;
     authum_usize_t len;
 
-    if (authum_null_eq(name) || fn == 0) {
+    if (authum_null_eq(name) || fn == 0)
+    {
         return authum_bool_false;
     }
     len = (authum_usize_t)strlen(name);
-    if (len == 0u || len >= (authum_usize_t)authum_events_name_max) {
+    if (len == 0u || len >= (authum_usize_t)authum_events_name_max)
+    {
         return authum_bool_false;
     }
-    while (!authum_null_eq(*link)) {
-        if (authum_events_sub_matches(*link, owner, name, fn, user)) {
+    while (!authum_null_eq(*link))
+    {
+        if (authum_events_sub_matches(*link, owner, name, fn, user))
+        {
             return authum_bool_true;
         }
         link = &(*link)->next;
     }
     sub = (authum_events_sub_t *)lh_runtime_allocator_alloc(sizeof *sub);
-    if (authum_null_eq(sub)) {
+    if (authum_null_eq(sub))
+    {
         return authum_bool_false;
     }
     memset(sub, 0, sizeof *sub);
@@ -104,11 +114,14 @@ authum_events_host_unsubscribe(authum_ptr owner, const authum_char_t *name,
 {
     authum_events_sub_t *sub;
 
-    if (authum_null_eq(name) || fn == 0) {
+    if (authum_null_eq(name) || fn == 0)
+    {
         return authum_bool_false;
     }
-    for (sub = authum_events_head; !authum_null_eq(sub); sub = sub->next) {
-        if (authum_events_sub_matches(sub, owner, name, fn, user)) {
+    for (sub = authum_events_head; !authum_null_eq(sub); sub = sub->next)
+    {
+        if (authum_events_sub_matches(sub, owner, name, fn, user))
+        {
             sub->dead = authum_bool_true;
             authum_events_sweep();
             return authum_bool_true;
@@ -125,19 +138,24 @@ authum_events_host_publish_as(authum_ptr owner, const authum_char_t *name, authu
     authum_event_result_t r;
 
     (void)owner;
-    if (authum_null_eq(name)) {
+    if (authum_null_eq(name))
+    {
         return best;
     }
     ++authum_events_depth;
-    for (sub = authum_events_head; !authum_null_eq(sub); sub = sub->next) {
-        if (sub->dead || strcmp(sub->name, name) != 0) {
+    for (sub = authum_events_head; !authum_null_eq(sub); sub = sub->next)
+    {
+        if (sub->dead || strcmp(sub->name, name) != 0)
+        {
             continue;
         }
         r = sub->fn(name, payload, sub->user);
-        if (r > best) {
+        if (r > best)
+        {
             best = r;
         }
-        if (r == authum_event_result_stop) {
+        if (r == authum_event_result_stop)
+        {
             break;
         }
     }
@@ -169,8 +187,10 @@ authum_events_host_drop_owner(authum_ptr owner)
 {
     authum_events_sub_t *sub;
 
-    for (sub = authum_events_head; !authum_null_eq(sub); sub = sub->next) {
-        if (sub->owner == owner) {
+    for (sub = authum_events_head; !authum_null_eq(sub); sub = sub->next)
+    {
+        if (sub->owner == owner)
+        {
             sub->dead = authum_bool_true;
         }
     }
@@ -183,8 +203,10 @@ authum_events_host_count(void)
     authum_events_sub_t *sub;
     authum_usize_t n = 0u;
 
-    for (sub = authum_events_head; !authum_null_eq(sub); sub = sub->next) {
-        if (!sub->dead) {
+    for (sub = authum_events_head; !authum_null_eq(sub); sub = sub->next)
+    {
+        if (!sub->dead)
+        {
             ++n;
         }
     }
@@ -196,7 +218,8 @@ authum_events_host_clear(void)
 {
     authum_events_sub_t *sub;
 
-    for (sub = authum_events_head; !authum_null_eq(sub); sub = sub->next) {
+    for (sub = authum_events_head; !authum_null_eq(sub); sub = sub->next)
+    {
         sub->dead = authum_bool_true;
     }
     authum_events_sweep();

@@ -28,7 +28,8 @@ extern plugin_info_t Plugin_info;
 extern meta_globals_t *gpMetaGlobals;
 extern mutil_funcs_t *gpMetaUtilFuncs;
 
-namespace {
+namespace
+{
 
 FILE *g_file = nullptr;
 

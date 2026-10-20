@@ -34,11 +34,13 @@ authum_sandbox_host_alloc(authum_ptr parent, authum_usize_t size)
 {
     authum_ptr ptr;
 
-    if (lh_null_eq(parent)) {
+    if (lh_null_eq(parent))
+    {
         return lh_null;
     }
     ptr = lh_memory_tree_alloc_child(parent, (lh_usize_t)size);
-    if (!lh_null_eq(ptr) && size > 0u) {
+    if (!lh_null_eq(ptr) && size > 0u)
+    {
         memset(ptr, 0, (size_t)size);
     }
     return ptr;
@@ -47,7 +49,8 @@ authum_sandbox_host_alloc(authum_ptr parent, authum_usize_t size)
 authum_ptr
 authum_sandbox_host_realloc(authum_ptr ptr, authum_usize_t size)
 {
-    if (lh_null_eq(ptr)) {
+    if (lh_null_eq(ptr))
+    {
         return lh_null;
     }
     return lh_memory_tree_realloc(ptr, (lh_usize_t)size);
@@ -62,7 +65,8 @@ authum_sandbox_host_free(authum_ptr ptr)
 void
 authum_sandbox_host_set_destructor(authum_ptr ptr, authum_sandbox_destructor_fn fn)
 {
-    if (lh_null_eq(ptr)) {
+    if (lh_null_eq(ptr))
+    {
         return;
     }
     lh_memory_tree_set_destructor(ptr, (lh_memory_tree_destructor_cb)fn);

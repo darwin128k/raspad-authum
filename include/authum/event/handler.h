@@ -11,16 +11,17 @@
 #include <authum/ptr.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-/**
- * @param name    Event name as published (`authum.client.connect`, …).
- * @param payload Publisher-defined struct; may carry out-fields for queries.
- * @param user    The pointer given at subscribe time.
- */
-typedef authum_event_result_t (*authum_event_handler_fn)(const authum_char_t *name,
-                                                         authum_ptr payload, authum_ptr user);
+    /**
+     * @param name    Event name as published (`authum.client.connect`, …).
+     * @param payload Publisher-defined struct; may carry out-fields for queries.
+     * @param user    The pointer given at subscribe time.
+     */
+    typedef authum_event_result_t (*authum_event_handler_fn)(const authum_char_t *name,
+                                                             authum_ptr payload, authum_ptr user);
 
 #ifdef __cplusplus
 }

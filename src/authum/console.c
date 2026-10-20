@@ -56,13 +56,15 @@ authum_console_list(authum_command_print_fn print, authum_ptr out)
     cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
-    authum_command_printf(&cmd, "Authum modules (%u):",
-                          (unsigned)authum_loader_get_loaded(&authum));
+    authum_command_printf(&cmd,
+                          "Authum modules (%u):", (unsigned)authum_loader_get_loaded(&authum));
     for (child = authum_loader_get_first(&authum); !authum_null_eq(child);
-         child = authum_loader_get_next(&authum, child)) {
+         child = authum_loader_get_next(&authum, child))
+    {
         ++i;
         info = authum_module_get_info(child);
-        if (authum_null_eq(info) || authum_null_eq(info->name)) {
+        if (authum_null_eq(info) || authum_null_eq(info->name))
+        {
             authum_command_printf(&cmd, "  %u. (unnamed)  RUNNING", i);
             continue;
         }
@@ -70,7 +72,8 @@ authum_console_list(authum_command_print_fn print, authum_ptr out)
                               info->version.major, info->version.minor, info->version.patch,
                               authum_commands_host_has_scope(info->name) ? "  [commands]" : "");
     }
-    if (authum_loader_get_loaded(&authum) == 0u) {
+    if (authum_loader_get_loaded(&authum) == 0u)
+    {
         authum_command_print(&cmd, "  (none — authum load <module> or modules.list)");
     }
     authum_command_print(&cmd, "authum help — all commands");
@@ -86,7 +89,8 @@ authum_console_help(authum_command_print_fn print, authum_ptr out)
     authum_console_reply(print, out, "authum reload <module>     - unload then load");
     authum_console_reply(print, out, "authum version             - Authum + ABI");
     authum_console_reply(print, out, "authum <module> [help|…]   - module commands");
-    if (authum_commands_host_print_help(authum_null, print, out) == 0u) {
+    if (authum_commands_host_print_help(authum_null, print, out) == 0u)
+    {
         authum_console_reply(print, out, "  (no module commands)");
     }
 }
@@ -121,23 +125,25 @@ authum_console_info(authum_command_print_fn print, authum_ptr out, const authum_
     cmd.print = print;
     cmd.out = out;
 
-    if (authum_null_eq(name) || name[0] == '\0') {
+    if (authum_null_eq(name) || name[0] == '\0')
+    {
         authum_console_version(print, out);
         authum_command_printf(&cmd, "modules loaded: %u",
                               (unsigned)authum_loader_get_loaded(&authum));
-        authum_command_printf(&cmd, "module commands: %u",
-                              (unsigned)authum_commands_host_count());
+        authum_command_printf(&cmd, "module commands: %u", (unsigned)authum_commands_host_count());
         authum_command_print(&cmd, "use: authum info <module>");
         return;
     }
 
     child = authum_loader_find(&authum, name);
-    if (authum_null_eq(child)) {
+    if (authum_null_eq(child))
+    {
         authum_command_printf(&cmd, "authum info %s: not loaded", name);
         return;
     }
     info = authum_module_get_info(child);
-    if (authum_null_eq(info)) {
+    if (authum_null_eq(info))
+    {
         authum_command_printf(&cmd, "authum info %s: no info", name);
         return;
     }
@@ -146,10 +152,12 @@ authum_console_info(authum_command_print_fn print, authum_ptr out, const authum_
                           info->version.patch);
     authum_command_printf(&cmd, "abi       %u.%u.%u", info->abi.major, info->abi.minor,
                           info->abi.patch);
-    if (!authum_null_eq(info->author) && info->author[0] != '\0') {
+    if (!authum_null_eq(info->author) && info->author[0] != '\0')
+    {
         authum_command_printf(&cmd, "author    %s", info->author);
     }
-    if (!authum_null_eq(info->url) && info->url[0] != '\0') {
+    if (!authum_null_eq(info->url) && info->url[0] != '\0')
+    {
         authum_command_printf(&cmd, "url       %s", info->url);
     }
     authum_command_printf(&cmd, "status    %s",
@@ -158,7 +166,8 @@ authum_console_info(authum_command_print_fn print, authum_ptr out, const authum_
                           authum_commands_host_has_scope(info->name) ? "yes" : "no");
     image = lh_os_module_get_path_as_const(child);
     path_text = lh_null;
-    if (lh_null_ne(image) && !lh_fs_path_is_empty(image)) {
+    if (lh_null_ne(image) && !lh_fs_path_is_empty(image))
+    {
         path_text = lh_fs_path_to_cstr(image, lh_fs_path_style_posix, lh_addr_of(scratch));
         authum_command_printf(&cmd, "path      %s", path_text != lh_null ? path_text : "?");
         lh_str_deinit(lh_addr_of(scratch));
@@ -174,13 +183,17 @@ authum_console_load(authum_command_print_fn print, authum_ptr out, const authum_
     cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
-    if (authum_null_eq(name) || name[0] == '\0') {
+    if (authum_null_eq(name) || name[0] == '\0')
+    {
         authum_command_print(&cmd, "usage: authum load <module>");
         return;
     }
-    if (authum_loader_load_name(&authum, name)) {
+    if (authum_loader_load_name(&authum, name))
+    {
         authum_command_printf(&cmd, "authum load %s: OK", name);
-    } else {
+    }
+    else
+    {
         authum_console_fail(print, out, "load", name);
     }
 }
@@ -194,13 +207,17 @@ authum_console_unload(authum_command_print_fn print, authum_ptr out, const authu
     cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
-    if (authum_null_eq(name) || name[0] == '\0') {
+    if (authum_null_eq(name) || name[0] == '\0')
+    {
         authum_command_print(&cmd, "usage: authum unload <module>");
         return;
     }
-    if (authum_loader_unload_name(&authum, name)) {
+    if (authum_loader_unload_name(&authum, name))
+    {
         authum_command_printf(&cmd, "authum unload %s: OK", name);
-    } else {
+    }
+    else
+    {
         authum_console_fail(print, out, "unload", name);
     }
 }
@@ -214,13 +231,17 @@ authum_console_reload(authum_command_print_fn print, authum_ptr out, const authu
     cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
-    if (authum_null_eq(name) || name[0] == '\0') {
+    if (authum_null_eq(name) || name[0] == '\0')
+    {
         authum_command_print(&cmd, "usage: authum reload <module>");
         return;
     }
-    if (authum_loader_reload_name(&authum, name)) {
+    if (authum_loader_reload_name(&authum, name))
+    {
         authum_command_printf(&cmd, "authum reload %s: OK", name);
-    } else {
+    }
+    else
+    {
         authum_console_fail(print, out, "reload", name);
     }
 }
@@ -234,31 +255,38 @@ authum_console_run(authum_usize_t argc, const authum_char_t *const *argv,
     const authum_char_t *arg;
 
     if (argc == 0u || authum_null_eq(argv) || authum_cstr_eq(argv[0], "list", authum_bool_true) ||
-        authum_cstr_eq(argv[0], "status", authum_bool_true)) {
+        authum_cstr_eq(argv[0], "status", authum_bool_true))
+    {
         authum_console_list(print, out);
         return;
     }
-    if (authum_cstr_eq(argv[0], "help", authum_bool_true)) {
+    if (authum_cstr_eq(argv[0], "help", authum_bool_true))
+    {
         authum_console_help(print, out);
         return;
     }
-    if (authum_cstr_eq(argv[0], "version", authum_bool_true)) {
+    if (authum_cstr_eq(argv[0], "version", authum_bool_true))
+    {
         authum_console_version(print, out);
         return;
     }
-    if (authum_cstr_eq(argv[0], "info", authum_bool_true)) {
+    if (authum_cstr_eq(argv[0], "info", authum_bool_true))
+    {
         authum_console_info(print, out, argc > 1u ? argv[1] : authum_null);
         return;
     }
-    if (authum_cstr_eq(argv[0], "load", authum_bool_true)) {
+    if (authum_cstr_eq(argv[0], "load", authum_bool_true))
+    {
         authum_console_load(print, out, argc > 1u ? argv[1] : authum_null);
         return;
     }
-    if (authum_cstr_eq(argv[0], "unload", authum_bool_true)) {
+    if (authum_cstr_eq(argv[0], "unload", authum_bool_true))
+    {
         authum_console_unload(print, out, argc > 1u ? argv[1] : authum_null);
         return;
     }
-    if (authum_cstr_eq(argv[0], "reload", authum_bool_true)) {
+    if (authum_cstr_eq(argv[0], "reload", authum_bool_true))
+    {
         authum_console_reload(print, out, argc > 1u ? argv[1] : authum_null);
         return;
     }
@@ -268,11 +296,13 @@ authum_console_run(authum_usize_t argc, const authum_char_t *const *argv,
     arg = (argc > 2u) ? argv[2] : authum_null;
     (void)arg;
     if (authum_commands_host_run(scope, name, (argc > 2u) ? argc - 2u : 0u,
-                                 (argc > 2u) ? argv + 2 : authum_null, print, out)) {
+                                 (argc > 2u) ? argv + 2 : authum_null, print, out))
+    {
         return;
     }
     if (authum_cstr_eq(name, "help", authum_bool_true) &&
-        authum_commands_host_print_help(scope, print, out) != 0u) {
+        authum_commands_host_print_help(scope, print, out) != 0u)
+    {
         return;
     }
     authum_console_reply(print, out,
