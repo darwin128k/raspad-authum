@@ -56,9 +56,9 @@ struct QprotoConfig
 	// exposed Steam API, an interface stock HLDS doesn't hand Metamod at all.
 	client_id_kind cidSteam = CI_REAL_STEAM;
 
-	// LoggingMode (0/1/2/3, default 2): same bitmask as dproto.cfg - rl_none=0,
-	// rl_console=1, rl_logfile=2, rl_console|rl_logfile=3. Read before the log file
-	// is opened, so with bit rl_logfile unset the file is never even created/touched.
+	// LoggingMode bitmask: rl_none=0, rl_console=1, rl_logfile=2, rl_host=4 (authum.log).
+	// Combine with | (e.g. 6 = file + host). Default: file only — no dual write.
+	// Bit rl_logfile unset → qproto.log is never created/touched.
 	int loggingMode = rl_logfile;
 
 	// Messages shown to a REJECTED client, one per client_auth_kind - matches ReUnion's

@@ -75,6 +75,7 @@ enum reuinon_log_mode {
 	rl_none = 0,
 	rl_console = 1,
 	rl_logfile = 2,
+	rl_host = 4, /* Authum authum.log via host->log (Authum packaging only) */
 };
 
 // ReUnion's version of this header also has auth_version (its own 2015/2018/2024 wire-

@@ -43,9 +43,12 @@ Qproto_Log_Init(int loggingMode)
 		setvbuf(g_logFile, nullptr, _IONBF, 0);
 		time_t t = time(nullptr);
 		fprintf(g_logFile, "\n---- qproto (Authum module) log opened %s", ctime(&t));
-		snprintf(note, sizeof(note), "[qproto] qproto.log opened: %s", g_logPath);
-		qproto_host_log(0, note);
-	} else {
+		/* Open/fail notes go only to host when host logging is enabled. */
+		if (g_mode & rl_host) {
+			snprintf(note, sizeof(note), "[qproto] qproto.log opened: %s", g_logPath);
+			qproto_host_log(0, note);
+		}
+	} else if (g_mode & rl_host) {
 		snprintf(note, sizeof(note), "[qproto] qproto.log open FAILED: %s", g_logPath);
 		qproto_host_log(1, note);
 	}
@@ -69,15 +72,14 @@ Qproto_Log(const char *fmt, ...)
 	vsnprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
 
-	/* Host authum.log (child .so has a separate lh_runtime_logger). */
-	{
+	if (!(g_mode & (rl_console | rl_logfile | rl_host)))
+		return;
+
+	if (g_mode & rl_host) {
 		char host_line[1100];
 		snprintf(host_line, sizeof(host_line), "[qproto] %s", buf);
 		qproto_host_log(0, host_line);
 	}
-
-	if (!(g_mode & (rl_console | rl_logfile)))
-		return;
 
 	if ((g_mode & rl_logfile) && g_logFile) {
 		time_t t = time(nullptr);
@@ -95,7 +97,7 @@ Qproto_Log(const char *fmt, ...)
 void
 Qproto_Log_HexDump(const char *label, const void *data, int len)
 {
-	if (!(g_mode & (rl_console | rl_logfile)))
+	if (!(g_mode & (rl_console | rl_logfile | rl_host)))
 		return;
 
 	const unsigned char *p = (const unsigned char *)data;
