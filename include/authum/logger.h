@@ -5,7 +5,7 @@
  * Modules own an ::authum_logger_t (stack or static). Wire it once from
  * `start` with the host + sink mask; then use ::authum_logger_info / `_error`
  * / … . Want something else? Write your own, or call the same bricks
- * (`host->log`, ::authum_engine_server_print, `FILE *`) yourself.
+ * (`authum_host_log_line`, ::authum_host_server_print, `FILE *`) yourself.
  *
  * Not a process-wide singleton: each module (and each logger instance) is
  * independent. The host’s `authum.log` is only reached through
@@ -168,13 +168,13 @@ authum_logger_log_v(authum_logger_t *self, authum_logger_level_t level, const au
     }
 
     if ((self->sinks & authum_logger_sink_console) != 0u && !authum_null_eq(self->host) &&
-        !authum_null_eq(self->host->engine)) {
+        !authum_null_eq(authum_host_engine(self->host))) {
         if (!authum_null_eq(self->tag) && self->tag[0] != '\0') {
             snprintf(console_line, sizeof console_line, "[%s] %s\n", self->tag, buf);
         } else {
             snprintf(console_line, sizeof console_line, "%s\n", buf);
         }
-        authum_engine_server_print(self->host->engine, console_line);
+        authum_host_server_print(self->host, console_line);
     }
 }
 

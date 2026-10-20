@@ -2,6 +2,7 @@
 #include <authum/host.h>
 #include <authum/module.h>
 #include <authum/module/api.h>
+#include <authum/path.h>
 #include <authum/version.h>
 #include <lh/fs/path.h>
 #include <lh/fs/path/style.h>
@@ -10,6 +11,7 @@
 #include <lh/os.h>
 #include <lh/os/error/code.h>
 #include <lh/os/loader.h>
+#include <lh/os/system/fs/path.h>
 #include <lh/runtime/allocator.h>
 #include <lh/str.h>
 #include <lh/util/addr.h>
@@ -17,12 +19,24 @@
 
 #include <string.h>
 
+typedef struct authum_child_paths
+{
+    authum_path_t game;
+    authum_path_t models;
+    authum_path_t sprites;
+    authum_path_t addons;
+    authum_path_t authum;
+    authum_path_t modules;
+    authum_path_t module;
+} authum_child_paths_t;
+
 typedef struct authum_child_data
 {
     const authum_module_info_t *info;
     const authum_module_api_t *api;
     authum_host_t host;
-    char *module_dir;
+    authum_env_t env;
+    authum_child_paths_t paths;
 } authum_child_data_t;
 
 const authum_module_info_t *
@@ -34,53 +48,133 @@ authum_child_peek_info(const void *data)
     return lh_ptr_ccast(authum_child_data_t, data)->info;
 }
 
-static char *
-authum_child_dup_cstr(const char *src)
+static void
+authum_child_bind_path(authum_path_t *slot, const authum_path_t **field, const char *text)
 {
-    size_t n;
-    char *dst;
-
-    if (lh_null_eq(src)) {
-        return lh_null;
+    if (authum_path_set_cstr(slot, text) && !authum_path_is_empty(slot)) {
+        *field = slot;
+    } else {
+        authum_path_clear(slot);
+        *field = lh_null;
     }
-    n = strlen(src) + 1u;
-    dst = lh_ptr_cast(char, lh_runtime_allocator_alloc(n));
-    if (lh_null_eq(dst)) {
-        return lh_null;
-    }
-    memcpy(dst, src, n);
-    return dst;
 }
 
 static void
-authum_child_fill_module_dir(authum_module_t *child, authum_child_data_t *data)
+authum_child_bind_lh_path(authum_path_t *slot, const authum_path_t **field, const lh_fs_path_t *path,
+                          lh_fs_path_style_t style)
+{
+    lh_str_t scratch;
+
+    if (lh_fs_path_is_empty(path)) {
+        authum_path_clear(slot);
+        *field = lh_null;
+        return;
+    }
+    authum_child_bind_path(slot, field, lh_fs_path_to_cstr(path, style, lh_addr_of(scratch)));
+    lh_str_deinit(lh_addr_of(scratch));
+}
+
+static void
+authum_child_bind_join(authum_path_t *slot, const authum_path_t **field, const authum_path_t *dir,
+                       const authum_char_t *leaf)
+{
+    if (authum_null_eq(dir) || authum_path_is_empty(dir)) {
+        authum_path_clear(slot);
+        *field = lh_null;
+        return;
+    }
+    if (authum_path_join(slot, dir, leaf) && !authum_path_is_empty(slot)) {
+        *field = slot;
+    } else {
+        authum_path_clear(slot);
+        *field = lh_null;
+    }
+}
+
+static void
+authum_child_fill_under_game(authum_child_data_t *data)
+{
+    authum_env_t *env = &data->env;
+    authum_child_paths_t *paths = &data->paths;
+
+    if (lh_null_eq(env->game)) {
+        return;
+    }
+
+    if (lh_null_eq(env->models)) {
+        authum_child_bind_join(&paths->models, &env->models, env->game, "models");
+    }
+    if (lh_null_eq(env->sprites)) {
+        authum_child_bind_join(&paths->sprites, &env->sprites, env->game, "sprites");
+    }
+    if (lh_null_eq(env->addons)) {
+        authum_child_bind_join(&paths->addons, &env->addons, env->game, "addons");
+    }
+    if (lh_null_eq(env->authum) && !lh_null_eq(env->addons)) {
+        authum_child_bind_join(&paths->authum, &env->authum, env->addons, "authum");
+    }
+    if (lh_null_eq(env->modules) && !lh_null_eq(env->authum)) {
+        authum_child_bind_join(&paths->modules, &env->modules, env->authum, "modules");
+    }
+}
+
+/**
+ * Walk image → module → modules → authum → addons → game, then fill models /
+ * sprites (and any missing middle dirs) from game. Engine game-dir is a
+ * fallback when the walk cannot reach game.
+ */
+static void
+authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
 {
     const lh_fs_path_t *image;
-    lh_fs_path_t parent;
-    lh_str_t scratch;
-    lh_str_ptr dir;
+    lh_fs_path_t walk;
+    lh_fs_path_style_t style;
+    authum_env_t *env = &data->env;
+    authum_child_paths_t *paths = &data->paths;
+    authum_path_t *slots[5];
+    const authum_path_t **fields[5];
+    size_t i;
 
-    data->module_dir = lh_null;
+    memset(env, 0, sizeof(*env));
+    memset(paths, 0, sizeof(*paths));
+    data->host.env = env;
     data->host.module_dir = lh_null;
 
+    style = lh_os_system_fs_path_style_native();
     image = lh_os_module_get_path_as_const(child);
-    if (lh_fs_path_is_empty(image)) {
-        return;
+    if (!lh_fs_path_is_empty(image)) {
+        lh_fs_path_init(lh_addr_of(walk));
+        if (lh_fs_path_parent(lh_addr_of(walk), image)) {
+            slots[0] = &paths->module;
+            slots[1] = &paths->modules;
+            slots[2] = &paths->authum;
+            slots[3] = &paths->addons;
+            slots[4] = &paths->game;
+            fields[0] = &env->module;
+            fields[1] = &env->modules;
+            fields[2] = &env->authum;
+            fields[3] = &env->addons;
+            fields[4] = &env->game;
+            for (i = 0; i < 5u; ++i) {
+                authum_child_bind_lh_path(slots[i], fields[i], lh_addr_of(walk), style);
+                if (i + 1u < 5u && !lh_fs_path_parent(lh_addr_of(walk), lh_addr_of(walk))) {
+                    break;
+                }
+            }
+        }
+        lh_fs_path_deinit(lh_addr_of(walk));
     }
 
-    lh_fs_path_init(lh_addr_of(parent));
-    if (!lh_fs_path_parent(lh_addr_of(parent), image)) {
-        lh_fs_path_deinit(lh_addr_of(parent));
-        return;
+    if (lh_null_eq(env->game) && !lh_null_eq(data->host.engine)) {
+        authum_char_t buf[authum_path_capacity];
+
+        memset(buf, 0, sizeof(buf));
+        authum_engine_get_game_dir(data->host.engine, buf, (authum_usize_t)sizeof(buf));
+        authum_child_bind_path(&paths->game, &env->game, buf);
     }
 
-    dir = lh_fs_path_to_cstr(lh_addr_of(parent), lh_fs_path_style_posix, lh_addr_of(scratch));
-    if (!lh_null_eq(dir)) {
-        data->module_dir = authum_child_dup_cstr(dir);
-        data->host.module_dir = data->module_dir;
-    }
-    lh_str_deinit(lh_addr_of(scratch));
-    lh_fs_path_deinit(lh_addr_of(parent));
+    authum_child_fill_under_game(data);
+    data->host.module_dir = authum_path_as_cstr_or_null(env->module);
 }
 
 /* Implemented in crypto.c / engine_server.cpp (linked into authum_mm). */
@@ -96,6 +190,7 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     out->log = lh_null;
     out->engine_funcs = lh_null;
     out->globals = lh_null;
+    out->env = lh_null;
     out->module_dir = lh_null;
     out->crypto = authum_crypto();
     out->engine = authum_engine();
@@ -108,7 +203,7 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
         out->globals = (authum_host_get_ptr_fn)lh_os_module_get_sym(parent, "authum_globals");
     }
 
-    authum_child_fill_module_dir(child, data);
+    authum_child_fill_env(child, data);
 }
 
 static lh_bool_t
@@ -151,9 +246,6 @@ authum_child_start(authum_module_t *self)
 
     if (!data->api->start(&data->host)) {
         lh_os_module_set_data(self, lh_null);
-        if (!lh_null_eq(data->module_dir)) {
-            lh_runtime_allocator_free(data->module_dir);
-        }
         lh_runtime_allocator_free(data);
         return lh_bool_false;
     }
@@ -173,9 +265,6 @@ authum_child_stop(authum_module_t *self)
         data->api->stop();
     }
     lh_os_module_set_data(self, lh_null);
-    if (!lh_null_eq(data->module_dir)) {
-        lh_runtime_allocator_free(data->module_dir);
-    }
     lh_runtime_allocator_free(data);
 }
 

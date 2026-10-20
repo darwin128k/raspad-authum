@@ -101,25 +101,32 @@ into `start` (valid until `stop`):
 | `log` | → `authum.log` |
 | `engine` | `const authum_engine_t *` — game dir / server print / server command (no HLSDK) |
 | `engine_funcs` / `globals` | escape hatch: `void *` → `enginefuncs_t *` / `globalvars_t *` |
-| `module_dir` | directory of this module's `.so` / `.dll` (cfg, logs, …) |
+| `env` | `const authum_env_t *` — `authum_path_t *` roots: game / models / sprites / addons / authum / modules / module |
+| `module_dir` | deprecated C string of `env->module` |
 | `crypto` | `const authum_crypto_t *` — Rijndael + SHA session API (lh subset; see `<authum/crypto.h>`) |
 
-Crypto mirrors lh layout (`authum/crypto/rijndael.h`, `…/sha.h`, mode/kind leaves) but only the
-session surface is exposed. Engine likewise exposes only the subset modules need:
+Paths in `env` are absolute when the host can resolve them from the module image
+(current volume, native separators). Prefer `authum_host_env_module(host)` for
+cfg/logs; `authum_path_join` appends a leaf; `authum_cfg_open` then
+`authum_cfg_get_bool(cfg, "Key", default)` / `_get_i32` / `_get_u32` / `_get_cstr` read flat
+`key = value` files (default used when the key is missing).
+
+Never touch `host->…` fields — only `authum_host_*` getters/setters.
 
 ```c
-char game_dir[256];
-authum_engine_get_game_dir(host->engine, game_dir, sizeof game_dir);
-authum_engine_server_print(host->engine, "[mod] hello\n");
-authum_engine_server_command(host->engine, "kick #1\n");
+authum_char_t game_dir[256];
+authum_host_get_game_dir(host, game_dir, sizeof game_dir);
+authum_host_server_print(host, "[mod] hello\n");
+authum_host_server_command(host, "kick #1\n");
 
+const authum_crypto_t *crypto = authum_host_crypto(host);
 authum_crypto_rijndael_t ctx;
-authum_crypto_rijndael_init(host->crypto, &ctx, key, 32, 0, 0, 32,
+authum_crypto_rijndael_init(crypto, &ctx, key, 32, 0, 0, 32,
                             authum_crypto_rijndael_mode_ecb);
-authum_crypto_rijndael_decrypt_block(host->crypto, &ctx, in, out);
+authum_crypto_rijndael_decrypt_block(crypto, &ctx, in, out);
 
 unsigned char dig[AUTHUM_CRYPTO_SHA256_DIGEST_SIZE];
-authum_crypto_sha_hash(host->crypto, authum_crypto_sha_kind_256, data, len, dig, sizeof dig);
+authum_crypto_sha_hash(crypto, authum_crypto_sha_kind_256, data, len, dig, sizeof dig);
 ```
 
 Copy the struct (or the function pointers) if you need them after `start` returns.

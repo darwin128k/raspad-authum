@@ -22,13 +22,16 @@ AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
 static authum_bool_t
 hello_start(authum_host_t *host)
 {
+    const authum_char_t *mod_dir;
+
     if (authum_null_eq(host)) {
         return authum_bool_false;
     }
     g_host = *host;
     authum_host_log_line(&g_host, 0, "[hello] start");
-    if (!authum_null_eq(g_host.module_dir)) {
-        authum_host_log_line(&g_host, 0, g_host.module_dir);
+    mod_dir = authum_host_env_module_cstr(&g_host);
+    if (!authum_null_eq(mod_dir)) {
+        authum_host_log_line(&g_host, 0, mod_dir);
     }
     return authum_bool_true;
 }
@@ -37,9 +40,7 @@ static void
 hello_stop(void)
 {
     authum_host_log_line(&g_host, 0, "[hello] stop");
-    g_host.log = 0;
-    g_host.engine_funcs = 0;
-    g_host.globals = 0;
+    authum_host_clear(&g_host);
 }
 
 AUTHUM_MODULE_EXPORT const authum_module_api_t authum_module_api = {

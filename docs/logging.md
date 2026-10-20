@@ -16,13 +16,13 @@ static authum_logger_t g_log;
 static authum_bool_t
 mod_start(authum_host_t *host)
 {
-    authum_char_t path[512];
+    authum_path_t path;
 
     authum_logger_init(&g_log, host,
                        authum_logger_sink_host | authum_logger_sink_file,
                        "mymod");
-    snprintf(path, sizeof path, "%s/mymod.log", host->module_dir);
-    authum_logger_open_file(&g_log, path);
+    authum_path_join(&path, authum_host_env_module(host), "mymod.log");
+    authum_logger_open_file(&g_log, authum_path_as_cstr(&path));
 
     authum_logger_info(&g_log, "start");
     return authum_bool_true;

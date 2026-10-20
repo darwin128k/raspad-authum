@@ -27,4 +27,10 @@ typedef authum_u8_t authum_byte_t;
  */
 typedef unsigned int authum_u32_t;
 
+/**
+ * @typedef authum_i32_t
+ * @brief 32-bit signed (`int` on the HLDS ABI).
+ */
+typedef int authum_i32_t;
+
 #endif /* AUTHUM_BYTE_H */

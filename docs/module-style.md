@@ -13,6 +13,9 @@ on the Authum surface. Sample: [`examples/hello`](../examples/hello/).
 | Pure C | C11. No `.cpp`, classes, namespaces, templates, references, `nullptr` |
 | snake_case | Functions, types, fields, globals, enum constants |
 | No lh in pure clients | `#include <authum/client.h>` only; never `<lh/…>` unless escape hatch |
+| Includes | Only `#include <…>` — never `"qproto/foo.h"` / `"bridge.h"` |
+| Authum types | Paths → `authum_path_t`; cfg → `authum_cfg_get_bool(cfg, key, default)` / `_get_i32` / `_get_u32` / `_get_cstr`; no raw `atoi`/`strncpy`/`strcasecmp` |
+| Host access | Never `host->engine` / `host->env` / … — only `authum_host_*` getters/setters |
 
 Config *file* keys may keep historical spellings (`EnableRevEmu`, …).
 
@@ -93,10 +96,14 @@ On the Authum API surface (and preferably inside the module) use:
 |-----|----------------|
 | Boolean | `authum_bool_t`, `authum_bool_true` / `authum_bool_false` |
 | Size / length | `authum_usize_t` |
-| Byte / binary | `authum_byte_t` |
+| Byte / binary | `authum_byte_t` / `authum_u8_t` |
+| 32-bit | `authum_u32_t`, `authum_i32_t` |
 | Text element | `authum_char_t` |
 | Untyped pointer | `authum_ptr` |
 | Null | `authum_null`, `authum_null_eq(p)` |
+
+Module structs should use these, not raw `int` / `uint32_t` / `size_t` /
+`uint8_t`, except where an external ABI (libc, peer plugins) forces otherwise.
 
 Do not put raw `size_t` / `void *` / `NULL` into Authum-facing signatures.
 Libc types remain OK for FILE*, `snprintf`, private buffers, etc.
@@ -117,7 +124,9 @@ authum_crypto_sha_hash(host->crypto, authum_crypto_sha_kind_256,
 - Include guards: `QPROTO_FOO_H` / `AUTHUM_FOO_H` (macros — SCREAMING OK).
 - One concept per header when practical (`…/kind.h`, `…/mode.h`), lh-style.
 - **Path is the namespace:** `qproto/api.h`, not `qproto/qproto_api.h`.
-  Symbols stay `qproto_*`; file names do not repeat the folder.
+  Compound names are directories: `qproto/client/state.h`, not
+  `qproto/client_state.h`. Symbols stay `qproto_*`; file names do not
+  repeat the module folder.
 - Export only `authum_module_info` + `authum_module_api` to Authum; other
   symbols for peer modules via your own stable C API if needed.
 
