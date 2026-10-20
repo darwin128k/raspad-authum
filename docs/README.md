@@ -7,6 +7,6 @@
 | [../examples/](../examples/) | Working `hello` module (`authum/host.h`) |
 | [modules.md](modules.md) | Loader model, `modules.list`, directory scan, host lifetime |
 | [logging.md](logging.md) | Where logs go today and the planned host/module logging policy |
-| [gate.md](gate.md) | Connect gate / auth modules (qproto under Authum) |
+| [gate.md](gate.md) | Connect gate / external auth modules |
 
 Build and drop-in layout: see the repo [README](../README.md).

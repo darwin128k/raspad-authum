@@ -12,7 +12,7 @@
 <p align="center">
   <a href="LICENSE">Apache-2.0</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
-  <a href="https://github.com/darwin128k/rapad-authum">GitHub</a>
+  <a href="https://github.com/darwin128k/raspad-authum">GitHub</a>
 </p>
 
 ---
@@ -41,12 +41,12 @@ projects dropped under `modules/`.
 ## Install
 
 Ready Linux binary: download `authum_mm.so` from
-[Releases](https://github.com/darwin128k/rapad-authum/releases).
+[Releases](https://github.com/darwin128k/raspad-authum/releases).
 
 1. Put into `cstrike/addons/authum/`:
    - `authum_mm.so`
-   - `modules.list` (one module path per line, e.g. `qproto`)
-   - `modules/<name>/<name>.so` (or `.dll` on Windows)
+   - `modules.list` (one module folder name per line)
+   - `modules/<name>/<name>.so` (built by that module’s own project)
 2. In `addons/metamod/plugins.ini`:
 
 ```text
