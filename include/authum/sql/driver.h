@@ -15,7 +15,7 @@ extern "C"
     {
         /** Local file via vendored SQLite (default). */
         authum_sql_driver_sqlite = 0,
-        /** Reserved — not linked yet. */
+        /** MySQL/MariaDB via dlopen of the host’s client library. */
         authum_sql_driver_mysql = 1
     };
     typedef enum authum_sql_driver authum_sql_driver_t;
