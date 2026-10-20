@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `authum help`, `authum version`, `authum <module>`. Modules never call
   `pfnAddServerCommand` (no clashes with AMX Mod X, no dangling commands after
   unload) ([docs/commands.md](docs/commands.md))
+- Console module control (Metamod-like): `authum status` / `info` /
+  `load` / `unload` / `reload` — turn a module off/on without restarting the
+  server; subscriptions and module commands drop on unload and return on load
 - `<authum/sandbox.h>` — per-module memory sandbox on lh's ownership tree
   (`lh_memory_tree`), freed by the host after `stop`; nested sandboxes,
   destructors ([docs/sandbox.md](docs/sandbox.md))
