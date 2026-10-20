@@ -16,8 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   models / sprites / addons / authum / modules / module (native volume;
   engine game-dir fallback)
 - `<authum/path.h>` — `authum_path_t` (fixed capacity), join / parent / as_cstr
-- `<authum/cfg.h>` + `src/authum/cfg.c` — flat `key = value` (modules compile
-  the `.c`); `get_*` / `apply_*` / `apply_items` (table; miss keeps object defaults)
+- `authum_client` static lib + `<authum/cfg.h>` — flat `key = value`
+  (`get_*` / `apply_*` / `apply_items`); modules link the lib, not Authum sources
 - `<authum/cstr.h>` — copy / `authum_cstr_eq(..., ignore_case)` / parse bool·i32·u32
 - `authum_host_t.module_dir` — deprecated C string of `env->module`
 - Architecture doc: host facade (B) + optional private deps

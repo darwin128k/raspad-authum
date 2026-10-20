@@ -1,10 +1,6 @@
 /**
  * @file cfg.c
- * @brief Flat cfg reader — one shared TU for every Authum client module.
- *
- * Modules compile this file into their `.so` / `.dll` (see writing-a-module).
- * Do not re-inline it in headers: bugs and fopen/parse issues stay debuggable
- * in one place.
+ * @brief Flat cfg reader — part of the `authum_client` static library.
  */
 
 #include <authum/cfg.h>
