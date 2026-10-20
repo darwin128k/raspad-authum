@@ -30,6 +30,7 @@
 #include <authum/ptr.h>
 #include <authum/sandbox.h>
 #include <authum/size.h>
+#include <authum/sql.h>
 #include <authum/version.h>
 
 #endif /* AUTHUM_CLIENT_H */
