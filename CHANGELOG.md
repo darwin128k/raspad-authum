@@ -9,6 +9,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Module ABI 0.3.0**: `authum_host_t` gains `sandbox`, `events` and
+  `commands` (0.2 modules must be rebuilt)
+- `<authum/commands.h>` — module console / RCON commands routed through the one
+  engine command: `authum <module> <name> [args]`; built-ins `authum`,
+  `authum help`, `authum version`, `authum <module>`. Modules never call
+  `pfnAddServerCommand` (no clashes with AMX Mod X, no dangling commands after
+  unload) ([docs/commands.md](docs/commands.md))
+- `<authum/sandbox.h>` — per-module memory sandbox on lh's ownership tree
+  (`lh_memory_tree`), freed by the host after `stop`; nested sandboxes,
+  destructors ([docs/sandbox.md](docs/sandbox.md))
+- `<authum/array.h>` — growable array stored in a sandbox
+- `<authum/events.h>` — event bus between modules: forwards + queries by name,
+  owner-tagged subscriptions dropped at unload ([docs/events.md](docs/events.md))
+- `<authum/event/client.h>` — host publishes `authum.client.connect` (can
+  refuse), `put_in_server`, `info_changed`, `disconnect` from Metamod dllapi hooks
+- `authum_engine_kick` / `authum_host_kick` — sanitized `kick #userid "reason"`
+- `authum_i64_t` / `authum_u64_t`
+- `tests/` (CTest): client helpers, sandbox, event bus — 32-bit like HLDS
+- `examples/hello` subscribes to `authum.client.connect` and uses a sandbox array
+
+### Changed
+
+- No `static inline` in public headers: all 64 helpers (host, env, path, cstr,
+  engine, crypto, logger, version) now live in `src/client/*.c` inside
+  `authum_client`; `authum_mm` links the same library
+- No `static` functions in Authum sources — prefixed, linkable bricks
+- C++-only flags (`-fno-rtti`, `-fno-exceptions`) no longer passed to C files
+- `authum` server command output goes to the engine console (`pfnServerPrint`),
+  so RCON sees it (was log-only)
+
+### Fixed
+
+- `authum_cstr_parse_i32` rejected `-2147483648` (INT_MIN)
+
+### Added (ABI 0.2 groundwork)
+
 - **Module ABI 0.2.0** (lh-free clients): `authum/client.h`, `authum_module_api`,
   host-filled `authum_host_t`; example [`examples/hello`](examples/hello/) links
   **no** liblh
@@ -20,6 +56,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`get_*` / `apply_*` / `apply_items`); modules link the lib, not Authum sources
 - `<authum/cstr.h>` — copy / `authum_cstr_eq(..., ignore_case)` / parse bool·i32·u32
 - `authum_host_t.module_dir` — deprecated C string of `env->module`
+- Docs: [docs/cfg.md](docs/cfg.md) (defaults + `apply_items`, custom keys outside
+  the table), [docs/path.md](docs/path.md) (env roots / join)
 - Architecture doc: host facade (B) + optional private deps
 
 ### Changed

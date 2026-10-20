@@ -1,3 +1,6 @@
+#include <authum/commands/host.h>
+#include <authum/console.h>
+#include <authum/events/host.h>
 #include <authum/gate.h>
 #include <authum/loader.h>
 #include <authum/log.h>
@@ -38,15 +41,49 @@ gamedll_funcs_t *gpGamedllFuncs;
 mutil_funcs_t *gpMetaUtilFuncs;
 
 static char g_version_text[32];
+/* The engine keeps this pointer for the life of the command. */
+static char g_command_name[] = "authum";
 
-static void
+enum
+{
+    authum_meta_argv_max = 64
+};
+
+void
 authum_format_version(const authum_version_t *v, char *buf, unsigned buf_size)
 {
     std::snprintf(buf, buf_size, "%u.%u.%u", v->major, v->minor, v->patch);
 }
 
-static void
-authum_cmd_list(void)
+/* Reply sink for `authum …`: the engine console, which RCON redirects. */
+extern "C" void
+authum_meta_print(authum_ptr /* out */, const authum_char_t *text)
+{
+    if (text != nullptr && g_engfuncs.pfnServerPrint != nullptr)
+    {
+        g_engfuncs.pfnServerPrint(text);
+    }
+}
+
+/* The only engine command Authum (and its modules) owns. */
+void
+authum_meta_command(void)
+{
+    const authum_char_t *argv[authum_meta_argv_max];
+    authum_usize_t argc = 0u;
+    int engine_argc;
+    int i;
+
+    engine_argc = CMD_ARGC();
+    for (i = 1; i < engine_argc && argc < static_cast<authum_usize_t>(authum_meta_argv_max); ++i)
+    {
+        argv[argc++] = CMD_ARGV(i);
+    }
+    authum_console_run(argc, argv, authum_meta_print, nullptr);
+}
+
+void
+authum_meta_log_modules(void)
 {
     authum_module_t *child;
     lh_usize_t loaded;
@@ -136,7 +173,7 @@ C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Attach(PLUG_LOADTIME /* now */, META_FUNC
     authum_log_info("Authum %s attaching", g_version_text);
 
     (void)authum_loader_load_modules(&authum);
-    authum_cmd_list();
+    authum_meta_log_modules();
 
     if (authum_gate_init() != lh_bool_true)
     {
@@ -146,8 +183,8 @@ C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Attach(PLUG_LOADTIME /* now */, META_FUNC
         return FALSE;
     }
 
-    REG_SVR_COMMAND("authum", authum_cmd_list);
-    authum_log_info("server command: authum  (list modules)");
+    REG_SVR_COMMAND(g_command_name, authum_meta_command);
+    authum_log_info("server command: authum  (authum help — module commands, RCON-safe)");
     return TRUE;
 }
 
@@ -155,6 +192,8 @@ C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Detach(PLUG_LOADTIME /* now */, PL_UNLOAD
 {
     authum_gate_deinit();
     authum_loader_deinit();
+    authum_commands_host_clear();
+    authum_events_host_clear();
     authum_log_deinit();
     return TRUE;
 }

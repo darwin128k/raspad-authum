@@ -17,7 +17,7 @@ _Static_assert(sizeof(lh_crypto_rijndael_t) <= AUTHUM_CRYPTO_RIJNDAEL_STORAGE,
                "AUTHUM_CRYPTO_RIJNDAEL_STORAGE too small for lh_crypto_rijndael_t");
 #endif
 
-static lh_crypto_rijndael_t *
+lh_crypto_rijndael_t *
 authum_crypto_rijndael_lh(authum_crypto_rijndael_t *self)
 {
     return (lh_crypto_rijndael_t *)(void *)self->storage;

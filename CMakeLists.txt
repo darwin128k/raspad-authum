@@ -139,7 +139,10 @@ target_include_directories(authum PRIVATE
         "${CMAKE_SOURCE_DIR}/include"
 )
 
-target_link_libraries(authum PRIVATE metamod-p)
+# Client API (cfg, path, host getters, sandbox, events, …) — same static lib modules link.
+add_subdirectory(client)
+
+target_link_libraries(authum PRIVATE metamod-p authum_client)
 authum_link_lh(authum)
 
 if (WIN32)
@@ -149,19 +152,22 @@ else ()
     target_link_libraries(authum PRIVATE m)
     if (NOT MSVC)
         target_compile_options(authum PRIVATE
-                -fno-exceptions
-                -fno-rtti
+                $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>
+                $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
                 -fvisibility=hidden
         )
     endif ()
 endif ()
-
-# Client-side helpers (cfg, …) for modules — static lib, no Metamod/lh.
-add_subdirectory(client)
 
 # Authum builds authum_mm + authum_client (+ optional examples). Real modules
 # are separate projects that link authum_client and drop into modules/ at runtime.
 option(AUTHUM_BUILD_EXAMPLES "Build example Authum modules under examples/" ON)
 if (AUTHUM_BUILD_EXAMPLES)
     add_subdirectory(examples/hello)
+endif ()
+
+option(AUTHUM_BUILD_TESTS "Build Authum tests (ctest)" ON)
+if (AUTHUM_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
 endif ()

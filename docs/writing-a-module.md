@@ -24,7 +24,7 @@ In short — type-as-namespace like lh (`qproto_log_mode_console`, not
 
 ---
 
-## 1. What you export (ABI 0.2)
+## 1. What you export (ABI 0.3)
 
 Include **`#include <authum/client.h>`** only. Do **not** include lh or link
 `liblh` unless you opt into the escape hatch.
@@ -34,12 +34,13 @@ Include **`#include <authum/client.h>`** only. Do **not** include lh or link
 | `authum_module_info` | `authum_module_info_t` | Name, SemVer, ABI, … |
 | `authum_module_api` | `authum_module_api_t` | `.start(host)` / `.stop()` |
 
-ABI: `AUTHUM_MODULE_ABI` = `0.2.0`.
+ABI: `AUTHUM_MODULE_ABI` = `0.3.0` (0.3 added the sandbox and the event bus to
+the host facade; 0.2 modules must be rebuilt).
 
 ```c
 #include <authum/client.h>
 
-static authum_host_t g_host;
+authum_host_t g_example_host;
 
 AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
     .abi = AUTHUM_MODULE_ABI,
@@ -51,20 +52,20 @@ AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
     .logtag = "EXAMPLE",
 };
 
-static authum_bool_t
+authum_bool_t
 example_start(authum_host_t *host)
 {
     if (authum_null_eq(host))
         return authum_bool_false;
-    g_host = *host;
-    authum_host_log_line(&g_host, 0, "[example] start");
+    g_example_host = *host;
+    authum_host_log_line(&g_example_host, 0, "[example] start");
     return authum_bool_true;
 }
 
-static void
+void
 example_stop(void)
 {
-    authum_host_log_line(&g_host, 0, "[example] stop");
+    authum_host_log_line(&g_example_host, 0, "[example] stop");
 }
 
 AUTHUM_MODULE_EXPORT const authum_module_api_t authum_module_api = {
@@ -104,6 +105,10 @@ into `start` (valid until `stop`):
 | `authum_host_env` / `authum_host_env_module` / `_game` / … | `authum_path_t` roots |
 | `authum_host_env_module_cstr` | deprecated C string of module dir |
 | `authum_host_crypto` | Rijndael + SHA (`<authum/crypto.h>`) |
+| `authum_host_sandbox` | Module memory freed at unload — [sandbox.md](sandbox.md) |
+| `authum_host_events` / `authum_host_subscribe` / `authum_host_publish` | Event bus — [events.md](events.md) |
+| `authum_host_kick` | `kick #userid "reason"` (sanitized) |
+| `authum_host_command_add[_all]` | `authum <module> <name>` console / RCON commands — [commands.md](commands.md) |
 
 Paths in `env` are absolute when the host can resolve them from the module image
 (current volume, native separators). Prefer `authum_host_env_module(host)` for
@@ -180,12 +185,15 @@ Policy: [logging.md](logging.md).
 - [ ] Strict snake_case; enums `{type}_leaf` ([module-style.md](module-style.md))
 - [ ] Authum foundation types on Authum / public ABI
 - [ ] `#include <authum/client.h>` (no lh in a pure client)
-- [ ] `authum_module_info.abi` = `0.2.0`, non-null `name`
+- [ ] `authum_module_info.abi` = `AUTHUM_MODULE_ABI` (`0.3.0`), non-null `name`
 - [ ] `authum_module_api` exported; `start` returns `authum_bool_false` only on hard failure
 - [ ] Listed in `modules.list` / under `modules/`
 - [ ] Folder `foo` → `foo.so` / `foo.dll`
 - [ ] Not a Metamod `plugins.ini` entry
 - [ ] Logs via host facade
+- [ ] Long-lived memory from the sandbox ([sandbox.md](sandbox.md))
+- [ ] Talks to other modules only via events ([events.md](events.md)); no Metamod hooks of its own for player connect/disconnect
+- [ ] Console / RCON commands via `authum_host_command_add` — never `pfnAddServerCommand` ([commands.md](commands.md))
 - [ ] Config: defaults + `authum_cfg_apply_items`; custom keys after the table ([cfg.md](cfg.md))
 - [ ] Links `authum_client` from `lib/authum/client` (no Authum `.c` in the module)
 
