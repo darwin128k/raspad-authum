@@ -111,6 +111,9 @@ cfg/logs; `authum_path_join` appends a leaf. Config: put defaults on your
 `g_mod_config = { … }`, then `authum_cfg_apply_items` from an
 `authum_cfg_item_t[]` (or call `authum_cfg_get_*` / `apply_*` by hand).
 
+Compile Authum’s `src/authum/cfg.c` into the module (not header-inline) so
+fopen/parse bugs are fixed and debugged in one TU for every plugin.
+
 Never touch `host->…` fields — only `authum_host_*` getters/setters.
 
 ```c
