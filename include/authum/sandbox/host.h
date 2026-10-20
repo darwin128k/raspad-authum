@@ -13,19 +13,20 @@
 #include <authum/sandbox/ops.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-const authum_sandbox_ops_t *
-authum_sandbox_host_ops(void);
+    const authum_sandbox_ops_t *
+    authum_sandbox_host_ops(void);
 
-/** New empty root (owns nothing yet). */
-authum_ptr
-authum_sandbox_host_root_create(void);
+    /** New empty root (owns nothing yet). */
+    authum_ptr
+    authum_sandbox_host_root_create(void);
 
-/** Free @p root and everything any module allocated under it. */
-void
-authum_sandbox_host_root_destroy(authum_ptr root);
+    /** Free @p root and everything any module allocated under it. */
+    void
+    authum_sandbox_host_root_destroy(authum_ptr root);
 
 #ifdef __cplusplus
 }

@@ -32,8 +32,10 @@ authum_log_init(const lh_fs_path_t *image_dir);
 void
 authum_log_deinit(void);
 
-void authum_log_info(const char *fmt, ...);
-void authum_log_error(const char *fmt, ...);
+void
+authum_log_info(const char *fmt, ...);
+void
+authum_log_error(const char *fmt, ...);
 
 /**
  * @brief One preformatted line for child modules (dlsym from the host image).

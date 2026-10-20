@@ -24,7 +24,8 @@ authum_crypto_sha_lh(authum_crypto_sha_t *self)
 void
 authum_crypto_sha_init_impl(authum_crypto_sha_t *self, authum_crypto_sha_kind_t kind)
 {
-    if (authum_null_eq(self)) {
+    if (authum_null_eq(self))
+    {
         return;
     }
     lh_crypto_sha_init(authum_crypto_sha_lh(self), (lh_crypto_sha_kind_t)kind);
@@ -33,7 +34,8 @@ authum_crypto_sha_init_impl(authum_crypto_sha_t *self, authum_crypto_sha_kind_t 
 void
 authum_crypto_sha_update_impl(authum_crypto_sha_t *self, authum_ptr data, authum_usize_t size)
 {
-    if (authum_null_eq(self) || (authum_null_eq(data) && size != 0u)) {
+    if (authum_null_eq(self) || (authum_null_eq(data) && size != 0u))
+    {
         return;
     }
     lh_crypto_sha_update(authum_crypto_sha_lh(self), (lh_ptr)data, (lh_usize_t)size);
@@ -42,7 +44,8 @@ authum_crypto_sha_update_impl(authum_crypto_sha_t *self, authum_ptr data, authum
 authum_usize_t
 authum_crypto_sha_finish_impl(authum_crypto_sha_t *self, authum_ptr out, authum_usize_t out_size)
 {
-    if (authum_null_eq(self) || authum_null_eq(out)) {
+    if (authum_null_eq(self) || authum_null_eq(out))
+    {
         return 0u;
     }
     return (authum_usize_t)lh_crypto_sha_finish(authum_crypto_sha_lh(self), (lh_ptr)out,
@@ -53,7 +56,8 @@ authum_usize_t
 authum_crypto_sha_hash_impl(authum_crypto_sha_kind_t kind, authum_ptr data, authum_usize_t size,
                             authum_ptr out, authum_usize_t out_size)
 {
-    if (authum_null_eq(out) || (authum_null_eq(data) && size != 0u)) {
+    if (authum_null_eq(out) || (authum_null_eq(data) && size != 0u))
+    {
         return 0u;
     }
     return (authum_usize_t)lh_crypto_sha_hash((lh_crypto_sha_kind_t)kind, (lh_ptr)data,

@@ -15,17 +15,18 @@
 #include <authum/ptr.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-struct authum_commands_ops
-{
-    authum_bool_t (*add)(authum_ptr owner, const authum_char_t *scope,
-                         const authum_command_def_t *def);
-    authum_bool_t (*remove)(authum_ptr owner, const authum_char_t *scope,
-                            const authum_char_t *name);
-};
-typedef struct authum_commands_ops authum_commands_ops_t;
+    struct authum_commands_ops
+    {
+        authum_bool_t (*add)(authum_ptr owner, const authum_char_t *scope,
+                             const authum_command_def_t *def);
+        authum_bool_t (*remove)(authum_ptr owner, const authum_char_t *scope,
+                                const authum_char_t *name);
+    };
+    typedef struct authum_commands_ops authum_commands_ops_t;
 
 #ifdef __cplusplus
 }

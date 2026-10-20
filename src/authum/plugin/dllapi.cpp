@@ -105,7 +105,8 @@ authum_dllapi_client_disconnect(edict_t *entity)
 
 static DLL_FUNCTIONS g_function_table = {};
 
-C_DLLEXPORT FORCE_STACK_ALIGN int GetEntityAPI2(DLL_FUNCTIONS *pFunctionTable, int *interfaceVersion)
+C_DLLEXPORT FORCE_STACK_ALIGN int
+GetEntityAPI2(DLL_FUNCTIONS *pFunctionTable, int *interfaceVersion)
 {
     if (lh_null_eq(lh_ptr_cast(lh_void, pFunctionTable)) ||
         lh_null_eq(lh_ptr_cast(lh_void, interfaceVersion)))

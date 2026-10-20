@@ -9,8 +9,8 @@
 
 static enginefuncs_t g_engine_functions = {};
 
-C_DLLEXPORT FORCE_STACK_ALIGN int GetEngineFunctions(enginefuncs_t *pengfuncsFromEngine,
-                                                     int *interfaceVersion)
+C_DLLEXPORT FORCE_STACK_ALIGN int
+GetEngineFunctions(enginefuncs_t *pengfuncsFromEngine, int *interfaceVersion)
 {
     if (lh_null_eq(lh_ptr_cast(lh_void, pengfuncsFromEngine)) ||
         lh_null_eq(lh_ptr_cast(lh_void, interfaceVersion)))

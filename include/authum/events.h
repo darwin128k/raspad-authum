@@ -34,38 +34,40 @@
 #include <authum/ptr.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-/**
- * @struct authum_events
- * @brief Per-module handle: host ops + who is calling.
- */
-struct authum_events
-{
-    const authum_events_ops_t *ops;
-    authum_ptr owner;
-};
-typedef struct authum_events authum_events_t;
+    /**
+     * @struct authum_events
+     * @brief Per-module handle: host ops + who is calling.
+     */
+    struct authum_events
+    {
+        const authum_events_ops_t *ops;
+        authum_ptr owner;
+    };
+    typedef struct authum_events authum_events_t;
 
-/**
- * Call @p fn for every event named @p name until unsubscribed or unloaded.
- * The same (@p name, @p fn, @p user) triple is registered once.
- */
-authum_bool_t
-authum_events_subscribe(const authum_events_t *self, const authum_char_t *name,
-                        authum_event_handler_fn fn, authum_ptr user);
+    /**
+     * Call @p fn for every event named @p name until unsubscribed or unloaded.
+     * The same (@p name, @p fn, @p user) triple is registered once.
+     */
+    authum_bool_t
+    authum_events_subscribe(const authum_events_t *self, const authum_char_t *name,
+                            authum_event_handler_fn fn, authum_ptr user);
 
-authum_bool_t
-authum_events_unsubscribe(const authum_events_t *self, const authum_char_t *name,
-                          authum_event_handler_fn fn, authum_ptr user);
+    authum_bool_t
+    authum_events_unsubscribe(const authum_events_t *self, const authum_char_t *name,
+                              authum_event_handler_fn fn, authum_ptr user);
 
-/**
- * Deliver @p payload to subscribers of @p name.
- * @return Strongest result any handler returned (continue when none).
- */
-authum_event_result_t
-authum_events_publish(const authum_events_t *self, const authum_char_t *name, authum_ptr payload);
+    /**
+     * Deliver @p payload to subscribers of @p name.
+     * @return Strongest result any handler returned (continue when none).
+     */
+    authum_event_result_t
+    authum_events_publish(const authum_events_t *self, const authum_char_t *name,
+                          authum_ptr payload);
 
 #ifdef __cplusplus
 }

@@ -13,7 +13,8 @@
 #include <authum/size.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /**
@@ -58,17 +59,17 @@ extern "C" {
  */
 #define AUTHUM_CRYPTO_SHA_STORAGE 256u
 
-/**
- * @struct authum_crypto_sha
- * @brief Opaque SHA hasher. Treat as opaque; only use via crypto ops.
- */
-struct authum_crypto_sha
-{
-    authum_usize_t storage[(AUTHUM_CRYPTO_SHA_STORAGE + sizeof(authum_usize_t) - 1u) /
-                           sizeof(authum_usize_t)];
-};
-/** @copybrief authum_crypto_sha */
-typedef struct authum_crypto_sha authum_crypto_sha_t;
+    /**
+     * @struct authum_crypto_sha
+     * @brief Opaque SHA hasher. Treat as opaque; only use via crypto ops.
+     */
+    struct authum_crypto_sha
+    {
+        authum_usize_t storage[(AUTHUM_CRYPTO_SHA_STORAGE + sizeof(authum_usize_t) - 1u) /
+                               sizeof(authum_usize_t)];
+    };
+    /** @copybrief authum_crypto_sha */
+    typedef struct authum_crypto_sha authum_crypto_sha_t;
 
 #ifdef __cplusplus
 }

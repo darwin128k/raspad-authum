@@ -30,7 +30,8 @@ authum_command_argv(const authum_command_t *cmd, authum_usize_t index)
 {
     const authum_char_t *arg;
 
-    if (index >= authum_command_argc(cmd)) {
+    if (index >= authum_command_argc(cmd))
+    {
         return "";
     }
     arg = cmd->argv[index];
@@ -40,7 +41,8 @@ authum_command_argv(const authum_command_t *cmd, authum_usize_t index)
 authum_bool_t
 authum_command_arg_i32(const authum_command_t *cmd, authum_usize_t index, authum_i32_t *out)
 {
-    if (index >= authum_command_argc(cmd)) {
+    if (index >= authum_command_argc(cmd))
+    {
         return authum_bool_false;
     }
     return authum_cstr_parse_i32(authum_command_argv(cmd, index), out);
@@ -52,11 +54,13 @@ authum_command_print(const authum_command_t *cmd, const authum_char_t *line)
     authum_char_t buf[authum_command_line_max + 2];
     size_t len;
 
-    if (authum_null_eq(cmd) || cmd->print == 0 || authum_null_eq(line)) {
+    if (authum_null_eq(cmd) || cmd->print == 0 || authum_null_eq(line))
+    {
         return;
     }
     len = strlen(line);
-    if (len > (size_t)authum_command_line_max) {
+    if (len > (size_t)authum_command_line_max)
+    {
         len = (size_t)authum_command_line_max;
     }
     memcpy(buf, line, len);
@@ -71,7 +75,8 @@ authum_command_printf(const authum_command_t *cmd, const authum_char_t *fmt, ...
     authum_char_t line[authum_command_line_max + 1];
     va_list ap;
 
-    if (authum_null_eq(fmt)) {
+    if (authum_null_eq(fmt))
+    {
         return;
     }
     va_start(ap, fmt);

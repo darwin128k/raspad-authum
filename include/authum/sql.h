@@ -18,71 +18,85 @@
 #include <authum/size.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-enum
-{
-	authum_sql_errmsg_max = 256
-};
+    enum
+    {
+        authum_sql_errmsg_max = 256
+    };
 
-struct authum_sql
-{
-	authum_sql_driver_t driver;
-	/** Backend handle (`sqlite3 *` today). */
-	void *db;
-	authum_char_t errmsg[authum_sql_errmsg_max];
-};
-typedef struct authum_sql authum_sql_t;
+    struct authum_sql
+    {
+        authum_sql_driver_t driver;
+        /** Backend handle (`sqlite3 *` today). */
+        void *db;
+        authum_char_t errmsg[authum_sql_errmsg_max];
+    };
+    typedef struct authum_sql authum_sql_t;
 
-struct authum_sql_stmt
-{
-	authum_sql_t *sql;
-	void *stmt;
-};
-typedef struct authum_sql_stmt authum_sql_stmt_t;
+    struct authum_sql_stmt
+    {
+        authum_sql_t *sql;
+        void *stmt;
+    };
+    typedef struct authum_sql_stmt authum_sql_stmt_t;
 
-void authum_sql_init(authum_sql_t *self);
+    void
+    authum_sql_init(authum_sql_t *self);
 
-/**
- * @brief Open a SQLite file (creates if missing). @p path is filesystem text.
- */
-authum_bool_t authum_sql_open_sqlite(authum_sql_t *self, const authum_char_t *path);
+    /**
+     * @brief Open a SQLite file (creates if missing). @p path is filesystem text.
+     */
+    authum_bool_t
+    authum_sql_open_sqlite(authum_sql_t *self, const authum_char_t *path);
 
-void authum_sql_close(authum_sql_t *self);
+    void
+    authum_sql_close(authum_sql_t *self);
 
-authum_bool_t authum_sql_is_open(const authum_sql_t *self);
+    authum_bool_t
+    authum_sql_is_open(const authum_sql_t *self);
 
-const authum_char_t *authum_sql_errmsg(const authum_sql_t *self);
+    const authum_char_t *
+    authum_sql_errmsg(const authum_sql_t *self);
 
-authum_bool_t authum_sql_exec(authum_sql_t *self, const authum_char_t *sql);
+    authum_bool_t
+    authum_sql_exec(authum_sql_t *self, const authum_char_t *sql);
 
-authum_i64_t authum_sql_last_insert_id(authum_sql_t *self);
+    authum_i64_t
+    authum_sql_last_insert_id(authum_sql_t *self);
 
-authum_bool_t authum_sql_prepare(authum_sql_t *self, authum_sql_stmt_t *stmt,
-				 const authum_char_t *sql);
+    authum_bool_t
+    authum_sql_prepare(authum_sql_t *self, authum_sql_stmt_t *stmt, const authum_char_t *sql);
 
-void authum_sql_stmt_finalize(authum_sql_stmt_t *stmt);
+    void
+    authum_sql_stmt_finalize(authum_sql_stmt_t *stmt);
 
-authum_bool_t authum_sql_stmt_bind_i32(authum_sql_stmt_t *stmt, authum_i32_t index,
-				       authum_i32_t value);
+    authum_bool_t
+    authum_sql_stmt_bind_i32(authum_sql_stmt_t *stmt, authum_i32_t index, authum_i32_t value);
 
-authum_bool_t authum_sql_stmt_bind_cstr(authum_sql_stmt_t *stmt, authum_i32_t index,
-					const authum_char_t *text);
+    authum_bool_t
+    authum_sql_stmt_bind_cstr(authum_sql_stmt_t *stmt, authum_i32_t index,
+                              const authum_char_t *text);
 
-/** @return true when a row is available. */
-authum_bool_t authum_sql_stmt_step_row(authum_sql_stmt_t *stmt);
+    /** @return true when a row is available. */
+    authum_bool_t
+    authum_sql_stmt_step_row(authum_sql_stmt_t *stmt);
 
-/** @return true when the statement finished successfully (no row). */
-authum_bool_t authum_sql_stmt_step_done(authum_sql_stmt_t *stmt);
+    /** @return true when the statement finished successfully (no row). */
+    authum_bool_t
+    authum_sql_stmt_step_done(authum_sql_stmt_t *stmt);
 
-authum_i32_t authum_sql_stmt_column_i32(authum_sql_stmt_t *stmt, authum_i32_t index);
+    authum_i32_t
+    authum_sql_stmt_column_i32(authum_sql_stmt_t *stmt, authum_i32_t index);
 
-/**
- * @brief UTF-8 column text valid until the next step/finalize. Empty string
- *        when NULL.
- */
-const authum_char_t *authum_sql_stmt_column_cstr(authum_sql_stmt_t *stmt, authum_i32_t index);
+    /**
+     * @brief UTF-8 column text valid until the next step/finalize. Empty string
+     *        when NULL.
+     */
+    const authum_char_t *
+    authum_sql_stmt_column_cstr(authum_sql_stmt_t *stmt, authum_i32_t index);
 
 #ifdef __cplusplus
 }

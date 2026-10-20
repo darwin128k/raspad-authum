@@ -17,19 +17,20 @@
 #include <authum/ptr.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-struct authum_events_ops
-{
-    authum_bool_t (*subscribe)(authum_ptr owner, const authum_char_t *name,
-                               authum_event_handler_fn fn, authum_ptr user);
-    authum_bool_t (*unsubscribe)(authum_ptr owner, const authum_char_t *name,
-                                 authum_event_handler_fn fn, authum_ptr user);
-    authum_event_result_t (*publish)(authum_ptr owner, const authum_char_t *name,
-                                     authum_ptr payload);
-};
-typedef struct authum_events_ops authum_events_ops_t;
+    struct authum_events_ops
+    {
+        authum_bool_t (*subscribe)(authum_ptr owner, const authum_char_t *name,
+                                   authum_event_handler_fn fn, authum_ptr user);
+        authum_bool_t (*unsubscribe)(authum_ptr owner, const authum_char_t *name,
+                                     authum_event_handler_fn fn, authum_ptr user);
+        authum_event_result_t (*publish)(authum_ptr owner, const authum_char_t *name,
+                                         authum_ptr payload);
+    };
+    typedef struct authum_events_ops authum_events_ops_t;
 
 #ifdef __cplusplus
 }

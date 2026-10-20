@@ -25,14 +25,7 @@
 #include <lh/void.h>
 
 static META_FUNCTIONS g_meta_functions = {
-    nullptr,
-    nullptr,
-    GetEntityAPI2,
-    nullptr,
-    nullptr,
-    nullptr,
-    GetEngineFunctions,
-    nullptr,
+    nullptr, nullptr, GetEntityAPI2, nullptr, nullptr, nullptr, GetEngineFunctions, nullptr,
 };
 
 plugin_info_t Plugin_info;
@@ -111,8 +104,8 @@ authum_meta_log_modules(void)
     }
 }
 
-C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Query(char * /* ifvers */, plugin_info_t **pPlugInfo,
-                                             mutil_funcs_t *pMetaUtilFuncs)
+C_DLLEXPORT FORCE_STACK_ALIGN int
+Meta_Query(char * /* ifvers */, plugin_info_t **pPlugInfo, mutil_funcs_t *pMetaUtilFuncs)
 {
     if (lh_null_eq(lh_ptr_cast(lh_void, pPlugInfo)))
     {
@@ -124,9 +117,8 @@ C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Query(char * /* ifvers */, plugin_info_t 
     Plugin_info.ifvers = const_cast<char *>(META_INTERFACE_VERSION);
     Plugin_info.name = const_cast<char *>(authum_module_info.name);
     Plugin_info.version = g_version_text;
-    Plugin_info.date = const_cast<char *>(authum_module_info.date != nullptr
-                                              ? authum_module_info.date
-                                              : "");
+    Plugin_info.date =
+        const_cast<char *>(authum_module_info.date != nullptr ? authum_module_info.date : "");
     Plugin_info.author = const_cast<char *>(authum_module_info.author);
     Plugin_info.url = const_cast<char *>(authum_module_info.url);
     Plugin_info.logtag = const_cast<char *>(authum_module_info.logtag);
@@ -138,9 +130,9 @@ C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Query(char * /* ifvers */, plugin_info_t 
     return TRUE;
 }
 
-C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Attach(PLUG_LOADTIME /* now */, META_FUNCTIONS *pFunctionTable,
-                                              meta_globals_t *pMGlobals,
-                                              gamedll_funcs_t *pGamedllFuncs)
+C_DLLEXPORT FORCE_STACK_ALIGN int
+Meta_Attach(PLUG_LOADTIME /* now */, META_FUNCTIONS *pFunctionTable, meta_globals_t *pMGlobals,
+            gamedll_funcs_t *pGamedllFuncs)
 {
     if (lh_null_eq(lh_ptr_cast(lh_void, pMGlobals)) ||
         lh_null_eq(lh_ptr_cast(lh_void, pFunctionTable)))
@@ -188,7 +180,8 @@ C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Attach(PLUG_LOADTIME /* now */, META_FUNC
     return TRUE;
 }
 
-C_DLLEXPORT FORCE_STACK_ALIGN int Meta_Detach(PLUG_LOADTIME /* now */, PL_UNLOAD_REASON /* reason */)
+C_DLLEXPORT FORCE_STACK_ALIGN int
+Meta_Detach(PLUG_LOADTIME /* now */, PL_UNLOAD_REASON /* reason */)
 {
     authum_gate_deinit();
     authum_loader_deinit();
