@@ -15,8 +15,8 @@ own types** (`authum_bool_t`, `authum_usize_t`, `authum_byte_t`, `authum_ptr`,
 Do not ship module code as C++ (no classes, namespaces, templates, references,
 `nullptr`, C++ headers). The host Metamod plugin (`authum_mm`) may remain C++ /
 mixed; only the loadable child modules are constrained to C + snake_case.
-Config *file* keys (e.g. `EnableRevEmu` for dproto compatibility) may keep
-their historical spellings.
+Config *file* keys use snake_case matching C fields (e.g. `enable_revemu`,
+`logging_mode`) — not PascalCase.
 
 **Naming / enums / types:** full rules in [module-style.md](module-style.md).
 In short — type-as-namespace like lh (`qproto_log_mode_console`, not

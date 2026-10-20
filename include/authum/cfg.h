@@ -20,7 +20,7 @@
  * mymod_config_t g = { .enable_foo = authum_bool_true, ... };
  * authum_cfg_t cfg;
  * static const authum_cfg_item_t items[] = {
- *     { "EnableFoo", authum_cfg_kind_bool, &g.enable_foo, 0 },
+ *     { "enable_foo", authum_cfg_kind_bool, &g.enable_foo, 0 },
  * };
  * if (authum_cfg_open(&cfg, &path)) {
  *     authum_cfg_apply_items(&cfg, items, sizeof items / sizeof items[0]);
