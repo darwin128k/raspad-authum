@@ -116,6 +116,8 @@ authum_crypto_sha_hash(host->crypto, authum_crypto_sha_kind_256,
 
 - Include guards: `QPROTO_FOO_H` / `AUTHUM_FOO_H` (macros — SCREAMING OK).
 - One concept per header when practical (`…/kind.h`, `…/mode.h`), lh-style.
+- **Path is the namespace:** `qproto/api.h`, not `qproto/qproto_api.h`.
+  Symbols stay `qproto_*`; file names do not repeat the folder.
 - Export only `authum_module_info` + `authum_module_api` to Authum; other
   symbols for peer modules via your own stable C API if needed.
 
