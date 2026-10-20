@@ -10,13 +10,17 @@
 
 #include <authum/bool.h>
 #include <authum/byte.h>
+#include <authum/cfg.h>
 #include <authum/char.h>
+#include <authum/cstr.h>
+#include <authum/env.h>
 #include <authum/export.h>
 #include <authum/host.h>
 #include <authum/logger.h>
 #include <authum/module/api.h>
 #include <authum/module/info.h>
 #include <authum/null.h>
+#include <authum/path.h>
 #include <authum/ptr.h>
 #include <authum/size.h>
 #include <authum/version.h>
