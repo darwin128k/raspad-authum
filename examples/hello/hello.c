@@ -22,15 +22,15 @@ AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
 static authum_bool_t
 hello_start(authum_host_t *host)
 {
-    if (host == 0) {
-        return AUTHUM_FALSE;
+    if (authum_null_eq(host)) {
+        return authum_bool_false;
     }
     g_host = *host;
     authum_host_log_line(&g_host, 0, "[hello] start");
-    if (g_host.module_dir != 0) {
+    if (!authum_null_eq(g_host.module_dir)) {
         authum_host_log_line(&g_host, 0, g_host.module_dir);
     }
-    return AUTHUM_TRUE;
+    return authum_bool_true;
 }
 
 static void

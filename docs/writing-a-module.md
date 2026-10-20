@@ -9,11 +9,18 @@ See [architecture.md](architecture.md). Sample: [`examples/hello`](../examples/h
 ### Language requirement
 
 Authum **modules MUST be pure C** (C11 recommended) with **strict snake_case**
-identifiers (functions, types, struct fields, globals). Do not ship module code
-as C++ (no classes, namespaces, templates, references, `nullptr`, C++ headers).
-The host Metamod plugin (`authum_mm`) may remain C++ / mixed; only the loadable
-child modules are constrained to C + snake_case. Config *file* keys (e.g.
-`EnableRevEmu` for dproto compatibility) may keep their historical spellings.
+identifiers (functions, types, struct fields, globals), and must use **Authum’s
+own types** (`authum_bool_t`, `authum_usize_t`, `authum_byte_t`, `authum_ptr`,
+…) — not raw libc/`size_t` on the Authum API surface, and never `<lh/…>`.
+Do not ship module code as C++ (no classes, namespaces, templates, references,
+`nullptr`, C++ headers). The host Metamod plugin (`authum_mm`) may remain C++ /
+mixed; only the loadable child modules are constrained to C + snake_case.
+Config *file* keys (e.g. `EnableRevEmu` for dproto compatibility) may keep
+their historical spellings.
+
+**Naming / enums / types:** full rules in [module-style.md](module-style.md).
+In short — type-as-namespace like lh (`qproto_log_mode_console`, not
+`QPROTO_LOG_CONSOLE` or `rl_console`); typedefs end in `_t`, tags do not.
 
 ---
 
@@ -47,11 +54,11 @@ AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
 static authum_bool_t
 example_start(authum_host_t *host)
 {
-    if (host == 0)
-        return AUTHUM_FALSE;
+    if (authum_null_eq(host))
+        return authum_bool_false;
     g_host = *host;
     authum_host_log_line(&g_host, 0, "[example] start");
-    return AUTHUM_TRUE;
+    return authum_bool_true;
 }
 
 static void
@@ -124,9 +131,14 @@ private utilities. Not the host runtime.
 
 ## 4. Logging
 
-Use `authum_host_log_line` / `host->log`. Never assume a process-wide
-`lh_runtime_logger()` is `authum.log`. Optional private file under your
-package is fine. Policy: [logging.md](logging.md).
+Prefer **`authum_logger_t`** (`<authum/logger.h>`): lh-like levels + sink
+bricks (`host` / `console` / `file`). Do not invent a parallel
+`mymod_log()` unless you truly need a custom design — then write it from
+scratch or reuse the same bricks (`authum_host_log_line`,
+`authum_engine_server_print`, `FILE *`).
+
+Never assume a process-wide `lh_runtime_logger()` is `authum.log`.
+Policy: [logging.md](logging.md).
 
 ---
 
@@ -144,10 +156,11 @@ package is fine. Policy: [logging.md](logging.md).
 ## 6. Checklist
 
 - [ ] Pure C11 module (no `.cpp` / C++ in the module)
-- [ ] Strict snake_case for all C identifiers
+- [ ] Strict snake_case; enums `{type}_leaf` ([module-style.md](module-style.md))
+- [ ] Authum foundation types on Authum / public ABI
 - [ ] `#include <authum/client.h>` (no lh in a pure client)
 - [ ] `authum_module_info.abi` = `0.2.0`, non-null `name`
-- [ ] `authum_module_api` exported; `start` returns `AUTHUM_FALSE` only on hard failure
+- [ ] `authum_module_api` exported; `start` returns `authum_bool_false` only on hard failure
 - [ ] Listed in `modules.list` / under `modules/`
 - [ ] Folder `foo` → `foo.so` / `foo.dll`
 - [ ] Not a Metamod `plugins.ini` entry

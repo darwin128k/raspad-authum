@@ -11,7 +11,9 @@
 #ifndef AUTHUM_ENGINE_H
 #define AUTHUM_ENGINE_H
 
-#include <stddef.h>
+#include <authum/char.h>
+#include <authum/null.h>
+#include <authum/size.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,35 +29,35 @@ typedef struct authum_engine
      * Write the game directory (e.g. `cstrike`) into @p buf.
      * Always NUL-terminates when @p buf_size > 0.
      */
-    void (*get_game_dir)(char *buf, size_t buf_size);
+    void (*get_game_dir)(authum_char_t *buf, authum_usize_t buf_size);
     /** Mirror of `pfnServerPrint` (text as-is, typically already `\n`-terminated). */
-    void (*server_print)(const char *text);
+    void (*server_print)(const authum_char_t *text);
     /** Mirror of `pfnServerCommand` (e.g. `kick #3\n`). */
-    void (*server_command)(const char *cmd);
+    void (*server_command)(const authum_char_t *cmd);
 } authum_engine_t;
 
 static inline void
-authum_engine_get_game_dir(const authum_engine_t *engine, char *buf, size_t buf_size)
+authum_engine_get_game_dir(const authum_engine_t *engine, authum_char_t *buf, authum_usize_t buf_size)
 {
-    if (engine != 0 && engine->get_game_dir != 0) {
+    if (!authum_null_eq(engine) && engine->get_game_dir != 0) {
         engine->get_game_dir(buf, buf_size);
-    } else if (buf != 0 && buf_size > 0u) {
+    } else if (!authum_null_eq(buf) && buf_size > 0u) {
         buf[0] = '\0';
     }
 }
 
 static inline void
-authum_engine_server_print(const authum_engine_t *engine, const char *text)
+authum_engine_server_print(const authum_engine_t *engine, const authum_char_t *text)
 {
-    if (engine != 0 && engine->server_print != 0 && text != 0) {
+    if (!authum_null_eq(engine) && engine->server_print != 0 && !authum_null_eq(text)) {
         engine->server_print(text);
     }
 }
 
 static inline void
-authum_engine_server_command(const authum_engine_t *engine, const char *cmd)
+authum_engine_server_command(const authum_engine_t *engine, const authum_char_t *cmd)
 {
-    if (engine != 0 && engine->server_command != 0 && cmd != 0) {
+    if (!authum_null_eq(engine) && engine->server_command != 0 && !authum_null_eq(cmd)) {
         engine->server_command(cmd);
     }
 }

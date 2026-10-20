@@ -8,6 +8,8 @@
 #ifndef AUTHUM_CRYPTO_SHA_KIND_H
 #define AUTHUM_CRYPTO_SHA_KIND_H
 
+#include <authum/byte.h>
+
 /**
  * @def authum_crypto_sha_kind_1
  * @brief SHA-1 (160-bit digest).
@@ -42,6 +44,6 @@
  * @typedef authum_crypto_sha_kind_t
  * @brief One of the `authum_crypto_sha_kind_*` constants.
  */
-typedef unsigned char authum_crypto_sha_kind_t;
+typedef authum_byte_t authum_crypto_sha_kind_t;
 
 #endif /* AUTHUM_CRYPTO_SHA_KIND_H */

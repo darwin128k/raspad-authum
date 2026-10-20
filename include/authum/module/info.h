@@ -6,6 +6,7 @@
 #ifndef AUTHUM_MODULE_INFO_H
 #define AUTHUM_MODULE_INFO_H
 
+#include <authum/char.h>
 #include <authum/export.h>
 #include <authum/module/info/fields.h>
 #include <authum/version.h>
@@ -28,7 +29,7 @@ extern "C" {
 
 struct authum_module_info
 {
-    authum_module_info_fields(const char *, authum_version_t);
+    authum_module_info_fields(const authum_char_t *, authum_version_t);
 };
 
 typedef struct authum_module_info authum_module_info_t;
