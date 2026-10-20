@@ -6,6 +6,15 @@ Authum once; everything else hangs under Authum.
 
 See [architecture.md](architecture.md). Sample: [`examples/hello`](../examples/hello/).
 
+### Language requirement
+
+Authum **modules MUST be pure C** (C11 recommended) with **strict snake_case**
+identifiers (functions, types, struct fields, globals). Do not ship module code
+as C++ (no classes, namespaces, templates, references, `nullptr`, C++ headers).
+The host Metamod plugin (`authum_mm`) may remain C++ / mixed; only the loadable
+child modules are constrained to C + snake_case. Config *file* keys (e.g.
+`EnableRevEmu` for dproto compatibility) may keep their historical spellings.
+
 ---
 
 ## 1. What you export (ABI 0.2)
@@ -123,6 +132,8 @@ package is fine. Policy: [logging.md](logging.md).
 
 ## 5. Build notes
 
+- **Pure C** sources (`.c` / C headers with include guards); `project(... C)` is enough — no CXX.
+- **snake_case** for all C identifiers in the module.
 - **32-bit** HLDS (`-m32` on Linux).
 - Include path: Authum’s `include/` only (for a pure client).
 - Do **not** link `liblh` unless you choose the escape hatch.
@@ -132,6 +143,8 @@ package is fine. Policy: [logging.md](logging.md).
 
 ## 6. Checklist
 
+- [ ] Pure C11 module (no `.cpp` / C++ in the module)
+- [ ] Strict snake_case for all C identifiers
 - [ ] `#include <authum/client.h>` (no lh in a pure client)
 - [ ] `authum_module_info.abi` = `0.2.0`, non-null `name`
 - [ ] `authum_module_api` exported; `start` returns `AUTHUM_FALSE` only on hard failure
