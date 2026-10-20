@@ -107,9 +107,9 @@ into `start` (valid until `stop`):
 
 Paths in `env` are absolute when the host can resolve them from the module image
 (current volume, native separators). Prefer `authum_host_env_module(host)` for
-cfg/logs; `authum_path_join` appends a leaf; `authum_cfg_open` then
-`authum_cfg_get_bool(cfg, "Key", default)` / `_get_i32` / `_get_u32` / `_get_cstr` read flat
-`key = value` files (default used when the key is missing).
+cfg/logs; `authum_path_join` appends a leaf. Config: put defaults on your
+`g_mod_config = { … }`, then `authum_cfg_apply_items` from an
+`authum_cfg_item_t[]` (or call `authum_cfg_get_*` / `apply_*` by hand).
 
 Never touch `host->…` fields — only `authum_host_*` getters/setters.
 

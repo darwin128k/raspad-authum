@@ -8,14 +8,19 @@
  * - First `=` splits key and value (value may contain more `=`).
  * - No `[sections]` required.
  *
- * Open once, then pull typed values. Missing or unparseable keys return the
- * caller-supplied default — that is the intended way to set defaults.
+ * Prefer: put defaults on your config object (static init), open the file,
+ * then ::authum_cfg_apply_items (or ::authum_cfg_apply_bool / …) so missing
+ * keys leave the defaults alone. ::authum_cfg_get_* still exist for one-shot
+ * reads with an explicit default.
  *
  * @code
+ * mymod_config_t g = { .enable_foo = authum_bool_true, ... };
  * authum_cfg_t cfg;
+ * static const authum_cfg_item_t items[] = {
+ *     { "EnableFoo", authum_cfg_kind_bool, &g.enable_foo, 0 },
+ * };
  * if (authum_cfg_open(&cfg, &path)) {
- *     enable = authum_cfg_get_bool(&cfg, "EnableFoo", authum_bool_true);
- *     authum_cfg_get_cstr(&cfg, "Msg", buf, sizeof buf, "hello");
+ *     authum_cfg_apply_items(&cfg, items, sizeof items / sizeof items[0]);
  *     authum_cfg_close(&cfg);
  * }
  * @endcode
@@ -26,10 +31,13 @@
 
 #include <authum/bool.h>
 #include <authum/byte.h>
+#include <authum/cfg/item.h>
+#include <authum/cfg/kind.h>
 #include <authum/char.h>
 #include <authum/cstr.h>
 #include <authum/null.h>
 #include <authum/path.h>
+#include <authum/ptr.h>
 #include <authum/size.h>
 
 #include <stdio.h>
@@ -234,6 +242,109 @@ authum_cfg_get_cstr(authum_cfg_t *self, const authum_char_t *key, authum_char_t 
     }
     (void)authum_cstr_copy(buf, buf_size, v);
     return authum_bool_true;
+}
+
+/**
+ * @brief Write @p key into *@p out only when present and parseable.
+ * @return ::authum_bool_true when @p out was updated.
+ */
+static inline authum_bool_t
+authum_cfg_apply_bool(authum_cfg_t *self, const authum_char_t *key, authum_bool_t *out)
+{
+    const authum_char_t *v;
+    authum_bool_t parsed;
+
+    if (authum_null_eq(out)) {
+        return authum_bool_false;
+    }
+    v = authum_cfg_get_value(self, key);
+    if (authum_null_eq(v) || !authum_cstr_parse_bool(v, &parsed)) {
+        return authum_bool_false;
+    }
+    *out = parsed;
+    return authum_bool_true;
+}
+
+static inline authum_bool_t
+authum_cfg_apply_i32(authum_cfg_t *self, const authum_char_t *key, authum_i32_t *out)
+{
+    const authum_char_t *v;
+    authum_i32_t parsed;
+
+    if (authum_null_eq(out)) {
+        return authum_bool_false;
+    }
+    v = authum_cfg_get_value(self, key);
+    if (authum_null_eq(v) || !authum_cstr_parse_i32(v, &parsed)) {
+        return authum_bool_false;
+    }
+    *out = parsed;
+    return authum_bool_true;
+}
+
+static inline authum_bool_t
+authum_cfg_apply_u32(authum_cfg_t *self, const authum_char_t *key, authum_u32_t *out)
+{
+    const authum_char_t *v;
+    authum_u32_t parsed;
+
+    if (authum_null_eq(out)) {
+        return authum_bool_false;
+    }
+    v = authum_cfg_get_value(self, key);
+    if (authum_null_eq(v) || !authum_cstr_parse_u32(v, &parsed)) {
+        return authum_bool_false;
+    }
+    *out = parsed;
+    return authum_bool_true;
+}
+
+static inline authum_bool_t
+authum_cfg_apply_cstr(authum_cfg_t *self, const authum_char_t *key, authum_char_t *buf,
+                      authum_usize_t buf_size)
+{
+    const authum_char_t *v;
+
+    v = authum_cfg_get_value(self, key);
+    if (authum_null_eq(v)) {
+        return authum_bool_false;
+    }
+    return authum_cstr_copy(buf, buf_size, v);
+}
+
+/** @brief Apply one binding; no-op when the key is missing. */
+static inline authum_bool_t
+authum_cfg_apply_item(authum_cfg_t *self, const authum_cfg_item_t *item)
+{
+    if (authum_null_eq(item) || authum_null_eq(item->ptr) || authum_null_eq(item->key)) {
+        return authum_bool_false;
+    }
+    switch (item->kind) {
+    case authum_cfg_kind_bool:
+        return authum_cfg_apply_bool(self, item->key, (authum_bool_t *)item->ptr);
+    case authum_cfg_kind_i32:
+        return authum_cfg_apply_i32(self, item->key, (authum_i32_t *)item->ptr);
+    case authum_cfg_kind_u32:
+        return authum_cfg_apply_u32(self, item->key, (authum_u32_t *)item->ptr);
+    case authum_cfg_kind_cstr:
+        return authum_cfg_apply_cstr(self, item->key, (authum_char_t *)item->ptr, item->size);
+    default:
+        return authum_bool_false;
+    }
+}
+
+/** @brief Apply every item in @p items (defaults stay if a key is absent). */
+static inline void
+authum_cfg_apply_items(authum_cfg_t *self, const authum_cfg_item_t *items, authum_usize_t count)
+{
+    authum_usize_t i;
+
+    if (authum_null_eq(items)) {
+        return;
+    }
+    for (i = 0u; i < count; ++i) {
+        (void)authum_cfg_apply_item(self, &items[i]);
+    }
 }
 
 #ifdef __cplusplus
