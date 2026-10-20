@@ -21,10 +21,10 @@ mod_start(authum_host_t *host)
     authum_logger_init(&g_log, host,
                        authum_logger_sink_host | authum_logger_sink_file,
                        "mymod");
-    authum_path_join(&path, authum_host_env_module(host), "mymod.log");
-    authum_logger_open_file(&g_log, authum_path_as_cstr(&path));
+    /* full = modules/mymod/mymod.log; session = modules/mymod/logs/mymod-….log */
+    authum_logger_open_module_file(&g_log, authum_logger_file_split_full, &path);
 
-    authum_logger_info(&g_log, "start");
+    authum_logger_info(&g_log, "start — %s", authum_path_as_cstr(&path));
     return authum_bool_true;
 }
 
@@ -41,6 +41,8 @@ mod_stop(void)
 | `authum_logger_level_*` | PSR-3 severity (emergency … debug), like lh |
 | `authum_logger_level_flags_*` | Which levels are emitted |
 | `authum_logger_sink_*` | Where lines go (bitmask) |
+| `authum_logger_file_split_*` | Private-file layout (`full` / `session`) |
+| `authum_logger_open_module_file` | Path under module dir + open |
 | `authum_logger_info` / `_error` / … | Shortcuts |
 
 ### Sinks (`LoggingMode`-compatible bits)
@@ -53,7 +55,15 @@ mod_stop(void)
 | 4 | `authum_logger_sink_host` | `host->log` → `authum.log` |
 
 Cfg integers such as qproto’s `LoggingMode` can be passed straight as the
-sink mask.
+sink mask. File layout strings (`full` / `session`) map through
+`authum_logger_file_split_parse`.
+
+| Split | Path |
+|-------|------|
+| `full` | `<module>/<tag>.log` (append) |
+| `session` | `<module>/logs/<tag>-YYYYMMDD-HHMMSS.log` (mkdir `logs/` once) |
+
+Raw path? Still use `authum_logger_open_file`.
 
 ---
 

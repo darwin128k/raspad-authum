@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `authum_logger_file_split_*` + `authum_logger_open_module_file` /
+  `build_module_path` / `ensure_dir` / `file_split_parse` — private log as one
+  append file (`full`) or per-start under `logs/` (`session`)
 - **Module ABI 0.3.0**: `authum_host_t` gains `sandbox`, `events` and
   `commands` (0.2 modules must be rebuilt)
 - `<authum/commands.h>` — module console / RCON commands routed through the one
