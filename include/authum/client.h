@@ -22,6 +22,7 @@
 #include <authum/events.h>
 #include <authum/export.h>
 #include <authum/host.h>
+#include <authum/json.h>
 #include <authum/logger.h>
 #include <authum/module/api.h>
 #include <authum/module/info.h>
