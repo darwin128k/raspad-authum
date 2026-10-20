@@ -4,21 +4,34 @@ Authum registers **one** engine command, `authum`. Every module command lives
 under it:
 
 ```
-authum                       loaded modules
+authum / list / status       loaded modules (RUNNING)
+authum info                  Authum version + how many modules
+authum info <module>         one module: version, path, commands yes/no
+authum load <module>         load from modules/<module>/
+authum unload <module>       stop + unload (temporary off — like meta unload)
+authum reload <module>       unload then load again
 authum help                  built-ins + every module command
-authum version               Authum version + module ABI
-authum <module>              that module's commands (same as `authum <module> help`)
-authum <module> <name> ...   run a module command
+authum version               Authum + module ABI
+authum <module> <name> ...   that module's own command
 ```
 
 Examples over RCON:
 
 ```
-rcon authum
+rcon authum status
+rcon authum info qproto
+rcon authum unload qproto          # off — authum qproto info disappears
+rcon authum load qproto            # on again — commands come back
+rcon authum reload qproto
 rcon authum qproto info
 rcon authum qproto info #12
-rcon authum qproto info "Some Player"
 ```
+
+`load` / `unload` / `reload` are why Authum is not “just Metamod with another name”:
+you can turn a module off without restarting the server or fighting AMXX for a
+command word. After `unload`, the module's event subscriptions and
+`authum <module> …` commands are gone; after `load` / `reload` they register
+again (Qproto included).
 
 The reply goes through the engine console (`pfnServerPrint`), which is what an
 RCON client receives.
