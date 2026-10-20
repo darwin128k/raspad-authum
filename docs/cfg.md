@@ -85,9 +85,9 @@ mymod_config_t g_mymod_config = {
 };
 
 static const authum_cfg_item_t g_mymod_config_items[] = {
-    { "EnableFoo", authum_cfg_kind_bool, &g_mymod_config.enable_foo, 0 },
-    { "LoggingMode", authum_cfg_kind_u32, &g_mymod_config.logging_sinks, 0 },
-    { "Greeting", authum_cfg_kind_cstr, g_mymod_config.greeting,
+    { "enable_foo", authum_cfg_kind_bool, &g_mymod_config.enable_foo, 0 },
+    { "logging_mode", authum_cfg_kind_u32, &g_mymod_config.logging_sinks, 0 },
+    { "greeting", authum_cfg_kind_cstr, g_mymod_config.greeting,
       sizeof g_mymod_config.greeting },
 };
 
@@ -133,10 +133,10 @@ Use when you need a value once with an explicit fallback, without mutating a
 long-lived struct:
 
 ```c
-authum_bool_t on = authum_cfg_get_bool(&cfg, "EnableFoo", authum_bool_true);
-authum_i32_t  n  = authum_cfg_get_i32(&cfg, "MaxPlayers", 32);
+authum_bool_t on = authum_cfg_get_bool(&cfg, "enable_foo", authum_bool_true);
+authum_i32_t  n  = authum_cfg_get_i32(&cfg, "max_players", 32);
 authum_char_t buf[64];
-authum_cfg_get_cstr(&cfg, "Name", buf, sizeof buf, "default");
+authum_cfg_get_cstr(&cfg, "name", buf, sizeof buf, "default");
 ```
 
 Prefer `apply_*` / the items table for normal module settings.
@@ -167,11 +167,11 @@ authum_i32_t cid;
 
 authum_cfg_apply_items(&cfg, items, count);
 
-if (authum_cfg_apply_cstr(&cfg, "EngineLayout", layout, sizeof layout))
+if (authum_cfg_apply_cstr(&cfg, "engine_layout", layout, sizeof layout))
     g.cfg.layout = mymod_parse_layout(layout); /* your mapper */
 
 cid = (authum_i32_t)g.cfg.cid_steam;
-if (authum_cfg_apply_i32(&cfg, "cid_Steam", &cid)) {
+if (authum_cfg_apply_i32(&cfg, "cid_steam", &cid)) {
     if (cid == ALLOWED_A || cid == ALLOWED_B)
         g.cfg.cid_steam = (mymod_cid_t)cid;
     /* else keep default — do not accept garbage */
@@ -179,8 +179,8 @@ if (authum_cfg_apply_i32(&cfg, "cid_Steam", &cid)) {
 ```
 
 Reference implementation: qproto’s `qproto_config_load` — bulk
-`qproto_config_items[]`, then hand-parsed `EngineLayout` and validated
-`cid_Steam`.
+`qproto_config_items[]`, then hand-parsed `engine_layout` and validated
+`cid_steam`.
 
 Do **not** put parsers in header `static inline` helpers just to “save a .c”:
 keep load logic in one `.c` so it stays debuggable.

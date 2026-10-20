@@ -45,7 +45,7 @@ mod_stop(void)
 | `authum_logger_open_module_file` | Path under module dir + open |
 | `authum_logger_info` / `_error` / … | Shortcuts |
 
-### Sinks (`LoggingMode`-compatible bits)
+### Sinks (`logging_mode`-compatible bits)
 
 | Bit | Symbol | Destination |
 |-----|--------|-------------|
@@ -54,7 +54,7 @@ mod_stop(void)
 | 2 | `authum_logger_sink_file` | Private file from `authum_logger_open_file` |
 | 4 | `authum_logger_sink_host` | `host->log` → `authum.log` |
 
-Cfg integers such as qproto’s `LoggingMode` can be passed straight as the
+Cfg integers such as qproto’s `logging_mode` can be passed straight as the
 sink mask. File layout strings (`full` / `session`) map through
 `authum_logger_file_split_parse`.
 

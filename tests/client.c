@@ -74,23 +74,24 @@ struct test_cfg
 void
 test_cfg(void)
 {
-    struct test_cfg c = { authum_bool_false, 5, 1u, "default" };
+    struct test_cfg c = {authum_bool_false, 5, 1u, "default"};
     const authum_cfg_item_t items[] = {
-        { "Enable", authum_cfg_kind_bool, &c.enable, 0 },
-        { "Level", authum_cfg_kind_i32, &c.level, 0 },
-        { "Mask", authum_cfg_kind_u32, &c.mask, 0 },
-        { "Text", authum_cfg_kind_cstr, c.text, sizeof c.text },
+        {"enable", authum_cfg_kind_bool, &c.enable, 0},
+        {"level", authum_cfg_kind_i32, &c.level, 0},
+        {"mask", authum_cfg_kind_u32, &c.mask, 0},
+        {"text", authum_cfg_kind_cstr, c.text, sizeof c.text},
     };
     authum_cfg_t cfg;
     authum_char_t buf[32];
     FILE *f = tmpfile();
 
     CHECK(f != authum_null);
-    if (f == authum_null) {
+    if (f == authum_null)
+    {
         return;
     }
-    fputs("# comment\n; also comment\n\n  enable = yes \nLevel=not-a-number\n"
-          "Text = a=b=c\nExtra = 12\n",
+    fputs("# comment\n; also comment\n\n  enable = yes \nlevel=not-a-number\n"
+          "text = a=b=c\nextra = 12\n",
           f);
     rewind(f);
     CHECK(authum_cfg_adopt(&cfg, f));

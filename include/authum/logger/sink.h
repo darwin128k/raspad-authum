@@ -2,7 +2,7 @@
  * @file sink.h
  * @brief Where ::authum_logger_t writes (module-side bricks).
  *
- * Bit values match the common `LoggingMode` cfg convention (1/2/4) so modules
+ * Bit values match the common `logging_mode` cfg convention (1/2/4) so modules
  * can pass that integer straight into ::authum_logger_init.
  */
 
