@@ -19,10 +19,12 @@
 #include <authum/char.h>
 #include <authum/engine.h>
 #include <authum/host.h>
+#include <authum/logger/file/split.h>
 #include <authum/logger/level.h>
 #include <authum/logger/level/flags.h>
 #include <authum/logger/sink.h>
 #include <authum/null.h>
+#include <authum/path.h>
 #include <authum/ptr.h>
 #include <authum/size.h>
 
@@ -71,6 +73,30 @@ authum_logger_set_sinks(authum_logger_t *self, authum_logger_sink_t sinks);
  */
 authum_bool_t
 authum_logger_open_file(authum_logger_t *self, const authum_char_t *path);
+
+/**
+ * @brief Create @p dir if missing (one level). Idempotent when it already exists.
+ */
+authum_bool_t
+authum_logger_ensure_dir(const authum_char_t *dir);
+
+/**
+ * @brief Build a private log path under ::authum_host_env_module.
+ *
+ * @p tag is the file stem (`qproto` → `qproto.log` / `logs/qproto-….log`).
+ * Empty/null @p tag falls back to `"module"`.
+ */
+authum_bool_t
+authum_logger_build_module_path(const authum_host_t *host, const authum_char_t *tag,
+				authum_logger_file_split_t split, authum_path_t *out);
+
+/**
+ * @brief Open a private file via ::authum_logger_build_module_path using
+ *        @c self->host and @c self->tag. Optional @p out receives the path.
+ */
+authum_bool_t
+authum_logger_open_module_file(authum_logger_t *self, authum_logger_file_split_t split,
+			       authum_path_t *out);
 
 void
 authum_logger_close(authum_logger_t *self);
