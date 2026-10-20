@@ -14,7 +14,7 @@ on the Authum surface. Sample: [`examples/hello`](../examples/hello/).
 | snake_case | Functions, types, fields, globals, enum constants |
 | No lh in pure clients | `#include <authum/client.h>` only; never `<lh/…>` unless escape hatch |
 | Includes | Only `#include <…>` — never `"qproto/foo.h"` / `"bridge.h"` |
-| Authum types | Paths → `authum_path_t`; cfg → `authum_cfg_get_bool(cfg, key, default)` / `_get_i32` / `_get_u32` / `_get_cstr`; no raw `atoi`/`strncpy`/`strcasecmp` |
+| Authum types | Paths → `authum_path_t`; cfg → defaults on the struct + `authum_cfg_apply_items` (or manual `get_*` / `apply_*`); no raw `atoi`/`strncpy`/`strcasecmp` |
 | Host access | Never `host->engine` / `host->env` / … — only `authum_host_*` getters/setters |
 
 Config *file* keys may keep historical spellings (`EnableRevEmu`, …).
