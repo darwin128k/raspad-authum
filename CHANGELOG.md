@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `<authum/path.h>` — `authum_path_t` (fixed capacity), join / parent / as_cstr
 - `<authum/cfg.h>` — flat `key = value`; `authum_cfg_get_bool` / `_get_i32` /
   `_get_u32` / `_get_cstr` with caller defaults on miss/parse fail
-- `<authum/cstr.h>` — copy / eq_ignore_case / parse bool·i32·u32
+- `<authum/cstr.h>` — copy / `authum_cstr_eq(..., ignore_case)` / parse bool·i32·u32
 - `authum_host_t.module_dir` — deprecated C string of `env->module`
 - Architecture doc: host facade (B) + optional private deps
 
