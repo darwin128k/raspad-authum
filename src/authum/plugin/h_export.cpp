@@ -1,10 +1,18 @@
-#include <authum/engine.h>
-
 #include <extdll.h>
 #include <h_export.h>
 
 #include <lh/memory.h>
 #include <lh/util/addr.h>
+
+#ifndef AUTHUM_MODULE_EXPORT
+#    if defined(_WIN32) || defined(__CYGWIN__)
+#        define AUTHUM_MODULE_EXPORT __declspec(dllexport)
+#    elif defined(__GNUC__)
+#        define AUTHUM_MODULE_EXPORT __attribute__((visibility("default")))
+#    else
+#        define AUTHUM_MODULE_EXPORT
+#    endif
+#endif
 
 enginefuncs_t g_engfuncs;
 globalvars_t *gpGlobals;

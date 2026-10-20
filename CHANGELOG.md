@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `authum_module_info` uses Authum `authum_version_t` / `date` string (not lh types)
 - Child load prefers `authum_module_api`; legacy `authum_module_ops` still accepted
 
+### Added
+
+- `authum/crypto/` — lh-shaped Rijndael + SHA facade for modules (`host->crypto` ops; not every lh symbol)
+- `authum/engine.h` — engfuncs subset for modules (`host->engine`: game dir / print / command; no HLSDK)
+
 ### Removed
 
 - In-tree qproto packaging (`src/modules/qproto`); qproto stays a separate project
