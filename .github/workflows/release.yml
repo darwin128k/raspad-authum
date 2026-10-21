@@ -88,10 +88,10 @@ jobs:
           TAG="${{ steps.tag.outputs.name }}"
           NOTES=$(mktemp)
           python3 scripts/release_notes.py --tag "$TAG" \
-            --package "Download **`authum-linux32-metamod.zip`** and unpack into the game dir → `addons/authum/`." \
+            --package "Download **\`authum-linux32-metamod.zip\`** and unpack into the game dir → \`addons/authum/\`." \
             --highlight "Metamod host for classic HLDS (i386) — authum_mm.so + modules.list" \
             --highlight "Module ABI 0.3: sandbox, events, console commands" \
-            --highlight "SQL / JSON helpers for modules"
+            --highlight "SQL / JSON helpers for modules" \
             > "$NOTES"
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" --title "$TAG" --notes-file "$NOTES"
