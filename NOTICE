@@ -22,5 +22,3 @@ cJSON contributors), MIT License — see lib/cjson/cJSON.h.
 This product includes SQLite (https://www.sqlite.org/), public domain
 amalgamation — see lib/sqlite / third_party/sqlite.
 
-Optional MySQL/MariaDB support loads the system client library at runtime
-(dlopen); that library is not distributed with Authum.
