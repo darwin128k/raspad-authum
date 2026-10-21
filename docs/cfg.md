@@ -80,7 +80,7 @@ typedef struct mymod_config mymod_config_t;
 
 mymod_config_t g_mymod_config = {
     .enable_foo = authum_bool_true,
-    .logging_sinks = 2u,
+    .logging_sinks = 4u, /* authum.log (host); 2 = private file, 6 = both */
     .greeting = "hello",
 };
 
