@@ -7,8 +7,13 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Existing tag to attach the .so to (e.g. v1.0.0)'
+        description: 'Release tag to create/update (e.g. v2.0.0)'
         required: true
+        type: string
+      ref:
+        description: 'Git ref to build (branch or SHA)'
+        required: true
+        default: master
         type: string
 
 permissions:
@@ -16,18 +21,17 @@ permissions:
 
 jobs:
   linux32:
-    name: Build and publish Linux .so
+    name: Build and publish Metamod zip
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref }}
 
       - name: Metamod-P + HLSDK
         run: |
-          # Same pin as local lib/metamod-p (FORCE_STACK_ALIGN lives here; p37 lacks it).
           git clone --depth 1 --branch v1.21p109 \
             https://github.com/Bots-United/metamod-p.git lib/metamod-p
 
@@ -36,7 +40,7 @@ jobs:
           sudo dpkg --add-architecture i386
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            gcc-multilib g++-multilib cmake ninja-build \
+            gcc-multilib g++-multilib cmake ninja-build zip \
             libc6-dev:i386 libstdc++-12-dev:i386
 
       - name: Configure
@@ -46,7 +50,27 @@ jobs:
             -DAUTHUM_LH_LINK_MODE=needed
 
       - name: Build
-        run: cmake --build build --target authum -j"$(nproc)"
+        run: cmake --build build --target authum_mm.so -j"$(nproc)"
+
+      - name: Pack Metamod layout
+        run: |
+          strip --strip-unneeded build/authum_mm.so
+          rm -rf dist && mkdir -p dist/addons/authum
+          cp build/authum_mm.so dist/addons/authum/authum_mm.so
+          cp deploy/modules.list dist/addons/authum/modules.list
+          cat > dist/addons/authum/INSTALL.txt <<'EOF'
+          Unpack into the game dir (cstrike/ or mod root) so you get:
+
+            addons/authum/authum_mm.so
+            addons/authum/modules.list
+
+          In addons/metamod/plugins.ini add:
+            linux addons/authum/authum_mm.so
+
+          Drop Authum modules under addons/authum/modules/<name>/ and list them in modules.list.
+          EOF
+          sed -i 's/^          //' dist/addons/authum/INSTALL.txt
+          (cd dist && zip -r ../authum-linux32-metamod.zip addons)
 
       - name: Resolve tag
         id: tag
@@ -63,5 +87,5 @@ jobs:
         run: |
           TAG="${{ steps.tag.outputs.name }}"
           gh release view "$TAG" >/dev/null 2>&1 || \
-            gh release create "$TAG" --title "$TAG" --notes "Authum $TAG (Linux i386 Metamod host)."
-          gh release upload "$TAG" build/authum_mm.so --clobber
+            gh release create "$TAG" --title "$TAG" --notes "Authum $TAG — Linux i386 Metamod package (zip: addons/authum/)."
+          gh release upload "$TAG" authum-linux32-metamod.zip --clobber
