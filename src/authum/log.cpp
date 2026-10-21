@@ -28,7 +28,8 @@ extern plugin_info_t Plugin_info;
 extern meta_globals_t *gpMetaGlobals;
 extern mutil_funcs_t *gpMetaUtilFuncs;
 
-namespace {
+namespace
+{
 
 FILE *g_file = nullptr;
 
@@ -196,7 +197,7 @@ authum_log_error(const char *fmt, ...)
 }
 
 void
-authum_host_log(int is_error, const char *line)
+authum_host_log(int is_error, const authum_char_t *line)
 {
     if (line == nullptr)
     {

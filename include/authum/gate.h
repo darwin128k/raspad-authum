@@ -28,12 +28,14 @@ LH_COMPILER_EXTERN_C_BEGIN
  *
  * @return ::lh_bool_true on success (including “not yet hooked”).
  */
-lh_bool_t authum_gate_init(void);
+lh_bool_t
+authum_gate_init(void);
 
 /**
  * @brief Remove the connect gate (Meta_Detach / unload).
  */
-void authum_gate_deinit(void);
+void
+authum_gate_deinit(void);
 
 LH_COMPILER_EXTERN_C_END
 

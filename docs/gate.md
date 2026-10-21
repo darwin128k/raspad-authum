@@ -1,7 +1,8 @@
 # Authum connect gate
 
 Product version **1.0.0** adds a connect gate to the host. The loader stays
-inside Authum; auth (and later 2D/3D) are modules under it.
+inside Authum; auth (and later 2D/3D) are **separate** modules dropped under
+`modules/` — Authum does not ship or compile them.
 
 ## Idea
 
@@ -19,30 +20,25 @@ inside Authum; auth (and later 2D/3D) are modules under it.
 |--------|------|
 | `0.1.0` | Freeze: loader + `modules.list` only |
 | `1.0.0` | Gate host + `modules.list` / `authum.log` (auth module ships separately) |
-| `master` | Mainline (merge from version branches when ready) |
+| `2.0.0` | Mainline host work after 1.0.0 |
 
-Reference freeze of the standalone plugin: **qproto `1.0.0`** /
-`v1.0.0` on [raspad-qproto](https://github.com/darwin128k/raspad-qproto).
+Auth modules (e.g. [raspad-qproto](https://github.com/darwin128k/raspad-qproto))
+are built and versioned in their own repos.
 
 ## Module ABI
 
-`AUTHUM_MODULE_ABI` stays `0.1.0` until authorizer registration is part of
-the exported module contract. Until then the host may grow a C API that
-children bind from the Authum image during `start`.
+See `AUTHUM_MODULE_ABI` / [`writing-a-module.md`](writing-a-module.md). Host
+fills `authum_host_t` and calls `authum_module_api.start`.
 
-## Status
-
-Host gate init is wired; **auth lives in the qproto Authum module**:
+## Layout
 
 ```
 addons/authum/
   authum_mm.so
-  modules.list                # qproto
-  modules/qproto/
-    qproto.so
-    qproto.cfg
-    qproto_bans.cfg
-    qproto.log                # created at runtime
+  modules.list          # one folder name per line
+  modules/
+    <name>/
+      <name>.so         # drop-in from that module’s project
 ```
 
 Console: `authum` lists modules. Server log shows `module OK` / `module FAIL`.

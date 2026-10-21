@@ -33,7 +33,7 @@ enum
     authum_loader_read_chunk = 4096
 };
 
-static lh_bool_t
+lh_bool_t
 authum_loader_is_shared_name(const lh_str_view_t *name)
 {
     lh_str_view_t ext;
@@ -46,7 +46,7 @@ authum_loader_is_shared_name(const lh_str_view_t *name)
     return lh_str_view_ends_with(name, lh_addr_of(ext), lh_bool_true);
 }
 
-static lh_bool_t
+lh_bool_t
 authum_loader_is_host_image(const lh_fs_path_t *path)
 {
     lh_str_view_t ext;
@@ -79,7 +79,7 @@ authum_loader_is_host_image(const lh_fs_path_t *path)
                                                     lh_str_view_get_size(lh_addr_of(ext))));
 }
 
-static lh_bool_t
+lh_bool_t
 authum_loader_path_is_file(const lh_fs_path_t *path)
 {
     lh_fs_stat_t st;
@@ -92,7 +92,7 @@ authum_loader_path_is_file(const lh_fs_path_t *path)
                           lh_math_eq(lh_fs_stat_get_kind(lh_addr_of(st)), lh_fs_kind_file));
 }
 
-static lh_bool_t
+lh_bool_t
 authum_loader_path_is_dir(const lh_fs_path_t *path)
 {
     lh_fs_stat_t st;
@@ -105,16 +105,16 @@ authum_loader_path_is_dir(const lh_fs_path_t *path)
                           lh_math_eq(lh_fs_stat_get_kind(lh_addr_of(st)), lh_fs_kind_dir));
 }
 
-static lh_bool_t authum_loader_ensure_shared_ext(lh_fs_path_t *path);
+lh_bool_t
+authum_loader_ensure_shared_ext(lh_fs_path_t *path);
 
 /*
  * Resolve an ini entry to a shared image path.
  * Prefer a package folder: modules/qproto/ → modules/qproto/qproto.so|.dll
  * Else a bare file (optional extension appended for this OS).
  */
-static lh_bool_t
-authum_loader_resolve_image(const lh_fs_path_t *base, const lh_fs_path_t *entry,
-                            lh_fs_path_t *out)
+lh_bool_t
+authum_loader_resolve_image(const lh_fs_path_t *base, const lh_fs_path_t *entry, lh_fs_path_t *out)
 {
     lh_fs_path_t candidate;
     lh_fs_path_t leaf;
@@ -202,7 +202,7 @@ authum_loader_resolve_image(const lh_fs_path_t *base, const lh_fs_path_t *entry,
     return lh_bool_true;
 }
 
-static void
+void
 authum_loader_log_attempt(const lh_fs_path_t *path, lh_bool_t ok)
 {
     lh_str_t scratch;
@@ -223,7 +223,7 @@ authum_loader_log_attempt(const lh_fs_path_t *path, lh_bool_t ok)
     lh_str_deinit(lh_addr_of(scratch));
 }
 
-static lh_bool_t
+lh_bool_t
 authum_loader_load_logged(authum_module_t *self, const lh_fs_path_t *path)
 {
     lh_bool_t ok;
@@ -233,7 +233,7 @@ authum_loader_load_logged(authum_module_t *self, const lh_fs_path_t *path)
     return ok;
 }
 
-static lh_bool_t
+lh_bool_t
 authum_loader_section_applies(const lh_str_view_t *section, const lh_str_view_t *os_section)
 {
     lh_str_view_t modules;
@@ -257,7 +257,7 @@ authum_loader_section_applies(const lh_str_view_t *section, const lh_str_view_t 
     return lh_bool_false;
 }
 
-static lh_bool_t
+lh_bool_t
 authum_loader_path_has_shared_ext(const lh_fs_path_t *path)
 {
     lh_str_view_t part;
@@ -275,7 +275,7 @@ authum_loader_path_has_shared_ext(const lh_fs_path_t *path)
 }
 
 /* If the path has no native shared suffix (.so / .dll / …), append it. */
-static lh_bool_t
+lh_bool_t
 authum_loader_ensure_shared_ext(lh_fs_path_t *path)
 {
     lh_fs_path_style_t style;
@@ -299,7 +299,7 @@ authum_loader_ensure_shared_ext(lh_fs_path_t *path)
     return lh_bool_true;
 }
 
-static lh_bool_t
+lh_bool_t
 authum_loader_modules_dir(const authum_module_t *self, lh_fs_path_t *out)
 {
     const lh_fs_path_t *image;
@@ -322,7 +322,7 @@ authum_loader_modules_dir(const authum_module_t *self, lh_fs_path_t *out)
     return ok;
 }
 
-static lh_bool_t
+lh_bool_t
 authum_loader_read_file(const lh_fs_path_t *path, lh_str_t *out)
 {
     lh_char_t buf[authum_loader_read_chunk];
@@ -353,7 +353,7 @@ authum_loader_read_file(const lh_fs_path_t *path, lh_str_t *out)
     return lh_bool_true;
 }
 
-static lh_bool_t
+lh_bool_t
 authum_loader_scan(authum_module_t *self, const lh_fs_path_t *dir, const lh_fs_path_t *skip)
 {
     lh_os_fs_dir_entry_kind_t kind;
@@ -478,18 +478,18 @@ authum_loader_load_dir(authum_module_t *self, const lh_fs_path_t *dir)
 /* Whole-line comments in modules.list. */
 static const lh_char_t authum_loader_list_comments[] = {lh_char_map_semicolon, lh_char_map_hash};
 
-static lh_bool_t
+lh_bool_t
 authum_loader_list_is_skipped(const lh_str_view_t *line)
 {
-    return lh_cast_static(lh_bool_t,
-                          lh_str_view_is_empty(line) ||
-                              lh_str_ptr_contains_char(authum_loader_list_comments,
-                                                       lh_array_ptr_get_size(authum_loader_list_comments),
-                                                       lh_str_view_get_first_char(line)));
+    return lh_cast_static(
+        lh_bool_t, lh_str_view_is_empty(line) ||
+                       lh_str_ptr_contains_char(authum_loader_list_comments,
+                                                lh_array_ptr_get_size(authum_loader_list_comments),
+                                                lh_str_view_get_first_char(line)));
 }
 
 /* `[name]` → write trimmed name into @p section. False = bad header. */
-static lh_bool_t
+lh_bool_t
 authum_loader_list_read_section(const lh_str_view_t *line, lh_str_view_t *section)
 {
     const lh_usize_t size = lh_str_view_get_size(line);
@@ -514,7 +514,7 @@ authum_loader_list_read_section(const lh_str_view_t *line, lh_str_view_t *sectio
     return lh_bool_true;
 }
 
-static void
+void
 authum_loader_list_load_path(authum_module_t *self, const lh_fs_path_t *modules,
                              lh_bool_t have_modules, const lh_str_view_t *path_text,
                              lh_fs_path_t *item, lh_fs_path_t *full)
@@ -533,8 +533,7 @@ authum_loader_list_load_path(authum_module_t *self, const lh_fs_path_t *modules,
     if (!have_modules)
     {
         authum_log_error("modules.list entry skipped (no modules/ beside image): %.*s",
-                         (int)lh_str_view_get_size(path_text),
-                         lh_str_view_get_data(path_text));
+                         (int)lh_str_view_get_size(path_text), lh_str_view_get_data(path_text));
         return;
     }
     if (!authum_loader_resolve_image(modules, item, full))
@@ -770,4 +769,143 @@ authum_loader_get(authum_module_t *self, lh_uindex_t index)
         return lh_null;
     }
     return lh_os_loader_get_at(loader, index);
+}
+
+authum_module_t *
+authum_loader_find(authum_module_t *self, const char *name)
+{
+    authum_module_t *child;
+    const authum_module_info_t *info;
+    lh_str_view_t want;
+    lh_str_view_t have;
+
+    if (lh_null_eq(name) || name[0] == '\0')
+    {
+        return lh_null;
+    }
+    want = lh_initializer_of(lh_str_view_t, lh_str_view_initializer, name, lh_str_ptr_len(name));
+    for (child = authum_loader_get_first(self); lh_null_ne(child);
+         child = authum_loader_get_next(self, child))
+    {
+        info = authum_module_get_info(child);
+        if (lh_null_eq(info) || lh_null_eq(info->name))
+        {
+            continue;
+        }
+        have = lh_initializer_of(lh_str_view_t, lh_str_view_initializer, info->name,
+                                 lh_str_ptr_len(info->name));
+        if (lh_str_view_equals(lh_addr_of(have), lh_addr_of(want), lh_bool_true))
+        {
+            return child;
+        }
+    }
+    return lh_null;
+}
+
+lh_bool_t
+authum_loader_resolve_name(authum_module_t *self, const char *name, lh_fs_path_t *out)
+{
+    lh_fs_path_t modules;
+    lh_fs_path_t entry;
+    lh_str_view_t name_view;
+    lh_bool_t ok;
+
+    if (lh_null_eq(name) || name[0] == '\0' || lh_null_eq(out))
+    {
+        return lh_bool_false;
+    }
+    lh_fs_path_init(lh_addr_of(modules));
+    lh_fs_path_init(lh_addr_of(entry));
+    if (!authum_loader_modules_dir(self, lh_addr_of(modules)))
+    {
+        lh_fs_path_deinit(lh_addr_of(modules));
+        lh_fs_path_deinit(lh_addr_of(entry));
+        lh_os_set_last_error_lit(lh_os_error_code_path_empty, "no modules/ beside authum_mm");
+        return lh_bool_false;
+    }
+    name_view =
+        lh_initializer_of(lh_str_view_t, lh_str_view_initializer, name, lh_str_ptr_len(name));
+    lh_fs_path_set(lh_addr_of(entry), name_view, lh_os_system_fs_path_style_native());
+    ok = authum_loader_resolve_image(lh_addr_of(modules), lh_addr_of(entry), out);
+    lh_fs_path_deinit(lh_addr_of(modules));
+    lh_fs_path_deinit(lh_addr_of(entry));
+    if (!ok)
+    {
+        lh_os_set_last_error_lit(lh_os_error_code_path_empty,
+                                 "module image not found under modules/");
+    }
+    return ok;
+}
+
+lh_bool_t
+authum_loader_load_name(authum_module_t *self, const char *name)
+{
+    lh_fs_path_t path;
+    lh_bool_t ok;
+
+    if (lh_null_ne(authum_loader_find(self, name)))
+    {
+        lh_os_set_last_error_lit(lh_os_error_code_already_open, "module already loaded");
+        return lh_bool_false;
+    }
+    lh_fs_path_init(lh_addr_of(path));
+    if (!authum_loader_resolve_name(self, name, lh_addr_of(path)))
+    {
+        lh_fs_path_deinit(lh_addr_of(path));
+        return lh_bool_false;
+    }
+    ok = authum_loader_load_logged(self, lh_addr_of(path));
+    lh_fs_path_deinit(lh_addr_of(path));
+    return ok;
+}
+
+lh_bool_t
+authum_loader_unload_name(authum_module_t *self, const char *name)
+{
+    lh_os_loader_t *loader;
+    authum_module_t *child;
+
+    loader = lh_os_module_get_loader(self);
+    child = authum_loader_find(self, name);
+    if (lh_null_eq(loader) || lh_null_eq(child))
+    {
+        lh_os_set_last_error_lit(lh_os_error_code_not_open, "module not loaded");
+        return lh_bool_false;
+    }
+    lh_os_loader_unload_child(loader, child);
+    return lh_bool_true;
+}
+
+lh_bool_t
+authum_loader_reload_name(authum_module_t *self, const char *name)
+{
+    authum_module_t *child;
+    lh_fs_path_t path;
+    const lh_fs_path_t *image;
+    lh_bool_t ok;
+
+    child = authum_loader_find(self, name);
+    lh_fs_path_init(lh_addr_of(path));
+    if (lh_null_ne(child))
+    {
+        image = lh_os_module_get_path_as_const(child);
+        if (lh_null_ne(image) && !lh_fs_path_is_empty(image))
+        {
+            lh_fs_path_assign(lh_addr_of(path), image);
+        }
+        if (!authum_loader_unload_name(self, name))
+        {
+            lh_fs_path_deinit(lh_addr_of(path));
+            return lh_bool_false;
+        }
+    }
+    if (lh_fs_path_is_empty(lh_addr_of(path)) &&
+        !authum_loader_resolve_name(self, name, lh_addr_of(path)))
+    {
+        lh_fs_path_deinit(lh_addr_of(path));
+        return lh_bool_false;
+    }
+    ok = authum_loader_load_logged(self, lh_addr_of(path));
+    lh_fs_path_deinit(lh_addr_of(path));
+    return ok;
 }

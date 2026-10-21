@@ -2,17 +2,36 @@
  * @file client.h
  * @brief Umbrella for Authum **client modules** (no lh headers).
  *
- * Include this from your module `.c` / `.cpp`. Link only your code — not liblh.
+ * Include this from your module `.c` and link `authum_client` — not liblh.
  */
 
 #ifndef AUTHUM_CLIENT_H
 #define AUTHUM_CLIENT_H
 
+#include <authum/array.h>
 #include <authum/bool.h>
+#include <authum/byte.h>
+#include <authum/cfg.h>
+#include <authum/char.h>
+#include <authum/command.h>
+#include <authum/command/def.h>
+#include <authum/commands.h>
+#include <authum/cstr.h>
+#include <authum/env.h>
+#include <authum/event/client.h>
+#include <authum/events.h>
 #include <authum/export.h>
 #include <authum/host.h>
+#include <authum/json.h>
+#include <authum/logger.h>
 #include <authum/module/api.h>
 #include <authum/module/info.h>
+#include <authum/null.h>
+#include <authum/path.h>
+#include <authum/ptr.h>
+#include <authum/sandbox.h>
+#include <authum/size.h>
+#include <authum/sql.h>
 #include <authum/version.h>
 
 #endif /* AUTHUM_CLIENT_H */

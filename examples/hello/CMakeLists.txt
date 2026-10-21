@@ -1,13 +1,11 @@
-# Client module: Authum headers only — does NOT link lh.
+# Client module: Authum API via authum_client — does NOT link lh.
 add_library(hello MODULE hello.c)
 set_target_properties(hello PROPERTIES
         PREFIX ""
         OUTPUT_NAME "hello"
 )
 
-target_include_directories(hello PRIVATE
-        "${CMAKE_SOURCE_DIR}/include"
-)
+target_link_libraries(hello PRIVATE authum_client)
 
 if (WIN32)
     target_compile_definitions(hello PRIVATE WIN32 _WINDOWS)
