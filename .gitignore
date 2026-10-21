@@ -86,3 +86,8 @@ $RECYCLE.BIN/
 .clangd/
 .claude/
 *.log
+
+# Generated API HTML (Doxygen → authum_api_docs)
+docs/api/html/
+docs/api/xml/
+docs/api/latex/

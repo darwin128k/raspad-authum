@@ -171,3 +171,9 @@ if (AUTHUM_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif ()
+
+# Browsable module API (Doxygen → docs/api/html), like amxmodx.org/api.
+option(AUTHUM_BUILD_API_DOCS "Generate Authum API HTML from include/authum" ON)
+if (AUTHUM_BUILD_API_DOCS)
+    add_subdirectory(docs/api)
+endif ()
