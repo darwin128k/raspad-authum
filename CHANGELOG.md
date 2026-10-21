@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `<authum/json.h>` — flat JSON object getters (`get_cstr` / `get_i32`) for API
   payloads; no full DOM
 - `<authum/sql.h>` — module SQL brick (vendored SQLite amalgamation in
-  `third_party/sqlite`, `authum_sql_open_sqlite` / prepare / bind / step). Modules
+  `lib/sqlite`, `authum_sql_open_sqlite` / prepare / bind / step). Modules
   never include `sqlite3.h`. MySQL driver enum reserved.
 - `authum_logger_file_split_*` + `authum_logger_open_module_file` /
   `build_module_path` / `ensure_dir` / `file_split_parse` — private log as one
