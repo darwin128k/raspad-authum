@@ -86,31 +86,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ steps.tag.outputs.name }}"
-          NOTES_FILE=$(mktemp)
-          {
-            echo "## Package"
-            echo
-            echo "Linux i386 Metamod host package (`authum-linux32-metamod.zip` → `addons/authum/`)."
-            echo
-            if [ -f CHANGELOG.md ]; then
-              echo "## Changelog"
-              echo
-              awk '/^## / { if (seen++) exit; } seen { print }' CHANGELOG.md
-              echo
-            fi
-          } > "$NOTES_FILE"
+          NOTES=$(mktemp)
+          python3 scripts/release_notes.py --tag "$TAG" \
+            --package "Download **`authum-linux32-metamod.zip`** and unpack into the game dir → `addons/authum/`." \
+            --highlight "Metamod host for classic HLDS (i386) — authum_mm.so + modules.list" \
+            --highlight "Module ABI 0.3: sandbox, events, console commands" \
+            --highlight "SQL / JSON helpers for modules"
+            > "$NOTES"
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --title "$TAG" --notes-file "$NOTES_FILE" --generate-notes
+            gh release create "$TAG" --title "$TAG" --notes-file "$NOTES"
           else
-            gen=$(mktemp)
-            gh api "repos/${{ github.repository }}/releases/generate-notes" \
-              -f tag_name="$TAG" -f target_commitish="${{ github.sha }}" \
-              --jq .body > "$gen" || true
-            {
-              cat "$NOTES_FILE"
-              echo
-              if [ -s "$gen" ]; then cat "$gen"; fi
-            } > "$NOTES_FILE.full"
-            gh release edit "$TAG" --notes-file "$NOTES_FILE.full"
+            gh release edit "$TAG" --notes-file "$NOTES"
           fi
           gh release upload "$TAG" authum-linux32-metamod.zip --clobber
