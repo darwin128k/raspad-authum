@@ -13,7 +13,7 @@ authum_module_t authum;
 const authum_module_info_t *
 authum_child_peek_info(const void *data);
 
-static lh_bool_t
+lh_bool_t
 authum_module_take_info(authum_module_t *self)
 {
     const authum_module_info_t *info;

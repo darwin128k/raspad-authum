@@ -1,110 +1,101 @@
 # Logging
 
-Goal: a module developer does not care whether the process is “Metamod →
-Authum → module” or anything else. They emit records; the **host**
-chooses sinks.
+Modules use Authum’s **standard logger** (`<authum/logger.h>`), shaped like
+lh’s levels. Want a custom setup? Write it from scratch, or reuse the same
+**bricks** (host channel, engine console, private `FILE *`).
 
 ---
 
-## 1. Today (Authum 1.0.0 line)
+## 1. Standard logger (preferred)
+
+```c
+#include <authum/client.h>
+
+static authum_logger_t g_log;
+
+static authum_bool_t
+mod_start(authum_host_t *host)
+{
+    authum_path_t path;
+
+    /* Default: host only → authum.log. Add sink_file only if you want a private .log. */
+    authum_logger_init(&g_log, host, authum_logger_sink_host, "mymod");
+    authum_logger_info(&g_log, "start");
+    return authum_bool_true;
+}
+
+static void
+mod_stop(void)
+{
+    authum_logger_info(&g_log, "stop");
+    authum_logger_close(&g_log);
+}
+```
+
+| Piece | Role |
+|-------|------|
+| `authum_logger_level_*` | PSR-3 severity (emergency … debug), like lh |
+| `authum_logger_level_flags_*` | Which levels are emitted |
+| `authum_logger_sink_*` | Where lines go (bitmask) |
+| `authum_logger_file_split_*` | Private-file layout (`full` / `session`) |
+| `authum_logger_open_module_file` | Path under module dir + open |
+| `authum_logger_info` / `_error` / … | Shortcuts |
+
+### Sinks (`logging_mode`-compatible bits)
+
+| Bit | Symbol | Destination |
+|-----|--------|-------------|
+| 0 | `authum_logger_sink_none` | Drop |
+| 1 | `authum_logger_sink_console` | `host->engine` → server print |
+| 2 | `authum_logger_sink_file` | Private file from `authum_logger_open_file` |
+| 4 | `authum_logger_sink_host` | `host->log` → `authum.log` |
+
+Cfg integers such as qproto’s `logging_mode` can be passed straight as the
+sink mask. File layout strings (`full` / `session`) map through
+`authum_logger_file_split_parse`.
+
+| Split | Path |
+|-------|------|
+| `full` | `<module>/<tag>.log` (append) |
+| `session` | `<module>/logs/<tag>-YYYYMMDD-HHMMSS.log` (mkdir `logs/` once) |
+
+Raw path? Still use `authum_logger_open_file`.
+
+---
+
+## 2. Bricks (DIY)
+
+| Brick | How |
+|-------|-----|
+| Host / `authum.log` | `authum_host_log_line(host, is_error, line)` or `host->log` |
+| Console | `authum_engine_server_print(host->engine, text)` |
+| Private file | `fopen` / `fprintf` yourself |
+
+Do **not** open `authum.log` from a module. Do **not** assume
+`lh_runtime_logger()` in a child `.so` is the host log (escape-hatch lh
+has its own instance).
+
+---
+
+## 3. Host side (today)
 
 | Channel | Where |
 |---------|--------|
-| Host | `addons/authum/authum.log` via `lh_runtime_logger` + Metamod `LOG_*` mirror |
-| qproto (Authum package) | `modules/qproto/qproto.log` + lines mirrored to host through `authum_host_log` |
-
-Policy: [architecture.md](architecture.md). Pure clients (ABI 0.2) get
-`authum_host_t` in `start` and call `authum_host_log_line` — no lh.
-If a module optionally links its own lh, `lh_runtime_logger()` there is
-still **not** `authum.log`.
-
-There is **no** `logs/` directory yet; files sit next to the image.
+| Host | `addons/authum/authum.log` via lh + Metamod mirror |
+| Modules | `authum_logger` → sinks above |
 
 ---
 
-## 2. Target policy (Authum / qproto 2.0 direction)
+## 4. Future host policy (unchanged intent)
 
-### 2.1 One emit API
-
-Modules call a small host-facing log API (or `lh_logger_*` on a logger
-the host installed). They never open `authum.log` themselves.
-
-### 2.2 Host scope (three levels)
-
-Configurable on the host (e.g. future `authum.cfg`), independent of
-PSR-3 severity:
-
-| Scope | `authum.log` contains |
-|-------|------------------------|
-| `off` | Nothing (or host fatals only) |
-| `host` | Authum only (attach, module OK/FAIL, commands) — **no** module chatter |
-| `full` | Host + every module line forwarded to the host |
-
-So you can run Vellum/qproto with rich private logs and still keep
-`authum.log` clean (`host`), or pull everything into one file (`full`).
-
-### 2.3 Module-private files
-
-A module may still keep its own transcript (qproto’s `LoggingMode` →
-file). That does not force lines into `authum.log`; forwarding is the
-host scope above.
-
-### 2.4 Directory layout
-
-Prefer a dedicated folder, not the addon root:
-
-```
-addons/authum/
-  logs/
-    authum-YYYYMMDD-HHMMSS.log    # one episode per attach (optional rotation)
-  modules/qproto/
-    logs/
-      qproto-….log                # or single qproto.log — module’s choice
-```
-
-Creating `logs/` is **host/module responsibility**. lh’s logger only
-writes to an already opened sink. lh today has directory **read** APIs;
-mkdir may be added later as a thin OS helper — until then Authum creates
-the directory itself.
-
-### 2.5 Episodes
-
-Optional: on Meta_Attach / Meta_Detach open a new file under `logs/`
-instead of one endless append. Policy belongs to Authum, not to each
-plugin.
+Configurable host scope (`off` / `host` / `full`) may later filter what
+module `sink_host` lines enter `authum.log`. Module-private files stay
+under the module’s control.
 
 ---
 
-## 3. Metamod vs Authum
+## Related
 
-| | Metamod plugin (qproto 1.0.0) | Authum module |
-|--|------------------------------|---------------|
-| Load path | `plugins.ini` | `modules.list` / `modules/` |
-| Default log | Own file + console bits | Host channel + optional own file |
-| Vellum | Opt-in in `qproto.cfg` (`EnableVellum`) | Same authorizer rules; logging via host policy |
-
-Same mental model for any third-party module: **emit → host policy →
-sinks**.
-
----
-
-## 4. Related
-
-- [writing-a-module.md](writing-a-module.md) — exports and layout  
-- [modules.md](modules.md) — loader  
-- [gate.md](gate.md) — auth / connect gate  
-
----
-
-## 5. Build size / lh link modes
-
-`AUTHUM_LH_LINK_MODE` (CMake cache):
-
-| Value | Meaning |
-|-------|---------|
-| `needed` (default) | Static `liblh.a`, only referenced objects + `--gc-sections` |
-| `whole` | `--whole-archive` — every lh object inside the `.so` |
-
-lh is always a static library (no shared build). Release also
-`strip --strip-unneeded` the host image.
-`CMAKE_BUILD_TYPE=Release` is `-O3 -DNDEBUG` (not Debug).
+- [module-style.md](module-style.md)
+- [writing-a-module.md](writing-a-module.md)
+- [architecture.md](architecture.md)

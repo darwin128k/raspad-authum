@@ -132,6 +132,33 @@ authum_loader_get_next(const authum_module_t *self, authum_module_t *child);
 authum_module_t *
 authum_loader_get(authum_module_t *self, lh_uindex_t index);
 
+/**
+ * @brief Child whose `authum_module_info.name` equals @p name (case-insensitive).
+ */
+authum_module_t *
+authum_loader_find(authum_module_t *self, const char *name);
+
+/**
+ * @brief Resolve @p name under `modules/` (package folder or bare `.so`) and load it.
+ *
+ * Fails if a child with that info name is already loaded, or the image cannot
+ * be resolved / started. On false, see ::lh_os_last_error.
+ */
+lh_bool_t
+authum_loader_load_name(authum_module_t *self, const char *name);
+
+/**
+ * @brief Stop and unload the child named @p name. False if not loaded.
+ */
+lh_bool_t
+authum_loader_unload_name(authum_module_t *self, const char *name);
+
+/**
+ * @brief Unload then load again from the same image path (or `modules/<name>`).
+ */
+lh_bool_t
+authum_loader_reload_name(authum_module_t *self, const char *name);
+
 LH_COMPILER_EXTERN_C_END
 
 #endif /* AUTHUM_LOADER_H */
