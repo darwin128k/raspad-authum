@@ -23,3 +23,7 @@ see lib/cjson/cJSON.h.
 This product includes SQLite (https://www.sqlite.org/), public domain
 amalgamation — see lib/sqlite / third_party/sqlite.
 
+This product includes Monocypher 4.0.2 (https://monocypher.org/),
+Copyright (c) 2017-2023 Loup Vaillant, Michael Savage, Fabio Scotoni,
+dual-licensed BSD-2-Clause / CC0-1.0 — see lib/monocypher/LICENCE.md.
+

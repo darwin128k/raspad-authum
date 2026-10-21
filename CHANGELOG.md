@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `<authum/crypto/ed25519.h>` — Ed25519 (RFC 8032) key pair / sign / check +
+  `authum_crypto_wipe`, built into `authum_client` from vendored Monocypher 4.0.2
+  (`lib/monocypher`). Client-side code, not a host facade: no ABI bump, modules
+  get it without a newer `authum_mm`.
+
 ## [2.0.0] - 2026-10-21
 
 ### Added

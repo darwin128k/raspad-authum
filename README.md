@@ -125,6 +125,7 @@ Authum builds on (and vendors where noted) the following:
 | **lh** | Host internals only (`lib/lh` submodule, branch `0.4.0`) | [darwin128K/lh](https://github.com/darwin128K/lh) |
 | **cJSON** | JSON behind `<authum/json.h>` (`lib/cjson`) | MIT — [DaveGamble/cJSON](https://github.com/DaveGamble/cJSON) |
 | **SQLite** | Amalgamation for `<authum/sql.h>` (`lib/sqlite` / `third_party/sqlite`) | [sqlite.org](https://www.sqlite.org/) ([copyright](https://www.sqlite.org/copyright.html)) |
+| **Monocypher** | Ed25519 signatures behind `<authum/crypto/ed25519.h>` (`lib/monocypher`, 4.0.2) | BSD-2-Clause / CC0 — [monocypher.org](https://monocypher.org/) |
 
 
 
