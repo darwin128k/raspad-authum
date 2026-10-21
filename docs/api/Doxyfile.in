@@ -1,0 +1,49 @@
+# Authum module API reference — generated from include/authum (AMXX-api style).
+PROJECT_NAME           = "Authum"
+PROJECT_BRIEF          = "Module ABI for classic HLDS (authum_client)"
+PROJECT_NUMBER         = @PROJECT_VERSION@
+OUTPUT_DIRECTORY       = @CMAKE_SOURCE_DIR@/docs/api
+
+INPUT                  = @CMAKE_SOURCE_DIR@/include/authum \
+                         @CMAKE_SOURCE_DIR@/docs/api/mainpage.md
+FILE_PATTERNS          = *.h *.md
+RECURSIVE              = YES
+EXCLUDE_PATTERNS       = */.git/*
+USE_MDFILE_AS_MAINPAGE = @CMAKE_SOURCE_DIR@/docs/api/mainpage.md
+MARKDOWN_ID_STYLE      = GITHUB
+
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = __cplusplus=
+
+EXTRACT_ALL            = NO
+EXTRACT_STATIC         = NO
+HIDE_UNDOC_MEMBERS     = NO
+OPTIMIZE_OUTPUT_FOR_C  = YES
+SHOW_INCLUDE_FILES     = YES
+INLINE_SIMPLE_STRUCTS  = YES
+TYPEDEF_HIDES_STRUCT   = NO
+SORT_MEMBER_DOCS       = YES
+SORT_BRIEF_DOCS        = YES
+
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+GENERATE_LATEX         = NO
+GENERATE_TREEVIEW      = YES
+DISABLE_INDEX          = NO
+SEARCHENGINE           = YES
+
+HAVE_DOT               = @DOXYGEN_HAVE_DOT@
+DOT_PATH               = @DOXYGEN_DOT_PATH@
+DOT_NUM_THREADS        = 2
+INCLUDE_GRAPH          = NO
+INCLUDED_BY_GRAPH      = NO
+CALL_GRAPH             = NO
+CALLER_GRAPH           = NO
+DIRECTORY_GRAPH        = @DOXYGEN_HAVE_DOT@
+
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_NO_PARAMDOC       = NO
