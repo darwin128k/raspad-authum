@@ -123,12 +123,10 @@ Authum builds on (and vendors where noted) the following:
 | **Metamod-P** | Host plugin API (`lib/metamod-p`, CI clone) | [Bots-United/metamod-p](https://github.com/Bots-United/metamod-p) |
 | **HLSDK** | Engine / game headers (via Metamod-P tree) | Valve HLSDK (as shipped with Metamod-P) |
 | **lh** | Host internals only (`lib/lh` submodule, branch `0.4.0`) | [darwin128K/lh](https://github.com/darwin128K/lh) |
-| **cJSON** | JSON behind `<authum/json.h>` (`lib/cjson`) | MIT — Dave Gamble & contributors |
-| **SQLite** | Amalgamation for `<authum/sql.h>` (`lib/sqlite` / `third_party/sqlite`) | [Public domain](https://www.sqlite.org/copyright.html) |
+| **cJSON** | JSON behind `<authum/json.h>` (`lib/cjson`) | MIT — [DaveGamble/cJSON](https://github.com/DaveGamble/cJSON) |
+| **SQLite** | Amalgamation for `<authum/sql.h>` (`lib/sqlite` / `third_party/sqlite`) | [sqlite.org](https://www.sqlite.org/) ([copyright](https://www.sqlite.org/copyright.html)) |
 
-Optional MySQL/MariaDB SQL uses a small Authum wrapper (`sql_mysql.c`) that `dlopen`s the host’s client library — nothing from Oracle/MariaDB is vendored.
 
-Child modules (**qproto**, **gatekeeper**, …) are **separate** repositories; they are not part of the Authum tree.
 
 See also [NOTICE](NOTICE).
 

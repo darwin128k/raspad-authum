@@ -16,8 +16,9 @@ used to build the Metamod host plugin.
 This product includes lh (https://github.com/darwin128K/lh), linked into
 the host only — client modules do not link liblh.
 
-This product includes cJSON (Copyright (c) 2009-2017 Dave Gamble and
-cJSON contributors), MIT License — see lib/cjson/cJSON.h.
+This product includes cJSON (https://github.com/DaveGamble/cJSON),
+Copyright (c) 2009-2017 Dave Gamble and cJSON contributors, MIT License —
+see lib/cjson/cJSON.h.
 
 This product includes SQLite (https://www.sqlite.org/), public domain
 amalgamation — see lib/sqlite / third_party/sqlite.
