@@ -18,13 +18,9 @@ mod_start(authum_host_t *host)
 {
     authum_path_t path;
 
-    authum_logger_init(&g_log, host,
-                       authum_logger_sink_host | authum_logger_sink_file,
-                       "mymod");
-    /* full = modules/mymod/mymod.log; session = modules/mymod/logs/mymod-….log */
-    authum_logger_open_module_file(&g_log, authum_logger_file_split_full, &path);
-
-    authum_logger_info(&g_log, "start — %s", authum_path_as_cstr(&path));
+    /* Default: host only → authum.log. Add sink_file only if you want a private .log. */
+    authum_logger_init(&g_log, host, authum_logger_sink_host, "mymod");
+    authum_logger_info(&g_log, "start");
     return authum_bool_true;
 }
 
