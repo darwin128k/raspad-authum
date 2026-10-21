@@ -5,7 +5,7 @@
 <h1 align="center">Authum</h1>
 
 <p align="center">
-  <b>1.0.0</b> — Metamod-P plugin host for classic HLDS<br>
+  <b>2.0.0</b> — Metamod-P plugin host for classic HLDS<br>
   loads child modules from <code>modules.list</code> / <code>modules/</code>
 </p>
 
@@ -25,9 +25,9 @@ projects dropped under `modules/`.
 
 - Loads modules from `modules.list` (Authum line format) or scans `modules/`
 - Connect gate scaffolding for children
-- Client modules: `authum/client.h` (ABI 0.2, no liblh); host passes
-  `authum_host_t` into `start`; optional private lh / other libs allowed
-- Server command `authum` — list loaded modules
+- Client modules: `authum/client.h` (ABI **0.3**, no liblh); host passes
+  `authum_host_t` into `start` (sandbox, events, commands)
+- Server command `authum` — status / load / unload / module commands
 - Static `lh` inside the host only (`AUTHUM_LH_LINK_MODE=needed|whole`)
 
 ## Branches
@@ -83,7 +83,7 @@ cstrike/addons/authum/
 ## Clone
 
 ```sh
-git clone --recurse-submodules https://github.com/darwin128k/rapad-authum.git
+git clone --recurse-submodules https://github.com/darwin128k/raspad-authum.git
 ```
 
 If you already cloned without submodules:
@@ -112,6 +112,24 @@ Optional: `-DAUTHUM_LH_LINK_MODE=needed` (default) or `whole`.
 
 Linux CI builds `authum_mm.so` on `master` only. Tag `v*` publishes the `.so`
 as a release asset. Output: `build-linux32/authum_mm.so`.
+
+
+## Acknowledgements / sources
+
+Authum builds on (and vendors where noted) the following:
+
+| Component | Role | License / upstream |
+|-----------|------|--------------------|
+| **Metamod-P** | Host plugin API (`lib/metamod-p`, CI clone) | [Bots-United/metamod-p](https://github.com/Bots-United/metamod-p) |
+| **HLSDK** | Engine / game headers (via Metamod-P tree) | Valve HLSDK (as shipped with Metamod-P) |
+| **lh** | Host internals only (`lib/lh` submodule, branch `0.4.0`) | [darwin128K/lh](https://github.com/darwin128K/lh) |
+| **cJSON** | JSON behind `<authum/json.h>` (`lib/cjson`) | MIT — Dave Gamble & contributors |
+| **SQLite** | Amalgamation for `<authum/sql.h>` (`lib/sqlite` / `third_party/sqlite`) | [Public domain](https://www.sqlite.org/copyright.html) |
+| **MySQL / MariaDB client** | Optional SQL via `dlopen` on the host (not vendored) | Oracle / MariaDB (system library) |
+
+Child modules (**qproto**, **gatekeeper**, …) are **separate** repositories; they are not part of the Authum tree.
+
+See also [NOTICE](NOTICE).
 
 ## License
 
