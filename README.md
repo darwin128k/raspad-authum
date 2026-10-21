@@ -125,7 +125,8 @@ Authum builds on (and vendors where noted) the following:
 | **lh** | Host internals only (`lib/lh` submodule, branch `0.4.0`) | [darwin128K/lh](https://github.com/darwin128K/lh) |
 | **cJSON** | JSON behind `<authum/json.h>` (`lib/cjson`) | MIT — Dave Gamble & contributors |
 | **SQLite** | Amalgamation for `<authum/sql.h>` (`lib/sqlite` / `third_party/sqlite`) | [Public domain](https://www.sqlite.org/copyright.html) |
-| **MySQL / MariaDB client** | Optional SQL via `dlopen` on the host (not vendored) | Oracle / MariaDB (system library) |
+
+Optional MySQL/MariaDB SQL uses a small Authum wrapper (`sql_mysql.c`) that `dlopen`s the host’s client library — nothing from Oracle/MariaDB is vendored.
 
 Child modules (**qproto**, **gatekeeper**, …) are **separate** repositories; they are not part of the Authum tree.
 
