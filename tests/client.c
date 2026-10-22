@@ -11,6 +11,7 @@
 #include <authum/cstr.h>
 #include <authum/detour.h>
 #include <authum/engine.h>
+#include <authum/event/message.h>
 #include <authum/host.h>
 #include <authum/json.h>
 #include <authum/net.h>
@@ -284,6 +285,42 @@ test_engine_messages(void)
     CHECK(authum_engine_cvar_get_i32(&engine, "missing", 5) == 5);
     CHECK(authum_engine_cvar_get_float(&engine, "b", 1.0f) == 0.25f);
     CHECK(authum_engine_cvar_get_float(&engine, "c", 1.0f) == 1.0f);
+}
+
+void
+test_event_message(void)
+{
+    authum_event_message_t ev;
+
+    memset(&ev, 0, sizeof ev);
+    ev.size = sizeof ev;
+    ev.argc = 3;
+    ev.args[0].kind = authum_message_arg_byte;
+    ev.args[0].value = 2;
+    ev.args[1].kind = authum_message_arg_string;
+    ev.args[1].text = 0u;
+    memcpy(ev.text, "ak47", 5);
+    ev.text_used = 5u;
+    ev.args[2].kind = authum_message_arg_coord;
+    ev.args[2].real = 1.5f;
+
+    CHECK(authum_event_message_get_i32(&ev, 0) == 2);
+    CHECK_STR(authum_event_message_get_string(&ev, 1), "ak47");
+    CHECK(authum_event_message_get_float(&ev, 2) == 1.5f);
+    CHECK_STR(authum_event_message_get_string(&ev, 0), ""); /* not a string */
+    CHECK(authum_event_message_get_i32(&ev, 3) == 0);       /* out of range */
+
+    CHECK(authum_event_message_set_i32(&ev, 0, 7) && authum_event_message_get_i32(&ev, 0) == 7);
+    CHECK(!authum_event_message_set_i32(&ev, 1, 7)); /* a string stays a string */
+    CHECK(authum_event_message_set_string(&ev, 1, "knife"));
+    CHECK_STR(authum_event_message_get_string(&ev, 1), "knife");
+    CHECK(!authum_event_message_set_string(&ev, 0, "x"));
+    CHECK(authum_event_message_set_float(&ev, 2, -3.0f));
+    CHECK(authum_event_message_get_float(&ev, 2) == -3.0f);
+
+    ev.text_used = authum_event_message_text_max - 2u; /* no room left */
+    CHECK(!authum_event_message_set_string(&ev, 1, "longer"));
+    CHECK_STR(authum_event_message_get_string(&ev, 1), "knife");
 }
 
 /* A host built before a function existed hands a shorter table. */
@@ -658,6 +695,7 @@ main(void)
     test_engine_kick();
     test_engine_query_cvar();
     test_engine_messages();
+    test_event_message();
     test_abi_size();
     test_host_copy();
     test_abi_version();

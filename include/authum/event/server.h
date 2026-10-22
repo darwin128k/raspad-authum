@@ -7,9 +7,12 @@
  * | ::AUTHUM_EVENT_SERVER_ACTIVATE | after the game DLL's `ServerActivate` (map loaded) |
  * | ::AUTHUM_EVENT_SERVER_DEACTIVATE | `ServerDeactivate` (map change / shutdown) |
  * | ::AUTHUM_EVENT_SERVER_FRAME | `StartFrame`, once per server frame |
+ * | ::AUTHUM_EVENT_SERVER_PRECACHE | the map is loading: the only time `authum_engine_precache_*`
+ * works | | ::AUTHUM_EVENT_SERVER_SHUTDOWN | `GameShutdown`, the server is quitting | |
+ * ::AUTHUM_EVENT_SERVER_LOG | a line of the HLDS log (`log on`), see ::authum_event_server_log_t |
  *
- * Every one carries ::authum_event_server_t. Frame handlers run every tick:
- * keep them short.
+ * All but the log line carry ::authum_event_server_t. Frame handlers run every
+ * tick: keep them short.
  */
 
 #ifndef AUTHUM_EVENT_SERVER_H
@@ -28,10 +31,14 @@ extern "C"
 #define AUTHUM_EVENT_SERVER_ACTIVATE "authum.server.activate"
 #define AUTHUM_EVENT_SERVER_DEACTIVATE "authum.server.deactivate"
 #define AUTHUM_EVENT_SERVER_FRAME "authum.server.frame"
+#define AUTHUM_EVENT_SERVER_PRECACHE "authum.server.precache"
+#define AUTHUM_EVENT_SERVER_SHUTDOWN "authum.server.shutdown"
+#define AUTHUM_EVENT_SERVER_LOG "authum.server.log"
 
     enum
     {
-        authum_event_server_map_max = 64
+        authum_event_server_map_max = 64,
+        authum_event_server_log_max = 512
     };
 
     struct authum_event_server
@@ -52,6 +59,24 @@ extern "C"
         authum_i64_t unix_time;
     };
     typedef struct authum_event_server authum_event_server_t;
+
+    /**
+     * One line the game wrote to the HLDS log — the lines stats are made of
+     * (`"Vega<2><STEAM_0:1:1><CT>" killed "Gordon<3><…><TERRORIST>" with "ak47"`).
+     * Only while logging is on (`log on`). Read-only. Authum's own log lines
+     * are not reported.
+     */
+    struct authum_event_server_log
+    {
+        /** sizeof(authum_event_server_log_t) as built by the host. */
+        authum_usize_t size;
+        /** The line without its date prefix and trailing newline. */
+        authum_char_t text[authum_event_server_log_max];
+        /** Seconds since map start. */
+        authum_float_t game_time;
+        authum_i64_t unix_time;
+    };
+    typedef struct authum_event_server_log authum_event_server_log_t;
 
 #ifdef __cplusplus
 }
