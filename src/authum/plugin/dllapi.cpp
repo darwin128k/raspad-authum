@@ -1,3 +1,4 @@
+#include <authum/engine/host.h>
 #include <authum/event/client.h>
 #include <authum/event/server.h>
 #include <authum/events/host.h>
@@ -59,9 +60,11 @@ authum_dllapi_client_connect(edict_t *entity, const char *name, const char *addr
 
     authum_dllapi_client_fill(&ev, entity, name);
     authum_dllapi_copy(ev.address, sizeof(ev.address), address);
+    authum_engine_host_set_client_address(ev.index, address);
     (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_CONNECT, &ev);
     if (!ev.allow)
     {
+        authum_engine_host_set_client_address(ev.index, nullptr);
         authum_dllapi_copy(reject_reason, 128,
                            ev.reject_reason[0] != '\0' ? ev.reject_reason : "Connection refused.");
         RETURN_META_VALUE(MRES_SUPERCEDE, FALSE);
@@ -101,6 +104,7 @@ authum_dllapi_client_disconnect(edict_t *entity)
 
     authum_dllapi_client_fill(&ev, entity, nullptr);
     (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_DISCONNECT, &ev);
+    authum_engine_host_set_client_address(ev.index, nullptr);
     RETURN_META(MRES_IGNORED);
 }
 

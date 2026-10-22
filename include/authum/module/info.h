@@ -24,11 +24,15 @@ extern "C"
 
 /**
  * @def AUTHUM_MODULE_ABI
- * @brief Loader ABI (`0.4.0`) — lh-free module API (`authum_module_api`);
- *        0.3 adds the per-module sandbox and event bus to ::authum_host_t,
- *        0.4 adds `query_client_cvar` to ::authum_engine_t.
+ * @brief Loader ABI (`1.0.0`) — lh-free module API (`authum_module_api`).
+ *
+ * 1.0: every host table starts with `size` and only grows at the end
+ * (<authum/abi.h>), so a module loads on any 1.x host; the engine facade
+ * covers players, cvars and client queries. A minor bump adds functions, a
+ * major bump removes or changes one. Checked with
+ * ::authum_version_is_abi_compatible.
  */
-#define AUTHUM_MODULE_ABI AUTHUM_VERSION(0, 4, 0)
+#define AUTHUM_MODULE_ABI AUTHUM_VERSION(1, 0, 0)
 
     struct authum_module_info
     {

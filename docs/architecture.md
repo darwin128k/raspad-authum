@@ -27,14 +27,14 @@ not ship a process-wide `lh.so` for modules.
 | lh + HLSDK inside Authum | linked / includes in `authum_mm` | Implementation detail of the host |
 | Full lh / HLSDK / other libs in a module | that module’s `.so` | Optional, **private** escape hatch |
 
-## Client module contract (ABI 0.4)
+## Client module contract (ABI 1.0)
 
 Include **`authum/client.h`**, link **`authum_client`** — no `<lh/…>`, no link
 to `liblh`.
 
 Export:
 
-1. `authum_module_info` — identity / ABI (`0.4.0`)
+1. `authum_module_info` — identity / ABI (`1.0.0`)
 2. `authum_module_api` — `{ start(host), stop() }`
 
 The host resolves these symbols, fills `authum_host_t` (with a fresh sandbox

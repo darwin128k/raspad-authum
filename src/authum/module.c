@@ -32,7 +32,7 @@ authum_module_take_info(authum_module_t *self)
         lh_os_set_last_error_lit(authum_error_code_invalid_info, "invalid authum_module_info");
         return lh_bool_false;
     }
-    if (!authum_version_is_compatible(&info->abi, &required))
+    if (!authum_version_is_abi_compatible(&info->abi, &required))
     {
         lh_os_set_last_error_lit(authum_error_code_incompatible_abi, "incompatible module abi");
         return lh_bool_false;

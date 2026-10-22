@@ -6,6 +6,7 @@
 #include <authum/bool.h>
 #include <authum/char.h>
 #include <authum/engine.h>
+#include <authum/engine/host.h>
 #include <authum/null.h>
 #include <authum/size.h>
 
@@ -20,59 +21,268 @@ extern globalvars_t *gpGlobals;
 namespace
 {
 
+enum
+{
+    authum_engine_slots = 33, /* 1 … 32, the GoldSrc player limit */
+    authum_engine_address_max = 64
+};
+
+char authum_engine_addresses[authum_engine_slots][authum_engine_address_max];
+
+void
+authum_engine_copy(authum_char_t *buf, authum_usize_t buf_size, const char *src)
+{
+    std::snprintf(buf, static_cast<size_t>(buf_size), "%s", src != nullptr ? src : "");
+}
+
+/** Engine string table entry (HLSDK `STRING`, without util.h). */
+const char *
+authum_engine_string(string_t offset)
+{
+    return gpGlobals != nullptr ? gpGlobals->pStringBase + offset : "";
+}
+
+/** Edict of a connected player in slot @p index, or null. */
+edict_t *
+authum_engine_client_edict(authum_i32_t index)
+{
+    edict_t *entity;
+
+    if (gpGlobals == nullptr || index < 1 || index > gpGlobals->maxClients ||
+        g_engfuncs.pfnPEntityOfEntIndex == nullptr || g_engfuncs.pfnGetPlayerUserId == nullptr)
+    {
+        return nullptr;
+    }
+    entity = g_engfuncs.pfnPEntityOfEntIndex(index);
+    if (entity == nullptr || entity->free || g_engfuncs.pfnGetPlayerUserId(entity) <= 0)
+    {
+        return nullptr;
+    }
+    return entity;
+}
+
+/* --- server --------------------------------------------------------------- */
+
 void
 authum_engine_get_game_dir_impl(authum_char_t *buf, authum_usize_t buf_size)
 {
     char tmp[256];
 
-    if (authum_null_eq(buf) || buf_size == 0u)
-    {
-        return;
-    }
-    buf[0] = '\0';
     tmp[0] = '\0';
-    if (g_engfuncs.pfnGetGameDir != 0)
+    if (g_engfuncs.pfnGetGameDir != nullptr)
     {
         g_engfuncs.pfnGetGameDir(tmp);
     }
-    std::snprintf(buf, (size_t)buf_size, "%s", tmp);
+    authum_engine_copy(buf, buf_size, tmp);
 }
 
 void
 authum_engine_server_print_impl(const authum_char_t *text)
 {
-    if (authum_null_eq(text) || g_engfuncs.pfnServerPrint == 0)
+    if (g_engfuncs.pfnServerPrint != nullptr)
     {
-        return;
+        g_engfuncs.pfnServerPrint(text);
     }
-    g_engfuncs.pfnServerPrint(text);
 }
 
 void
 authum_engine_server_command_impl(const authum_char_t *cmd)
 {
-    if (authum_null_eq(cmd) || g_engfuncs.pfnServerCommand == 0)
+    if (g_engfuncs.pfnServerCommand != nullptr)
     {
-        return;
+        /* HLSDK typedef takes char*, not const char*. */
+        g_engfuncs.pfnServerCommand(const_cast<char *>(cmd));
     }
-    /* HLSDK typedef takes char*, not const char*. */
-    g_engfuncs.pfnServerCommand(const_cast<char *>(cmd));
+}
+
+authum_i32_t
+authum_engine_max_clients_impl(void)
+{
+    return gpGlobals != nullptr ? gpGlobals->maxClients : 0;
+}
+
+authum_float_t
+authum_engine_game_time_impl(void)
+{
+    return gpGlobals != nullptr ? gpGlobals->time : 0.0f;
+}
+
+void
+authum_engine_get_map_name_impl(authum_char_t *buf, authum_usize_t buf_size)
+{
+    authum_engine_copy(buf, buf_size,
+                       authum_engine_string(gpGlobals != nullptr ? gpGlobals->mapname : 0));
+}
+
+authum_bool_t
+authum_engine_cvar_get_impl(const authum_char_t *name, authum_char_t *buf, authum_usize_t buf_size)
+{
+    cvar_t *cvar;
+
+    if (g_engfuncs.pfnCVarGetPointer == nullptr)
+    {
+        return authum_bool_false;
+    }
+    cvar = g_engfuncs.pfnCVarGetPointer(name);
+    if (cvar == nullptr)
+    {
+        return authum_bool_false;
+    }
+    authum_engine_copy(buf, buf_size, cvar->string);
+    return authum_bool_true;
+}
+
+authum_bool_t
+authum_engine_cvar_set_impl(const authum_char_t *name, const authum_char_t *value)
+{
+    if (g_engfuncs.pfnCVarGetPointer == nullptr || g_engfuncs.pfnCVarSetString == nullptr ||
+        g_engfuncs.pfnCVarGetPointer(name) == nullptr)
+    {
+        return authum_bool_false;
+    }
+    g_engfuncs.pfnCVarSetString(name, value);
+    return authum_bool_true;
+}
+
+/* --- players -------------------------------------------------------------- */
+
+authum_bool_t
+authum_engine_client_is_connected_impl(authum_i32_t index)
+{
+    return authum_engine_client_edict(index) != nullptr ? authum_bool_true : authum_bool_false;
+}
+
+authum_i32_t
+authum_engine_client_userid_impl(authum_i32_t index)
+{
+    edict_t *entity = authum_engine_client_edict(index);
+
+    return entity != nullptr ? g_engfuncs.pfnGetPlayerUserId(entity) : 0;
+}
+
+authum_i32_t
+authum_engine_client_index_by_userid_impl(authum_i32_t userid)
+{
+    authum_i32_t index;
+
+    if (userid <= 0 || gpGlobals == nullptr)
+    {
+        return 0;
+    }
+    for (index = 1; index <= gpGlobals->maxClients; ++index)
+    {
+        if (authum_engine_client_userid_impl(index) == userid)
+        {
+            return index;
+        }
+    }
+    return 0;
+}
+
+authum_bool_t
+authum_engine_client_get_name_impl(authum_i32_t index, authum_char_t *buf, authum_usize_t buf_size)
+{
+    edict_t *entity = authum_engine_client_edict(index);
+
+    if (entity == nullptr)
+    {
+        return authum_bool_false;
+    }
+    authum_engine_copy(buf, buf_size, authum_engine_string(entity->v.netname));
+    return authum_bool_true;
+}
+
+authum_bool_t
+authum_engine_client_get_auth_id_impl(authum_i32_t index, authum_char_t *buf,
+                                      authum_usize_t buf_size)
+{
+    edict_t *entity = authum_engine_client_edict(index);
+
+    if (entity == nullptr || g_engfuncs.pfnGetPlayerAuthId == nullptr)
+    {
+        return authum_bool_false;
+    }
+    authum_engine_copy(buf, buf_size, g_engfuncs.pfnGetPlayerAuthId(entity));
+    return authum_bool_true;
+}
+
+authum_bool_t
+authum_engine_client_get_address_impl(authum_i32_t index, authum_char_t *buf,
+                                      authum_usize_t buf_size)
+{
+    if (authum_engine_client_edict(index) == nullptr || index >= authum_engine_slots)
+    {
+        return authum_bool_false;
+    }
+    authum_engine_copy(buf, buf_size, authum_engine_addresses[index]);
+    return authum_engine_addresses[index][0] != '\0' ? authum_bool_true : authum_bool_false;
+}
+
+authum_bool_t
+authum_engine_client_get_info_impl(authum_i32_t index, const authum_char_t *key, authum_char_t *buf,
+                                   authum_usize_t buf_size)
+{
+    edict_t *entity = authum_engine_client_edict(index);
+    char *info;
+
+    if (entity == nullptr || g_engfuncs.pfnGetInfoKeyBuffer == nullptr ||
+        g_engfuncs.pfnInfoKeyValue == nullptr)
+    {
+        return authum_bool_false;
+    }
+    info = g_engfuncs.pfnGetInfoKeyBuffer(entity);
+    if (info == nullptr)
+    {
+        return authum_bool_false;
+    }
+    authum_engine_copy(buf, buf_size, g_engfuncs.pfnInfoKeyValue(info, const_cast<char *>(key)));
+    return authum_bool_true;
+}
+
+authum_bool_t
+authum_engine_client_print_impl(authum_i32_t index, authum_i32_t kind, const authum_char_t *text)
+{
+    edict_t *entity;
+    authum_bool_t sent = authum_bool_false;
+    authum_i32_t i;
+
+    if (g_engfuncs.pfnClientPrintf == nullptr || gpGlobals == nullptr)
+    {
+        return authum_bool_false;
+    }
+    /* index 0: everyone connected. */
+    for (i = (index == 0 ? 1 : index); i <= (index == 0 ? gpGlobals->maxClients : index); ++i)
+    {
+        entity = authum_engine_client_edict(i);
+        if (entity != nullptr)
+        {
+            g_engfuncs.pfnClientPrintf(entity, static_cast<PRINT_TYPE>(kind), text);
+            sent = authum_bool_true;
+        }
+    }
+    return sent;
+}
+
+authum_bool_t
+authum_engine_client_command_impl(authum_i32_t index, const authum_char_t *cmd)
+{
+    edict_t *entity = authum_engine_client_edict(index);
+
+    if (entity == nullptr || g_engfuncs.pfnClientCommand == nullptr)
+    {
+        return authum_bool_false;
+    }
+    g_engfuncs.pfnClientCommand(entity, const_cast<char *>("%s\n"), cmd);
+    return authum_bool_true;
 }
 
 authum_bool_t
 authum_engine_query_client_cvar_impl(authum_i32_t index, const authum_char_t *cvar,
                                      authum_i32_t request_id)
 {
-    edict_t *entity;
+    edict_t *entity = authum_engine_client_edict(index);
 
-    if (authum_null_eq(cvar) || gpGlobals == nullptr || index < 1 ||
-        index > gpGlobals->maxClients || g_engfuncs.pfnPEntityOfEntIndex == 0 ||
-        g_engfuncs.pfnQueryClientCvarValue2 == 0)
-    {
-        return authum_bool_false;
-    }
-    entity = g_engfuncs.pfnPEntityOfEntIndex(index);
-    if (entity == nullptr || entity->free)
+    if (entity == nullptr || g_engfuncs.pfnQueryClientCvarValue2 == nullptr)
     {
         return authum_bool_false;
     }
@@ -81,9 +291,24 @@ authum_engine_query_client_cvar_impl(authum_i32_t index, const authum_char_t *cv
 }
 
 const authum_engine_t authum_engine_ops = {
+    sizeof(authum_engine_t),
     authum_engine_get_game_dir_impl,
     authum_engine_server_print_impl,
     authum_engine_server_command_impl,
+    authum_engine_max_clients_impl,
+    authum_engine_game_time_impl,
+    authum_engine_get_map_name_impl,
+    authum_engine_cvar_get_impl,
+    authum_engine_cvar_set_impl,
+    authum_engine_client_is_connected_impl,
+    authum_engine_client_userid_impl,
+    authum_engine_client_index_by_userid_impl,
+    authum_engine_client_get_name_impl,
+    authum_engine_client_get_auth_id_impl,
+    authum_engine_client_get_address_impl,
+    authum_engine_client_get_info_impl,
+    authum_engine_client_print_impl,
+    authum_engine_client_command_impl,
     authum_engine_query_client_cvar_impl,
 };
 
@@ -93,4 +318,15 @@ extern "C" const authum_engine_t *
 authum_engine(void)
 {
     return &authum_engine_ops;
+}
+
+extern "C" void
+authum_engine_host_set_client_address(authum_i32_t index, const authum_char_t *address)
+{
+    if (index < 1 || index >= authum_engine_slots)
+    {
+        return;
+    }
+    authum_engine_copy(authum_engine_addresses[index], sizeof authum_engine_addresses[index],
+                       address);
 }

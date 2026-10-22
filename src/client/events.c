@@ -6,8 +6,8 @@ authum_bool_t
 authum_events_subscribe(const authum_events_t *self, const authum_char_t *name,
                         authum_event_handler_fn fn, authum_ptr user)
 {
-    if (authum_null_eq(self) || authum_null_eq(self->ops) || self->ops->subscribe == 0 ||
-        authum_null_eq(name) || fn == 0)
+    if (authum_null_eq(self) || authum_null_eq(self->ops) ||
+        !AUTHUM_ABI_HAS(self->ops, subscribe) || authum_null_eq(name) || fn == 0)
     {
         return authum_bool_false;
     }
@@ -18,8 +18,8 @@ authum_bool_t
 authum_events_unsubscribe(const authum_events_t *self, const authum_char_t *name,
                           authum_event_handler_fn fn, authum_ptr user)
 {
-    if (authum_null_eq(self) || authum_null_eq(self->ops) || self->ops->unsubscribe == 0 ||
-        authum_null_eq(name) || fn == 0)
+    if (authum_null_eq(self) || authum_null_eq(self->ops) ||
+        !AUTHUM_ABI_HAS(self->ops, unsubscribe) || authum_null_eq(name) || fn == 0)
     {
         return authum_bool_false;
     }
@@ -29,7 +29,7 @@ authum_events_unsubscribe(const authum_events_t *self, const authum_char_t *name
 authum_event_result_t
 authum_events_publish(const authum_events_t *self, const authum_char_t *name, authum_ptr payload)
 {
-    if (authum_null_eq(self) || authum_null_eq(self->ops) || self->ops->publish == 0 ||
+    if (authum_null_eq(self) || authum_null_eq(self->ops) || !AUTHUM_ABI_HAS(self->ops, publish) ||
         authum_null_eq(name))
     {
         return authum_event_result_continue;

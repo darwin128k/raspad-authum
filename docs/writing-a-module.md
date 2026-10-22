@@ -24,7 +24,7 @@ In short — type-as-namespace like lh (`qproto_log_mode_console`, not
 
 ---
 
-## 1. What you export (ABI 0.4)
+## 1. What you export (ABI 1.0)
 
 Include **`#include <authum/client.h>`** only. Do **not** include lh or link
 `liblh` unless you opt into the escape hatch.
@@ -34,9 +34,11 @@ Include **`#include <authum/client.h>`** only. Do **not** include lh or link
 | `authum_module_info` | `authum_module_info_t` | Name, SemVer, ABI, … |
 | `authum_module_api` | `authum_module_api_t` | `.start(host)` / `.stop()` |
 
-ABI: `AUTHUM_MODULE_ABI` = `0.4.0` (0.3 added the sandbox and the event bus to
-the host facade, 0.4 added `query_client_cvar` to the engine facade; modules
-built for an older minor must be rebuilt).
+ABI: `AUTHUM_MODULE_ABI` = `1.0.0`. Every table the host passes starts with
+`size` and only grows at the end, so a 1.x module loads on any 1.x host: a
+function the host is too old for answers "not available" (false / 0 / empty
+string) instead of crashing. Only a major bump means rebuilding. See
+`<authum/abi.h>`.
 
 ```c
 #include <authum/client.h>
@@ -58,7 +60,7 @@ example_start(authum_host_t *host)
 {
     if (authum_null_eq(host))
         return authum_bool_false;
-    g_example_host = *host;
+    authum_host_copy(&g_example_host, host);
     authum_host_log_line(&g_example_host, 0, "[example] start");
     return authum_bool_true;
 }
@@ -96,7 +98,10 @@ cstrike/addons/authum/
 ## 3. Host facade
 
 Children do **not** get `GiveFnptrsToDll`. The host passes `authum_host_t`
-into `start` (valid until `stop`):
+into `start` (valid until `stop`). Keep it with `authum_host_copy(&g_host, host)`
+— never `g_host = *host`, which reads past the table of an older host. Prefer
+these accessors to the `engine_funcs` escape hatch: what goes through them
+survives Authum's internal changes.
 
 | Accessor | Purpose |
 |----------|---------|
@@ -109,6 +114,12 @@ into `start` (valid until `stop`):
 | `authum_host_sandbox` | Module memory freed at unload — [sandbox.md](sandbox.md) |
 | `authum_host_events` / `authum_host_subscribe` / `authum_host_publish` | Event bus — [events.md](events.md) |
 | `authum_host_kick` | `kick #userid "reason"` (sanitized) |
+| `authum_host_max_clients` / `_game_time` / `_get_map_name` | current map |
+| `authum_host_cvar_get` / `_cvar_set` | server cvars |
+| `authum_host_client_is_connected` / `_userid` / `_index_by_userid` | player slots (entity index 1 … maxClients, as in `authum.client.*`) |
+| `authum_host_client_get_name` / `_auth_id` / `_address` / `_info` | who the player is (`_info` reads `setinfo` keys) |
+| `authum_host_client_print` | text to one player or everyone (`authum_engine_print_console` / `_center` / `_chat`) |
+| `authum_host_client_command` | run a command in the player's console |
 | `authum_host_query_cvar` | Ask a client for a cvar; the answer is `authum.client.cvar_value` — [events.md](events.md) |
 | `authum_host_command_add[_all]` | `authum <module> <name>` console / RCON commands — [commands.md](commands.md) |
 
@@ -187,7 +198,7 @@ Policy: [logging.md](logging.md).
 - [ ] Strict snake_case; enums `{type}_leaf` ([module-style.md](module-style.md))
 - [ ] Authum foundation types on Authum / public ABI
 - [ ] `#include <authum/client.h>` (no lh in a pure client)
-- [ ] `authum_module_info.abi` = `AUTHUM_MODULE_ABI` (`0.4.0`), non-null `name`
+- [ ] `authum_module_info.abi` = `AUTHUM_MODULE_ABI` (`1.0.0`); host kept with `authum_host_copy`, non-null `name`
 - [ ] `authum_module_api` exported; `start` returns `authum_bool_false` only on hard failure
 - [ ] Listed in `modules.list` / under `modules/`
 - [ ] Folder `foo` → `foo.so` / `foo.dll`

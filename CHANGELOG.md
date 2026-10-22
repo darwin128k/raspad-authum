@@ -26,8 +26,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   test). Configure fails at once, with a hint, when the compiler cannot link
   with `-m32`, instead of at the first link.
 
-- **Module ABI 0.4.0**: `authum_engine_t` gains `query_client_cvar`. Modules
-  built for 0.3 must be rebuilt (the loader refuses them).
+- **Module ABI 1.0.0** (modules built for 0.x must be rebuilt):
+  - Every table the host hands a module (`authum_host_t`, `authum_engine_t`,
+    `authum_crypto_t`, the events / sandbox / commands ops) starts with
+    `authum_usize_t size`; functions are only appended, and the client
+    wrappers call one only when the host's table reaches it
+    (`AUTHUM_ABI_HAS`, `<authum/abi.h>`). Adding a function is now a minor
+    bump: a 1.x module loads on any 1.x host (`authum_version_is_abi_compatible`).
+  - Keep the host with `authum_host_copy(&g_host, host)`, not `g_host = *host`.
+  - `authum_engine_t` covers what modules took from raw `engine_funcs`:
+    `max_clients`, `game_time`, `get_map_name`, `cvar_get` / `cvar_set`,
+    `client_is_connected`, `client_userid`, `client_index_by_userid`,
+    `client_get_name` / `_auth_id` / `_address` / `_info`, `client_print`
+    (console / center / chat, 0 = everyone), `client_command`,
+    `query_client_cvar` — each with `authum_engine_*` and `authum_host_*`
+    wrappers. Players are addressed by entity index, as in `authum.client.*`.
 
 - `<authum/json.h>` and `<authum/sql.h>` run on lh (`lh/json`, `lh/sql`) linked
   into `authum_client`; vendored cJSON (unused) and SQLite (`lib/cjson`,

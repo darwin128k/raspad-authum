@@ -70,7 +70,7 @@ hello_start(authum_host_t *host)
     if (authum_null_eq(host)) {
         return authum_bool_false;
     }
-    g_hello_host = *host;
+    authum_host_copy(&g_hello_host, host);
     authum_host_log_line(&g_hello_host, 0, "[hello] start");
     authum_host_log_line(&g_hello_host, 0,
                          authum_path_as_cstr(authum_host_env_module(&g_hello_host)));
