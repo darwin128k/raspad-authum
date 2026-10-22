@@ -31,10 +31,6 @@ if (NOT TARGET lh)
 	add_subdirectory("${AUTHUM_LH_DIR}" "${CMAKE_BINARY_DIR}/lh")
 	if (AUTHUM_CLIENT_FORCE_32BIT AND NOT MSVC)
 		target_compile_options(lh PRIVATE -m32 -march=i686 -msse2)
-		if (NOT WIN32)
-			# See the top-level CMakeLists: readdir() in a 32-bit build.
-			target_compile_definitions(lh PRIVATE _FILE_OFFSET_BITS=64)
-		endif ()
 	endif ()
 endif ()
 
@@ -107,6 +103,7 @@ if (NOT MSVC)
 		target_compile_options(authum_monocypher PRIVATE -m32 -march=i686 -msse2)
 		target_link_options(authum_monocypher PRIVATE -m32)
 		if (NOT WIN32)
+			# stat() / lseek() in a 32-bit build; lh sets the same for itself.
 			target_compile_definitions(authum_client PRIVATE _FILE_OFFSET_BITS=64)
 		endif ()
 	endif ()
