@@ -96,7 +96,7 @@ Fields: `index` (entity index 1…maxClients — AMXX `id`), `userid`, `name`,
 `reject_reason`.
 
 | `authum.client.command` | `ClientCommand` | Payload `authum_event_client_command_t`: `client`, `argc`, `argv[16][128]`, `args` (the line after the command). Set `block = authum_bool_true` and the game DLL never sees the command |
-| `authum.client.cvar_value` | `CvarValue2` | Payload `authum_event_client_cvar_t`: `client`, `request_id`, `cvar`, `value` — the answer to `pfnQueryClientCvarValue2` (via the `engine_funcs` escape hatch) |
+| `authum.client.cvar_value` | `CvarValue2` | Payload `authum_event_client_cvar_t`: `client`, `request_id`, `cvar`, `value` — the answer to `authum_host_query_cvar(host, index, "cvar", request_id)` |
 
 Map and frame events, payload `authum_event_server_t` (`<authum/event/server.h>`):
 `map`, `max_clients`, `edict_count` (activate), `game_time`, `frame_time`,

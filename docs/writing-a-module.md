@@ -24,7 +24,7 @@ In short — type-as-namespace like lh (`qproto_log_mode_console`, not
 
 ---
 
-## 1. What you export (ABI 0.3)
+## 1. What you export (ABI 0.4)
 
 Include **`#include <authum/client.h>`** only. Do **not** include lh or link
 `liblh` unless you opt into the escape hatch.
@@ -34,8 +34,9 @@ Include **`#include <authum/client.h>`** only. Do **not** include lh or link
 | `authum_module_info` | `authum_module_info_t` | Name, SemVer, ABI, … |
 | `authum_module_api` | `authum_module_api_t` | `.start(host)` / `.stop()` |
 
-ABI: `AUTHUM_MODULE_ABI` = `0.3.0` (0.3 added the sandbox and the event bus to
-the host facade; 0.2 modules must be rebuilt).
+ABI: `AUTHUM_MODULE_ABI` = `0.4.0` (0.3 added the sandbox and the event bus to
+the host facade, 0.4 added `query_client_cvar` to the engine facade; modules
+built for an older minor must be rebuilt).
 
 ```c
 #include <authum/client.h>
@@ -108,6 +109,7 @@ into `start` (valid until `stop`):
 | `authum_host_sandbox` | Module memory freed at unload — [sandbox.md](sandbox.md) |
 | `authum_host_events` / `authum_host_subscribe` / `authum_host_publish` | Event bus — [events.md](events.md) |
 | `authum_host_kick` | `kick #userid "reason"` (sanitized) |
+| `authum_host_query_cvar` | Ask a client for a cvar; the answer is `authum.client.cvar_value` — [events.md](events.md) |
 | `authum_host_command_add[_all]` | `authum <module> <name>` console / RCON commands — [commands.md](commands.md) |
 
 Paths in `env` are absolute when the host can resolve them from the module image
@@ -185,7 +187,7 @@ Policy: [logging.md](logging.md).
 - [ ] Strict snake_case; enums `{type}_leaf` ([module-style.md](module-style.md))
 - [ ] Authum foundation types on Authum / public ABI
 - [ ] `#include <authum/client.h>` (no lh in a pure client)
-- [ ] `authum_module_info.abi` = `AUTHUM_MODULE_ABI` (`0.3.0`), non-null `name`
+- [ ] `authum_module_info.abi` = `AUTHUM_MODULE_ABI` (`0.4.0`), non-null `name`
 - [ ] `authum_module_api` exported; `start` returns `authum_bool_false` only on hard failure
 - [ ] Listed in `modules.list` / under `modules/`
 - [ ] Folder `foo` → `foo.so` / `foo.dll`

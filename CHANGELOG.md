@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Module ABI 0.4.0**: `authum_engine_t` gains `query_client_cvar`. Modules
+  built for 0.3 must be rebuilt (the loader refuses them).
+
 - `<authum/json.h>` and `<authum/sql.h>` run on lh (`lh/json`, `lh/sql`) linked
   into `authum_client`; vendored cJSON (unused) and SQLite (`lib/cjson`,
   `lib/sqlite`) are gone, SQLite 3.46.1 now comes with lh. The module API is the
@@ -35,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `GetEntityAPI2_Post` and `GetNewDLLFunctions`.
 - `<authum/float.h>` — `authum_float_t` (mirrors `lh_float_t`); event payloads
   use it for `game_time` / `frame_time`.
+- `authum_host_query_cvar` / `authum_engine_query_cvar` — ask a client for a
+  cvar by entity index; the answer comes as `authum.client.cvar_value` with the
+  same `request_id`.
 - `authum_sql_stmt_bind_i64` / `authum_sql_stmt_column_i64` — 64-bit integers
   (SteamID64, row ids) in `<authum/sql.h>`.
 - `<authum/crypto/ed25519.h>` — Ed25519 (RFC 8032) key pair / sign / check +

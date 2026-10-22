@@ -3,6 +3,7 @@
  * @brief ::authum_engine_t ops — thin wrappers over host `g_engfuncs`.
  */
 
+#include <authum/bool.h>
 #include <authum/char.h>
 #include <authum/engine.h>
 #include <authum/null.h>
@@ -14,6 +15,7 @@
 #include <cstring>
 
 extern enginefuncs_t g_engfuncs;
+extern globalvars_t *gpGlobals;
 
 namespace
 {
@@ -57,10 +59,32 @@ authum_engine_server_command_impl(const authum_char_t *cmd)
     g_engfuncs.pfnServerCommand(const_cast<char *>(cmd));
 }
 
+authum_bool_t
+authum_engine_query_client_cvar_impl(authum_i32_t index, const authum_char_t *cvar,
+                                     authum_i32_t request_id)
+{
+    edict_t *entity;
+
+    if (authum_null_eq(cvar) || gpGlobals == nullptr || index < 1 ||
+        index > gpGlobals->maxClients || g_engfuncs.pfnPEntityOfEntIndex == 0 ||
+        g_engfuncs.pfnQueryClientCvarValue2 == 0)
+    {
+        return authum_bool_false;
+    }
+    entity = g_engfuncs.pfnPEntityOfEntIndex(index);
+    if (entity == nullptr || entity->free)
+    {
+        return authum_bool_false;
+    }
+    g_engfuncs.pfnQueryClientCvarValue2(entity, cvar, request_id);
+    return authum_bool_true;
+}
+
 const authum_engine_t authum_engine_ops = {
     authum_engine_get_game_dir_impl,
     authum_engine_server_print_impl,
     authum_engine_server_command_impl,
+    authum_engine_query_client_cvar_impl,
 };
 
 } // namespace
