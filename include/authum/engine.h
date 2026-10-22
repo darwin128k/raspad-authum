@@ -134,6 +134,17 @@ extern "C"
         void (*message_write)(authum_i32_t kind, authum_i32_t value, authum_float_t real,
                               const authum_char_t *text);
         void (*message_end)(void);
+
+        /* --- precache (only during authum.server.precache) ---------------- */
+
+        /**
+         * Precache `models/…` / `sound/…` (relative to `sound/`) / any file for
+         * download. Returns the engine index, or 0 outside the precache window
+         * (the engine would stop the server) or on failure.
+         */
+        authum_i32_t (*precache_model)(const authum_char_t *path);
+        authum_i32_t (*precache_sound)(const authum_char_t *path);
+        authum_i32_t (*precache_generic)(const authum_char_t *path);
     } authum_engine_t;
 
     /** Flags for ::authum_engine_cvar_register (the engine's FCVAR_*). */
@@ -303,6 +314,17 @@ extern "C"
 
     void
     authum_engine_message_end(const authum_engine_t *engine);
+
+    /* --- precache: call from an authum.server.precache handler ------------- */
+
+    authum_i32_t
+    authum_engine_precache_model(const authum_engine_t *engine, const authum_char_t *path);
+
+    authum_i32_t
+    authum_engine_precache_sound(const authum_engine_t *engine, const authum_char_t *path);
+
+    authum_i32_t
+    authum_engine_precache_generic(const authum_engine_t *engine, const authum_char_t *path);
 
 #ifdef __cplusplus
 }

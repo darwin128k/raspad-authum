@@ -288,6 +288,15 @@ extern "C"
     void
     authum_host_message_end(const authum_host_t *host);
 
+    authum_i32_t
+    authum_host_precache_model(const authum_host_t *host, const authum_char_t *path);
+
+    authum_i32_t
+    authum_host_precache_sound(const authum_host_t *host, const authum_char_t *path);
+
+    authum_i32_t
+    authum_host_precache_generic(const authum_host_t *host, const authum_char_t *path);
+
     /** Ask a client for a cvar; see ::authum_engine_query_cvar. */
     authum_bool_t
     authum_host_query_cvar(const authum_host_t *host, authum_i32_t index, const authum_char_t *cvar,

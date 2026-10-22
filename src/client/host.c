@@ -423,6 +423,24 @@ authum_host_message_end(const authum_host_t *host)
     authum_engine_message_end(authum_host_engine(host));
 }
 
+authum_i32_t
+authum_host_precache_model(const authum_host_t *host, const authum_char_t *path)
+{
+    return authum_engine_precache_model(authum_host_engine(host), path);
+}
+
+authum_i32_t
+authum_host_precache_sound(const authum_host_t *host, const authum_char_t *path)
+{
+    return authum_engine_precache_sound(authum_host_engine(host), path);
+}
+
+authum_i32_t
+authum_host_precache_generic(const authum_host_t *host, const authum_char_t *path)
+{
+    return authum_engine_precache_generic(authum_host_engine(host), path);
+}
+
 authum_bool_t
 authum_host_query_cvar(const authum_host_t *host, authum_i32_t index, const authum_char_t *cvar,
                        authum_i32_t request_id)

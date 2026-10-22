@@ -94,6 +94,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `authum_engine_cvar_*` flags) with `cvar_get_i32` / `cvar_get_float`,
   `client_get_stats` (ping, loss) and `client_set_info` — each with an
   `authum_host_*` shortcut.
+- Game user messages as events: subscribe to `authum.message.<Name>`
+  (`authum.message.DeathMsg`, `SayText`, …) to read the whole message
+  (`<authum/event/message.h>`, `authum_event_message_get_*`), change its
+  arguments (`_set_*`) or `block` it. Only messages someone listens to are
+  held back; a held message is sent again after the handlers, so other
+  Metamod plugins hooking messages see it twice. The plugin now hooks
+  `GetEngineFunctions` (MessageBegin … MessageEnd, AlertMessage).
+- `authum.server.log`: every line of the HLDS log (`log on`) — the kill /
+  round / team lines stats are built from (`authum_event_server_log_t`).
+- `authum.client.kill` (`ClientKill`; `allow = false` refuses it),
+  `authum.server.precache` (worldspawn's `Spawn`) with
+  `authum_engine_precache_model` / `_sound` / `_generic` — 0 outside the
+  precache window instead of the engine's Host_Error — and
+  `authum.server.shutdown` (`GameShutdown`).
 - `<authum/timer.h>`: `authum_timer_add(host, delay, interval, fn, user)` /
   `_remove` / `_clear` / `_count` — module timers on server frames, counting
   across map changes, dropped with the module.

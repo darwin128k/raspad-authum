@@ -454,6 +454,41 @@ authum_engine_message_end_impl(void)
     g_engfuncs.pfnMessageEnd();
 }
 
+/* --- precache --------------------------------------------------------------- */
+
+/* Between worldspawn's Spawn and ServerActivate; any other time the engine
+ * stops the server with a Host_Error. */
+bool authum_engine_precache_open = false;
+
+/* The engine keeps the pointer for the whole map: hand it an engine string. */
+char *
+authum_engine_persistent(const authum_char_t *path)
+{
+    return const_cast<char *>(authum_engine_string(g_engfuncs.pfnAllocString(path)));
+}
+
+authum_i32_t
+authum_engine_precache_model_impl(const authum_char_t *path)
+{
+    return authum_engine_precache_open ? g_engfuncs.pfnPrecacheModel(authum_engine_persistent(path))
+                                       : 0;
+}
+
+authum_i32_t
+authum_engine_precache_sound_impl(const authum_char_t *path)
+{
+    return authum_engine_precache_open ? g_engfuncs.pfnPrecacheSound(authum_engine_persistent(path))
+                                       : 0;
+}
+
+authum_i32_t
+authum_engine_precache_generic_impl(const authum_char_t *path)
+{
+    return authum_engine_precache_open
+               ? g_engfuncs.pfnPrecacheGeneric(authum_engine_persistent(path))
+               : 0;
+}
+
 const authum_engine_t authum_engine_ops = {
     sizeof(authum_engine_t),
     authum_engine_get_game_dir_impl,
@@ -481,6 +516,9 @@ const authum_engine_t authum_engine_ops = {
     authum_engine_message_begin_impl,
     authum_engine_message_write_impl,
     authum_engine_message_end_impl,
+    authum_engine_precache_model_impl,
+    authum_engine_precache_sound_impl,
+    authum_engine_precache_generic_impl,
 };
 
 } // namespace
@@ -489,6 +527,12 @@ extern "C" const authum_engine_t *
 authum_engine(void)
 {
     return &authum_engine_ops;
+}
+
+extern "C" void
+authum_engine_host_set_precache(authum_bool_t open)
+{
+    authum_engine_precache_open = open != 0;
 }
 
 extern "C" void

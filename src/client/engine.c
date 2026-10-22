@@ -428,3 +428,38 @@ authum_engine_message_end(const authum_engine_t *engine)
     }
     authum_engine_message_open = authum_bool_false;
 }
+
+/* --- precache --------------------------------------------------------------- */
+
+authum_i32_t
+authum_engine_precache_model(const authum_engine_t *engine, const authum_char_t *path)
+{
+    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, precache_model) || authum_null_eq(path) ||
+        path[0] == 0)
+    {
+        return 0;
+    }
+    return engine->precache_model(path);
+}
+
+authum_i32_t
+authum_engine_precache_sound(const authum_engine_t *engine, const authum_char_t *path)
+{
+    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, precache_sound) || authum_null_eq(path) ||
+        path[0] == 0)
+    {
+        return 0;
+    }
+    return engine->precache_sound(path);
+}
+
+authum_i32_t
+authum_engine_precache_generic(const authum_engine_t *engine, const authum_char_t *path)
+{
+    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, precache_generic) ||
+        authum_null_eq(path) || path[0] == 0)
+    {
+        return 0;
+    }
+    return engine->precache_generic(path);
+}
