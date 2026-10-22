@@ -20,6 +20,7 @@
 #include <authum/engine.h>
 #include <authum/env.h>
 #include <authum/events.h>
+#include <authum/logger/ops.h>
 #include <authum/null.h>
 #include <authum/ptr.h>
 #include <authum/sandbox.h>
@@ -30,14 +31,17 @@ extern "C"
 {
 #endif
 
-    typedef void (*authum_host_log_fn)(int is_error, const authum_char_t *line);
     typedef authum_ptr (*authum_host_get_ptr_fn)(void);
 
     typedef struct authum_host
     {
         /** sizeof this table as built by the host — see <authum/abi.h>. */
         authum_usize_t size;
-        authum_host_log_fn log;
+        /**
+         * This module's log channel: the host files each line under
+         * `logs/<module>/` per `authum.cfg`. Use <authum/logger.h>.
+         */
+        const authum_logger_channel_t *logger;
         /**
          * Escape hatch: `enginefuncs_t *` / `globalvars_t *` (cast in the module).
          * Prefer ::authum_host_engine for the common subset — no HLSDK required.
@@ -73,8 +77,8 @@ extern "C"
 
     /* --- getters (modules: only these) --------------------------------------- */
 
-    authum_host_log_fn
-    authum_host_get_log(const authum_host_t *host);
+    const authum_logger_channel_t *
+    authum_host_logger(const authum_host_t *host);
 
     authum_host_get_ptr_fn
     authum_host_engine_funcs(const authum_host_t *host);
@@ -115,7 +119,7 @@ extern "C"
     /* --- setters (module-owned copies, e.g. clear on stop) ------------------- */
 
     void
-    authum_host_set_log(authum_host_t *host, authum_host_log_fn log);
+    authum_host_set_logger(authum_host_t *host, const authum_logger_channel_t *logger);
 
     void
     authum_host_set_engine_funcs(authum_host_t *host, authum_host_get_ptr_fn fn);

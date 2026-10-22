@@ -2,6 +2,7 @@
 #include <authum/error/code.h>
 #include <authum/events/host.h>
 #include <authum/host.h>
+#include <authum/logger/host.h>
 #include <authum/sandbox/host.h>
 #include <authum/module.h>
 #include <authum/module/api.h>
@@ -43,6 +44,7 @@ typedef struct authum_child_data
     authum_sandbox_t sandbox;
     authum_events_t events;
     authum_commands_t commands;
+    authum_logger_channel_t logger;
 } authum_child_data_t;
 
 const authum_module_info_t *
@@ -216,7 +218,6 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     authum_host_t *out = &data->host;
 
     out->size = sizeof(*out);
-    out->log = lh_null;
     out->engine_funcs = lh_null;
     out->globals = lh_null;
     out->env = lh_null;
@@ -232,6 +233,11 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     data->events.owner = data;
     out->events = &data->events;
 
+    data->logger.ops = authum_logs_ops();
+    data->logger.owner = data;
+    (void)authum_logs_open(data, data->info->name);
+    out->logger = &data->logger;
+
     data->commands.ops = authum_commands_host_ops();
     data->commands.owner = data;
     data->commands.scope = data->info->name;
@@ -240,7 +246,6 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     parent = lh_os_module_get_parent(child);
     if (!lh_null_eq(parent))
     {
-        out->log = (authum_host_log_fn)lh_os_module_get_sym(parent, "authum_host_log");
         out->engine_funcs =
             (authum_host_get_ptr_fn)lh_os_module_get_sym(parent, "authum_engine_funcs");
         out->globals = (authum_host_get_ptr_fn)lh_os_module_get_sym(parent, "authum_globals");
@@ -256,6 +261,7 @@ authum_child_release(authum_child_data_t *data)
 {
     authum_commands_host_drop_owner(data);
     authum_events_host_drop_owner(data);
+    authum_logs_close(data);
     authum_sandbox_host_root_destroy(data->sandbox.root);
     lh_runtime_allocator_free(data);
 }

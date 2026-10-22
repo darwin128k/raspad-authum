@@ -26,6 +26,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   test). Configure fails at once, with a hint, when the compiler cannot link
   with `-m32`, instead of at the first link.
 
+- **Logging is decided by Authum, not by each module.** Every module writes
+  `addons/authum/logs/<module>/YYYY-MM-DD.log` (a new file each day);
+  Authum's own lines and every module's warnings and errors (tagged
+  `[module]`) go to `logs/authum/`. Levels live in one new file,
+  `addons/authum/authum.cfg`: `log_level`, `log_console` (what also reaches
+  the server console / HLDS log through Metamod) and `<module>.log_level`.
+  `addons/authum/authum.log` is gone. A module just calls
+  `authum_logger_init(&log, host)` and `authum_logger_info` / … ; lines below
+  the level are dropped before formatting. Removed: sinks
+  (`authum_logger_sink_*`, `logging_mode`-style masks), private files
+  (`authum_logger_open_file`, `open_module_file`, `build_module_path`,
+  `file_split_*`), `set_level_flags` / `set_sinks` / `ensure_dir`,
+  `authum_host_get_log` / `set_log` and the host's `authum_host_log` export.
+  `authum_host_t.log` became `authum_host_t.logger` (a channel). New:
+  `authum_logger_is_enabled`, `authum_logger_level_parse` / `_name`,
+  `authum_path_ensure_dir`. The release zip ships a commented `authum.cfg`.
 - **Module ABI 1.0.0** (modules built for 0.x must be rebuilt):
   - Every table the host hands a module (`authum_host_t`, `authum_engine_t`,
     `authum_crypto_t`, the events / sandbox / commands ops) starts with

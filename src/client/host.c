@@ -1,11 +1,12 @@
 #include <authum/host.h>
+#include <authum/logger.h>
 
 #include <string.h>
 
-authum_host_log_fn
-authum_host_get_log(const authum_host_t *host)
+const authum_logger_channel_t *
+authum_host_logger(const authum_host_t *host)
 {
-    return (!authum_null_eq(host) && AUTHUM_ABI_HAS(host, log)) ? host->log : 0;
+    return (!authum_null_eq(host) && AUTHUM_ABI_HAS(host, logger)) ? host->logger : authum_null;
 }
 
 authum_host_get_ptr_fn
@@ -64,11 +65,11 @@ authum_host_env_module_cstr(const authum_host_t *host)
 }
 
 void
-authum_host_set_log(authum_host_t *host, authum_host_log_fn log)
+authum_host_set_logger(authum_host_t *host, const authum_logger_channel_t *logger)
 {
-    if (!authum_null_eq(host) && AUTHUM_ABI_FITS(host, log))
+    if (!authum_null_eq(host) && AUTHUM_ABI_FITS(host, logger))
     {
-        host->log = log;
+        host->logger = logger;
     }
 }
 
@@ -354,9 +355,7 @@ authum_host_server_command(const authum_host_t *host, const authum_char_t *cmd)
 void
 authum_host_log_line(const authum_host_t *host, int is_error, const authum_char_t *line)
 {
-    authum_host_log_fn log = authum_host_get_log(host);
-    if (log != 0 && !authum_null_eq(line))
-    {
-        log(is_error, line);
-    }
+    authum_logger_channel_write(authum_host_logger(host),
+                                is_error ? authum_logger_level_error : authum_logger_level_info,
+                                line);
 }

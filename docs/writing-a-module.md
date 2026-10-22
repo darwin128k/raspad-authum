@@ -16,7 +16,7 @@ Do not ship module code as C++ (no classes, namespaces, templates, references,
 `nullptr`, C++ headers). The host Metamod plugin (`authum_mm`) may remain C++ /
 mixed; only the loadable child modules are constrained to C + snake_case.
 Config *file* keys use snake_case matching C fields (e.g. `enable_revemu`,
-`logging_mode`) — not PascalCase.
+`max_bans`) — not PascalCase.
 
 **Naming / enums / types:** full rules in [module-style.md](module-style.md).
 In short — type-as-namespace like lh (`qproto_log_mode_console`, not
@@ -90,8 +90,9 @@ cstrike/addons/authum/
     example.cfg                # optional
 ```
 
-`modules.list`: see [modules.md](modules.md). Console: `authum`. Log:
-`addons/authum/authum.log`.
+`modules.list`: see [modules.md](modules.md). Console: `authum`. Logs:
+`addons/authum/logs/<module>/YYYY-MM-DD.log`, levels in `addons/authum/authum.cfg`
+([logging.md](logging.md)).
 
 ---
 
@@ -105,7 +106,7 @@ survives Authum's internal changes.
 
 | Accessor | Purpose |
 |----------|---------|
-| `authum_host_log_line` / logger sinks | → `authum.log` |
+| `authum_logger_*` / `authum_host_log_line` | the module's log — [logging.md](logging.md) |
 | `authum_host_engine` / game dir / print / command | engine facade (no HLSDK) |
 | `authum_host_engine_funcs` / `authum_host_globals` | escape hatch → HLSDK types |
 | `authum_host_env` / `authum_host_env_module` / `_game` / … | `authum_path_t` roots |
@@ -169,14 +170,12 @@ private utilities. Not the host runtime.
 
 ## 4. Logging
 
-Prefer **`authum_logger_t`** (`<authum/logger.h>`): lh-like levels + sink
-bricks (`host` / `console` / `file`). Do not invent a parallel
-`mymod_log()` unless you truly need a custom design — then write it from
-scratch or reuse the same bricks (`authum_host_log_line`,
-`authum_engine_server_print`, `FILE *`).
-
-Never assume a process-wide `lh_runtime_logger()` is `authum.log`.
-Policy: [logging.md](logging.md).
+Use **`authum_logger_t`** (`<authum/logger.h>`): `authum_logger_init(&log,
+&g_host)` in `start`, then `authum_logger_info` / `_warning` / `_debug` / ….
+The module only picks the level; Authum writes `logs/<module>/YYYY-MM-DD.log`
+and copies warnings and errors to its own log, as `authum.cfg` says. No
+logging keys in the module's cfg, no files of its own, no console prints for
+diagnostics. Details: [logging.md](logging.md).
 
 ---
 

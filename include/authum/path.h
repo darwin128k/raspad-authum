@@ -86,6 +86,10 @@ extern "C"
     authum_bool_t
     authum_path_parent(authum_path_t *self, const authum_path_t *path);
 
+    /** Create directory @p self (one level) if missing; true when it is a directory. */
+    authum_bool_t
+    authum_path_ensure_dir(const authum_path_t *self);
+
 #ifdef __cplusplus
 }
 #endif

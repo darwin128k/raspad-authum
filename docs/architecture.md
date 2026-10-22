@@ -43,7 +43,7 @@ the module's subscriptions and frees its sandbox.
 
 **Escape hatch:** link your own static lh (from Authum’s `lib/lh`) or any
 other library into *your* `.so` for private code. That is not the host runtime;
-`lh_runtime_logger()` there is not `authum.log`.
+`lh_runtime_logger()` there is not Authum's log.
 
 ## Tests
 

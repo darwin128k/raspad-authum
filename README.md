@@ -64,9 +64,10 @@ cstrike/addons/metamod/plugins.ini   →  linux addons/authum/authum_mm.so
 cstrike/addons/authum/
   authum_mm.so
   modules.list
+  authum.cfg                         ← log levels
   modules/<name>/
     <name>.so
-  authum.log                         ← written at runtime
+  logs/<authum|module>/YYYY-MM-DD.log ← written at runtime
 ```
 
 ## Docs
