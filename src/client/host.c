@@ -315,6 +315,115 @@ authum_host_client_command(const authum_host_t *host, authum_i32_t index, const 
 }
 
 authum_bool_t
+authum_host_client_get_stats(const authum_host_t *host, authum_i32_t index, authum_i32_t *ping,
+                             authum_i32_t *loss)
+{
+    return authum_engine_client_get_stats(authum_host_engine(host), index, ping, loss);
+}
+
+authum_bool_t
+authum_host_client_set_info(const authum_host_t *host, authum_i32_t index, const authum_char_t *key,
+                            const authum_char_t *value)
+{
+    return authum_engine_client_set_info(authum_host_engine(host), index, key, value);
+}
+
+authum_bool_t
+authum_host_client_chat(const authum_host_t *host, authum_i32_t index, authum_i32_t sender,
+                        const authum_char_t *text)
+{
+    return authum_engine_client_chat(authum_host_engine(host), index, sender, text);
+}
+
+authum_bool_t
+authum_host_cvar_register(const authum_host_t *host, const authum_char_t *name,
+                          const authum_char_t *value, authum_i32_t flags)
+{
+    return authum_engine_cvar_register(authum_host_engine(host), name, value, flags);
+}
+
+authum_i32_t
+authum_host_cvar_get_i32(const authum_host_t *host, const authum_char_t *name,
+                         authum_i32_t fallback)
+{
+    return authum_engine_cvar_get_i32(authum_host_engine(host), name, fallback);
+}
+
+authum_float_t
+authum_host_cvar_get_float(const authum_host_t *host, const authum_char_t *name,
+                           authum_float_t fallback)
+{
+    return authum_engine_cvar_get_float(authum_host_engine(host), name, fallback);
+}
+
+authum_i32_t
+authum_host_message_id(const authum_host_t *host, const authum_char_t *name)
+{
+    return authum_engine_message_id(authum_host_engine(host), name);
+}
+
+authum_bool_t
+authum_host_message_begin(const authum_host_t *host, authum_i32_t dest, authum_i32_t msg_id,
+                          authum_i32_t index)
+{
+    return authum_engine_message_begin(authum_host_engine(host), dest, msg_id, index);
+}
+
+void
+authum_host_message_write_byte(const authum_host_t *host, authum_i32_t value)
+{
+    authum_engine_message_write_byte(authum_host_engine(host), value);
+}
+
+void
+authum_host_message_write_char(const authum_host_t *host, authum_i32_t value)
+{
+    authum_engine_message_write_char(authum_host_engine(host), value);
+}
+
+void
+authum_host_message_write_short(const authum_host_t *host, authum_i32_t value)
+{
+    authum_engine_message_write_short(authum_host_engine(host), value);
+}
+
+void
+authum_host_message_write_long(const authum_host_t *host, authum_i32_t value)
+{
+    authum_engine_message_write_long(authum_host_engine(host), value);
+}
+
+void
+authum_host_message_write_entity(const authum_host_t *host, authum_i32_t index)
+{
+    authum_engine_message_write_entity(authum_host_engine(host), index);
+}
+
+void
+authum_host_message_write_angle(const authum_host_t *host, authum_float_t value)
+{
+    authum_engine_message_write_angle(authum_host_engine(host), value);
+}
+
+void
+authum_host_message_write_coord(const authum_host_t *host, authum_float_t value)
+{
+    authum_engine_message_write_coord(authum_host_engine(host), value);
+}
+
+void
+authum_host_message_write_string(const authum_host_t *host, const authum_char_t *text)
+{
+    authum_engine_message_write_string(authum_host_engine(host), text);
+}
+
+void
+authum_host_message_end(const authum_host_t *host)
+{
+    authum_engine_message_end(authum_host_engine(host));
+}
+
+authum_bool_t
 authum_host_query_cvar(const authum_host_t *host, authum_i32_t index, const authum_char_t *cvar,
                        authum_i32_t request_id)
 {

@@ -86,6 +86,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Engine facade, more of what modules took from raw `engine_funcs`:
+  user messages (`authum_engine_message_id` / `_begin` / `_write_byte` …
+  `_write_string` / `_end`, destinations and argument kinds in
+  `<authum/engine/message.h>`), `authum_engine_client_chat` (colored chat
+  through the game's `SayText`), `cvar_register` (a module's own server cvar,
+  `authum_engine_cvar_*` flags) with `cvar_get_i32` / `cvar_get_float`,
+  `client_get_stats` (ping, loss) and `client_set_info` — each with an
+  `authum_host_*` shortcut.
+- `<authum/timer.h>`: `authum_timer_add(host, delay, interval, fn, user)` /
+  `_remove` / `_clear` / `_count` — module timers on server frames, counting
+  across map changes, dropped with the module.
 - `examples/`: module templates, one topic each, all loaded and exercised by
   the new CTest `authum_examples` (real event bus, commands, sandbox and logs,
   a fake engine): `skeleton` (the empty template), `hello` (updated to the

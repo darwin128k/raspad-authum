@@ -36,6 +36,7 @@
 #include <authum/sandbox.h>
 #include <authum/size.h>
 #include <authum/sql.h>
+#include <authum/timer.h>
 #include <authum/symbol.h>
 #include <authum/version.h>
 

@@ -1,6 +1,9 @@
 #include <authum/engine.h>
 
+#include <authum/cstr.h>
+
 #include <stdio.h>
+#include <stdlib.h>
 
 /** Empty @p buf so a refused call still leaves a valid string. */
 authum_bool_t
@@ -229,4 +232,199 @@ authum_engine_query_cvar(const authum_engine_t *engine, authum_i32_t index,
         return authum_bool_false;
     }
     return engine->query_client_cvar(index, cvar, request_id);
+}
+
+authum_bool_t
+authum_engine_client_get_stats(const authum_engine_t *engine, authum_i32_t index,
+                               authum_i32_t *ping, authum_i32_t *loss)
+{
+    authum_i32_t dummy_ping;
+    authum_i32_t dummy_loss;
+
+    ping = authum_null_eq(ping) ? &dummy_ping : ping;
+    loss = authum_null_eq(loss) ? &dummy_loss : loss;
+    *ping = 0;
+    *loss = 0;
+    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, client_get_stats))
+    {
+        return authum_bool_false;
+    }
+    return engine->client_get_stats(index, ping, loss);
+}
+
+authum_bool_t
+authum_engine_client_set_info(const authum_engine_t *engine, authum_i32_t index,
+                              const authum_char_t *key, const authum_char_t *value)
+{
+    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, client_set_info) || authum_null_eq(key) ||
+        key[0] == '\0' || authum_null_eq(value))
+    {
+        return authum_bool_false;
+    }
+    return engine->client_set_info(index, key, value);
+}
+
+authum_bool_t
+authum_engine_client_chat(const authum_engine_t *engine, authum_i32_t index, authum_i32_t sender,
+                          const authum_char_t *text)
+{
+    authum_i32_t say_text = authum_engine_message_id(engine, "SayText");
+    authum_i32_t dest = index == 0 ? authum_message_dest_all : authum_message_dest_one;
+
+    if (say_text == 0 || authum_null_eq(text))
+    {
+        return authum_bool_false;
+    }
+    /* SayText carries the sender's index first; its team picks the \x03 color. */
+    if (!authum_engine_message_begin(engine, dest, say_text, index))
+    {
+        return authum_bool_false;
+    }
+    authum_engine_message_write_byte(engine, sender);
+    authum_engine_message_write_string(engine, text);
+    authum_engine_message_end(engine);
+    return authum_bool_true;
+}
+
+/* --- cvars ------------------------------------------------------------------ */
+
+authum_bool_t
+authum_engine_cvar_register(const authum_engine_t *engine, const authum_char_t *name,
+                            const authum_char_t *value, authum_i32_t flags)
+{
+    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, cvar_register) || authum_null_eq(name) ||
+        name[0] == '\0')
+    {
+        return authum_bool_false;
+    }
+    return engine->cvar_register(name, authum_null_eq(value) ? "" : value, flags);
+}
+
+authum_i32_t
+authum_engine_cvar_get_i32(const authum_engine_t *engine, const authum_char_t *name,
+                           authum_i32_t fallback)
+{
+    authum_char_t text[64];
+    authum_i32_t value;
+
+    return (authum_engine_cvar_get(engine, name, text, sizeof text) &&
+            authum_cstr_parse_i32(text, &value))
+               ? value
+               : fallback;
+}
+
+authum_float_t
+authum_engine_cvar_get_float(const authum_engine_t *engine, const authum_char_t *name,
+                             authum_float_t fallback)
+{
+    authum_char_t text[64];
+    char *end;
+    authum_float_t value;
+
+    if (!authum_engine_cvar_get(engine, name, text, sizeof text))
+    {
+        return fallback;
+    }
+    value = strtof(text, &end);
+    return (end != text) ? value : fallback;
+}
+
+/* --- user messages ---------------------------------------------------------- */
+
+authum_i32_t
+authum_engine_message_id(const authum_engine_t *engine, const authum_char_t *name)
+{
+    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, message_id) || authum_null_eq(name) ||
+        name[0] == '\0')
+    {
+        return 0;
+    }
+    return engine->message_id(name);
+}
+
+/* Set by a successful begin, cleared by end: writes after a refused begin are dropped. */
+authum_bool_t authum_engine_message_open;
+
+authum_bool_t
+authum_engine_message_begin(const authum_engine_t *engine, authum_i32_t dest, authum_i32_t msg_id,
+                            authum_i32_t index)
+{
+    authum_engine_message_open = authum_bool_false;
+    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, message_begin) ||
+        !AUTHUM_ABI_HAS(engine, message_write) || !AUTHUM_ABI_HAS(engine, message_end) ||
+        msg_id <= 0)
+    {
+        return authum_bool_false;
+    }
+    authum_engine_message_open = engine->message_begin(dest, msg_id, index);
+    return authum_engine_message_open;
+}
+
+void
+authum_engine_message_write(const authum_engine_t *engine, authum_i32_t kind, authum_i32_t value,
+                            authum_float_t real, const authum_char_t *text)
+{
+    if (authum_engine_message_open && !authum_null_eq(engine))
+    {
+        engine->message_write(kind, value, real, text);
+    }
+}
+
+void
+authum_engine_message_write_byte(const authum_engine_t *engine, authum_i32_t value)
+{
+    authum_engine_message_write(engine, authum_message_arg_byte, value, 0.0f, authum_null);
+}
+
+void
+authum_engine_message_write_char(const authum_engine_t *engine, authum_i32_t value)
+{
+    authum_engine_message_write(engine, authum_message_arg_char, value, 0.0f, authum_null);
+}
+
+void
+authum_engine_message_write_short(const authum_engine_t *engine, authum_i32_t value)
+{
+    authum_engine_message_write(engine, authum_message_arg_short, value, 0.0f, authum_null);
+}
+
+void
+authum_engine_message_write_long(const authum_engine_t *engine, authum_i32_t value)
+{
+    authum_engine_message_write(engine, authum_message_arg_long, value, 0.0f, authum_null);
+}
+
+void
+authum_engine_message_write_entity(const authum_engine_t *engine, authum_i32_t index)
+{
+    authum_engine_message_write(engine, authum_message_arg_entity, index, 0.0f, authum_null);
+}
+
+void
+authum_engine_message_write_angle(const authum_engine_t *engine, authum_float_t value)
+{
+    authum_engine_message_write(engine, authum_message_arg_angle, 0, value, authum_null);
+}
+
+void
+authum_engine_message_write_coord(const authum_engine_t *engine, authum_float_t value)
+{
+    authum_engine_message_write(engine, authum_message_arg_coord, 0, value, authum_null);
+}
+
+void
+authum_engine_message_write_string(const authum_engine_t *engine, const authum_char_t *text)
+{
+    authum_engine_message_write(engine, authum_message_arg_string, 0, 0.0f,
+                                authum_null_eq(text) ? "" : text);
+}
+
+void
+authum_engine_message_end(const authum_engine_t *engine)
+{
+    if (authum_engine_message_open && !authum_null_eq(engine))
+    {
+        engine->message_end();
+    }
+    authum_engine_message_open = authum_bool_false;
 }
