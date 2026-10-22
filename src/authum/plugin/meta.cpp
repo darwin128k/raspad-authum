@@ -25,7 +25,14 @@
 #include <lh/void.h>
 
 static META_FUNCTIONS g_meta_functions = {
-    nullptr, nullptr, GetEntityAPI2, nullptr, nullptr, nullptr, GetEngineFunctions, nullptr,
+    nullptr,            /* GetEntityAPI */
+    nullptr,            /* GetEntityAPI_Post */
+    GetEntityAPI2,      /* ClientConnect … ClientCommand, ServerDeactivate, StartFrame */
+    GetEntityAPI2_Post, /* ServerActivate */
+    GetNewDLLFunctions, /* CvarValue2 */
+    nullptr,            /* GetNewDLLFunctions_Post */
+    GetEngineFunctions, /* nothing hooked yet */
+    nullptr,            /* GetEngineFunctions_Post */
 };
 
 plugin_info_t Plugin_info;
@@ -153,7 +160,7 @@ Meta_Attach(PLUG_LOADTIME /* now */, META_FUNCTIONS *pFunctionTable, meta_global
         const lh_fs_path_t *image;
         lh_fs_path_t parent;
 
-        image = lh_os_module_get_path_as_const(&authum);
+        image = lh_os_module_get_path(&authum);
         lh_fs_path_init(lh_addr_of(parent));
         if (lh_null_ne(image) && lh_fs_path_parent(lh_addr_of(parent), image))
         {

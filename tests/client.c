@@ -1,14 +1,20 @@
 /**
  * @file client.c
- * @brief authum_client: cstr, path, cfg, engine kick.
+ * @brief authum_client: cstr, path, cfg, engine kick, ed25519, detour, symbol, json, sql.
  */
 
 #include <check.h>
 
 #include <authum/cfg.h>
+#include <authum/crypto/ed25519.h>
 #include <authum/cstr.h>
+#include <authum/detour.h>
 #include <authum/engine.h>
+#include <authum/json.h>
+#include <authum/net.h>
 #include <authum/path.h>
+#include <authum/sql.h>
+#include <authum/symbol.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -131,12 +137,279 @@ test_engine_kick(void)
     authum_engine_kick(authum_null, 1, "x");
 }
 
+void
+test_hex(authum_byte_t *out, const char *hex)
+{
+    unsigned int byte;
+
+    while (hex[0] != '\0' && hex[1] != '\0')
+    {
+        sscanf(hex, "%2x", &byte);
+        *out++ = (authum_byte_t)byte;
+        hex += 2;
+    }
+}
+
+/* RFC 8032 section 7.1, TEST 1 (empty message) and TEST 2 (one byte 0x72). */
+void
+test_ed25519(void)
+{
+    authum_byte_t seed[AUTHUM_CRYPTO_ED25519_SEED_SIZE];
+    authum_byte_t secret_key[AUTHUM_CRYPTO_ED25519_SECRET_KEY_SIZE];
+    authum_byte_t public_key[AUTHUM_CRYPTO_ED25519_PUBLIC_KEY_SIZE];
+    authum_byte_t expected_key[AUTHUM_CRYPTO_ED25519_PUBLIC_KEY_SIZE];
+    authum_byte_t signature[AUTHUM_CRYPTO_ED25519_SIGNATURE_SIZE];
+    authum_byte_t expected_sig[AUTHUM_CRYPTO_ED25519_SIGNATURE_SIZE];
+    authum_byte_t message[1] = {0x72};
+    authum_byte_t zeros[AUTHUM_CRYPTO_ED25519_SEED_SIZE];
+
+    test_hex(seed, "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60");
+    test_hex(expected_key, "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a");
+    test_hex(expected_sig, "e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e06522490155"
+                           "5fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b");
+    authum_crypto_ed25519_key_pair(secret_key, public_key, seed);
+    memset(zeros, 0, sizeof zeros);
+    CHECK(memcmp(seed, zeros, sizeof zeros) == 0);
+    CHECK(memcmp(public_key, expected_key, sizeof expected_key) == 0);
+    authum_crypto_ed25519_sign(signature, secret_key, authum_null, 0u);
+    CHECK(memcmp(signature, expected_sig, sizeof expected_sig) == 0);
+    CHECK(authum_crypto_ed25519_check(signature, public_key, authum_null, 0u));
+
+    test_hex(seed, "4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb");
+    test_hex(expected_key, "3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c");
+    test_hex(expected_sig, "92a009a9f0d4cab8720e820b5f642540a2b27b5416503f8fb3762223ebdb69da"
+                           "085ac1e43e15996e458f3613d0f11d8c387b2eaeb4302aeeb00d291612bb0c00");
+    authum_crypto_ed25519_key_pair(secret_key, public_key, seed);
+    CHECK(memcmp(public_key, expected_key, sizeof expected_key) == 0);
+    authum_crypto_ed25519_sign(signature, secret_key, message, sizeof message);
+    CHECK(memcmp(signature, expected_sig, sizeof expected_sig) == 0);
+    CHECK(authum_crypto_ed25519_check(signature, public_key, message, sizeof message));
+
+    /* Any flipped bit in message, signature or key must fail. */
+    message[0] ^= 1u;
+    CHECK(!authum_crypto_ed25519_check(signature, public_key, message, sizeof message));
+    message[0] ^= 1u;
+    signature[0] ^= 1u;
+    CHECK(!authum_crypto_ed25519_check(signature, public_key, message, sizeof message));
+    signature[0] ^= 1u;
+    public_key[0] ^= 1u;
+    CHECK(!authum_crypto_ed25519_check(signature, public_key, message, sizeof message));
+    public_key[0] ^= 1u;
+    CHECK(!authum_crypto_ed25519_check(authum_null, public_key, message, sizeof message));
+
+    authum_crypto_wipe(secret_key, sizeof secret_key);
+    CHECK(memcmp(secret_key, zeros, sizeof zeros) == 0);
+}
+
+authum_detour_t g_test_detour;
+
+/* noinline + calls through a volatile pointer: the patched bytes must be what runs. */
+__attribute__((noinline)) int
+test_detour_target(int x)
+{
+    return x + 1;
+}
+
+int
+test_detour_hook(int x)
+{
+    int original;
+
+    authum_detour_suspend(&g_test_detour);
+    original = ((int (*)(int))g_test_detour.target)(x);
+    authum_detour_resume(&g_test_detour);
+    return original * 100;
+}
+
+void
+test_detour(void)
+{
+    int (*volatile fn)(int) = test_detour_target;
+    authum_detour_t other;
+
+    CHECK(fn(1) == 2);
+#if defined(__i386__)
+    CHECK(authum_detour_attach(&g_test_detour, (authum_ptr)fn, (authum_ptr)&test_detour_hook));
+    CHECK(!authum_detour_attach(&g_test_detour, (authum_ptr)fn, (authum_ptr)&test_detour_hook));
+    CHECK(fn(1) == 200);
+    CHECK(fn(4) == 500);
+    authum_detour_suspend(&g_test_detour);
+    CHECK(fn(1) == 2);
+    authum_detour_resume(&g_test_detour);
+    CHECK(fn(1) == 200);
+    authum_detour_detach(&g_test_detour);
+    CHECK(fn(1) == 2);
+    authum_detour_detach(&g_test_detour); /* second detach is a no-op */
+    CHECK(fn(1) == 2);
+#endif
+    memset(&other, 0, sizeof other);
+    CHECK(!authum_detour_attach(&other, authum_null, (authum_ptr)&test_detour_hook));
+    CHECK(!authum_detour_attach(authum_null, (authum_ptr)fn, (authum_ptr)&test_detour_hook));
+}
+
+void
+test_symbol(void)
+{
+    authum_bool_t via_dynsym = authum_bool_false;
+
+    CHECK(authum_symbol_find("libc.so.6", "strlen", &via_dynsym) != authum_null);
+    CHECK(via_dynsym);
+    CHECK(authum_symbol_find("libc.so.6", "authum_no_such_symbol", &via_dynsym) == authum_null);
+    CHECK(!via_dynsym);
+    CHECK(authum_symbol_find("authum_not_loaded.so", "strlen", authum_null) == authum_null);
+    CHECK(authum_symbol_find_engine("SVC_Info", authum_null) == authum_null);
+    CHECK(authum_symbol_find(authum_null, "strlen", authum_null) == authum_null);
+}
+
+void
+test_net(void)
+{
+    authum_char_t text[AUTHUM_NET_IPV4_TEXT_SIZE];
+    authum_u32_t ips[8];
+    authum_usize_t n;
+    authum_usize_t i;
+
+    CHECK(authum_net_ipv4_is_external(0x25e6d2dau));  /* 37.230.210.218 */
+    CHECK(authum_net_ipv4_is_external(0x08080808u));  /* 8.8.8.8 */
+    CHECK(authum_net_ipv4_is_external(0xac200001u));  /* 172.32.0.1, just past 172.16/12 */
+    CHECK(!authum_net_ipv4_is_external(0x7f000001u)); /* 127.0.0.1 */
+    CHECK(!authum_net_ipv4_is_external(0x0a000001u)); /* 10.0.0.1 */
+    CHECK(!authum_net_ipv4_is_external(0xac1f0001u)); /* 172.31.0.1 */
+    CHECK(!authum_net_ipv4_is_external(0xc0a80101u)); /* 192.168.1.1 */
+    CHECK(!authum_net_ipv4_is_external(0x64400001u)); /* 100.64.0.1 CGNAT */
+    CHECK(!authum_net_ipv4_is_external(0xa9fe0101u)); /* 169.254.1.1 */
+    CHECK(!authum_net_ipv4_is_external(0xe0000001u)); /* 224.0.0.1 */
+    CHECK(!authum_net_ipv4_is_external(0x00000000u));
+    CHECK(authum_net_ipv4_is_loopback(0x7f000001u));
+    CHECK(!authum_net_ipv4_is_loopback(0x0a000001u));
+
+    CHECK(authum_net_ipv4_format(0x25e6d2dau, text, sizeof text));
+    CHECK_STR(text, "37.230.210.218");
+    CHECK(authum_net_ipv4_format(0xffffffffu, text, sizeof text));
+    CHECK_STR(text, "255.255.255.255");
+    CHECK(!authum_net_ipv4_format(0x25e6d2dau, text, 8u));
+
+    /* Real interfaces: whatever this machine has, the lists must be clean. */
+    n = authum_net_ipv4_external(ips, 8u);
+    for (i = 0u; i < n && i < 8u; i++)
+    {
+        CHECK(authum_net_ipv4_is_external(ips[i]));
+    }
+    n = authum_net_ipv4_internal(ips, 8u);
+    for (i = 0u; i < n && i < 8u; i++)
+    {
+        CHECK(!authum_net_ipv4_is_external(ips[i]) && !authum_net_ipv4_is_loopback(ips[i]));
+    }
+    CHECK(authum_net_ipv4_internal(authum_null, 0u) == n); /* count without a buffer */
+}
+
+void
+test_json(void)
+{
+    const char *reply =
+        "{\"ip\":\"8.8.8.8\",\"countryCode\":\"US\",\"asn\":15169,"
+        "\"isp\":\"Caf\\u00e9 \\\"Net\\\"\",\"note\":\"asn: 1\",\"big\":3000000000}";
+    authum_char_t text[32];
+    authum_char_t small[4];
+    authum_i32_t n = 0;
+
+    CHECK(authum_json_object_get_cstr(reply, "countryCode", text, sizeof text));
+    CHECK_STR(text, "US");
+    /* Escapes are decoded, é to UTF-8 included. */
+    CHECK(authum_json_object_get_cstr(reply, "isp", text, sizeof text));
+    CHECK_STR(text, "Caf\xC3\xA9 \"Net\"");
+    /* Truncated to the buffer. */
+    CHECK(authum_json_object_get_cstr(reply, "ip", small, sizeof small));
+    CHECK_STR(small, "8.8");
+    CHECK(!authum_json_object_get_cstr(reply, "asn", text, sizeof text)); /* not a string */
+    CHECK(!authum_json_object_get_cstr(reply, "missing", text, sizeof text));
+    CHECK_STR(text, "");
+
+    CHECK(authum_json_object_get_i32(reply, "asn", &n) && n == 15169);
+    CHECK(!authum_json_object_get_i32(reply, "big", &n)); /* past i32 */
+    CHECK(!authum_json_object_get_i32(reply, "ip", &n));
+    /* "asn: 1" inside a string value is text, not a field. */
+    CHECK(authum_json_object_get_i32_or("{\"note\":\"asn: 1\"}", "asn", -1) == -1);
+    CHECK(authum_json_object_get_i32_or("{\"asn\": 7}", "asn", -1) == 7);
+    CHECK(authum_json_object_get_i32_or("{\"asn\": 7", "asn", -1) == -1); /* broken JSON */
+    CHECK(authum_json_object_get_i32_or("[1,2]", "asn", -1) == -1);
+    CHECK(authum_json_object_get_i32_or(authum_null, "asn", -1) == -1);
+}
+
+void
+test_sql(void)
+{
+    authum_sql_t sql;
+    authum_sql_stmt_t stmt;
+    int rows = 0;
+
+    authum_sql_init(&sql);
+    CHECK(!authum_sql_is_open(&sql));
+    CHECK(!authum_sql_exec(&sql, "SELECT 1"));
+
+    CHECK(authum_sql_open_sqlite(&sql, ":memory:"));
+    CHECK(authum_sql_is_open(&sql));
+    CHECK(authum_sql_exec(&sql, "CREATE TABLE bans (id INTEGER PRIMARY KEY, steam INTEGER, "
+                                "name TEXT, reason TEXT);"
+                                "CREATE INDEX bans_steam ON bans(steam);"));
+
+    CHECK(
+        authum_sql_prepare(&sql, &stmt, "INSERT INTO bans (steam, name, reason) VALUES (?, ?, ?)"));
+    CHECK(authum_sql_stmt_bind_i64(&stmt, 1, 76561198000000001LL));
+    CHECK(authum_sql_stmt_bind_cstr(&stmt, 2, "O'Brien"));
+    CHECK(authum_sql_stmt_bind_cstr(&stmt, 3, authum_null)); /* null text binds "" */
+    CHECK(!authum_sql_stmt_bind_i32(&stmt, 0, 1));           /* parameters count from 1 */
+    CHECK(authum_sql_stmt_step_done(&stmt));
+    authum_sql_stmt_finalize(&stmt);
+    CHECK(authum_sql_last_insert_id(&sql) == 1);
+
+    CHECK(authum_sql_prepare(&sql, &stmt, "SELECT steam, name, reason FROM bans WHERE steam = ?"));
+    CHECK(authum_sql_stmt_bind_i64(&stmt, 1, 76561198000000001LL));
+    while (authum_sql_stmt_step_row(&stmt))
+    {
+        const authum_char_t *name = authum_sql_stmt_column_cstr(&stmt, 1);
+
+        ++rows;
+        CHECK(authum_sql_stmt_column_i64(&stmt, 0) == 76561198000000001LL);
+        CHECK_STR(name, "O'Brien");
+        CHECK_STR(authum_sql_stmt_column_cstr(&stmt, 2), "");
+        CHECK_STR(authum_sql_stmt_column_cstr(&stmt, 7), ""); /* no such column */
+        /* An earlier column's text is still there after reading another. */
+        CHECK_STR(name, "O'Brien");
+    }
+    CHECK(rows == 1);
+    authum_sql_stmt_finalize(&stmt);
+    authum_sql_stmt_finalize(&stmt); /* a second finalize is a no-op */
+
+    CHECK(!authum_sql_exec(&sql, "SELECT * FROM nowhere"));
+    CHECK(strstr(authum_sql_errmsg(&sql), "no such table") != authum_null);
+    CHECK(!authum_sql_prepare(&sql, &stmt, "SELEKT"));
+    CHECK(authum_sql_errmsg(&sql)[0] != '\0');
+    CHECK(authum_sql_exec(&sql, "SELECT 1"));
+    CHECK_STR(authum_sql_errmsg(&sql), ""); /* a success clears the message */
+
+    authum_sql_close(&sql);
+    CHECK(!authum_sql_is_open(&sql));
+    authum_sql_close(&sql);
+
+    /* MySQL: with or without a client library here, nothing listens on port 1. */
+    CHECK(!authum_sql_open_mysql(&sql, "127.0.0.1", "u", "p", "d", 1u));
+    CHECK(!authum_sql_is_open(&sql));
+    CHECK(authum_sql_errmsg(&sql)[0] != '\0');
+}
+
 int
 main(void)
 {
+    test_json();
+    test_sql();
+    test_net();
     test_cstr();
     test_path();
     test_cfg();
     test_engine_kick();
+    test_ed25519();
+    test_detour();
+    test_symbol();
     return authum_check_report("authum_client");
 }

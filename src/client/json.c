@@ -1,83 +1,47 @@
 #include <authum/json.h>
 
-#include <authum/cstr.h>
+#include <lh/json.h>
 
-#include <stdlib.h>
 #include <string.h>
 
-static const authum_char_t *
-authum_json_skip_ws(const authum_char_t *p)
+/* Read @p json into @p root; the caller deinits @p root whatever this returns. */
+static authum_bool_t
+authum_json_read(const authum_char_t *json, lh_json_node_t *root)
 {
-    while (!authum_null_eq(p) && (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r'))
+    lh_json_reader_t reader;
+    lh_str_view_t text;
+
+    lh_json_node_init(root);
+    if (authum_null_eq(json))
     {
-        ++p;
+        return authum_bool_false;
     }
-    return p;
+    lh_str_view_init(&text, json);
+    lh_json_reader_init(&reader, text);
+    return lh_json_reader_read(&reader, root) ? authum_bool_true : authum_bool_false;
 }
 
-/**
- * Find `"key"` then `:` in @p json. Returns pointer at the value start, or null.
- */
-static const authum_char_t *
-authum_json_object_find_value(const authum_char_t *json, const authum_char_t *key)
+/* The member @p key of the object @p root, or null. */
+static const lh_json_node_t *
+authum_json_object_find(const lh_json_node_t *root, const authum_char_t *key)
 {
-    authum_char_t needle[96];
-    authum_usize_t key_len;
-    const authum_char_t *p;
-    const authum_char_t *end;
+    lh_str_view_t name;
 
-    if (authum_null_eq(json) || authum_null_eq(key) || key[0] == '\0')
+    if (authum_null_eq(key) || key[0] == '\0')
     {
         return authum_null;
     }
-
-    key_len = (authum_usize_t)strlen(key);
-    if (key_len + 3u >= sizeof needle)
-    {
-        return authum_null;
-    }
-
-    needle[0] = '"';
-    memcpy(needle + 1, key, key_len);
-    needle[key_len + 1u] = '"';
-    needle[key_len + 2u] = '\0';
-
-    p = json;
-    for (;;)
-    {
-        p = strstr(p, needle);
-        if (authum_null_eq(p))
-        {
-            return authum_null;
-        }
-        /* avoid matching a longer key that ends with our key */
-        if (p > json)
-        {
-            authum_char_t before = p[-1];
-            if (before != '{' && before != ',' && before != ' ' && before != '\t' &&
-                before != '\n' && before != '\r')
-            {
-                p += key_len + 2u;
-                continue;
-            }
-        }
-        end = p + key_len + 2u;
-        end = authum_json_skip_ws(end);
-        if (*end != ':')
-        {
-            p += key_len + 2u;
-            continue;
-        }
-        return authum_json_skip_ws(end + 1);
-    }
+    lh_str_view_init(&name, key);
+    return lh_json_node_get_member(root, name);
 }
 
 authum_bool_t
 authum_json_object_get_cstr(const authum_char_t *json, const authum_char_t *key, authum_char_t *out,
                             authum_usize_t out_size)
 {
-    const authum_char_t *p;
-    authum_usize_t n = 0u;
+    lh_json_node_t root;
+    const lh_json_node_t *member;
+    authum_bool_t found = authum_bool_false;
 
     if (authum_null_eq(out) || out_size == 0u)
     {
@@ -85,71 +49,55 @@ authum_json_object_get_cstr(const authum_char_t *json, const authum_char_t *key,
     }
     out[0] = '\0';
 
-    p = authum_json_object_find_value(json, key);
-    if (authum_null_eq(p) || *p != '"')
+    if (authum_json_read(json, &root))
     {
-        return authum_bool_false;
-    }
-    ++p;
+        member = authum_json_object_find(&root, key);
+        if (!authum_null_eq(member) && lh_json_node_has_kind(member, lh_json_kind_string))
+        {
+            const lh_str_view_t value = lh_json_node_get_str(member);
+            authum_usize_t n = (authum_usize_t)lh_str_view_get_size(&value);
 
-    while (*p && *p != '"')
-    {
-        authum_char_t c = *p++;
-        if (c == '\\' && *p)
-        {
-            c = *p++;
-            if (c == 'n')
+            /* Truncated to the buffer, as before; the text is already unescaped. */
+            if (n > out_size - 1u)
             {
-                c = '\n';
+                n = out_size - 1u;
             }
-            else if (c == 't')
+            if (n > 0u)
             {
-                c = '\t';
+                memcpy(out, lh_str_view_get_data(&value), n);
             }
-            else if (c == 'r')
-            {
-                c = '\r';
-            }
-            /* \" \\ \/ kept as the escaped char */
-        }
-        if (n + 1u < out_size)
-        {
-            out[n++] = c;
+            out[n] = '\0';
+            found = authum_bool_true;
         }
     }
-    out[n] = '\0';
-    return (*p == '"') ? authum_bool_true : authum_bool_false;
+    lh_json_node_deinit(&root);
+    return found;
 }
 
 authum_bool_t
 authum_json_object_get_i32(const authum_char_t *json, const authum_char_t *key, authum_i32_t *out)
 {
-    const authum_char_t *p;
-    authum_char_t *end = authum_null;
-    long v;
+    lh_json_node_t root;
+    const lh_json_node_t *member;
+    lh_sllong_t value;
+    authum_bool_t found = authum_bool_false;
 
     if (authum_null_eq(out))
     {
         return authum_bool_false;
     }
-
-    p = authum_json_object_find_value(json, key);
-    if (authum_null_eq(p))
+    if (authum_json_read(json, &root))
     {
-        return authum_bool_false;
+        member = authum_json_object_find(&root, key);
+        if (!authum_null_eq(member) && lh_json_node_get_sint(member, &value) &&
+            value >= -2147483647LL - 1 && value <= 2147483647LL)
+        {
+            *out = (authum_i32_t)value;
+            found = authum_bool_true;
+        }
     }
-    if (*p != '-' && (*p < '0' || *p > '9'))
-    {
-        return authum_bool_false;
-    }
-
-    v = strtol(p, &end, 10);
-    if (authum_null_eq(end) || end == p)
-    {
-        return authum_bool_false;
-    }
-    *out = (authum_i32_t)v;
-    return authum_bool_true;
+    lh_json_node_deinit(&root);
+    return found;
 }
 
 authum_i32_t
