@@ -76,7 +76,7 @@ cstrike/addons/authum/
 |-----|--|
 | [CHANGELOG.md](CHANGELOG.md) | Releases |
 | [docs/architecture.md](docs/architecture.md) | Host facade + optional private deps |
-| [examples/](examples/) | `hello` module |
+| [examples/](examples/) | Module templates: skeleton, events, engine, chat filter, cvar check, config, SQLite, module-to-module bus |
 | [docs/README.md](docs/README.md) | Index |
 | [docs/writing-a-module.md](docs/writing-a-module.md) | Write your own module |
 | [docs/modules.md](docs/modules.md) | Loader / `modules.list` |

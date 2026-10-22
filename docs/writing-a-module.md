@@ -4,7 +4,8 @@ An Authum module is a shared library (`.so` / `.dll`) that the host
 `authum_mm` loads. It is **not** a Metamod plugin. Metamod only loads
 Authum once; everything else hangs under Authum.
 
-See [architecture.md](architecture.md). Sample: [`examples/hello`](../examples/hello/).
+See [architecture.md](architecture.md). Templates to copy: [`examples/`](../examples/) — start from
+[`skeleton`](../examples/skeleton/), take pieces from the topic examples.
 
 ### Language requirement
 

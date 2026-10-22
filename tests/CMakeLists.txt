@@ -33,3 +33,16 @@ add_test(NAME authum_commands COMMAND authum_test_commands)
 add_executable(authum_test_logs logs.c)
 target_link_libraries(authum_test_logs PRIVATE authum_test_host authum_test_check)
 add_test(NAME authum_logs COMMAND authum_test_logs)
+
+# Smoke test of examples/: loads every built example module.
+if (AUTHUM_BUILD_EXAMPLES)
+    add_executable(authum_test_examples examples.c)
+    target_link_libraries(authum_test_examples PRIVATE authum_test_host authum_test_check
+            ${CMAKE_DL_LIBS})
+    target_compile_definitions(authum_test_examples PRIVATE
+            AUTHUM_TEST_EXAMPLES_DIR="${CMAKE_BINARY_DIR}/examples"
+            AUTHUM_TEST_MODULE_SUFFIX="${CMAKE_SHARED_MODULE_SUFFIX}")
+    add_dependencies(authum_test_examples skeleton hello welcome chatfilter cvarguard settings
+            stats scores scoreboard)
+    add_test(NAME authum_examples COMMAND authum_test_examples)
+endif ()

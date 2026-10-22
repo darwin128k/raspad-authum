@@ -86,6 +86,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `examples/`: module templates, one topic each, all loaded and exercised by
+  the new CTest `authum_examples` (real event bus, commands, sandbox and logs,
+  a fake engine): `skeleton` (the empty template), `hello` (updated to the
+  new logger), `welcome` (player / map events, engine facade), `chatfilter`
+  (block a client command), `cvarguard` (client cvar query, kick),
+  `settings` (module cfg with defaults, a checked key, reload), `stats`
+  (SQLite + a journal), `scores` + `scoreboard` (two modules over the event
+  bus with a types-only header). Built with `-Wall -Wextra`, warning-free.
 - More host events from Metamod hooks: `authum.client.command` (`ClientCommand`,
   a handler can block it), `authum.client.cvar_value` (`CvarValue2`, the answer
   to `QueryClientCvarValue2`), and `<authum/event/server.h>` with
