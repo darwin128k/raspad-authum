@@ -23,6 +23,7 @@
 #include <authum/bool.h>
 #include <authum/byte.h>
 #include <authum/char.h>
+#include <authum/engine/entity.h>
 #include <authum/engine/message.h>
 #include <authum/float.h>
 #include <authum/null.h>
@@ -145,6 +146,31 @@ extern "C"
         authum_i32_t (*precache_model)(const authum_char_t *path);
         authum_i32_t (*precache_sound)(const authum_char_t *path);
         authum_i32_t (*precache_generic)(const authum_char_t *path);
+
+        /* --- entities (<authum/engine/entity.h>) --------------------------- */
+
+        /** One past the highest entity index (`maxEntities`). */
+        authum_i32_t (*entity_max)(void);
+        /** True when @p index is a live entity (0 = the world). */
+        authum_bool_t (*entity_is_valid)(authum_i32_t index);
+        authum_bool_t (*entity_get_classname)(authum_i32_t index, authum_char_t *buf,
+                                              authum_usize_t buf_size);
+        /**
+         * The next entity after @p start (0 = from the first) whose class is
+         * @p classname; 0 when there is none.
+         */
+        authum_i32_t (*entity_find_by_classname)(authum_i32_t start,
+                                                 const authum_char_t *classname);
+        authum_bool_t (*entity_get_float)(authum_i32_t index, authum_i32_t field,
+                                          authum_float_t *out);
+        authum_bool_t (*entity_set_float)(authum_i32_t index, authum_i32_t field,
+                                          authum_float_t value);
+        authum_bool_t (*entity_get_i32)(authum_i32_t index, authum_i32_t field, authum_i32_t *out);
+        authum_bool_t (*entity_set_i32)(authum_i32_t index, authum_i32_t field, authum_i32_t value);
+        authum_bool_t (*entity_get_vector)(authum_i32_t index, authum_i32_t field,
+                                           authum_float_t out[3]);
+        authum_bool_t (*entity_set_vector)(authum_i32_t index, authum_i32_t field,
+                                           const authum_float_t value[3]);
     } authum_engine_t;
 
     /** Flags for ::authum_engine_cvar_register (the engine's FCVAR_*). */
@@ -314,6 +340,55 @@ extern "C"
 
     void
     authum_engine_message_end(const authum_engine_t *engine);
+
+    /* --- entities (<authum/engine/entity.h>) ------------------------------- */
+
+    authum_i32_t
+    authum_engine_entity_max(const authum_engine_t *engine);
+
+    authum_bool_t
+    authum_engine_entity_is_valid(const authum_engine_t *engine, authum_i32_t index);
+
+    authum_bool_t
+    authum_engine_entity_get_classname(const authum_engine_t *engine, authum_i32_t index,
+                                       authum_char_t *buf, authum_usize_t buf_size);
+
+    authum_i32_t
+    authum_engine_entity_find_by_classname(const authum_engine_t *engine, authum_i32_t start,
+                                           const authum_char_t *classname);
+
+    /** `authum_entity_float_*` @p field; 0 and false when the entity or field is not there. */
+    authum_bool_t
+    authum_engine_entity_get_float(const authum_engine_t *engine, authum_i32_t index,
+                                   authum_i32_t field, authum_float_t *out);
+
+    authum_bool_t
+    authum_engine_entity_set_float(const authum_engine_t *engine, authum_i32_t index,
+                                   authum_i32_t field, authum_float_t value);
+
+    authum_bool_t
+    authum_engine_entity_get_i32(const authum_engine_t *engine, authum_i32_t index,
+                                 authum_i32_t field, authum_i32_t *out);
+
+    authum_bool_t
+    authum_engine_entity_set_i32(const authum_engine_t *engine, authum_i32_t index,
+                                 authum_i32_t field, authum_i32_t value);
+
+    authum_bool_t
+    authum_engine_entity_get_vector(const authum_engine_t *engine, authum_i32_t index,
+                                    authum_i32_t field, authum_float_t out[3]);
+
+    authum_bool_t
+    authum_engine_entity_set_vector(const authum_engine_t *engine, authum_i32_t index,
+                                    authum_i32_t field, const authum_float_t value[3]);
+
+    /** Connected, not dead and with health left. */
+    authum_bool_t
+    authum_engine_client_is_alive(const authum_engine_t *engine, authum_i32_t index);
+
+    /** Connected and a bot (fake client). */
+    authum_bool_t
+    authum_engine_client_is_bot(const authum_engine_t *engine, authum_i32_t index);
 
     /* --- precache: call from an authum.server.precache handler ------------- */
 

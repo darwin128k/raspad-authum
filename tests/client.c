@@ -287,6 +287,91 @@ test_engine_messages(void)
     CHECK(authum_engine_cvar_get_float(&engine, "c", 1.0f) == 1.0f);
 }
 
+/* --- entities through a fake engine: slot 1 alive, 2 dead, 3 a bot ---------- */
+
+authum_float_t g_ent_health[4] = {0.0f, 100.0f, 0.0f, 35.0f};
+authum_i32_t g_ent_dead[4] = {0, authum_entity_dead_no, authum_entity_dead_dead,
+                              authum_entity_dead_no};
+authum_i32_t g_ent_flags[4] = {0, authum_entity_flag_client, authum_entity_flag_client,
+                               authum_entity_flag_client | authum_entity_flag_fake_client};
+
+authum_bool_t
+test_ent_connected(authum_i32_t index)
+{
+    return index >= 1 && index <= 3 ? authum_bool_true : authum_bool_false;
+}
+
+authum_bool_t
+test_ent_get_float(authum_i32_t index, authum_i32_t field, authum_float_t *out)
+{
+    if (index < 0 || index > 3 || field != authum_entity_float_health)
+    {
+        return authum_bool_false;
+    }
+    *out = g_ent_health[index];
+    return authum_bool_true;
+}
+
+authum_bool_t
+test_ent_get_i32(authum_i32_t index, authum_i32_t field, authum_i32_t *out)
+{
+    if (index < 0 || index > 3)
+    {
+        return authum_bool_false;
+    }
+    if (field == authum_entity_i32_dead)
+    {
+        *out = g_ent_dead[index];
+        return authum_bool_true;
+    }
+    if (field == authum_entity_i32_flags)
+    {
+        *out = g_ent_flags[index];
+        return authum_bool_true;
+    }
+    return authum_bool_false;
+}
+
+void
+test_engine_entities(void)
+{
+    authum_engine_t engine;
+    authum_float_t health = -1.0f;
+    authum_float_t vector[3] = {1.0f, 2.0f, 3.0f};
+    authum_i32_t flags = -1;
+    authum_char_t classname[16];
+
+    memset(&engine, 0, sizeof engine);
+    engine.size = sizeof engine;
+    engine.client_is_connected = test_ent_connected;
+    engine.entity_get_float = test_ent_get_float;
+    engine.entity_get_i32 = test_ent_get_i32;
+
+    CHECK(authum_engine_client_is_alive(&engine, 1));
+    CHECK(!authum_engine_client_is_alive(&engine, 2)); /* dead */
+    CHECK(authum_engine_client_is_alive(&engine, 3));
+    CHECK(!authum_engine_client_is_alive(&engine, 4)); /* nobody there */
+    CHECK(!authum_engine_client_is_bot(&engine, 1));
+    CHECK(authum_engine_client_is_bot(&engine, 3));
+
+    CHECK(authum_engine_entity_get_float(&engine, 3, authum_entity_float_health, &health));
+    CHECK(health == 35.0f);
+    CHECK(!authum_engine_entity_get_float(&engine, 3, authum_entity_float_armor, &health));
+    CHECK(health == 0.0f); /* a refused read leaves 0, not the old value */
+    CHECK(authum_engine_entity_get_i32(&engine, 3, authum_entity_i32_flags, &flags));
+    CHECK((flags & authum_entity_flag_fake_client) != 0);
+
+    /* Functions this fake engine does not have: false, and outputs zeroed. */
+    CHECK(!authum_engine_entity_get_vector(&engine, 1, authum_entity_vector_origin, vector));
+    CHECK(vector[0] == 0.0f && vector[1] == 0.0f && vector[2] == 0.0f);
+    CHECK(!authum_engine_entity_set_float(&engine, 1, authum_entity_float_health, 1.0f));
+    CHECK(!authum_engine_entity_get_classname(&engine, 1, classname, sizeof classname));
+    CHECK_STR(classname, "");
+    CHECK(authum_engine_entity_find_by_classname(&engine, 0, "player") == 0);
+    CHECK(authum_engine_entity_max(authum_null) == 0);
+    CHECK(!authum_engine_client_is_alive(authum_null, 1));
+}
+
 void
 test_event_message(void)
 {
@@ -696,6 +781,7 @@ main(void)
     test_engine_query_cvar();
     test_engine_messages();
     test_event_message();
+    test_engine_entities();
     test_abi_size();
     test_host_copy();
     test_abi_version();
