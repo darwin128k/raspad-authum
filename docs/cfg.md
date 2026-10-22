@@ -73,20 +73,20 @@ Wrong:
 
 struct mymod_config {
     authum_bool_t enable_foo;
-    authum_u32_t  logging_sinks;
+    authum_u32_t  max_bans;
     authum_char_t greeting[64];
 };
 typedef struct mymod_config mymod_config_t;
 
 mymod_config_t g_mymod_config = {
     .enable_foo = authum_bool_true,
-    .logging_sinks = 4u, /* authum.log (host); 2 = private file, 6 = both */
+    .max_bans = 1000u,
     .greeting = "hello",
 };
 
 static const authum_cfg_item_t g_mymod_config_items[] = {
     { "enable_foo", authum_cfg_kind_bool, &g_mymod_config.enable_foo, 0 },
-    { "logging_mode", authum_cfg_kind_u32, &g_mymod_config.logging_sinks, 0 },
+    { "max_bans", authum_cfg_kind_u32, &g_mymod_config.max_bans, 0 },
     { "greeting", authum_cfg_kind_cstr, g_mymod_config.greeting,
       sizeof g_mymod_config.greeting },
 };

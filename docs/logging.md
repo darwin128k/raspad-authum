@@ -1,30 +1,75 @@
 # Logging
 
-Modules use Authum’s **standard logger** (`<authum/logger.h>`), shaped like
-lh’s levels. Want a custom setup? Write it from scratch, or reuse the same
-**bricks** (host channel, engine console, private `FILE *`).
+A module says **what happened and how bad it is**. Authum decides **where it
+goes**, from one file, `addons/authum/authum.cfg`. No module has its own
+logging keys, file paths or console switches.
 
 ---
 
-## 1. Standard logger (preferred)
+## 1. Where lines end up
+
+```text
+addons/authum/
+  authum.cfg
+  logs/
+    authum/2026-10-22.log    ← Authum itself + every module's warnings and errors
+    qproto/2026-10-22.log    ← one folder per module, one file per day
+    hello/2026-10-22.log
+```
+
+| Line | Goes to |
+|------|---------|
+| Module line at or above the module's `log_level` | `logs/<module>/YYYY-MM-DD.log` |
+| Module **warning or worse** | also `logs/authum/…`, tagged `[module]` |
+| Authum's own line (loader, gate, commands) | `logs/authum/…` |
+| Any line at or above `log_console` | also the server console and the HLDS log (through Metamod, `[AUTHUM]`) |
+
+A new file starts when the date changes. A line looks like:
+
+```text
+[15:30:02] [warning] [qproto] ban list not found, starting empty
+```
+
+(the `[qproto]` tag only appears in `logs/authum/`).
+
+---
+
+## 2. Configuration (`authum.cfg`)
+
+```ini
+log_level = info          # what reaches the files
+log_console = warning     # what also reaches the console / HLDS log
+qproto.log_level = debug  # one module louder (or `off`), by its `authum status` name
+authum.log_level = info   # Authum's own channel
+```
+
+Levels, quietest to loudest (PSR-3, like lh): `emergency`, `alert`,
+`critical`, `error`, `warning`, `notice`, `info`, `debug`; `off` turns a
+channel off. Without `authum.cfg`: `log_level = info`, `log_console = warning`.
+
+A module's own `log_level` is read when it loads, so `authum reload <module>`
+picks up a change for that module.
+
+---
+
+## 3. In a module
 
 ```c
 #include <authum/client.h>
 
-static authum_logger_t g_log;
+authum_host_t g_host;
+authum_logger_t g_log;
 
-static authum_bool_t
+authum_bool_t
 mod_start(authum_host_t *host)
 {
-    authum_path_t path;
-
-    /* Default: host only → authum.log. Add sink_file only if you want a private .log. */
-    authum_logger_init(&g_log, host, authum_logger_sink_host, "mymod");
+    authum_host_copy(&g_host, host);
+    authum_logger_init(&g_log, &g_host);
     authum_logger_info(&g_log, "start");
     return authum_bool_true;
 }
 
-static void
+void
 mod_stop(void)
 {
     authum_logger_info(&g_log, "stop");
@@ -32,70 +77,34 @@ mod_stop(void)
 }
 ```
 
-| Piece | Role |
-|-------|------|
-| `authum_logger_level_*` | PSR-3 severity (emergency … debug), like lh |
-| `authum_logger_level_flags_*` | Which levels are emitted |
-| `authum_logger_sink_*` | Where lines go (bitmask) |
-| `authum_logger_file_split_*` | Private-file layout (`full` / `session`) |
-| `authum_logger_open_module_file` | Path under module dir + open |
-| `authum_logger_info` / `_error` / … | Shortcuts |
+| Call | |
+|------|--|
+| `authum_logger_emergency` … `authum_logger_debug` | printf-style line at that level |
+| `authum_logger_is_enabled(&log, level)` | skip expensive work for a level nobody records |
+| `authum_logger_hex_dump(&log, label, data, len)` | debug-level hex dump |
+| `authum_host_log_line(host, is_error, text)` | one preformatted line (error or info) |
 
-### Sinks (`logging_mode`-compatible bits)
+Lines below the configured level are dropped **before formatting**, so
+`authum_logger_debug` in a hot path costs one call when debug is off.
 
-| Bit | Symbol | Destination |
-|-----|--------|-------------|
-| 0 | `authum_logger_sink_none` | Drop |
-| 1 | `authum_logger_sink_console` | `host->engine` → server print |
-| 2 | `authum_logger_sink_file` | Private file from `authum_logger_open_file` |
-| 4 | `authum_logger_sink_host` | `host->log` → `authum.log` |
-
-Cfg integers such as qproto’s `logging_mode` can be passed straight as the
-sink mask. File layout strings (`full` / `session`) map through
-`authum_logger_file_split_parse`.
-
-| Split | Path |
-|-------|------|
-| `full` | `<module>/<tag>.log` (append) |
-| `session` | `<module>/logs/<tag>-YYYYMMDD-HHMMSS.log` (mkdir `logs/` once) |
-
-Raw path? Still use `authum_logger_open_file`.
+Do **not** open files under `logs/` yourself, and do not print to the console
+for diagnostics — that is what `log_console` is for. A module that links its
+own lh (escape hatch) has its own `lh_runtime_logger()`; it is not Authum's.
 
 ---
 
-## 2. Bricks (DIY)
+## 4. Host side
 
-| Brick | How |
-|-------|-----|
-| Host / `authum.log` | `authum_host_log_line(host, is_error, line)` or `host->log` |
-| Console | `authum_engine_server_print(host->engine, text)` |
-| Private file | `fopen` / `fprintf` yourself |
-
-Do **not** open `authum.log` from a module. Do **not** assume
-`lh_runtime_logger()` in a child `.so` is the host log (escape-hatch lh
-has its own instance).
-
----
-
-## 3. Host side (today)
-
-| Channel | Where |
-|---------|--------|
-| Host | `addons/authum/authum.log` via lh + Metamod mirror |
-| Modules | `authum_logger` → sinks above |
-
----
-
-## 4. Future host policy (unchanged intent)
-
-Configurable host scope (`off` / `host` / `full`) may later filter what
-module `sink_host` lines enter `authum.log`. Module-private files stay
-under the module’s control.
+`<authum/logger/host.h>` (`src/authum/logs.c`): one channel per loaded module,
+opened before `start` and closed after `stop`, plus Authum's own. The module
+reaches its channel through `authum_host_t.logger`. Authum's code and lh log
+through `lh_runtime_logger()`, which `src/authum/log.cpp` feeds into the
+`authum` channel.
 
 ---
 
 ## Related
 
-- [module-style.md](module-style.md)
 - [writing-a-module.md](writing-a-module.md)
+- [cfg.md](cfg.md)
 - [architecture.md](architecture.md)
