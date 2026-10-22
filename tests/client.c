@@ -1,6 +1,6 @@
 /**
  * @file client.c
- * @brief authum_client: cstr, path, cfg, engine kick, ed25519.
+ * @brief authum_client: cstr, path, cfg, engine kick, ed25519, detour, symbol.
  */
 
 #include <check.h>
@@ -8,8 +8,10 @@
 #include <authum/cfg.h>
 #include <authum/crypto/ed25519.h>
 #include <authum/cstr.h>
+#include <authum/detour.h>
 #include <authum/engine.h>
 #include <authum/path.h>
+#include <authum/symbol.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -196,6 +198,66 @@ test_ed25519(void)
     CHECK(memcmp(secret_key, zeros, sizeof zeros) == 0);
 }
 
+authum_detour_t g_test_detour;
+
+/* noinline + calls through a volatile pointer: the patched bytes must be what runs. */
+__attribute__((noinline)) int
+test_detour_target(int x)
+{
+    return x + 1;
+}
+
+int
+test_detour_hook(int x)
+{
+    int original;
+
+    authum_detour_suspend(&g_test_detour);
+    original = ((int (*)(int))g_test_detour.target)(x);
+    authum_detour_resume(&g_test_detour);
+    return original * 100;
+}
+
+void
+test_detour(void)
+{
+    int (*volatile fn)(int) = test_detour_target;
+    authum_detour_t other;
+
+    CHECK(fn(1) == 2);
+#if defined(__i386__)
+    CHECK(authum_detour_attach(&g_test_detour, (authum_ptr)fn, (authum_ptr)&test_detour_hook));
+    CHECK(!authum_detour_attach(&g_test_detour, (authum_ptr)fn, (authum_ptr)&test_detour_hook));
+    CHECK(fn(1) == 200);
+    CHECK(fn(4) == 500);
+    authum_detour_suspend(&g_test_detour);
+    CHECK(fn(1) == 2);
+    authum_detour_resume(&g_test_detour);
+    CHECK(fn(1) == 200);
+    authum_detour_detach(&g_test_detour);
+    CHECK(fn(1) == 2);
+    authum_detour_detach(&g_test_detour); /* second detach is a no-op */
+    CHECK(fn(1) == 2);
+#endif
+    memset(&other, 0, sizeof other);
+    CHECK(!authum_detour_attach(&other, authum_null, (authum_ptr)&test_detour_hook));
+    CHECK(!authum_detour_attach(authum_null, (authum_ptr)fn, (authum_ptr)&test_detour_hook));
+}
+
+void
+test_symbol(void)
+{
+    authum_bool_t via_dynsym = authum_bool_false;
+
+    CHECK(authum_symbol_find("libc.so.6", "strlen", &via_dynsym) != authum_null);
+    CHECK(via_dynsym);
+    CHECK(authum_symbol_find("libc.so.6", "authum_no_such_symbol", &via_dynsym) == authum_null);
+    CHECK(!via_dynsym);
+    CHECK(authum_symbol_find("authum_not_loaded.so", "strlen", authum_null) == authum_null);
+    CHECK(authum_symbol_find_engine("SVC_Info", authum_null) == authum_null);
+    CHECK(authum_symbol_find(authum_null, "strlen", authum_null) == authum_null);
+}
+
 int
 main(void)
 {
@@ -204,5 +266,7 @@ main(void)
     test_cfg();
     test_engine_kick();
     test_ed25519();
+    test_detour();
+    test_symbol();
     return authum_check_report("authum_client");
 }

@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `authum_crypto_wipe`, built into `authum_client` from vendored Monocypher 4.0.2
   (`lib/monocypher`). Client-side code, not a host facade: no ABI bump, modules
   get it without a newer `authum_mm`.
+- `<authum/symbol.h>` — `authum_symbol_find` / `authum_symbol_find_engine`:
+  address of a function or global in an already-loaded library, `dlsym` first,
+  then the on-disk ELF `.symtab` (engine build 10211 keeps its internals local).
+  Moved out of qproto so every module that detours the engine shares one copy.
+- `<authum/detour.h>` — `authum_detour_t` + `attach` / `detach` / `suspend` /
+  `resume`: 5-byte `jmp rel32` detour on 32-bit x86 for engine-thread hooks
+  (was `qproto_hook_patch_jmp` / `restore_bytes`). Client-side, no ABI bump.
 
 ## [2.0.0] - 2026-10-21
 
