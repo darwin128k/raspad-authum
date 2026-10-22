@@ -153,7 +153,7 @@ Meta_Attach(PLUG_LOADTIME /* now */, META_FUNCTIONS *pFunctionTable, meta_global
         const lh_fs_path_t *image;
         lh_fs_path_t parent;
 
-        image = lh_os_module_get_path_as_const(&authum);
+        image = lh_os_module_get_path(&authum);
         lh_fs_path_init(lh_addr_of(parent));
         if (lh_null_ne(image) && lh_fs_path_parent(lh_addr_of(parent), image))
         {

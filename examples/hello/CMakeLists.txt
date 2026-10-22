@@ -1,4 +1,5 @@
-# Client module: Authum API via authum_client — does NOT link lh.
+# Client module: Authum API via authum_client (which brings its own lh, kept
+# local to the module).
 add_library(hello MODULE hello.c)
 set_target_properties(hello PROPERTIES
         PREFIX ""

@@ -7,8 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `<authum/json.h>` and `<authum/sql.h>` run on lh (`lh/json`, `lh/sql`) linked
+  into `authum_client`; vendored cJSON (unused) and SQLite (`lib/cjson`,
+  `lib/sqlite`) are gone, SQLite 3.46.1 now comes with lh. The module API is the
+  same, and no lh type is in it; lh's symbols stay local to each module
+  (`--exclude-libs,liblh.a`). Needs lh `0.4.0` with JSON/SQL; `-DAUTHUM_LH_DIR`
+  builds against another lh tree.
+- JSON fields come from a strict RFC 8259 reader: a key inside a string value
+  is no longer found as a field, every escape is decoded (`\uXXXX` included),
+  and a number must be an integer to read as `i32` (`1.5` was read as `1`).
+- SQL on MySQL: `?` inside quotes, backquoted names and comments is no longer
+  replaced; text of any length (embedded NULs included) instead of 255 bytes
+  and a 2048-byte query; column indices are checked; server errors are kept for
+  every step. The connection is utf8mb4.
+- Host code follows lh's getter naming: `lh_os_module_get_path_as_const` is
+  `lh_os_module_get_path`.
+
 ### Added
 
+- `authum_sql_stmt_bind_i64` / `authum_sql_stmt_column_i64` — 64-bit integers
+  (SteamID64, row ids) in `<authum/sql.h>`.
 - `<authum/crypto/ed25519.h>` — Ed25519 (RFC 8032) key pair / sign / check +
   `authum_crypto_wipe`, built into `authum_client` from vendored Monocypher 4.0.2
   (`lib/monocypher`). Client-side code, not a host facade: no ABI bump, modules

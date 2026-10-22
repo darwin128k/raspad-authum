@@ -3,8 +3,10 @@
  * @brief Small JSON object field getters (flat objects / one level).
  *
  * Enough for API replies like IPHub (`{"countryCode":"RU","asn":15169,…}`).
- * Not a full DOM — no arrays-as-trees, no streaming. Escapes in strings: `\\`
- * and `\"` only.
+ * The text is read whole by a strict RFC 8259 reader (lh/json): a key is only
+ * a member of the top-level object, never text inside a string, and every
+ * escape (`\n`, `é`, surrogate pairs) is decoded. Text that is not JSON,
+ * or not an object, has no fields.
  */
 
 #ifndef AUTHUM_JSON_H

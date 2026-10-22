@@ -164,7 +164,7 @@ authum_console_info(authum_command_print_fn print, authum_ptr out, const authum_
                           lh_os_module_is_started(child) ? "RUNNING" : "STOPPED");
     authum_command_printf(&cmd, "commands  %s",
                           authum_commands_host_has_scope(info->name) ? "yes" : "no");
-    image = lh_os_module_get_path_as_const(child);
+    image = lh_os_module_get_path(child);
     path_text = lh_null;
     if (lh_null_ne(image) && !lh_fs_path_is_empty(image))
     {

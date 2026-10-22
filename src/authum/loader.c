@@ -307,7 +307,7 @@ authum_loader_modules_dir(const authum_module_t *self, lh_fs_path_t *out)
     lh_fs_path_t sub;
     lh_bool_t ok;
 
-    image = lh_os_module_get_path_as_const(self);
+    image = lh_os_module_get_path(self);
     if (lh_fs_path_is_empty(image))
     {
         return lh_bool_false;
@@ -633,7 +633,7 @@ authum_loader_load_modules(authum_module_t *self)
     lh_fs_path_t parent;
     lh_fs_path_t sub;
 
-    image = lh_os_module_get_path_as_const(self);
+    image = lh_os_module_get_path(self);
     if (lh_fs_path_is_empty(image))
     {
         lh_os_set_last_error_lit(lh_os_error_code_path_empty, "path is empty");
@@ -888,7 +888,7 @@ authum_loader_reload_name(authum_module_t *self, const char *name)
     lh_fs_path_init(lh_addr_of(path));
     if (lh_null_ne(child))
     {
-        image = lh_os_module_get_path_as_const(child);
+        image = lh_os_module_get_path(child);
         if (lh_null_ne(image) && !lh_fs_path_is_empty(image))
         {
             lh_fs_path_assign(lh_addr_of(path), image);
