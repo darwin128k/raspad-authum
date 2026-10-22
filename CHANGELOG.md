@@ -108,6 +108,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `authum_engine_precache_model` / `_sound` / `_generic` — 0 outside the
   precache window instead of the engine's Host_Error — and
   `authum.server.shutdown` (`GameShutdown`).
+- Entities without HLSDK (`<authum/engine/entity.h>`): `entity_max`,
+  `entity_is_valid`, `entity_get_classname`, `entity_find_by_classname`,
+  `entity_get_float` / `_set_float` (health, armor, frags, gravity, max speed,
+  take damage, …), `entity_get_i32` / `_set_i32` (flags, dead, buttons,
+  weapons, render mode, …), `entity_get_vector` / `_set_vector` (origin —
+  set through SET_ORIGIN — velocity, angles, view angle, mins / maxs — set
+  through SET_SIZE — …), with `authum_entity_flag_*` / `authum_entity_dead_*`
+  values; `authum_engine_client_is_alive` / `_is_bot`. Field numbers never
+  change; game private data (a CS player's money or team) stays behind the
+  `engine_funcs` escape hatch.
 - `<authum/timer.h>`: `authum_timer_add(host, delay, interval, fn, user)` /
   `_remove` / `_clear` / `_count` — module timers on server frames, counting
   across map changes, dropped with the module.

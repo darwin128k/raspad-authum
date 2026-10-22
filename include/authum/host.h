@@ -297,6 +297,50 @@ extern "C"
     authum_i32_t
     authum_host_precache_generic(const authum_host_t *host, const authum_char_t *path);
 
+    authum_i32_t
+    authum_host_entity_max(const authum_host_t *host);
+
+    authum_bool_t
+    authum_host_entity_is_valid(const authum_host_t *host, authum_i32_t index);
+
+    authum_bool_t
+    authum_host_entity_get_classname(const authum_host_t *host, authum_i32_t index,
+                                     authum_char_t *buf, authum_usize_t buf_size);
+
+    authum_i32_t
+    authum_host_entity_find_by_classname(const authum_host_t *host, authum_i32_t start,
+                                         const authum_char_t *classname);
+
+    authum_bool_t
+    authum_host_entity_get_float(const authum_host_t *host, authum_i32_t index, authum_i32_t field,
+                                 authum_float_t *out);
+
+    authum_bool_t
+    authum_host_entity_set_float(const authum_host_t *host, authum_i32_t index, authum_i32_t field,
+                                 authum_float_t value);
+
+    authum_bool_t
+    authum_host_entity_get_i32(const authum_host_t *host, authum_i32_t index, authum_i32_t field,
+                               authum_i32_t *out);
+
+    authum_bool_t
+    authum_host_entity_set_i32(const authum_host_t *host, authum_i32_t index, authum_i32_t field,
+                               authum_i32_t value);
+
+    authum_bool_t
+    authum_host_entity_get_vector(const authum_host_t *host, authum_i32_t index, authum_i32_t field,
+                                  authum_float_t *out);
+
+    authum_bool_t
+    authum_host_entity_set_vector(const authum_host_t *host, authum_i32_t index, authum_i32_t field,
+                                  const authum_float_t *value);
+
+    authum_bool_t
+    authum_host_client_is_alive(const authum_host_t *host, authum_i32_t index);
+
+    authum_bool_t
+    authum_host_client_is_bot(const authum_host_t *host, authum_i32_t index);
+
     /** Ask a client for a cvar; see ::authum_engine_query_cvar. */
     authum_bool_t
     authum_host_query_cvar(const authum_host_t *host, authum_i32_t index, const authum_char_t *cvar,
