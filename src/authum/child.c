@@ -162,7 +162,7 @@ authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
     data->host.module_dir = lh_null;
 
     style = lh_os_system_fs_path_style_native();
-    image = lh_os_module_get_path_as_const(child);
+    image = lh_os_module_get_path(child);
     if (!lh_fs_path_is_empty(image))
     {
         lh_fs_path_init(lh_addr_of(walk));
@@ -374,6 +374,6 @@ authum_child_load(lh_os_loader_t *loader, const lh_fs_path_t *path)
         return lh_null;
     }
 
-    lh_list_push_back(lh_os_loader_get_modules(loader), lh_os_module_get_node(child));
+    lh_list_push_back(lh_os_loader_get_modules_mut(loader), lh_os_module_get_node(child));
     return child;
 }

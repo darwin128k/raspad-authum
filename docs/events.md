@@ -6,7 +6,7 @@ bus** in the host. A module that unloads simply stops answering — Authum drops
 its subscriptions after `stop`.
 
 Headers: `<authum/events.h>` (bus), `<authum/event/client.h>` (player events
-the host publishes). Shortcuts on the host facade: `authum_host_subscribe`,
+the host publishes), `<authum/event/server.h>` (map and frame events). Shortcuts on the host facade: `authum_host_subscribe`,
 `authum_host_publish`.
 
 The rule behind it: **one module = one job.** qproto knows how a client
@@ -94,6 +94,19 @@ modules need no Metamod hooks of their own. Payload: `authum_event_client_t`.
 Fields: `index` (entity index 1…maxClients — AMXX `id`), `userid`, `name`,
 `address` (connect), `auth_id`, `game_time`, `unix_time`, `allow`,
 `reject_reason`.
+
+| `authum.client.command` | `ClientCommand` | Payload `authum_event_client_command_t`: `client`, `argc`, `argv[16][128]`, `args` (the line after the command). Set `block = authum_bool_true` and the game DLL never sees the command |
+| `authum.client.cvar_value` | `CvarValue2` | Payload `authum_event_client_cvar_t`: `client`, `request_id`, `cvar`, `value` — the answer to `pfnQueryClientCvarValue2` (via the `engine_funcs` escape hatch) |
+
+Map and frame events, payload `authum_event_server_t` (`<authum/event/server.h>`):
+`map`, `max_clients`, `edict_count` (activate), `game_time`, `frame_time`,
+`unix_time`.
+
+| Event | When | Notes |
+|-------|------|-------|
+| `authum.server.activate` | after the game DLL's `ServerActivate` | The map is spawned; a good place to reset per-map state |
+| `authum.server.deactivate` | `ServerDeactivate` | Map change or shutdown |
+| `authum.server.frame` | `StartFrame` | Every tick — keep handlers short |
 
 A ban module, for example:
 

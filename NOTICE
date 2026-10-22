@@ -6,3 +6,22 @@ This product includes software developed by Egor Tsyganchuk.
 When you modify Authum source files, keep this NOTICE and the Apache-2.0
 LICENSE, and mark the changed files with a clear notice that you changed them
 (Apache License 2.0, section 4(b)).
+
+---------------------------------------------------------------------------
+Third-party software
+
+This product includes Metamod-P (Bots-United/metamod-p) and HLSDK headers
+used to build the Metamod host plugin.
+
+This product includes lh (https://github.com/darwin128K/lh), linked into
+the host and into authum_client (JSON and SQL); no lh type reaches the module
+API.
+
+This product includes SQLite 3.46.1 (https://www.sqlite.org/), public domain
+amalgamation, vendored in lh — see lib/lh/lib/sqlite and
+lib/lh/LICENSES/blessing.txt.
+
+This product includes Monocypher 4.0.2 (https://monocypher.org/),
+Copyright (c) 2017-2023 Loup Vaillant, Michael Savage, Fabio Scotoni,
+dual-licensed BSD-2-Clause / CC0-1.0 — see lib/monocypher/LICENCE.md.
+

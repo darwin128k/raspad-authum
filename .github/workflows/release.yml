@@ -86,6 +86,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ steps.tag.outputs.name }}"
-          gh release view "$TAG" >/dev/null 2>&1 || \
-            gh release create "$TAG" --title "$TAG" --notes "Authum $TAG — Linux i386 Metamod package (zip: addons/authum/)."
+          NOTES=$(mktemp)
+          python3 scripts/release_notes.py --tag "$TAG" \
+            --package "Download **\`authum-linux32-metamod.zip\`** and unpack into the game dir → \`addons/authum/\`." \
+            --highlight "Metamod host for classic HLDS (i386) — authum_mm.so + modules.list" \
+            --highlight "Module ABI 0.3: sandbox, events, console commands" \
+            --highlight "SQL / JSON helpers for modules" \
+            > "$NOTES"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "$TAG" --notes-file "$NOTES"
+          else
+            gh release edit "$TAG" --notes-file "$NOTES"
+          fi
           gh release upload "$TAG" authum-linux32-metamod.zip --clobber
