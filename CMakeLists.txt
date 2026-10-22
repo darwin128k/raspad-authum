@@ -198,7 +198,7 @@ endif ()
 # are separate projects that link authum_client and drop into modules/ at runtime.
 option(AUTHUM_BUILD_EXAMPLES "Build example Authum modules under examples/" ON)
 if (AUTHUM_BUILD_EXAMPLES)
-    add_subdirectory(examples/hello)
+    add_subdirectory(examples)
 endif ()
 
 option(AUTHUM_BUILD_TESTS "Build Authum tests (ctest)" ON)
