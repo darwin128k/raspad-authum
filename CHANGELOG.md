@@ -11,9 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Windows build (MinGW): `authum_logger_ensure_dir` used the POSIX two-argument
   `mkdir`; the symbol test looked for `libc.so.6`, which exists only on Linux.
+- `authum_net_ipv4_internal` / `_external` list the interfaces on Windows too
+  (they were always empty there).
+- `authum_engine_query_cvar` had a raw NUL byte in a character literal, so git
+  took `src/client/engine.c` for a binary file.
 
 ### Changed
 
+- Everything authum_client asks of the OS (directories, page protection,
+  library symbols, interface addresses) sits behind `src/client/os/os.h`, with
+  one implementation in `os/posix/` and one in `os/win/`; CMake builds the
+  target's. The rest of `src/client` has no `#if _WIN32`. No API change.
 - `CMakePresets.json` with `linux32` and `windows-mingw32` (configure, build,
   test). Configure fails at once, with a hint, when the compiler cannot link
   with `-m32`, instead of at the first link.
