@@ -9,8 +9,13 @@
  * ```
  * log_level = info          # what reaches the files
  * log_console = warning     # what also goes to the server console / Metamod
+ * log_keep_days = 30        # delete daily files older than this (0 = keep)
  * qproto.log_level = debug  # one module (or `authum.log_level` for the host)
+ * qproto.bans.log_level = info  # one journal of a module
  * ```
+ *
+ * A module may also open named journals: `logs/<module>/<name>/YYYY-MM-DD.log`.
+ * The file is re-read on every map change (::authum_logs_reload).
  *
  * A module's warnings and worse are copied into the `authum` channel, tagged
  * `[module]`, so one file shows every problem on the server.
@@ -67,6 +72,24 @@ extern "C"
 
     authum_bool_t
     authum_logs_is_enabled(authum_ptr owner, authum_logger_level_t level);
+
+    /** Re-read `authum.cfg`: global keys and every open channel's level. */
+    void
+    authum_logs_reload(void);
+
+    /**
+     * Put buffered lines on disk. Lines are buffered (errors and worse are
+     * flushed at once); the host calls this every server frame.
+     */
+    void
+    authum_logs_flush(void);
+
+    /** Journal @p name of module @p owner; see ::authum_logger_ops_t.open. */
+    authum_ptr
+    authum_logs_open_journal(authum_ptr owner, const authum_char_t *name);
+
+    void
+    authum_logs_close_journal(authum_ptr journal);
 
     void
     authum_logs_set_clock(authum_logs_clock_fn clock);

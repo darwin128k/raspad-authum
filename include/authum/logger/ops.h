@@ -29,6 +29,13 @@ extern "C"
         void (*write)(authum_ptr owner, authum_logger_level_t level, const authum_char_t *text);
         /** Whether a line at @p level would go anywhere — skip formatting otherwise. */
         authum_bool_t (*is_enabled)(authum_ptr owner, authum_logger_level_t level);
+        /**
+         * Open the module's journal @p name (`logs/<module>/<name>/`); the
+         * result is the owner for `write` / `is_enabled`. Null on failure.
+         */
+        authum_ptr (*open)(authum_ptr owner, const authum_char_t *name);
+        /** Close a journal from `open` (each open needs one close). */
+        void (*close)(authum_ptr journal);
     };
     typedef struct authum_logger_ops authum_logger_ops_t;
 

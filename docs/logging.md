@@ -14,6 +14,7 @@ addons/authum/
   logs/
     authum/2026-10-22.log    ← Authum itself + every module's warnings and errors
     qproto/2026-10-22.log    ← one folder per module, one file per day
+    qproto/bans/2026-10-22.log  ← a journal the module opened
     hello/2026-10-22.log
 ```
 
@@ -24,7 +25,10 @@ addons/authum/
 | Authum's own line (loader, gate, commands) | `logs/authum/…` |
 | Any line at or above `log_console` | also the server console and the HLDS log (through Metamod, `[AUTHUM]`) |
 
-A new file starts when the date changes. A line looks like:
+A new file starts when the date changes; files older than `log_keep_days` are
+deleted then. Lines are buffered and reach the disk every server frame;
+errors and worse are written at once, so a crash does not lose them. A line
+looks like:
 
 ```text
 [15:30:02] [warning] [qproto] ban list not found, starting empty
@@ -39,7 +43,9 @@ A new file starts when the date changes. A line looks like:
 ```ini
 log_level = info          # what reaches the files
 log_console = warning     # what also reaches the console / HLDS log
+log_keep_days = 30        # delete daily files older than this (0 = keep all)
 qproto.log_level = debug  # one module louder (or `off`), by its `authum status` name
+qproto.bans.log_level = info  # one journal of a module (default: the module's)
 authum.log_level = info   # Authum's own channel
 ```
 
@@ -47,8 +53,8 @@ Levels, quietest to loudest (PSR-3, like lh): `emergency`, `alert`,
 `critical`, `error`, `warning`, `notice`, `info`, `debug`; `off` turns a
 channel off. Without `authum.cfg`: `log_level = info`, `log_console = warning`.
 
-A module's own `log_level` is read when it loads, so `authum reload <module>`
-picks up a change for that module.
+The file is read when the server starts and again on **every map change**, so
+an edit applies from the next map without a restart.
 
 ---
 
@@ -83,6 +89,25 @@ mod_stop(void)
 | `authum_logger_is_enabled(&log, level)` | skip expensive work for a level nobody records |
 | `authum_logger_hex_dump(&log, label, data, len)` | debug-level hex dump |
 | `authum_host_log_line(host, is_error, text)` | one preformatted line (error or info) |
+| `authum_logger_open(&log, host, "bans")` | a journal: own folder and level, same calls |
+
+### Journals
+
+A task that wants its own file — bans, payments, an admin audit trail — opens
+a journal. Same logger, two lines:
+
+```c
+authum_logger_t g_bans;
+
+authum_logger_open(&g_bans, &g_host, "bans");          /* start */
+authum_logger_info(&g_bans, "%s banned %s", admin, target);
+authum_logger_close(&g_bans);                          /* stop */
+```
+
+It writes `logs/<module>/bans/YYYY-MM-DD.log` at `<module>.bans.log_level`
+(default: the module's level); its warnings and errors reach `logs/authum/`
+tagged `[module/bans]`. Opening the same name twice shares the journal. A
+journal the module forgets to close is closed after `stop`.
 
 Lines below the configured level are dropped **before formatting**, so
 `authum_logger_debug` in a hot path costs one call when debug is off.

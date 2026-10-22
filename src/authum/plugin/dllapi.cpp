@@ -1,6 +1,7 @@
 #include <authum/engine/host.h>
 #include <authum/event/client.h>
 #include <authum/event/server.h>
+#include <authum/logger/host.h>
 #include <authum/events/host.h>
 
 #include <extdll.h>
@@ -154,6 +155,7 @@ authum_dllapi_server_activate_post(edict_t * /* edicts */, int edict_count, int 
 {
     authum_event_server_t ev;
 
+    authum_logs_reload(); /* authum.cfg edits apply from the next map */
     authum_dllapi_server_fill(&ev);
     ev.edict_count = edict_count;
     ev.max_clients = client_max;
@@ -178,6 +180,7 @@ authum_dllapi_start_frame(void)
 
     authum_dllapi_server_fill(&ev);
     (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_FRAME, &ev);
+    authum_logs_flush();
     RETURN_META(MRES_IGNORED);
 }
 
