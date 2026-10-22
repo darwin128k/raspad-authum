@@ -1,6 +1,6 @@
 /**
  * @file client.c
- * @brief authum_client: cstr, path, cfg, engine kick, ed25519, detour, symbol.
+ * @brief authum_client: cstr, path, cfg, engine kick, ed25519, detour, symbol, json, sql.
  */
 
 #include <check.h>
@@ -10,8 +10,10 @@
 #include <authum/cstr.h>
 #include <authum/detour.h>
 #include <authum/engine.h>
+#include <authum/json.h>
 #include <authum/net.h>
 #include <authum/path.h>
+#include <authum/sql.h>
 #include <authum/symbol.h>
 
 #include <stdio.h>
@@ -301,9 +303,106 @@ test_net(void)
     CHECK(authum_net_ipv4_internal(authum_null, 0u) == n); /* count without a buffer */
 }
 
+void
+test_json(void)
+{
+    const char *reply =
+        "{\"ip\":\"8.8.8.8\",\"countryCode\":\"US\",\"asn\":15169,"
+        "\"isp\":\"Caf\\u00e9 \\\"Net\\\"\",\"note\":\"asn: 1\",\"big\":3000000000}";
+    authum_char_t text[32];
+    authum_char_t small[4];
+    authum_i32_t n = 0;
+
+    CHECK(authum_json_object_get_cstr(reply, "countryCode", text, sizeof text));
+    CHECK_STR(text, "US");
+    /* Escapes are decoded, é to UTF-8 included. */
+    CHECK(authum_json_object_get_cstr(reply, "isp", text, sizeof text));
+    CHECK_STR(text, "Caf\xC3\xA9 \"Net\"");
+    /* Truncated to the buffer. */
+    CHECK(authum_json_object_get_cstr(reply, "ip", small, sizeof small));
+    CHECK_STR(small, "8.8");
+    CHECK(!authum_json_object_get_cstr(reply, "asn", text, sizeof text)); /* not a string */
+    CHECK(!authum_json_object_get_cstr(reply, "missing", text, sizeof text));
+    CHECK_STR(text, "");
+
+    CHECK(authum_json_object_get_i32(reply, "asn", &n) && n == 15169);
+    CHECK(!authum_json_object_get_i32(reply, "big", &n)); /* past i32 */
+    CHECK(!authum_json_object_get_i32(reply, "ip", &n));
+    /* "asn: 1" inside a string value is text, not a field. */
+    CHECK(authum_json_object_get_i32_or("{\"note\":\"asn: 1\"}", "asn", -1) == -1);
+    CHECK(authum_json_object_get_i32_or("{\"asn\": 7}", "asn", -1) == 7);
+    CHECK(authum_json_object_get_i32_or("{\"asn\": 7", "asn", -1) == -1); /* broken JSON */
+    CHECK(authum_json_object_get_i32_or("[1,2]", "asn", -1) == -1);
+    CHECK(authum_json_object_get_i32_or(authum_null, "asn", -1) == -1);
+}
+
+void
+test_sql(void)
+{
+    authum_sql_t sql;
+    authum_sql_stmt_t stmt;
+    int rows = 0;
+
+    authum_sql_init(&sql);
+    CHECK(!authum_sql_is_open(&sql));
+    CHECK(!authum_sql_exec(&sql, "SELECT 1"));
+
+    CHECK(authum_sql_open_sqlite(&sql, ":memory:"));
+    CHECK(authum_sql_is_open(&sql));
+    CHECK(authum_sql_exec(&sql, "CREATE TABLE bans (id INTEGER PRIMARY KEY, steam INTEGER, "
+                                "name TEXT, reason TEXT);"
+                                "CREATE INDEX bans_steam ON bans(steam);"));
+
+    CHECK(
+        authum_sql_prepare(&sql, &stmt, "INSERT INTO bans (steam, name, reason) VALUES (?, ?, ?)"));
+    CHECK(authum_sql_stmt_bind_i64(&stmt, 1, 76561198000000001LL));
+    CHECK(authum_sql_stmt_bind_cstr(&stmt, 2, "O'Brien"));
+    CHECK(authum_sql_stmt_bind_cstr(&stmt, 3, authum_null)); /* null text binds "" */
+    CHECK(!authum_sql_stmt_bind_i32(&stmt, 0, 1));           /* parameters count from 1 */
+    CHECK(authum_sql_stmt_step_done(&stmt));
+    authum_sql_stmt_finalize(&stmt);
+    CHECK(authum_sql_last_insert_id(&sql) == 1);
+
+    CHECK(authum_sql_prepare(&sql, &stmt, "SELECT steam, name, reason FROM bans WHERE steam = ?"));
+    CHECK(authum_sql_stmt_bind_i64(&stmt, 1, 76561198000000001LL));
+    while (authum_sql_stmt_step_row(&stmt))
+    {
+        const authum_char_t *name = authum_sql_stmt_column_cstr(&stmt, 1);
+
+        ++rows;
+        CHECK(authum_sql_stmt_column_i64(&stmt, 0) == 76561198000000001LL);
+        CHECK_STR(name, "O'Brien");
+        CHECK_STR(authum_sql_stmt_column_cstr(&stmt, 2), "");
+        CHECK_STR(authum_sql_stmt_column_cstr(&stmt, 7), ""); /* no such column */
+        /* An earlier column's text is still there after reading another. */
+        CHECK_STR(name, "O'Brien");
+    }
+    CHECK(rows == 1);
+    authum_sql_stmt_finalize(&stmt);
+    authum_sql_stmt_finalize(&stmt); /* a second finalize is a no-op */
+
+    CHECK(!authum_sql_exec(&sql, "SELECT * FROM nowhere"));
+    CHECK(strstr(authum_sql_errmsg(&sql), "no such table") != authum_null);
+    CHECK(!authum_sql_prepare(&sql, &stmt, "SELEKT"));
+    CHECK(authum_sql_errmsg(&sql)[0] != '\0');
+    CHECK(authum_sql_exec(&sql, "SELECT 1"));
+    CHECK_STR(authum_sql_errmsg(&sql), ""); /* a success clears the message */
+
+    authum_sql_close(&sql);
+    CHECK(!authum_sql_is_open(&sql));
+    authum_sql_close(&sql);
+
+    /* MySQL: with or without a client library here, nothing listens on port 1. */
+    CHECK(!authum_sql_open_mysql(&sql, "127.0.0.1", "u", "p", "d", 1u));
+    CHECK(!authum_sql_is_open(&sql));
+    CHECK(authum_sql_errmsg(&sql)[0] != '\0');
+}
+
 int
 main(void)
 {
+    test_json();
+    test_sql();
     test_net();
     test_cstr();
     test_path();

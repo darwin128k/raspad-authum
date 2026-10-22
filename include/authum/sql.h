@@ -3,6 +3,9 @@
  * @brief Module SQL brick — SQLite (linked) + MySQL/MariaDB (dlopen).
  *
  * Modules never `#include <sqlite3.h>` / `<mysql.h>`. Schema stays in the module.
+ * Runs on lh/sql (SQLite 3.46.1 inside lh; the host's MySQL client loaded at run
+ * time). `?` parameters count from 1, columns from 0. A text column stays valid
+ * until the next step or finalize. On MySQL, ::authum_sql_exec runs one statement.
  */
 
 #ifndef AUTHUM_SQL_H
@@ -28,7 +31,7 @@ enum
 struct authum_sql
 {
 	authum_sql_driver_t driver;
-	/** Backend handle (`sqlite3 *` or `MYSQL *`). */
+	/** The connection (opaque; owned by Authum while open). */
 	void *db;
 	authum_char_t errmsg[authum_sql_errmsg_max];
 };
@@ -37,6 +40,7 @@ typedef struct authum_sql authum_sql_t;
 struct authum_sql_stmt
 {
 	authum_sql_t *sql;
+	/** The prepared statement (opaque; owned by Authum until finalize). */
 	void *stmt;
 };
 typedef struct authum_sql_stmt authum_sql_stmt_t;
@@ -77,11 +81,18 @@ authum_bool_t authum_sql_stmt_bind_i32(authum_sql_stmt_t *stmt, authum_i32_t ind
 authum_bool_t authum_sql_stmt_bind_cstr(authum_sql_stmt_t *stmt, authum_i32_t index,
 					const authum_char_t *text);
 
+/** @brief Bind a 64-bit integer (a SteamID64, a row id) to parameter @p index. */
+authum_bool_t authum_sql_stmt_bind_i64(authum_sql_stmt_t *stmt, authum_i32_t index,
+				       authum_i64_t value);
+
 authum_bool_t authum_sql_stmt_step_row(authum_sql_stmt_t *stmt);
 
 authum_bool_t authum_sql_stmt_step_done(authum_sql_stmt_t *stmt);
 
 authum_i32_t authum_sql_stmt_column_i32(authum_sql_stmt_t *stmt, authum_i32_t index);
+
+/** @brief Column @p index of the current row as a 64-bit integer; `0` for NULL. */
+authum_i64_t authum_sql_stmt_column_i64(authum_sql_stmt_t *stmt, authum_i32_t index);
 
 const authum_char_t *authum_sql_stmt_column_cstr(authum_sql_stmt_t *stmt, authum_i32_t index);
 
