@@ -27,6 +27,7 @@
 #include <authum/logger.h>
 #include <authum/module/api.h>
 #include <authum/module/info.h>
+#include <authum/net.h>
 #include <authum/null.h>
 #include <authum/path.h>
 #include <authum/ptr.h>
