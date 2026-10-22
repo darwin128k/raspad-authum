@@ -49,9 +49,9 @@ if (AUTHUM_FORCE_32BIT)
         endif ()
         add_compile_options(-m32 -march=i686 -msse2)
         add_link_options(-m32)
-        # 64-bit file offsets and inode numbers in a 32-bit build: without them
-        # readdir() fails with EOVERFLOW on XFS / btrfs / network mounts, and
-        # the modules/ scan and log pruning see an empty directory.
+        # 64-bit file offsets and inode numbers in Authum's own code (stat,
+        # lseek): a 32-bit build otherwise gets EOVERFLOW on XFS / btrfs /
+        # network mounts. lh sets the same for itself.
         if (NOT WIN32)
             add_compile_definitions(_FILE_OFFSET_BITS=64)
         endif ()
