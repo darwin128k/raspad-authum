@@ -14,6 +14,8 @@ what you need, rename it, and build from there. They use only
 | [settings](settings/) | give your module a config file | defaults in a struct, `authum_cfg_apply_items`, a key with its own check, reload command |
 | [stats](stats/) | store data | SQLite through `<authum/sql.h>`, a separate journal (`authum_logger_open`) |
 | [scores](scores/) + [scoreboard](scoreboard/) | let two modules talk | a public types-only header, a forward and a query on the event bus |
+| [deathnotice](deathnotice/) | read or change a game message | `authum.message.DeathMsg`, colored chat, the module's own server cvars, refusing `kill` |
+| [announcer](announcer/) | do something every N seconds or on a log line | timers, precache, `authum.server.log`, entity fields (health, armor) |
 
 Every example is loaded and exercised by `tests/examples.c` (CTest
 `authum_examples`), so they keep working as the API moves.

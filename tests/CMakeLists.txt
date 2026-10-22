@@ -47,6 +47,6 @@ if (AUTHUM_BUILD_EXAMPLES)
             AUTHUM_TEST_EXAMPLES_DIR="${CMAKE_BINARY_DIR}/examples"
             AUTHUM_TEST_MODULE_SUFFIX="${CMAKE_SHARED_MODULE_SUFFIX}")
     add_dependencies(authum_test_examples skeleton hello welcome chatfilter cvarguard settings
-            stats scores scoreboard)
+            stats scores scoreboard deathnotice announcer)
     add_test(NAME authum_examples COMMAND authum_test_examples)
 endif ()

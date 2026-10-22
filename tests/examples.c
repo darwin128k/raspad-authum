@@ -176,6 +176,181 @@ test_query_client_cvar(authum_i32_t index, const authum_char_t *cvar, authum_i32
     return authum_bool_true;
 }
 
+/* Chat through SayText: "chat|<index>|<text>" lines in g_prints. */
+authum_i32_t g_msg_index;
+authum_i32_t g_msg_id;
+authum_char_t g_msg_text[192];
+
+authum_i32_t
+test_message_id(const authum_char_t *name)
+{
+    return strcmp(name, "SayText") == 0 ? 76 : 0;
+}
+
+authum_bool_t
+test_message_begin(authum_i32_t dest, authum_i32_t msg_id, authum_i32_t index)
+{
+    (void)dest;
+    g_msg_id = msg_id;
+    g_msg_index = index;
+    g_msg_text[0] = '\0';
+    return authum_bool_true;
+}
+
+void
+test_message_write(authum_i32_t kind, authum_i32_t value, authum_float_t real,
+                   const authum_char_t *text)
+{
+    (void)value;
+    (void)real;
+    if (kind == authum_message_arg_string)
+    {
+        authum_cstr_copy(g_msg_text, sizeof g_msg_text, text);
+    }
+}
+
+void
+test_message_end(void)
+{
+    authum_char_t line[256];
+
+    if (g_msg_id == 76)
+    {
+        snprintf(line, sizeof line, "chat|%d|%s\n", (int)g_msg_index, g_msg_text);
+        test_append(g_prints, line);
+    }
+}
+
+/* Server cvars: a small table. */
+enum
+{
+    test_cvars_max = 16
+};
+
+authum_char_t g_cvar_names[test_cvars_max][64];
+authum_char_t g_cvar_values[test_cvars_max][64];
+int g_cvar_count;
+
+int
+test_cvar_find(const authum_char_t *name)
+{
+    int i;
+
+    for (i = 0; i < g_cvar_count; ++i)
+    {
+        if (strcmp(g_cvar_names[i], name) == 0)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+authum_bool_t
+test_cvar_register(const authum_char_t *name, const authum_char_t *value, authum_i32_t flags)
+{
+    (void)flags;
+    if (test_cvar_find(name) >= 0)
+    {
+        return authum_bool_true;
+    }
+    if (g_cvar_count >= test_cvars_max)
+    {
+        return authum_bool_false;
+    }
+    authum_cstr_copy(g_cvar_names[g_cvar_count], sizeof g_cvar_names[0], name);
+    authum_cstr_copy(g_cvar_values[g_cvar_count], sizeof g_cvar_values[0], value);
+    ++g_cvar_count;
+    return authum_bool_true;
+}
+
+authum_bool_t
+test_cvar_get(const authum_char_t *name, authum_char_t *buf, authum_usize_t size)
+{
+    int i = test_cvar_find(name);
+
+    if (i < 0)
+    {
+        return authum_bool_false;
+    }
+    authum_cstr_copy(buf, size, g_cvar_values[i]);
+    return authum_bool_true;
+}
+
+authum_bool_t
+test_cvar_set(const authum_char_t *name, const authum_char_t *value)
+{
+    int i = test_cvar_find(name);
+
+    if (i < 0)
+    {
+        return authum_bool_false;
+    }
+    authum_cstr_copy(g_cvar_values[i], sizeof g_cvar_values[0], value);
+    return authum_bool_true;
+}
+
+authum_char_t g_precached[128];
+
+authum_i32_t
+test_precache_sound(const authum_char_t *path)
+{
+    test_append(g_precached, path);
+    return 1;
+}
+
+/* Vega 100 hp, the bot dead, Gordon 50 hp. */
+authum_float_t g_health[test_max_clients + 1] = {0.0f, 100.0f, 0.0f, 50.0f, 0.0f};
+
+authum_bool_t
+test_entity_get_float(authum_i32_t index, authum_i32_t field, authum_float_t *out)
+{
+    if (test_player(index) == authum_null)
+    {
+        return authum_bool_false;
+    }
+    *out = field == authum_entity_float_health ? g_health[index] : 0.0f;
+    return authum_bool_true;
+}
+
+authum_bool_t
+test_entity_get_i32(authum_i32_t index, authum_i32_t field, authum_i32_t *out)
+{
+    if (test_player(index) == authum_null)
+    {
+        return authum_bool_false;
+    }
+    if (field == authum_entity_i32_dead)
+    {
+        *out = g_health[index] > 0.0f ? authum_entity_dead_no : authum_entity_dead_dead;
+    }
+    else if (field == authum_entity_i32_flags)
+    {
+        *out =
+            authum_entity_flag_client |
+            (strcmp(test_player(index)->auth_id, "BOT") == 0 ? authum_entity_flag_fake_client : 0);
+    }
+    else
+    {
+        *out = 0;
+    }
+    return authum_bool_true;
+}
+
+authum_bool_t
+test_client_command(authum_i32_t index, const authum_char_t *cmd)
+{
+    authum_char_t line[192];
+
+    if (test_player(index) == authum_null)
+    {
+        return authum_bool_false;
+    }
+    snprintf(line, sizeof line, "cmd|%d|%s\n", (int)index, cmd);
+    test_append(g_commands, line);
+    return authum_bool_true;
+}
+
 const authum_engine_t g_engine = {
     .size = sizeof(authum_engine_t),
     .get_game_dir = test_get_game_dir,
@@ -191,6 +366,17 @@ const authum_engine_t g_engine = {
     .client_get_address = test_client_get_address,
     .client_print = test_client_print,
     .query_client_cvar = test_query_client_cvar,
+    .cvar_get = test_cvar_get,
+    .cvar_set = test_cvar_set,
+    .cvar_register = test_cvar_register,
+    .message_id = test_message_id,
+    .message_begin = test_message_begin,
+    .message_write = test_message_write,
+    .message_end = test_message_end,
+    .precache_sound = test_precache_sound,
+    .entity_get_float = test_entity_get_float,
+    .entity_get_i32 = test_entity_get_i32,
+    .client_command = test_client_command,
 };
 
 /* --- loading a module the way the host does --------------------------------- */
@@ -411,8 +597,8 @@ test_write_file(const char *path, const char *text)
 }
 
 test_module_t g_modules[] = {
-    {"skeleton"}, {"hello"}, {"welcome"}, {"chatfilter"}, {"cvarguard"},
-    {"settings"}, {"stats"}, {"scores"},  {"scoreboard"},
+    {"skeleton"}, {"hello"},  {"welcome"},    {"chatfilter"},  {"cvarguard"}, {"settings"},
+    {"stats"},    {"scores"}, {"scoreboard"}, {"deathnotice"}, {"announcer"},
 };
 
 int
@@ -501,6 +687,83 @@ main(void)
     CHECK(strstr(g_out, "Vega") != NULL);
     CHECK(test_run("stats", "top", 0u, authum_null));
     CHECK(strstr(g_out, "Vega") != NULL && strstr(g_out, "STEAM_0:1:111") != NULL);
+
+    /* deathnotice: the game's DeathMsg becomes a colored chat line. */
+    {
+        authum_event_message_t death;
+
+        memset(&death, 0, sizeof death);
+        death.size = sizeof death;
+        authum_cstr_copy(death.name, sizeof death.name, "DeathMsg");
+        death.argc = 4;
+        death.args[0].kind = authum_message_arg_byte;
+        death.args[0].value = 1;
+        death.args[1].kind = authum_message_arg_byte;
+        death.args[1].value = 3;
+        death.args[2].kind = authum_message_arg_byte;
+        death.args[2].value = 1;
+        death.args[3].kind = authum_message_arg_string;
+        memcpy(death.text, "ak47", 5);
+        death.text_used = 5u;
+        g_prints[0] = '\0';
+        (void)authum_events_host_publish(AUTHUM_EVENT_MESSAGE_PREFIX "DeathMsg", &death);
+        CHECK(strstr(g_prints,
+                     "chat|0|\x04[Death]\x03 Vega\x01 killed Gordon with ak47 (headshot)") != NULL);
+        CHECK(!death.block);
+    }
+    CHECK(test_cvar_find("deathnotice_enabled") >= 0);
+
+    /* deathnotice: kill is allowed until its cvar says otherwise. */
+    {
+        authum_event_client_t kill;
+
+        memset(&kill, 0, sizeof kill);
+        kill.size = sizeof kill;
+        kill.index = 1;
+        kill.allow = authum_bool_true;
+        (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_KILL, &kill);
+        CHECK(kill.allow);
+        CHECK(test_cvar_set("deathnotice_allow_kill", "0"));
+        (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_KILL, &kill);
+        CHECK(!kill.allow);
+    }
+
+    /* announcer: precache, the round start line, the timer, the hp list. */
+    {
+        authum_event_server_t server;
+        authum_event_server_log_t line;
+        int i;
+
+        memset(&server, 0, sizeof server);
+        server.size = sizeof server;
+        (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_PRECACHE, &server);
+        CHECK_STR(g_precached, "buttons/bell1.wav");
+
+        memset(&line, 0, sizeof line);
+        line.size = sizeof line;
+        authum_cstr_copy(line.text, sizeof line.text, "World triggered \"Round_Start\"");
+        g_commands[0] = '\0';
+        (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_LOG, &line);
+        CHECK(strstr(g_commands, "cmd|1|spk buttons/bell1.wav") != NULL);
+        CHECK(strstr(g_commands, "cmd|2|") == NULL); /* the bot */
+        CHECK(strstr(g_commands, "cmd|3|spk buttons/bell1.wav") != NULL);
+
+        g_prints[0] = '\0';
+        server.frame_time = 1.0f;
+        for (i = 0; i < 119; ++i)
+        {
+            (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_FRAME, &server);
+        }
+        CHECK(strstr(g_prints, "Message #1") == NULL);
+        (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_FRAME, &server); /* 120 s */
+        CHECK(strstr(g_prints, "chat|0|\x04[Info]\x01 This server runs Authum. Message #1.") !=
+              NULL);
+
+        CHECK(test_run("announcer", "hp", 0u, authum_null));
+        CHECK(strstr(g_out, "Vega") != NULL && strstr(g_out, "100 hp") != NULL);
+        CHECK(strstr(g_out, "Gordon") != NULL && strstr(g_out, "Bot Alice") == NULL);
+        CHECK(strstr(g_out, "2 alive") != NULL);
+    }
 
     /* The player leaves: scores forgets the slot. */
     test_client_event(AUTHUM_EVENT_CLIENT_DISCONNECT, 1);

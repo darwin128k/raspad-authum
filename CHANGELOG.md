@@ -128,7 +128,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (block a client command), `cvarguard` (client cvar query, kick),
   `settings` (module cfg with defaults, a checked key, reload), `stats`
   (SQLite + a journal), `scores` + `scoreboard` (two modules over the event
-  bus with a types-only header). Built with `-Wall -Wextra`, warning-free.
+  bus with a types-only header), `deathnotice` (`DeathMsg`, colored chat,
+  module cvars, refusing `kill`), `announcer` (timers, precache, HLDS log
+  lines, entity fields). Built with `-Wall -Wextra`, warning-free.
 - More host events from Metamod hooks: `authum.client.command` (`ClientCommand`,
   a handler can block it), `authum.client.cvar_value` (`CvarValue2`, the answer
   to `QueryClientCvarValue2`), and `<authum/event/server.h>` with
