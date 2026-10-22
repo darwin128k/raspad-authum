@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `<authum/detour.h>` — `authum_detour_t` + `attach` / `detach` / `suspend` /
   `resume`: 5-byte `jmp rel32` detour on 32-bit x86 for engine-thread hooks
   (was `qproto_hook_patch_jmp` / `restore_bytes`). Client-side, no ABI bump.
+- `<authum/net.h>` — this machine's IPv4 addresses from its interfaces:
+  `authum_net_ipv4_external` (public) and `authum_net_ipv4_internal`
+  (LAN / NAT side), plus `is_external` / `is_loopback` / `format`. For HLDS
+  bound to every interface, where the engine only knows `0.0.0.0`.
+  Linux only; elsewhere the lists are empty. Client-side, no ABI bump.
 
 ## [2.0.0] - 2026-10-21
 

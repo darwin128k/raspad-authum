@@ -10,6 +10,7 @@
 #include <authum/cstr.h>
 #include <authum/detour.h>
 #include <authum/engine.h>
+#include <authum/net.h>
 #include <authum/path.h>
 #include <authum/symbol.h>
 
@@ -258,9 +259,52 @@ test_symbol(void)
     CHECK(authum_symbol_find(authum_null, "strlen", authum_null) == authum_null);
 }
 
+void
+test_net(void)
+{
+    authum_char_t text[AUTHUM_NET_IPV4_TEXT_SIZE];
+    authum_u32_t ips[8];
+    authum_usize_t n;
+    authum_usize_t i;
+
+    CHECK(authum_net_ipv4_is_external(0x25e6d2dau));  /* 37.230.210.218 */
+    CHECK(authum_net_ipv4_is_external(0x08080808u));  /* 8.8.8.8 */
+    CHECK(authum_net_ipv4_is_external(0xac200001u));  /* 172.32.0.1, just past 172.16/12 */
+    CHECK(!authum_net_ipv4_is_external(0x7f000001u)); /* 127.0.0.1 */
+    CHECK(!authum_net_ipv4_is_external(0x0a000001u)); /* 10.0.0.1 */
+    CHECK(!authum_net_ipv4_is_external(0xac1f0001u)); /* 172.31.0.1 */
+    CHECK(!authum_net_ipv4_is_external(0xc0a80101u)); /* 192.168.1.1 */
+    CHECK(!authum_net_ipv4_is_external(0x64400001u)); /* 100.64.0.1 CGNAT */
+    CHECK(!authum_net_ipv4_is_external(0xa9fe0101u)); /* 169.254.1.1 */
+    CHECK(!authum_net_ipv4_is_external(0xe0000001u)); /* 224.0.0.1 */
+    CHECK(!authum_net_ipv4_is_external(0x00000000u));
+    CHECK(authum_net_ipv4_is_loopback(0x7f000001u));
+    CHECK(!authum_net_ipv4_is_loopback(0x0a000001u));
+
+    CHECK(authum_net_ipv4_format(0x25e6d2dau, text, sizeof text));
+    CHECK_STR(text, "37.230.210.218");
+    CHECK(authum_net_ipv4_format(0xffffffffu, text, sizeof text));
+    CHECK_STR(text, "255.255.255.255");
+    CHECK(!authum_net_ipv4_format(0x25e6d2dau, text, 8u));
+
+    /* Real interfaces: whatever this machine has, the lists must be clean. */
+    n = authum_net_ipv4_external(ips, 8u);
+    for (i = 0u; i < n && i < 8u; i++)
+    {
+        CHECK(authum_net_ipv4_is_external(ips[i]));
+    }
+    n = authum_net_ipv4_internal(ips, 8u);
+    for (i = 0u; i < n && i < 8u; i++)
+    {
+        CHECK(!authum_net_ipv4_is_external(ips[i]) && !authum_net_ipv4_is_loopback(ips[i]));
+    }
+    CHECK(authum_net_ipv4_internal(authum_null, 0u) == n); /* count without a buffer */
+}
+
 int
 main(void)
 {
+    test_net();
     test_cstr();
     test_path();
     test_cfg();
