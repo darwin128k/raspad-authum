@@ -278,14 +278,23 @@ test_detour(void)
     CHECK(!authum_detour_attach(authum_null, (authum_ptr)fn, (authum_ptr)&test_detour_hook));
 }
 
+#if defined(_WIN32)
+#    define TEST_SYMBOL_LIBRARY "kernel32.dll"
+#    define TEST_SYMBOL_NAME "lstrlenA"
+#else
+#    define TEST_SYMBOL_LIBRARY "libc.so.6"
+#    define TEST_SYMBOL_NAME "strlen"
+#endif
+
 void
 test_symbol(void)
 {
     authum_bool_t via_dynsym = authum_bool_false;
 
-    CHECK(authum_symbol_find("libc.so.6", "strlen", &via_dynsym) != authum_null);
+    CHECK(authum_symbol_find(TEST_SYMBOL_LIBRARY, TEST_SYMBOL_NAME, &via_dynsym) != authum_null);
     CHECK(via_dynsym);
-    CHECK(authum_symbol_find("libc.so.6", "authum_no_such_symbol", &via_dynsym) == authum_null);
+    CHECK(authum_symbol_find(TEST_SYMBOL_LIBRARY, "authum_no_such_symbol", &via_dynsym) ==
+          authum_null);
     CHECK(!via_dynsym);
     CHECK(authum_symbol_find("authum_not_loaded.so", "strlen", authum_null) == authum_null);
     CHECK(authum_symbol_find_engine("SVC_Info", authum_null) == authum_null);

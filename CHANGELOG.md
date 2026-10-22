@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Windows build (MinGW): `authum_logger_ensure_dir` used the POSIX two-argument
+  `mkdir`; the symbol test looked for `libc.so.6`, which exists only on Linux.
+
 ### Changed
+
+- `CMakePresets.json` with `linux32` and `windows-mingw32` (configure, build,
+  test). Configure fails at once, with a hint, when the compiler cannot link
+  with `-m32`, instead of at the first link.
 
 - **Module ABI 0.4.0**: `authum_engine_t` gains `query_client_cvar`. Modules
   built for 0.3 must be rebuilt (the loader refuses them).

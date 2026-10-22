@@ -4,6 +4,9 @@
 
 #include <errno.h>
 #include <sys/stat.h>
+#if defined(_WIN32)
+#    include <direct.h>
+#endif
 
 authum_logger_file_split_t
 authum_logger_file_split_parse(const authum_char_t *value)
@@ -30,7 +33,11 @@ authum_logger_ensure_dir(const authum_char_t *dir)
     {
         return S_ISDIR(st.st_mode) ? authum_bool_true : authum_bool_false;
     }
+#if defined(_WIN32)
+    if (_mkdir(dir) == 0)
+#else
     if (mkdir(dir, 0755) == 0)
+#endif
     {
         return authum_bool_true;
     }

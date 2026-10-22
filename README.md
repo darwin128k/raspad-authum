@@ -104,10 +104,25 @@ You still need Metamod-P (+ HLSDK headers) under `lib/metamod-p`
 
 ## Build
 
+HLDS loads 32-bit modules only. `CMakePresets.json` picks the toolchain for the
+host system:
+
 ```sh
-cmake -S . -B build-linux32 -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build-linux32
+# Linux (gcc-multilib / g++-multilib)
+cmake --preset linux32
+cmake --build --preset linux32
+ctest --preset linux32
+
+# Windows (MSYS2 C:/msys64/mingw32: pacman -S mingw-w64-i686-gcc mingw-w64-i686-ninja)
+cmake --preset windows-mingw32
+cmake --build --preset windows-mingw32
+ctest --preset windows-mingw32
 ```
+
+The build goes to `build-<preset>/`. Without presets, pass a 32-bit capable
+compiler yourself (`cmake -S . -B build-linux32 -G Ninja -DCMAKE_BUILD_TYPE=Release`).
+A compiler that cannot link with `-m32` (MSYS2 `mingw64`, Linux without
+multilib) is refused at configure time, not at the first link.
 
 Optional: `-DAUTHUM_LH_LINK_MODE=needed` (default) or `whole`.
 `LH_STATIC_LIBGCC` is forced on so the module does not depend on the host’s
