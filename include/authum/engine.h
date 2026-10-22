@@ -11,6 +11,7 @@
 #ifndef AUTHUM_ENGINE_H
 #define AUTHUM_ENGINE_H
 
+#include <authum/bool.h>
 #include <authum/byte.h>
 #include <authum/char.h>
 #include <authum/null.h>
@@ -36,6 +37,14 @@ extern "C"
         void (*server_print)(const authum_char_t *text);
         /** Mirror of `pfnServerCommand` (e.g. `kick #3\n`). */
         void (*server_command)(const authum_char_t *cmd);
+        /**
+         * Mirror of `pfnQueryClientCvarValue2` for the player at entity @p index
+         * (1 … maxClients). The answer arrives as ::AUTHUM_EVENT_CLIENT_CVAR_VALUE
+         * with the same @p request_id. Returns false if @p index is not a player
+         * slot in use. ABI 0.4.
+         */
+        authum_bool_t (*query_client_cvar)(authum_i32_t index, const authum_char_t *cvar,
+                                           authum_i32_t request_id);
     } authum_engine_t;
 
     void
@@ -55,6 +64,15 @@ extern "C"
     void
     authum_engine_kick(const authum_engine_t *engine, authum_i32_t userid,
                        const authum_char_t *reason);
+
+    /**
+     * Ask the client at entity @p index for the value of @p cvar. The answer is
+     * published as ::AUTHUM_EVENT_CLIENT_CVAR_VALUE carrying @p request_id.
+     * Returns false when nothing was sent (no engine, empty @p cvar, bad index).
+     */
+    authum_bool_t
+    authum_engine_query_cvar(const authum_engine_t *engine, authum_i32_t index,
+                             const authum_char_t *cvar, authum_i32_t request_id);
 
 #ifdef __cplusplus
 }

@@ -161,6 +161,11 @@ extern "C"
     void
     authum_host_kick(const authum_host_t *host, authum_i32_t userid, const authum_char_t *reason);
 
+    /** Ask a client for a cvar; see ::authum_engine_query_cvar. */
+    authum_bool_t
+    authum_host_query_cvar(const authum_host_t *host, authum_i32_t index,
+                           const authum_char_t *cvar, authum_i32_t request_id);
+
     void
     authum_host_log_line(const authum_host_t *host, int is_error, const authum_char_t *line);
 

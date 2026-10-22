@@ -207,6 +207,13 @@ authum_host_kick(const authum_host_t *host, authum_i32_t userid, const authum_ch
 }
 
 authum_bool_t
+authum_host_query_cvar(const authum_host_t *host, authum_i32_t index, const authum_char_t *cvar,
+                       authum_i32_t request_id)
+{
+    return authum_engine_query_cvar(authum_host_engine(host), index, cvar, request_id);
+}
+
+authum_bool_t
 authum_host_subscribe(const authum_host_t *host, const authum_char_t *name,
                       authum_event_handler_fn fn, authum_ptr user)
 {

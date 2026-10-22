@@ -1,6 +1,6 @@
 /**
  * @file client.c
- * @brief authum_client: cstr, path, cfg, engine kick, ed25519, detour, symbol, json, sql.
+ * @brief authum_client: cstr, path, cfg, engine kick/cvar query, ed25519, detour, symbol, json, sql.
  */
 
 #include <check.h>
@@ -135,6 +135,37 @@ test_engine_kick(void)
     authum_engine_kick(&engine, 3, authum_null);
     CHECK_STR(g_last_command, "kick #3\n");
     authum_engine_kick(authum_null, 1, "x");
+}
+
+authum_i32_t g_last_cvar_index;
+authum_i32_t g_last_cvar_request;
+authum_char_t g_last_cvar[64];
+
+authum_bool_t
+test_engine_record_cvar(authum_i32_t index, const authum_char_t *cvar, authum_i32_t request_id)
+{
+    g_last_cvar_index = index;
+    g_last_cvar_request = request_id;
+    authum_cstr_copy(g_last_cvar, sizeof g_last_cvar, cvar);
+    return index == 2 ? authum_bool_true : authum_bool_false;
+}
+
+void
+test_engine_query_cvar(void)
+{
+    authum_engine_t engine;
+
+    memset(&engine, 0, sizeof engine);
+    CHECK(!authum_engine_query_cvar(&engine, 2, "rate", 1));
+    engine.query_client_cvar = test_engine_record_cvar;
+    CHECK(authum_engine_query_cvar(&engine, 2, "cl_updaterate", 42));
+    CHECK(g_last_cvar_index == 2);
+    CHECK(g_last_cvar_request == 42);
+    CHECK_STR(g_last_cvar, "cl_updaterate");
+    CHECK(!authum_engine_query_cvar(&engine, 5, "rate", 1));
+    CHECK(!authum_engine_query_cvar(&engine, 2, "", 1));
+    CHECK(!authum_engine_query_cvar(&engine, 2, authum_null, 1));
+    CHECK(!authum_engine_query_cvar(authum_null, 2, "rate", 1));
 }
 
 void
@@ -408,6 +439,7 @@ main(void)
     test_path();
     test_cfg();
     test_engine_kick();
+    test_engine_query_cvar();
     test_ed25519();
     test_detour();
     test_symbol();
