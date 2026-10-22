@@ -27,6 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- More host events from Metamod hooks: `authum.client.command` (`ClientCommand`,
+  a handler can block it), `authum.client.cvar_value` (`CvarValue2`, the answer
+  to `QueryClientCvarValue2`), and `<authum/event/server.h>` with
+  `authum.server.activate` / `deactivate` / `frame` (`ServerActivate` post,
+  `ServerDeactivate`, `StartFrame`). The plugin now registers
+  `GetEntityAPI2_Post` and `GetNewDLLFunctions`.
+- `<authum/float.h>` — `authum_float_t` (mirrors `lh_float_t`); event payloads
+  use it for `game_time` / `frame_time`.
 - `authum_sql_stmt_bind_i64` / `authum_sql_stmt_column_i64` — 64-bit integers
   (SteamID64, row ids) in `<authum/sql.h>`.
 - `<authum/crypto/ed25519.h>` — Ed25519 (RFC 8032) key pair / sign / check +
