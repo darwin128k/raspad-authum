@@ -30,6 +30,10 @@ add_executable(authum_test_commands commands.c)
 target_link_libraries(authum_test_commands PRIVATE authum_test_host authum_test_check)
 add_test(NAME authum_commands COMMAND authum_test_commands)
 
+add_executable(authum_test_timers timers.c)
+target_link_libraries(authum_test_timers PRIVATE authum_test_host authum_test_check)
+add_test(NAME authum_timers COMMAND authum_test_timers)
+
 add_executable(authum_test_logs logs.c)
 target_link_libraries(authum_test_logs PRIVATE authum_test_host authum_test_check)
 add_test(NAME authum_logs COMMAND authum_test_logs)

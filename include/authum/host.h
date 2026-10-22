@@ -230,6 +230,64 @@ extern "C"
     authum_host_client_command(const authum_host_t *host, authum_i32_t index,
                                const authum_char_t *cmd);
 
+    authum_bool_t
+    authum_host_client_get_stats(const authum_host_t *host, authum_i32_t index, authum_i32_t *ping,
+                                 authum_i32_t *loss);
+
+    authum_bool_t
+    authum_host_client_set_info(const authum_host_t *host, authum_i32_t index,
+                                const authum_char_t *key, const authum_char_t *value);
+
+    authum_bool_t
+    authum_host_client_chat(const authum_host_t *host, authum_i32_t index, authum_i32_t sender,
+                            const authum_char_t *text);
+
+    authum_bool_t
+    authum_host_cvar_register(const authum_host_t *host, const authum_char_t *name,
+                              const authum_char_t *value, authum_i32_t flags);
+
+    authum_i32_t
+    authum_host_cvar_get_i32(const authum_host_t *host, const authum_char_t *name,
+                             authum_i32_t fallback);
+
+    authum_float_t
+    authum_host_cvar_get_float(const authum_host_t *host, const authum_char_t *name,
+                               authum_float_t fallback);
+
+    authum_i32_t
+    authum_host_message_id(const authum_host_t *host, const authum_char_t *name);
+
+    authum_bool_t
+    authum_host_message_begin(const authum_host_t *host, authum_i32_t dest, authum_i32_t msg_id,
+                              authum_i32_t index);
+
+    void
+    authum_host_message_write_byte(const authum_host_t *host, authum_i32_t value);
+
+    void
+    authum_host_message_write_char(const authum_host_t *host, authum_i32_t value);
+
+    void
+    authum_host_message_write_short(const authum_host_t *host, authum_i32_t value);
+
+    void
+    authum_host_message_write_long(const authum_host_t *host, authum_i32_t value);
+
+    void
+    authum_host_message_write_entity(const authum_host_t *host, authum_i32_t index);
+
+    void
+    authum_host_message_write_angle(const authum_host_t *host, authum_float_t value);
+
+    void
+    authum_host_message_write_coord(const authum_host_t *host, authum_float_t value);
+
+    void
+    authum_host_message_write_string(const authum_host_t *host, const authum_char_t *text);
+
+    void
+    authum_host_message_end(const authum_host_t *host);
+
     /** Ask a client for a cvar; see ::authum_engine_query_cvar. */
     authum_bool_t
     authum_host_query_cvar(const authum_host_t *host, authum_i32_t index, const authum_char_t *cvar,

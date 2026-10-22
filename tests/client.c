@@ -173,6 +173,119 @@ test_engine_query_cvar(void)
     CHECK(!authum_engine_query_cvar(authum_null, 2, "rate", 1));
 }
 
+/* --- user messages and cvars through a fake engine ------------------------ */
+
+authum_char_t g_msg_log[256];
+
+void
+test_msg_log(const authum_char_t *text)
+{
+    authum_usize_t used = strlen(g_msg_log);
+
+    snprintf(g_msg_log + used, sizeof g_msg_log - used, "%s;", text);
+}
+
+authum_i32_t
+test_msg_id(const authum_char_t *name)
+{
+    return strcmp(name, "SayText") == 0 ? 76 : 0;
+}
+
+authum_bool_t
+test_msg_begin(authum_i32_t dest, authum_i32_t msg_id, authum_i32_t index)
+{
+    authum_char_t line[64];
+
+    if (index == 9)
+    {
+        return authum_bool_false; /* nobody in slot 9 */
+    }
+    snprintf(line, sizeof line, "begin %d %d %d", (int)dest, (int)msg_id, (int)index);
+    test_msg_log(line);
+    return authum_bool_true;
+}
+
+void
+test_msg_write(authum_i32_t kind, authum_i32_t value, authum_float_t real,
+               const authum_char_t *text)
+{
+    authum_char_t line[96];
+
+    snprintf(line, sizeof line, "w%d %d %.2f %s", (int)kind, (int)value, (double)real,
+             text != NULL ? text : "-");
+    test_msg_log(line);
+}
+
+void
+test_msg_end(void)
+{
+    test_msg_log("end");
+}
+
+authum_bool_t
+test_cvar_get(const authum_char_t *name, authum_char_t *buf, authum_usize_t buf_size)
+{
+    const authum_char_t *value = strcmp(name, "a") == 0   ? "12"
+                                 : strcmp(name, "b") == 0 ? "0.25"
+                                 : strcmp(name, "c") == 0 ? "x"
+                                                          : NULL;
+
+    if (value == NULL)
+    {
+        return authum_bool_false;
+    }
+    authum_cstr_copy(buf, buf_size, value);
+    return authum_bool_true;
+}
+
+void
+test_engine_messages(void)
+{
+    authum_engine_t engine;
+
+    memset(&engine, 0, sizeof engine);
+    engine.size = sizeof engine;
+    engine.message_id = test_msg_id;
+    engine.message_begin = test_msg_begin;
+    engine.message_write = test_msg_write;
+    engine.message_end = test_msg_end;
+    engine.cvar_get = test_cvar_get;
+
+    g_msg_log[0] = '\0';
+    CHECK(authum_engine_client_chat(&engine, 3, 3, "hi"));
+    CHECK_STR(g_msg_log, "begin 1 76 3;w0 3 0.00 -;w6 0 0.00 hi;end;");
+
+    g_msg_log[0] = '\0';
+    CHECK(authum_engine_client_chat(&engine, 0, 0, "all")); /* everyone: dest all */
+    CHECK_STR(g_msg_log, "begin 2 76 0;w0 0 0.00 -;w6 0 0.00 all;end;");
+
+    /* A refused begin: the writes and the end after it go nowhere. */
+    g_msg_log[0] = '\0';
+    CHECK(!authum_engine_client_chat(&engine, 9, 0, "x"));
+    CHECK(!authum_engine_message_begin(&engine, authum_message_dest_one, 76, 9));
+    authum_engine_message_write_coord(&engine, 1.5f);
+    authum_engine_message_end(&engine);
+    CHECK_STR(g_msg_log, "");
+
+    g_msg_log[0] = '\0';
+    CHECK(authum_engine_message_begin(&engine, authum_message_dest_all, 76, 0));
+    authum_engine_message_write_coord(&engine, 1.5f);
+    authum_engine_message_write_string(&engine, authum_null);
+    authum_engine_message_end(&engine);
+    CHECK_STR(g_msg_log, "begin 2 76 0;w5 0 1.50 -;w6 0 0.00 ;end;");
+
+    CHECK(authum_engine_message_id(&engine, "DeathMsg") == 0);
+    CHECK(!authum_engine_message_begin(&engine, authum_message_dest_all, 0, 0)); /* no id */
+    engine.message_id = 0;
+    CHECK(!authum_engine_client_chat(&engine, 1, 1, "no SayText")); /* host without it */
+
+    CHECK(authum_engine_cvar_get_i32(&engine, "a", 5) == 12);
+    CHECK(authum_engine_cvar_get_i32(&engine, "c", 5) == 5); /* not a number */
+    CHECK(authum_engine_cvar_get_i32(&engine, "missing", 5) == 5);
+    CHECK(authum_engine_cvar_get_float(&engine, "b", 1.0f) == 0.25f);
+    CHECK(authum_engine_cvar_get_float(&engine, "c", 1.0f) == 1.0f);
+}
+
 /* A host built before a function existed hands a shorter table. */
 void
 test_abi_size(void)
@@ -544,6 +657,7 @@ main(void)
     test_cfg();
     test_engine_kick();
     test_engine_query_cvar();
+    test_engine_messages();
     test_abi_size();
     test_host_copy();
     test_abi_version();

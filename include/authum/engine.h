@@ -23,6 +23,7 @@
 #include <authum/bool.h>
 #include <authum/byte.h>
 #include <authum/char.h>
+#include <authum/engine/message.h>
 #include <authum/float.h>
 #include <authum/null.h>
 #include <authum/size.h>
@@ -106,7 +107,47 @@ extern "C"
          */
         authum_bool_t (*query_client_cvar)(authum_i32_t index, const authum_char_t *cvar,
                                            authum_i32_t request_id);
+        /** Ping (ms) and packet loss (%) of the player. */
+        authum_bool_t (*client_get_stats)(authum_i32_t index, authum_i32_t *ping,
+                                          authum_i32_t *loss);
+        /** Set @p key in the player's userinfo (`setinfo`). */
+        authum_bool_t (*client_set_info)(authum_i32_t index, const authum_char_t *key,
+                                         const authum_char_t *value);
+
+        /* --- cvars and messages ------------------------------------------ */
+
+        /**
+         * Create server cvar @p name with @p value and `authum_engine_cvar_*`
+         * @p flags; true also when it already exists (it is left as it is).
+         * The engine keeps it until the server quits — module reloads included.
+         */
+        authum_bool_t (*cvar_register)(const authum_char_t *name, const authum_char_t *value,
+                                       authum_i32_t flags);
+        /** Id of user message @p name (`SayText`); 0 when the game has none (yet). */
+        authum_i32_t (*message_id)(const authum_char_t *name);
+        /**
+         * Start user message @p msg_id to `authum_message_dest_*` @p dest; @p index
+         * is the player for the `_one` destinations, else 0.
+         */
+        authum_bool_t (*message_begin)(authum_i32_t dest, authum_i32_t msg_id, authum_i32_t index);
+        /** One argument: `authum_message_arg_*` @p kind takes @p value, @p real or @p text. */
+        void (*message_write)(authum_i32_t kind, authum_i32_t value, authum_float_t real,
+                              const authum_char_t *text);
+        void (*message_end)(void);
     } authum_engine_t;
+
+    /** Flags for ::authum_engine_cvar_register (the engine's FCVAR_*). */
+    enum
+    {
+        /** Saved in config.cfg (client-side meaning; harmless on a server). */
+        authum_engine_cvar_archive = 1,
+        /** Listed in the server's rules (`rules` query, server browsers). */
+        authum_engine_cvar_server = 4,
+        /** The value is hidden in the rules (passwords). */
+        authum_engine_cvar_protected = 32,
+        /** Changing it is not written to the log. */
+        authum_engine_cvar_unlogged = 256
+    };
 
     /* --- server ------------------------------------------------------------ */
 
@@ -190,6 +231,78 @@ extern "C"
     authum_bool_t
     authum_engine_query_cvar(const authum_engine_t *engine, authum_i32_t index,
                              const authum_char_t *cvar, authum_i32_t request_id);
+
+    /** Ping (ms) and loss (%); both 0 and false when the player is not there. */
+    authum_bool_t
+    authum_engine_client_get_stats(const authum_engine_t *engine, authum_i32_t index,
+                                   authum_i32_t *ping, authum_i32_t *loss);
+
+    authum_bool_t
+    authum_engine_client_set_info(const authum_engine_t *engine, authum_i32_t index,
+                                  const authum_char_t *key, const authum_char_t *value);
+
+    /**
+     * Colored chat line for player @p index (0 = everyone) through the game's
+     * `SayText`. In Counter-Strike `\x01` is the default color, `\x04` green
+     * and `\x03` the team color of player @p sender (0 = grey). False when
+     * the game has no `SayText` or nobody received it.
+     */
+    authum_bool_t
+    authum_engine_client_chat(const authum_engine_t *engine, authum_i32_t index,
+                              authum_i32_t sender, const authum_char_t *text);
+
+    /* --- cvars ------------------------------------------------------------- */
+
+    authum_bool_t
+    authum_engine_cvar_register(const authum_engine_t *engine, const authum_char_t *name,
+                                const authum_char_t *value, authum_i32_t flags);
+
+    /** Server cvar @p name as an integer; @p fallback when missing or not a number. */
+    authum_i32_t
+    authum_engine_cvar_get_i32(const authum_engine_t *engine, const authum_char_t *name,
+                               authum_i32_t fallback);
+
+    /** Server cvar @p name as a number (`0.5`); @p fallback when missing or not a number. */
+    authum_float_t
+    authum_engine_cvar_get_float(const authum_engine_t *engine, const authum_char_t *name,
+                                 authum_float_t fallback);
+
+    /* --- user messages (<authum/engine/message.h>) ------------------------- */
+
+    authum_i32_t
+    authum_engine_message_id(const authum_engine_t *engine, const authum_char_t *name);
+
+    /** Every _write_* and _end after a false begin does nothing. */
+    authum_bool_t
+    authum_engine_message_begin(const authum_engine_t *engine, authum_i32_t dest,
+                                authum_i32_t msg_id, authum_i32_t index);
+
+    void
+    authum_engine_message_write_byte(const authum_engine_t *engine, authum_i32_t value);
+
+    void
+    authum_engine_message_write_char(const authum_engine_t *engine, authum_i32_t value);
+
+    void
+    authum_engine_message_write_short(const authum_engine_t *engine, authum_i32_t value);
+
+    void
+    authum_engine_message_write_long(const authum_engine_t *engine, authum_i32_t value);
+
+    void
+    authum_engine_message_write_entity(const authum_engine_t *engine, authum_i32_t index);
+
+    void
+    authum_engine_message_write_angle(const authum_engine_t *engine, authum_float_t value);
+
+    void
+    authum_engine_message_write_coord(const authum_engine_t *engine, authum_float_t value);
+
+    void
+    authum_engine_message_write_string(const authum_engine_t *engine, const authum_char_t *text);
+
+    void
+    authum_engine_message_end(const authum_engine_t *engine);
 
 #ifdef __cplusplus
 }

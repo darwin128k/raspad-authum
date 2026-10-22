@@ -11,12 +11,16 @@
 #include <authum/size.h>
 
 #include <extdll.h>
+#include <meta_api.h>
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 extern enginefuncs_t g_engfuncs;
 extern globalvars_t *gpGlobals;
+extern plugin_info_t Plugin_info;
+extern mutil_funcs_t *gpMetaUtilFuncs;
 
 namespace
 {
@@ -290,6 +294,166 @@ authum_engine_query_client_cvar_impl(authum_i32_t index, const authum_char_t *cv
     return authum_bool_true;
 }
 
+authum_bool_t
+authum_engine_client_get_stats_impl(authum_i32_t index, authum_i32_t *ping, authum_i32_t *loss)
+{
+    edict_t *entity = authum_engine_client_edict(index);
+    int p = 0;
+    int l = 0;
+
+    if (entity == nullptr || g_engfuncs.pfnGetPlayerStats == nullptr)
+    {
+        return authum_bool_false;
+    }
+    g_engfuncs.pfnGetPlayerStats(entity, &p, &l);
+    *ping = p;
+    *loss = l;
+    return authum_bool_true;
+}
+
+authum_bool_t
+authum_engine_client_set_info_impl(authum_i32_t index, const authum_char_t *key,
+                                   const authum_char_t *value)
+{
+    edict_t *entity = authum_engine_client_edict(index);
+    char *info;
+
+    if (entity == nullptr || g_engfuncs.pfnGetInfoKeyBuffer == nullptr ||
+        g_engfuncs.pfnSetClientKeyValue == nullptr)
+    {
+        return authum_bool_false;
+    }
+    info = g_engfuncs.pfnGetInfoKeyBuffer(entity);
+    if (info == nullptr)
+    {
+        return authum_bool_false;
+    }
+    g_engfuncs.pfnSetClientKeyValue(index, info, const_cast<char *>(key),
+                                    const_cast<char *>(value));
+    return authum_bool_true;
+}
+
+/* --- cvars and messages ---------------------------------------------------- */
+
+char *
+authum_engine_strdup(const char *text)
+{
+    std::size_t n = std::strlen(text) + 1u;
+    char *copy = static_cast<char *>(std::malloc(n));
+
+    if (copy != nullptr)
+    {
+        std::memcpy(copy, text, n);
+    }
+    return copy;
+}
+
+authum_bool_t
+authum_engine_cvar_register_impl(const authum_char_t *name, const authum_char_t *value,
+                                 authum_i32_t flags)
+{
+    cvar_t *cvar;
+
+    if (g_engfuncs.pfnCVarGetPointer == nullptr || g_engfuncs.pfnCVarRegister == nullptr)
+    {
+        return authum_bool_false;
+    }
+    if (g_engfuncs.pfnCVarGetPointer(name) != nullptr)
+    {
+        return authum_bool_true;
+    }
+    /* The engine keeps the pointer for good: this memory is never freed. */
+    cvar = static_cast<cvar_t *>(std::calloc(1u, sizeof(cvar_t)));
+    if (cvar == nullptr)
+    {
+        return authum_bool_false;
+    }
+    cvar->name = authum_engine_strdup(name);
+    cvar->string = authum_engine_strdup(value);
+    cvar->flags = flags;
+    if (cvar->name == nullptr || cvar->string == nullptr)
+    {
+        std::free(cvar->name);
+        std::free(cvar->string);
+        std::free(cvar);
+        return authum_bool_false;
+    }
+    g_engfuncs.pfnCVarRegister(cvar);
+    return g_engfuncs.pfnCVarGetPointer(name) != nullptr ? authum_bool_true : authum_bool_false;
+}
+
+authum_i32_t
+authum_engine_message_id_impl(const authum_char_t *name)
+{
+    if (gpMetaUtilFuncs == nullptr || gpMetaUtilFuncs->pfnGetUserMsgID == nullptr)
+    {
+        return 0;
+    }
+    return gpMetaUtilFuncs->pfnGetUserMsgID(PLID, name, nullptr);
+}
+
+authum_bool_t
+authum_engine_message_begin_impl(authum_i32_t dest, authum_i32_t msg_id, authum_i32_t index)
+{
+    edict_t *target = nullptr;
+
+    if (g_engfuncs.pfnMessageBegin == nullptr)
+    {
+        return authum_bool_false;
+    }
+    if (dest == authum_message_dest_one || dest == authum_message_dest_one_unreliable)
+    {
+        target = authum_engine_client_edict(index);
+        if (target == nullptr)
+        {
+            return authum_bool_false;
+        }
+    }
+    g_engfuncs.pfnMessageBegin(dest, msg_id, nullptr, target);
+    return authum_bool_true;
+}
+
+void
+authum_engine_message_write_impl(authum_i32_t kind, authum_i32_t value, authum_float_t real,
+                                 const authum_char_t *text)
+{
+    switch (kind)
+    {
+    case authum_message_arg_byte:
+        g_engfuncs.pfnWriteByte(value);
+        break;
+    case authum_message_arg_char:
+        g_engfuncs.pfnWriteChar(value);
+        break;
+    case authum_message_arg_short:
+        g_engfuncs.pfnWriteShort(value);
+        break;
+    case authum_message_arg_long:
+        g_engfuncs.pfnWriteLong(value);
+        break;
+    case authum_message_arg_angle:
+        g_engfuncs.pfnWriteAngle(real);
+        break;
+    case authum_message_arg_coord:
+        g_engfuncs.pfnWriteCoord(real);
+        break;
+    case authum_message_arg_string:
+        g_engfuncs.pfnWriteString(text != nullptr ? text : "");
+        break;
+    case authum_message_arg_entity:
+        g_engfuncs.pfnWriteEntity(value);
+        break;
+    default:
+        break;
+    }
+}
+
+void
+authum_engine_message_end_impl(void)
+{
+    g_engfuncs.pfnMessageEnd();
+}
+
 const authum_engine_t authum_engine_ops = {
     sizeof(authum_engine_t),
     authum_engine_get_game_dir_impl,
@@ -310,6 +474,13 @@ const authum_engine_t authum_engine_ops = {
     authum_engine_client_print_impl,
     authum_engine_client_command_impl,
     authum_engine_query_client_cvar_impl,
+    authum_engine_client_get_stats_impl,
+    authum_engine_client_set_info_impl,
+    authum_engine_cvar_register_impl,
+    authum_engine_message_id_impl,
+    authum_engine_message_begin_impl,
+    authum_engine_message_write_impl,
+    authum_engine_message_end_impl,
 };
 
 } // namespace
