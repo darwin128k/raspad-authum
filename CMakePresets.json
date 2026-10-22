@@ -1,0 +1,72 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "linux32",
+      "displayName": "Linux, 32-bit (GCC multilib)",
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "windows-mingw32",
+      "displayName": "Windows, 32-bit (MSYS2 mingw32)",
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "environment": {
+        "PATH": "C:/msys64/mingw32/bin;$penv{PATH}"
+      },
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "C:/msys64/mingw32/bin/gcc.exe",
+        "CMAKE_CXX_COMPILER": "C:/msys64/mingw32/bin/g++.exe"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "linux32",
+      "configurePreset": "linux32"
+    },
+    {
+      "name": "windows-mingw32",
+      "configurePreset": "windows-mingw32"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "linux32",
+      "configurePreset": "linux32",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-mingw32",
+      "configurePreset": "windows-mingw32",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}
