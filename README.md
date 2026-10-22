@@ -25,7 +25,7 @@ projects dropped under `modules/`.
 
 - Loads modules from `modules.list` (Authum line format) or scans `modules/`
 - Connect gate scaffolding for children
-- Client modules: `authum/client.h` (ABI **0.4**, no lh type in its headers);
+- Client modules: `authum/client.h` (ABI **1.0**, no lh type in its headers);
   host passes `authum_host_t` into `start` (sandbox, events, commands)
 - Server command `authum` — status / load / unload / module commands
 - Static `lh` in the host (`AUTHUM_LH_LINK_MODE=needed|whole`); `authum_client`

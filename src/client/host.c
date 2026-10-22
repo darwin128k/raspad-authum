@@ -1,45 +1,48 @@
 #include <authum/host.h>
 
+#include <string.h>
+
 authum_host_log_fn
 authum_host_get_log(const authum_host_t *host)
 {
-    return (!authum_null_eq(host)) ? host->log : 0;
+    return (!authum_null_eq(host) && AUTHUM_ABI_HAS(host, log)) ? host->log : 0;
 }
 
 authum_host_get_ptr_fn
 authum_host_engine_funcs(const authum_host_t *host)
 {
-    return (!authum_null_eq(host)) ? host->engine_funcs : 0;
+    return (!authum_null_eq(host) && AUTHUM_ABI_HAS(host, engine_funcs)) ? host->engine_funcs : 0;
 }
 
 authum_host_get_ptr_fn
 authum_host_globals(const authum_host_t *host)
 {
-    return (!authum_null_eq(host)) ? host->globals : 0;
+    return (!authum_null_eq(host) && AUTHUM_ABI_HAS(host, globals)) ? host->globals : 0;
 }
 
 const authum_env_t *
 authum_host_env(const authum_host_t *host)
 {
-    return (!authum_null_eq(host)) ? host->env : authum_null;
+    return (!authum_null_eq(host) && AUTHUM_ABI_HAS(host, env)) ? host->env : authum_null;
 }
 
 const authum_crypto_t *
 authum_host_crypto(const authum_host_t *host)
 {
-    return (!authum_null_eq(host)) ? host->crypto : authum_null;
+    return (!authum_null_eq(host) && AUTHUM_ABI_HAS(host, crypto)) ? host->crypto : authum_null;
 }
 
 const authum_engine_t *
 authum_host_engine(const authum_host_t *host)
 {
-    return (!authum_null_eq(host)) ? host->engine : authum_null;
+    return (!authum_null_eq(host) && AUTHUM_ABI_HAS(host, engine)) ? host->engine : authum_null;
 }
 
 const authum_char_t *
 authum_host_module_dir(const authum_host_t *host)
 {
-    return (!authum_null_eq(host)) ? host->module_dir : authum_null;
+    return (!authum_null_eq(host) && AUTHUM_ABI_HAS(host, module_dir)) ? host->module_dir
+                                                                       : authum_null;
 }
 
 const authum_path_t *
@@ -63,7 +66,7 @@ authum_host_env_module_cstr(const authum_host_t *host)
 void
 authum_host_set_log(authum_host_t *host, authum_host_log_fn log)
 {
-    if (!authum_null_eq(host))
+    if (!authum_null_eq(host) && AUTHUM_ABI_FITS(host, log))
     {
         host->log = log;
     }
@@ -72,7 +75,7 @@ authum_host_set_log(authum_host_t *host, authum_host_log_fn log)
 void
 authum_host_set_engine_funcs(authum_host_t *host, authum_host_get_ptr_fn fn)
 {
-    if (!authum_null_eq(host))
+    if (!authum_null_eq(host) && AUTHUM_ABI_FITS(host, engine_funcs))
     {
         host->engine_funcs = fn;
     }
@@ -81,7 +84,7 @@ authum_host_set_engine_funcs(authum_host_t *host, authum_host_get_ptr_fn fn)
 void
 authum_host_set_globals(authum_host_t *host, authum_host_get_ptr_fn fn)
 {
-    if (!authum_null_eq(host))
+    if (!authum_null_eq(host) && AUTHUM_ABI_FITS(host, globals))
     {
         host->globals = fn;
     }
@@ -90,7 +93,7 @@ authum_host_set_globals(authum_host_t *host, authum_host_get_ptr_fn fn)
 void
 authum_host_set_env(authum_host_t *host, const authum_env_t *env)
 {
-    if (!authum_null_eq(host))
+    if (!authum_null_eq(host) && AUTHUM_ABI_FITS(host, env))
     {
         host->env = env;
     }
@@ -99,7 +102,7 @@ authum_host_set_env(authum_host_t *host, const authum_env_t *env)
 void
 authum_host_set_module_dir(authum_host_t *host, const authum_char_t *module_dir)
 {
-    if (!authum_null_eq(host))
+    if (!authum_null_eq(host) && AUTHUM_ABI_FITS(host, module_dir))
     {
         host->module_dir = module_dir;
     }
@@ -108,7 +111,7 @@ authum_host_set_module_dir(authum_host_t *host, const authum_char_t *module_dir)
 void
 authum_host_set_crypto(authum_host_t *host, const authum_crypto_t *crypto)
 {
-    if (!authum_null_eq(host))
+    if (!authum_null_eq(host) && AUTHUM_ABI_FITS(host, crypto))
     {
         host->crypto = crypto;
     }
@@ -117,7 +120,7 @@ authum_host_set_crypto(authum_host_t *host, const authum_crypto_t *crypto)
 void
 authum_host_set_engine(authum_host_t *host, const authum_engine_t *engine)
 {
-    if (!authum_null_eq(host))
+    if (!authum_null_eq(host) && AUTHUM_ABI_FITS(host, engine))
     {
         host->engine = engine;
     }
@@ -126,32 +129,45 @@ authum_host_set_engine(authum_host_t *host, const authum_engine_t *engine)
 void
 authum_host_clear(authum_host_t *host)
 {
-    if (authum_null_eq(host))
+    authum_usize_t size;
+
+    if (authum_null_eq(host) || host->size < sizeof host->size)
     {
         return;
     }
-    host->log = 0;
-    host->engine_funcs = 0;
-    host->globals = 0;
-    host->env = authum_null;
-    host->module_dir = authum_null;
-    host->crypto = authum_null;
-    host->engine = authum_null;
-    host->sandbox = authum_null;
-    host->events = authum_null;
-    host->commands = authum_null;
+    size = host->size < sizeof *host ? host->size : sizeof *host;
+    memset((char *)host + sizeof host->size, 0, size - sizeof host->size);
+}
+
+void
+authum_host_copy(authum_host_t *dst, const authum_host_t *src)
+{
+    authum_usize_t size;
+
+    if (authum_null_eq(dst))
+    {
+        return;
+    }
+    memset(dst, 0, sizeof *dst);
+    if (authum_null_eq(src) || src->size < sizeof src->size)
+    {
+        return;
+    }
+    size = src->size < sizeof *dst ? src->size : sizeof *dst;
+    memcpy(dst, src, size);
+    dst->size = size;
 }
 
 const authum_commands_t *
 authum_host_commands(const authum_host_t *host)
 {
-    return (!authum_null_eq(host)) ? host->commands : authum_null;
+    return (!authum_null_eq(host) && AUTHUM_ABI_HAS(host, commands)) ? host->commands : authum_null;
 }
 
 void
 authum_host_set_commands(authum_host_t *host, const authum_commands_t *commands)
 {
-    if (!authum_null_eq(host))
+    if (!authum_null_eq(host) && AUTHUM_ABI_FITS(host, commands))
     {
         host->commands = commands;
     }
@@ -173,19 +189,19 @@ authum_host_command_add_all(const authum_host_t *host, const authum_command_def_
 const authum_sandbox_t *
 authum_host_sandbox(const authum_host_t *host)
 {
-    return (!authum_null_eq(host)) ? host->sandbox : authum_null;
+    return (!authum_null_eq(host) && AUTHUM_ABI_HAS(host, sandbox)) ? host->sandbox : authum_null;
 }
 
 const authum_events_t *
 authum_host_events(const authum_host_t *host)
 {
-    return (!authum_null_eq(host)) ? host->events : authum_null;
+    return (!authum_null_eq(host) && AUTHUM_ABI_HAS(host, events)) ? host->events : authum_null;
 }
 
 void
 authum_host_set_sandbox(authum_host_t *host, const authum_sandbox_t *sandbox)
 {
-    if (!authum_null_eq(host))
+    if (!authum_null_eq(host) && AUTHUM_ABI_FITS(host, sandbox))
     {
         host->sandbox = sandbox;
     }
@@ -194,7 +210,7 @@ authum_host_set_sandbox(authum_host_t *host, const authum_sandbox_t *sandbox)
 void
 authum_host_set_events(authum_host_t *host, const authum_events_t *events)
 {
-    if (!authum_null_eq(host))
+    if (!authum_null_eq(host) && AUTHUM_ABI_FITS(host, events))
     {
         host->events = events;
     }
@@ -204,6 +220,97 @@ void
 authum_host_kick(const authum_host_t *host, authum_i32_t userid, const authum_char_t *reason)
 {
     authum_engine_kick(authum_host_engine(host), userid, reason);
+}
+
+authum_i32_t
+authum_host_max_clients(const authum_host_t *host)
+{
+    return authum_engine_max_clients(authum_host_engine(host));
+}
+
+authum_float_t
+authum_host_game_time(const authum_host_t *host)
+{
+    return authum_engine_game_time(authum_host_engine(host));
+}
+
+void
+authum_host_get_map_name(const authum_host_t *host, authum_char_t *buf, authum_usize_t buf_size)
+{
+    authum_engine_get_map_name(authum_host_engine(host), buf, buf_size);
+}
+
+authum_bool_t
+authum_host_cvar_get(const authum_host_t *host, const authum_char_t *name, authum_char_t *buf,
+                     authum_usize_t buf_size)
+{
+    return authum_engine_cvar_get(authum_host_engine(host), name, buf, buf_size);
+}
+
+authum_bool_t
+authum_host_cvar_set(const authum_host_t *host, const authum_char_t *name,
+                     const authum_char_t *value)
+{
+    return authum_engine_cvar_set(authum_host_engine(host), name, value);
+}
+
+authum_bool_t
+authum_host_client_is_connected(const authum_host_t *host, authum_i32_t index)
+{
+    return authum_engine_client_is_connected(authum_host_engine(host), index);
+}
+
+authum_i32_t
+authum_host_client_userid(const authum_host_t *host, authum_i32_t index)
+{
+    return authum_engine_client_userid(authum_host_engine(host), index);
+}
+
+authum_i32_t
+authum_host_client_index_by_userid(const authum_host_t *host, authum_i32_t userid)
+{
+    return authum_engine_client_index_by_userid(authum_host_engine(host), userid);
+}
+
+authum_bool_t
+authum_host_client_get_name(const authum_host_t *host, authum_i32_t index, authum_char_t *buf,
+                            authum_usize_t buf_size)
+{
+    return authum_engine_client_get_name(authum_host_engine(host), index, buf, buf_size);
+}
+
+authum_bool_t
+authum_host_client_get_auth_id(const authum_host_t *host, authum_i32_t index, authum_char_t *buf,
+                               authum_usize_t buf_size)
+{
+    return authum_engine_client_get_auth_id(authum_host_engine(host), index, buf, buf_size);
+}
+
+authum_bool_t
+authum_host_client_get_address(const authum_host_t *host, authum_i32_t index, authum_char_t *buf,
+                               authum_usize_t buf_size)
+{
+    return authum_engine_client_get_address(authum_host_engine(host), index, buf, buf_size);
+}
+
+authum_bool_t
+authum_host_client_get_info(const authum_host_t *host, authum_i32_t index, const authum_char_t *key,
+                            authum_char_t *buf, authum_usize_t buf_size)
+{
+    return authum_engine_client_get_info(authum_host_engine(host), index, key, buf, buf_size);
+}
+
+authum_bool_t
+authum_host_client_print(const authum_host_t *host, authum_i32_t index, authum_i32_t kind,
+                         const authum_char_t *text)
+{
+    return authum_engine_client_print(authum_host_engine(host), index, kind, text);
+}
+
+authum_bool_t
+authum_host_client_command(const authum_host_t *host, authum_i32_t index, const authum_char_t *cmd)
+{
+    return authum_engine_client_command(authum_host_engine(host), index, cmd);
 }
 
 authum_bool_t

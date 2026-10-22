@@ -1,19 +1,29 @@
 /**
  * @file engine.h
- * @brief Host engine facade for modules — subset of engfuncs, no HLSDK.
+ * @brief Host engine facade for modules — the engfuncs modules need, no HLSDK.
  *
- * Full `enginefuncs_t` / `globalvars_t` stay inside `authum_mm`. Modules that
- * only need game-dir / console / server-command go through ::authum_engine_t
- * on ::authum_host_t.engine. Raw pointers remain on the host as an escape hatch
- * (`engine_funcs` / `globals`) for modules that link HLSDK privately.
+ * Full `enginefuncs_t` / `globalvars_t` stay inside `authum_mm`. Modules go
+ * through ::authum_engine_t on ::authum_host_t.engine (or the `authum_host_*`
+ * shortcuts). Raw pointers remain on the host as an escape hatch
+ * (`engine_funcs` / `globals`) for modules that link HLSDK privately — every
+ * call that goes through here instead is one less thing an ABI change breaks.
+ *
+ * Players are addressed by entity `index` (1 … maxClients), the number every
+ * `authum.client.*` event carries. A function given an index that is not a
+ * connected player does nothing and returns false / 0.
+ *
+ * Wrappers check the table with ::AUTHUM_ABI_HAS: on a host that predates a
+ * function they return false / 0 / an empty string instead of calling it.
  */
 
 #ifndef AUTHUM_ENGINE_H
 #define AUTHUM_ENGINE_H
 
+#include <authum/abi.h>
 #include <authum/bool.h>
 #include <authum/byte.h>
 #include <authum/char.h>
+#include <authum/float.h>
 #include <authum/null.h>
 #include <authum/size.h>
 
@@ -22,30 +32,83 @@ extern "C"
 {
 #endif
 
+    /** Where ::authum_engine_client_print puts the text. */
+    enum
+    {
+        /** The player's console. */
+        authum_engine_print_console = 0,
+        /** Middle of the screen. */
+        authum_engine_print_center = 1,
+        /** Chat / notify area. */
+        authum_engine_print_chat = 2
+    };
+
     /**
      * @struct authum_engine
-     * @brief Ops table filled by the host from HLDS engfuncs.
+     * @brief Ops table filled by the host from HLDS engfuncs. Append only.
      */
     typedef struct authum_engine
     {
-        /**
-         * Write the game directory (e.g. `cstrike`) into @p buf.
-         * Always NUL-terminates when @p buf_size > 0.
-         */
+        /** sizeof this table as built by the host — see <authum/abi.h>. */
+        authum_usize_t size;
+
+        /* --- server ------------------------------------------------------ */
+
+        /** Game directory (e.g. `cstrike`); always NUL-terminated. */
         void (*get_game_dir)(authum_char_t *buf, authum_usize_t buf_size);
-        /** Mirror of `pfnServerPrint` (text as-is, typically already `\n`-terminated). */
+        /** `pfnServerPrint` (text as-is, typically already `\n`-terminated). */
         void (*server_print)(const authum_char_t *text);
-        /** Mirror of `pfnServerCommand` (e.g. `kick #3\n`). */
+        /** `pfnServerCommand` (e.g. `kick #3\n`). */
         void (*server_command)(const authum_char_t *cmd);
+        /** `maxplayers` of the current map. */
+        authum_i32_t (*max_clients)(void);
+        /** Seconds since map start (`gpGlobals->time`). */
+        authum_float_t (*game_time)(void);
+        /** Current map (`de_dust2`); always NUL-terminated. */
+        void (*get_map_name)(authum_char_t *buf, authum_usize_t buf_size);
+        /** String value of server cvar @p name; false when there is no such cvar. */
+        authum_bool_t (*cvar_get)(const authum_char_t *name, authum_char_t *buf,
+                                  authum_usize_t buf_size);
+        /** Set server cvar @p name; false when there is no such cvar. */
+        authum_bool_t (*cvar_set)(const authum_char_t *name, const authum_char_t *value);
+
+        /* --- players ----------------------------------------------------- */
+
+        /** True when slot @p index holds a connected (or connecting) player. */
+        authum_bool_t (*client_is_connected)(authum_i32_t index);
+        /** Engine userid (`kick #userid`), or 0. */
+        authum_i32_t (*client_userid)(authum_i32_t index);
+        /** Entity index of @p userid, or 0. */
+        authum_i32_t (*client_index_by_userid)(authum_i32_t userid);
+        /** Player name. */
+        authum_bool_t (*client_get_name)(authum_i32_t index, authum_char_t *buf,
+                                         authum_usize_t buf_size);
+        /** `STEAM_0:…` / `VALVE_…` / `HLTV`; empty while not authorized yet. */
+        authum_bool_t (*client_get_auth_id)(authum_i32_t index, authum_char_t *buf,
+                                            authum_usize_t buf_size);
+        /** `ip:port` the player connected from. */
+        authum_bool_t (*client_get_address)(authum_i32_t index, authum_char_t *buf,
+                                            authum_usize_t buf_size);
+        /** Value of @p key in the player's userinfo (`setinfo`), e.g. `_pw`, `*hltv`. */
+        authum_bool_t (*client_get_info)(authum_i32_t index, const authum_char_t *key,
+                                         authum_char_t *buf, authum_usize_t buf_size);
         /**
-         * Mirror of `pfnQueryClientCvarValue2` for the player at entity @p index
-         * (1 … maxClients). The answer arrives as ::AUTHUM_EVENT_CLIENT_CVAR_VALUE
-         * with the same @p request_id. Returns false if @p index is not a player
-         * slot in use. ABI 0.4.
+         * Show @p text to player @p index (0 = every player) as
+         * `authum_engine_print_*` @p kind. Add the `\n` yourself.
+         */
+        authum_bool_t (*client_print)(authum_i32_t index, authum_i32_t kind,
+                                      const authum_char_t *text);
+        /** Run @p cmd in the player's own console (a `\n` is added). */
+        authum_bool_t (*client_command)(authum_i32_t index, const authum_char_t *cmd);
+        /**
+         * `pfnQueryClientCvarValue2`: the answer arrives as
+         * ::AUTHUM_EVENT_CLIENT_CVAR_VALUE carrying @p request_id.
          */
         authum_bool_t (*query_client_cvar)(authum_i32_t index, const authum_char_t *cvar,
                                            authum_i32_t request_id);
     } authum_engine_t;
+
+    /* --- server ------------------------------------------------------------ */
 
     void
     authum_engine_get_game_dir(const authum_engine_t *engine, authum_char_t *buf,
@@ -57,6 +120,24 @@ extern "C"
     void
     authum_engine_server_command(const authum_engine_t *engine, const authum_char_t *cmd);
 
+    authum_i32_t
+    authum_engine_max_clients(const authum_engine_t *engine);
+
+    authum_float_t
+    authum_engine_game_time(const authum_engine_t *engine);
+
+    void
+    authum_engine_get_map_name(const authum_engine_t *engine, authum_char_t *buf,
+                               authum_usize_t buf_size);
+
+    authum_bool_t
+    authum_engine_cvar_get(const authum_engine_t *engine, const authum_char_t *name,
+                           authum_char_t *buf, authum_usize_t buf_size);
+
+    authum_bool_t
+    authum_engine_cvar_set(const authum_engine_t *engine, const authum_char_t *name,
+                           const authum_char_t *value);
+
     /**
      * Issue `kick #userid "reason"`. Quotes, `;` and line breaks in @p reason are
      * replaced with spaces so the command cannot be split or injected.
@@ -64,6 +145,42 @@ extern "C"
     void
     authum_engine_kick(const authum_engine_t *engine, authum_i32_t userid,
                        const authum_char_t *reason);
+
+    /* --- players ----------------------------------------------------------- */
+
+    authum_bool_t
+    authum_engine_client_is_connected(const authum_engine_t *engine, authum_i32_t index);
+
+    authum_i32_t
+    authum_engine_client_userid(const authum_engine_t *engine, authum_i32_t index);
+
+    authum_i32_t
+    authum_engine_client_index_by_userid(const authum_engine_t *engine, authum_i32_t userid);
+
+    authum_bool_t
+    authum_engine_client_get_name(const authum_engine_t *engine, authum_i32_t index,
+                                  authum_char_t *buf, authum_usize_t buf_size);
+
+    authum_bool_t
+    authum_engine_client_get_auth_id(const authum_engine_t *engine, authum_i32_t index,
+                                     authum_char_t *buf, authum_usize_t buf_size);
+
+    authum_bool_t
+    authum_engine_client_get_address(const authum_engine_t *engine, authum_i32_t index,
+                                     authum_char_t *buf, authum_usize_t buf_size);
+
+    authum_bool_t
+    authum_engine_client_get_info(const authum_engine_t *engine, authum_i32_t index,
+                                  const authum_char_t *key, authum_char_t *buf,
+                                  authum_usize_t buf_size);
+
+    authum_bool_t
+    authum_engine_client_print(const authum_engine_t *engine, authum_i32_t index, authum_i32_t kind,
+                               const authum_char_t *text);
+
+    authum_bool_t
+    authum_engine_client_command(const authum_engine_t *engine, authum_i32_t index,
+                                 const authum_char_t *cmd);
 
     /**
      * Ask the client at entity @p index for the value of @p cvar. The answer is

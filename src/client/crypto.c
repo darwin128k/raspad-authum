@@ -6,7 +6,7 @@ authum_crypto_rijndael_init(const authum_crypto_t *crypto, authum_crypto_rijndae
                             authum_usize_t chain_size, authum_usize_t block_size,
                             authum_crypto_rijndael_mode_t mode)
 {
-    if (authum_null_eq(crypto) || crypto->rijndael_init == 0)
+    if (authum_null_eq(crypto) || !AUTHUM_ABI_HAS(crypto, rijndael_init))
     {
         return authum_bool_false;
     }
@@ -17,7 +17,7 @@ authum_bool_t
 authum_crypto_rijndael_encrypt_block(const authum_crypto_t *crypto, authum_crypto_rijndael_t *self,
                                      authum_ptr in, authum_ptr out)
 {
-    if (authum_null_eq(crypto) || crypto->rijndael_encrypt_block == 0)
+    if (authum_null_eq(crypto) || !AUTHUM_ABI_HAS(crypto, rijndael_encrypt_block))
     {
         return authum_bool_false;
     }
@@ -28,7 +28,7 @@ authum_bool_t
 authum_crypto_rijndael_decrypt_block(const authum_crypto_t *crypto, authum_crypto_rijndael_t *self,
                                      authum_ptr in, authum_ptr out)
 {
-    if (authum_null_eq(crypto) || crypto->rijndael_decrypt_block == 0)
+    if (authum_null_eq(crypto) || !AUTHUM_ABI_HAS(crypto, rijndael_decrypt_block))
     {
         return authum_bool_false;
     }
@@ -39,7 +39,7 @@ void
 authum_crypto_sha_init(const authum_crypto_t *crypto, authum_crypto_sha_t *self,
                        authum_crypto_sha_kind_t kind)
 {
-    if (!authum_null_eq(crypto) && crypto->sha_init != 0)
+    if (!authum_null_eq(crypto) && AUTHUM_ABI_HAS(crypto, sha_init))
     {
         crypto->sha_init(self, kind);
     }
@@ -49,7 +49,7 @@ void
 authum_crypto_sha_update(const authum_crypto_t *crypto, authum_crypto_sha_t *self, authum_ptr data,
                          authum_usize_t size)
 {
-    if (!authum_null_eq(crypto) && crypto->sha_update != 0)
+    if (!authum_null_eq(crypto) && AUTHUM_ABI_HAS(crypto, sha_update))
     {
         crypto->sha_update(self, data, size);
     }
@@ -59,7 +59,7 @@ authum_usize_t
 authum_crypto_sha_finish(const authum_crypto_t *crypto, authum_crypto_sha_t *self, authum_ptr out,
                          authum_usize_t out_size)
 {
-    if (authum_null_eq(crypto) || crypto->sha_finish == 0)
+    if (authum_null_eq(crypto) || !AUTHUM_ABI_HAS(crypto, sha_finish))
     {
         return 0u;
     }
@@ -71,7 +71,7 @@ authum_crypto_sha_hash(const authum_crypto_t *crypto, authum_crypto_sha_kind_t k
                        authum_ptr data, authum_usize_t size, authum_ptr out,
                        authum_usize_t out_size)
 {
-    if (authum_null_eq(crypto) || crypto->sha_hash == 0)
+    if (authum_null_eq(crypto) || !AUTHUM_ABI_HAS(crypto, sha_hash))
     {
         return 0u;
     }

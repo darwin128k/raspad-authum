@@ -9,6 +9,7 @@
 #ifndef AUTHUM_COMMANDS_OPS_H
 #define AUTHUM_COMMANDS_OPS_H
 
+#include <authum/abi.h>
 #include <authum/bool.h>
 #include <authum/char.h>
 #include <authum/command/def.h>
@@ -21,6 +22,8 @@ extern "C"
 
     struct authum_commands_ops
     {
+        /** sizeof this table as built by the host — see <authum/abi.h>. */
+        authum_usize_t size;
         authum_bool_t (*add)(authum_ptr owner, const authum_char_t *scope,
                              const authum_command_def_t *def);
         authum_bool_t (*remove)(authum_ptr owner, const authum_char_t *scope,

@@ -215,6 +215,7 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     authum_module_t *parent;
     authum_host_t *out = &data->host;
 
+    out->size = sizeof(*out);
     out->log = lh_null;
     out->engine_funcs = lh_null;
     out->globals = lh_null;
@@ -291,7 +292,7 @@ authum_child_start(authum_module_t *self)
         lh_os_set_last_error_lit(authum_error_code_invalid_info, "invalid module info/api");
         return lh_bool_false;
     }
-    if (!authum_version_is_compatible(&data->info->abi, &required))
+    if (!authum_version_is_abi_compatible(&data->info->abi, &required))
     {
         lh_runtime_allocator_free(data);
         lh_os_set_last_error_lit(authum_error_code_incompatible_abi, "incompatible module abi");

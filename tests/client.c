@@ -1,6 +1,7 @@
 /**
  * @file client.c
- * @brief authum_client: cstr, path, cfg, engine kick/cvar query, ed25519, detour, symbol, json, sql.
+ * @brief authum_client: cstr, path, cfg, engine kick/cvar query, ed25519, detour, symbol, json,
+ * sql.
  */
 
 #include <check.h>
@@ -10,11 +11,13 @@
 #include <authum/cstr.h>
 #include <authum/detour.h>
 #include <authum/engine.h>
+#include <authum/host.h>
 #include <authum/json.h>
 #include <authum/net.h>
 #include <authum/path.h>
 #include <authum/sql.h>
 #include <authum/symbol.h>
+#include <authum/version.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -129,6 +132,7 @@ test_engine_kick(void)
     authum_engine_t engine;
 
     memset(&engine, 0, sizeof engine);
+    engine.size = sizeof engine;
     engine.server_command = test_engine_record_command;
     authum_engine_kick(&engine, 7, "bad \"guy\"; quit\n");
     CHECK_STR(g_last_command, "kick #7 \"bad  guy   quit \"\n");
@@ -156,6 +160,7 @@ test_engine_query_cvar(void)
     authum_engine_t engine;
 
     memset(&engine, 0, sizeof engine);
+    engine.size = sizeof engine;
     CHECK(!authum_engine_query_cvar(&engine, 2, "rate", 1));
     engine.query_client_cvar = test_engine_record_cvar;
     CHECK(authum_engine_query_cvar(&engine, 2, "cl_updaterate", 42));
@@ -166,6 +171,96 @@ test_engine_query_cvar(void)
     CHECK(!authum_engine_query_cvar(&engine, 2, "", 1));
     CHECK(!authum_engine_query_cvar(&engine, 2, authum_null, 1));
     CHECK(!authum_engine_query_cvar(authum_null, 2, "rate", 1));
+}
+
+/* A host built before a function existed hands a shorter table. */
+void
+test_abi_size(void)
+{
+    authum_engine_t engine;
+    authum_char_t buf[16];
+
+    memset(&engine, 0, sizeof engine);
+    engine.server_command = test_engine_record_command;
+    engine.query_client_cvar = test_engine_record_cvar;
+
+    engine.size = 0u; /* no size: nothing is called */
+    g_last_command[0] = '\0';
+    authum_engine_server_command(&engine, "a\n");
+    CHECK_STR(g_last_command, "");
+
+    /* Ends right after server_command: that works, later fields do not. */
+    engine.size = (authum_usize_t)((const char *)&engine.server_command - (const char *)&engine) +
+                  sizeof engine.server_command;
+    CHECK(AUTHUM_ABI_FITS(&engine, server_command));
+    CHECK(!AUTHUM_ABI_FITS(&engine, max_clients));
+    authum_engine_server_command(&engine, "b\n");
+    CHECK_STR(g_last_command, "b\n");
+    CHECK(!authum_engine_query_cvar(&engine, 2, "rate", 1));
+    CHECK(authum_engine_max_clients(&engine) == 0);
+    memcpy(buf, "junk", 5);
+    CHECK(!authum_engine_client_get_name(&engine, 1, buf, sizeof buf));
+    CHECK_STR(buf, ""); /* a refused getter still leaves a valid string */
+
+    engine.size = sizeof engine;
+    CHECK(AUTHUM_ABI_HAS(&engine, query_client_cvar));
+    CHECK(!AUTHUM_ABI_HAS(&engine, max_clients)); /* in the table, but not set */
+    CHECK(authum_engine_query_cvar(&engine, 2, "rate", 1));
+}
+
+void
+test_host_copy(void)
+{
+    authum_host_t src;
+    authum_host_t dst;
+    authum_engine_t engine;
+
+    memset(&engine, 0, sizeof engine);
+    engine.size = sizeof engine;
+    memset(&src, 0, sizeof src);
+    src.size = sizeof src;
+    src.engine = &engine;
+    src.commands = (const authum_commands_t *)&engine; /* any non-null marker */
+
+    authum_host_copy(&dst, &src);
+    CHECK(dst.size == sizeof dst);
+    CHECK(authum_host_engine(&dst) == &engine);
+    CHECK(authum_host_commands(&dst) == src.commands);
+
+    /* An older host: its table stops before `commands`. */
+    src.size = (authum_usize_t)((const char *)&src.commands - (const char *)&src);
+    memset(&dst, 0xff, sizeof dst);
+    authum_host_copy(&dst, &src);
+    CHECK(dst.size == src.size);
+    CHECK(authum_host_engine(&dst) == &engine);
+    CHECK(authum_host_commands(&dst) == authum_null);
+    CHECK(dst.commands == authum_null); /* zeroed, not garbage */
+
+    authum_host_clear(&dst);
+    CHECK(authum_host_engine(&dst) == authum_null);
+    CHECK(dst.size == src.size);
+
+    authum_host_copy(&dst, authum_null);
+    CHECK(dst.size == 0u);
+}
+
+void
+test_abi_version(void)
+{
+    const authum_version_t v1_0 = AUTHUM_VERSION(1, 0, 0);
+    const authum_version_t v1_3 = AUTHUM_VERSION(1, 3, 2);
+    const authum_version_t v2_0 = AUTHUM_VERSION(2, 0, 0);
+    const authum_version_t v0_3 = AUTHUM_VERSION(0, 3, 0);
+    const authum_version_t v0_4 = AUTHUM_VERSION(0, 4, 0);
+    const authum_version_t v0_4_1 = AUTHUM_VERSION(0, 4, 1);
+
+    CHECK(authum_version_is_abi_compatible(&v1_0, &v1_3)); /* old module, new host */
+    CHECK(authum_version_is_abi_compatible(&v1_3, &v1_0)); /* new module, old host */
+    CHECK(!authum_version_is_abi_compatible(&v1_0, &v2_0));
+    CHECK(!authum_version_is_abi_compatible(&v0_4, &v1_0));
+    CHECK(!authum_version_is_abi_compatible(&v0_3, &v0_4));
+    CHECK(authum_version_is_abi_compatible(&v0_4_1, &v0_4));
+    CHECK(!authum_version_is_abi_compatible(authum_null, &v1_0));
 }
 
 void
@@ -449,6 +544,9 @@ main(void)
     test_cfg();
     test_engine_kick();
     test_engine_query_cvar();
+    test_abi_size();
+    test_host_copy();
+    test_abi_version();
     test_ed25519();
     test_detour();
     test_symbol();

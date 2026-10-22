@@ -55,7 +55,7 @@ Every image that wants to be an Authum module exports two C symbols.
 
 | Field | Meaning |
 |-------|---------|
-| `abi` | Loader contract. Accepted when `lh_version_is_compatible` against the host's `AUTHUM_MODULE_ABI` (`0.4.0`). |
+| `abi` | Loader contract. Accepted when `authum_version_is_abi_compatible` against the host's `AUTHUM_MODULE_ABI` (`1.0.0`): same major (0.x: same minor). |
 | `name` | Required. A null name is rejected. |
 | `version` | The module's own SemVer. |
 | `datetime` | Build timestamp. |

@@ -13,6 +13,7 @@
 #ifndef AUTHUM_HOST_H
 #define AUTHUM_HOST_H
 
+#include <authum/abi.h>
 #include <authum/char.h>
 #include <authum/commands.h>
 #include <authum/crypto.h>
@@ -34,6 +35,8 @@ extern "C"
 
     typedef struct authum_host
     {
+        /** sizeof this table as built by the host — see <authum/abi.h>. */
+        authum_usize_t size;
         authum_host_log_fn log;
         /**
          * Escape hatch: `enginefuncs_t *` / `globalvars_t *` (cast in the module).
@@ -145,6 +148,14 @@ extern "C"
     void
     authum_host_clear(authum_host_t *host);
 
+    /**
+     * Keep the host passed to `start`: copies what both sides know (the
+     * smaller `size`), zeroes the rest. Use it instead of `*dst = *src` — a
+     * module built against newer headers would read past an older host's table.
+     */
+    void
+    authum_host_copy(authum_host_t *dst, const authum_host_t *src);
+
     /* --- engine ops via host (no `host->engine` at call sites) ---------------- */
 
     void
@@ -161,10 +172,64 @@ extern "C"
     void
     authum_host_kick(const authum_host_t *host, authum_i32_t userid, const authum_char_t *reason);
 
+    /* Same as the `authum_engine_*` of the same name on ::authum_host_engine. */
+
+    authum_i32_t
+    authum_host_max_clients(const authum_host_t *host);
+
+    authum_float_t
+    authum_host_game_time(const authum_host_t *host);
+
+    void
+    authum_host_get_map_name(const authum_host_t *host, authum_char_t *buf,
+                             authum_usize_t buf_size);
+
+    authum_bool_t
+    authum_host_cvar_get(const authum_host_t *host, const authum_char_t *name, authum_char_t *buf,
+                         authum_usize_t buf_size);
+
+    authum_bool_t
+    authum_host_cvar_set(const authum_host_t *host, const authum_char_t *name,
+                         const authum_char_t *value);
+
+    authum_bool_t
+    authum_host_client_is_connected(const authum_host_t *host, authum_i32_t index);
+
+    authum_i32_t
+    authum_host_client_userid(const authum_host_t *host, authum_i32_t index);
+
+    authum_i32_t
+    authum_host_client_index_by_userid(const authum_host_t *host, authum_i32_t userid);
+
+    authum_bool_t
+    authum_host_client_get_name(const authum_host_t *host, authum_i32_t index, authum_char_t *buf,
+                                authum_usize_t buf_size);
+
+    authum_bool_t
+    authum_host_client_get_auth_id(const authum_host_t *host, authum_i32_t index,
+                                   authum_char_t *buf, authum_usize_t buf_size);
+
+    authum_bool_t
+    authum_host_client_get_address(const authum_host_t *host, authum_i32_t index,
+                                   authum_char_t *buf, authum_usize_t buf_size);
+
+    authum_bool_t
+    authum_host_client_get_info(const authum_host_t *host, authum_i32_t index,
+                                const authum_char_t *key, authum_char_t *buf,
+                                authum_usize_t buf_size);
+
+    authum_bool_t
+    authum_host_client_print(const authum_host_t *host, authum_i32_t index, authum_i32_t kind,
+                             const authum_char_t *text);
+
+    authum_bool_t
+    authum_host_client_command(const authum_host_t *host, authum_i32_t index,
+                               const authum_char_t *cmd);
+
     /** Ask a client for a cvar; see ::authum_engine_query_cvar. */
     authum_bool_t
-    authum_host_query_cvar(const authum_host_t *host, authum_i32_t index,
-                           const authum_char_t *cvar, authum_i32_t request_id);
+    authum_host_query_cvar(const authum_host_t *host, authum_i32_t index, const authum_char_t *cvar,
+                           authum_i32_t request_id);
 
     void
     authum_host_log_line(const authum_host_t *host, int is_error, const authum_char_t *line);

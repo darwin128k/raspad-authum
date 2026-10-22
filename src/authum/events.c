@@ -165,6 +165,7 @@ authum_events_host_publish_as(authum_ptr owner, const authum_char_t *name, authu
 }
 
 const authum_events_ops_t authum_events_host_ops_table = {
+    .size = sizeof(authum_events_ops_t),
     .subscribe = authum_events_host_subscribe,
     .unsubscribe = authum_events_host_unsubscribe,
     .publish = authum_events_host_publish_as,
