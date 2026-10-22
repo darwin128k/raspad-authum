@@ -123,6 +123,14 @@ survives Authum's internal changes.
 | `authum_host_client_print` | text to one player or everyone (`authum_engine_print_console` / `_center` / `_chat`) |
 | `authum_host_client_command` | run a command in the player's console |
 | `authum_host_query_cvar` | Ask a client for a cvar; the answer is `authum.client.cvar_value` — [events.md](events.md) |
+| `authum_host_client_chat` | colored chat line (`SayText`: `\x01` default, `\x04` green, `\x03` team color) |
+| `authum_host_client_get_stats` / `_set_info` | ping and loss; set a `setinfo` key |
+| `authum_host_client_is_alive` / `_is_bot` | state of a player slot |
+| `authum_host_cvar_register` / `_cvar_get_i32` / `_cvar_get_float` | the module's own server cvars (`mymod_enabled 1` in server.cfg) |
+| `authum_host_message_id` / `_message_begin` / `_write_*` / `_end` | send any user message — `<authum/engine/message.h>` |
+| `authum_host_precache_model` / `_sound` / `_generic` | from an `authum.server.precache` handler only |
+| `authum_host_entity_*` | entity fields: health, frags, flags, origin, … — `<authum/engine/entity.h>` |
+| `authum_timer_add` / `_remove` | "in 5 s", "every 30 s" — `<authum/timer.h>` |
 | `authum_host_command_add[_all]` | `authum <module> <name>` console / RCON commands — [commands.md](commands.md) |
 
 Paths in `env` are absolute when the host can resolve them from the module image
