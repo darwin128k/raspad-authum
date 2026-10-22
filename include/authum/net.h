@@ -9,7 +9,7 @@
  * Addresses are `authum_u32_t` in host byte order (`1.2.3.4` = `0x01020304`).
  * Loopback is never listed. "External" means routable on the internet; behind
  * NAT the machine has none, and the caller has to be told the address.
- * Linux only for now; elsewhere the lists come back empty.
+ * Linux (`getifaddrs`) and Windows (`GetAdaptersAddresses`, adapters that are up).
  */
 
 #ifndef AUTHUM_NET_H
