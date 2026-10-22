@@ -20,8 +20,10 @@
 #include <authum/detour.h>
 #include <authum/env.h>
 #include <authum/event/client.h>
+#include <authum/event/server.h>
 #include <authum/events.h>
 #include <authum/export.h>
+#include <authum/float.h>
 #include <authum/host.h>
 #include <authum/json.h>
 #include <authum/logger.h>

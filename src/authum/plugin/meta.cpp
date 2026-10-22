@@ -25,7 +25,14 @@
 #include <lh/void.h>
 
 static META_FUNCTIONS g_meta_functions = {
-    nullptr, nullptr, GetEntityAPI2, nullptr, nullptr, nullptr, GetEngineFunctions, nullptr,
+    nullptr,            /* GetEntityAPI */
+    nullptr,            /* GetEntityAPI_Post */
+    GetEntityAPI2,      /* ClientConnect … ClientCommand, ServerDeactivate, StartFrame */
+    GetEntityAPI2_Post, /* ServerActivate */
+    GetNewDLLFunctions, /* CvarValue2 */
+    nullptr,            /* GetNewDLLFunctions_Post */
+    GetEngineFunctions, /* nothing hooked yet */
+    nullptr,            /* GetEngineFunctions_Post */
 };
 
 plugin_info_t Plugin_info;
