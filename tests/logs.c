@@ -1,7 +1,8 @@
 /**
  * @file logs.c
  * @brief Host log channels: a file per module and day, levels from authum.cfg,
- *        warnings copied to the authum channel, console mirror.
+ *        warnings copied to the authum channel, console mirror, journals,
+ *        buffering, old files pruned, cfg reload.
  */
 
 #include <check.h>
@@ -19,8 +20,9 @@
 #define TEST_ROOT "authum_logs_test_root"
 
 /* Noon, so the next day is the next calendar day in any time zone. */
+#define TEST_DAY ((time_t)86400)
 #define TEST_DAY_ONE ((time_t)1792929600)
-#define TEST_DAY_TWO (TEST_DAY_ONE + (time_t)86400)
+#define TEST_DAY_TWO (TEST_DAY_ONE + TEST_DAY)
 
 time_t g_test_now = TEST_DAY_ONE;
 int g_test_mirrored;
@@ -47,27 +49,25 @@ test_mirror(authum_logger_level_t level, const authum_char_t *name, const authum
     authum_cstr_copy(g_test_mirror_text, sizeof g_test_mirror_text, text);
 }
 
-/** `<root>/logs/<name>/YYYY-MM-DD.log` for @p when. */
+/** `<root>/logs/<dir>/YYYY-MM-DD.log` for @p when. */
 void
-test_log_path(authum_char_t *out, authum_usize_t out_size, const char *name, time_t when)
+test_log_path(authum_char_t *out, authum_usize_t out_size, const char *dir, time_t when)
 {
     char day[16];
     struct tm *tm = localtime(&when);
 
     strftime(day, sizeof day, "%Y-%m-%d", tm);
-    snprintf(out, out_size, TEST_ROOT "/logs/%s/%s.log", name, day);
+    snprintf(out, out_size, TEST_ROOT "/logs/%s/%s.log", dir, day);
 }
 
+/** Whether @p path is on disk now (without flushing anything). */
 authum_bool_t
-test_file_contains(const char *name, time_t when, const char *needle)
+test_path_contains(const char *path, const char *needle)
 {
-    authum_char_t path[256];
     authum_char_t line[512];
     authum_bool_t found = authum_bool_false;
-    FILE *file;
+    FILE *file = fopen(path, "r");
 
-    test_log_path(path, sizeof path, name, when);
-    file = fopen(path, "r");
     if (file == NULL)
     {
         return authum_bool_false;
@@ -81,13 +81,27 @@ test_file_contains(const char *name, time_t when, const char *needle)
 }
 
 authum_bool_t
-test_file_exists(const char *name, time_t when)
+test_on_disk(const char *dir, time_t when, const char *needle)
 {
     authum_char_t path[256];
-    FILE *file;
 
-    test_log_path(path, sizeof path, name, when);
-    file = fopen(path, "r");
+    test_log_path(path, sizeof path, dir, when);
+    return test_path_contains(path, needle);
+}
+
+/** What a reader sees once the host has flushed (it does so every frame). */
+authum_bool_t
+test_file_contains(const char *dir, time_t when, const char *needle)
+{
+    authum_logs_flush();
+    return test_on_disk(dir, when, needle);
+}
+
+authum_bool_t
+test_exists(const char *path)
+{
+    FILE *file = fopen(path, "r");
+
     if (file == NULL)
     {
         return authum_bool_false;
@@ -96,37 +110,74 @@ test_file_exists(const char *name, time_t when)
     return authum_bool_true;
 }
 
+authum_bool_t
+test_file_exists(const char *dir, time_t when)
+{
+    authum_char_t path[256];
+
+    authum_logs_flush();
+    test_log_path(path, sizeof path, dir, when);
+    return test_exists(path);
+}
+
+void
+test_write_cfg(const char *text)
+{
+    FILE *cfg = fopen(TEST_ROOT "/authum.cfg", "w");
+
+    CHECK(cfg != NULL);
+    if (cfg != NULL)
+    {
+        fputs(text, cfg);
+        fclose(cfg);
+    }
+}
+
+void
+test_touch(const char *path)
+{
+    FILE *file = fopen(path, "w");
+
+    if (file != NULL)
+    {
+        fclose(file);
+    }
+}
+
+void
+test_mkdir(const char *text)
+{
+    authum_path_t dir;
+
+    authum_path_set_cstr(&dir, text);
+    CHECK(authum_path_ensure_dir(&dir));
+}
+
+const char g_test_cfg[] = "# test config\n"
+                          "log_level = info\n"
+                          "log_console = error\n"
+                          "log_keep_days = 30\n"
+                          "qproto.log_level = debug\n"
+                          "quiet.log_level = off\n"
+                          "hello.audit.log_level = debug\n";
+
 /** Start from nothing: no files from an earlier run. */
 void
 test_reset(void)
 {
-    const char *names[] = {"authum", "qproto", "quiet", "hello"};
+    const char *dirs[] = {"authum", "qproto", "quiet", "hello", "hello/audit", "qproto/bans"};
     authum_char_t path[256];
     authum_usize_t i;
-    authum_path_t dir;
-    FILE *cfg;
 
-    for (i = 0u; i < sizeof names / sizeof names[0]; ++i)
+    for (i = 0u; i < sizeof dirs / sizeof dirs[0]; ++i)
     {
-        test_log_path(path, sizeof path, names[i], TEST_DAY_ONE);
+        test_log_path(path, sizeof path, dirs[i], TEST_DAY_ONE);
         remove(path);
-        test_log_path(path, sizeof path, names[i], TEST_DAY_TWO);
+        test_log_path(path, sizeof path, dirs[i], TEST_DAY_TWO);
         remove(path);
     }
-    authum_path_set_cstr(&dir, TEST_ROOT);
-    CHECK(authum_path_ensure_dir(&dir));
-    cfg = fopen(TEST_ROOT "/authum.cfg", "w");
-    CHECK(cfg != NULL);
-    if (cfg != NULL)
-    {
-        fputs("# test config\n"
-              "log_level = info\n"
-              "log_console = error\n"
-              "qproto.log_level = debug\n"
-              "quiet.log_level = off\n",
-              cfg);
-        fclose(cfg);
-    }
+    test_mkdir(TEST_ROOT);
+    test_write_cfg(g_test_cfg);
 }
 
 void
@@ -186,6 +237,124 @@ test_routing(void)
     authum_logs_deinit();
 }
 
+/* Lines wait in the buffer until a flush; an error goes out at once. */
+void
+test_buffering(void)
+{
+    CHECK(authum_logs_init(TEST_ROOT, authum_null));
+    authum_logs_set_clock(test_clock);
+    CHECK(authum_logs_open(&g_test_qproto, "qproto"));
+
+    authum_logs_write(&g_test_qproto, authum_logger_level_info, "buffered line");
+    CHECK(!test_on_disk("qproto", TEST_DAY_ONE, "buffered line"));
+    authum_logs_write(&g_test_qproto, authum_logger_level_error, "urgent line");
+    CHECK(test_on_disk("qproto", TEST_DAY_ONE, "urgent line"));
+    CHECK(test_on_disk("qproto", TEST_DAY_ONE, "buffered line")); /* went out with it */
+
+    authum_logs_write(&g_test_qproto, authum_logger_level_info, "flushed line");
+    CHECK(!test_on_disk("qproto", TEST_DAY_ONE, "flushed line"));
+    authum_logs_flush();
+    CHECK(test_on_disk("qproto", TEST_DAY_ONE, "flushed line"));
+
+    authum_logs_write(&g_test_qproto, authum_logger_level_info, "closed line");
+    authum_logs_deinit(); /* closing writes what is left */
+    CHECK(test_on_disk("qproto", TEST_DAY_ONE, "closed line"));
+}
+
+/* Journals: a module's own extra files, with their own level. */
+void
+test_journals(void)
+{
+    authum_ptr audit;
+    authum_ptr again;
+    authum_ptr bans;
+    authum_char_t path[256];
+
+    CHECK(authum_logs_init(TEST_ROOT, authum_null));
+    authum_logs_set_clock(test_clock);
+    CHECK(authum_logs_open(&g_test_hello, "hello"));
+    CHECK(authum_logs_open(&g_test_qproto, "qproto"));
+
+    audit = authum_logs_open_journal(&g_test_hello, "audit");
+    CHECK(audit != authum_null);
+    CHECK(authum_logs_open_journal(authum_null, "x") == authum_null);
+    CHECK(authum_logs_open_journal(&g_test_hello, "") == authum_null);
+    CHECK(authum_logs_open_journal(audit, "nested") == authum_null); /* journals of journals: no */
+
+    /* hello is at info, its audit journal at debug (hello.audit.log_level). */
+    authum_logs_write(audit, authum_logger_level_debug, "audit debug line");
+    CHECK(test_file_contains("hello/audit", TEST_DAY_ONE, "[debug] audit debug line"));
+    CHECK(!test_file_contains("hello", TEST_DAY_ONE, "audit debug line"));
+
+    authum_logs_write(audit, authum_logger_level_warning, "audit warning line");
+    CHECK(test_file_contains("authum", TEST_DAY_ONE, "[warning] [hello/audit] audit warning line"));
+
+    /* Opening the same name again shares it; it lives until the last close. */
+    again = authum_logs_open_journal(&g_test_hello, "audit");
+    CHECK(again == audit);
+    authum_logs_close_journal(again);
+    CHECK(authum_logs_is_enabled(audit, authum_logger_level_info));
+    authum_logs_close_journal(audit);
+    CHECK(!authum_logs_is_enabled(audit, authum_logger_level_error));
+
+    /* A module that forgets its journal: it goes when the module does. */
+    bans = authum_logs_open_journal(&g_test_qproto, "bans");
+    authum_logs_write(bans, authum_logger_level_info, "ban line");
+    test_log_path(path, sizeof path, "qproto/bans", TEST_DAY_ONE);
+    authum_logs_close(&g_test_qproto);
+    CHECK(test_path_contains(path, "ban line"));
+    CHECK(!authum_logs_is_enabled(bans, authum_logger_level_error));
+
+    authum_logs_deinit();
+}
+
+/* authum.cfg edits apply on reload (the host reloads on every map change). */
+void
+test_reload(void)
+{
+    CHECK(authum_logs_init(TEST_ROOT, authum_null));
+    CHECK(authum_logs_open(&g_test_qproto, "qproto"));
+    CHECK(authum_logs_is_enabled(&g_test_qproto, authum_logger_level_debug));
+
+    test_write_cfg("qproto.log_level = warning\n");
+    CHECK(authum_logs_is_enabled(&g_test_qproto, authum_logger_level_debug)); /* not yet */
+    authum_logs_reload();
+    CHECK(!authum_logs_is_enabled(&g_test_qproto, authum_logger_level_info));
+    CHECK(authum_logs_is_enabled(&g_test_qproto, authum_logger_level_warning));
+
+    test_write_cfg(g_test_cfg);
+    authum_logs_deinit();
+}
+
+/* log_keep_days = 30: older daily files go when a channel opens a new day. */
+void
+test_prune(void)
+{
+    authum_char_t old_path[256];
+    authum_char_t recent_path[256];
+
+    test_mkdir(TEST_ROOT "/logs");
+    test_mkdir(TEST_ROOT "/logs/hello");
+    test_log_path(old_path, sizeof old_path, "hello", TEST_DAY_ONE - 40 * TEST_DAY);
+    test_log_path(recent_path, sizeof recent_path, "hello", TEST_DAY_ONE - 5 * TEST_DAY);
+    test_touch(old_path);
+    test_touch(recent_path);
+    test_touch(TEST_ROOT "/logs/hello/notes.txt");
+    CHECK(test_exists(old_path));
+
+    CHECK(authum_logs_init(TEST_ROOT, authum_null));
+    authum_logs_set_clock(test_clock);
+    CHECK(authum_logs_open(&g_test_hello, "hello"));
+    authum_logs_write(&g_test_hello, authum_logger_level_info, "prune trigger");
+    authum_logs_deinit();
+
+    CHECK(!test_exists(old_path));
+    CHECK(test_exists(recent_path));
+    CHECK(test_exists(TEST_ROOT "/logs/hello/notes.txt")); /* not a daily file: kept */
+    remove(recent_path);
+    remove(TEST_ROOT "/logs/hello/notes.txt");
+}
+
 /* What a module does: authum_logger_* through the host's channel. */
 void
 test_module_logger(void)
@@ -193,6 +362,7 @@ test_module_logger(void)
     authum_logger_channel_t channel;
     authum_host_t host;
     authum_logger_t log;
+    authum_logger_t audit;
 
     CHECK(authum_logs_init(TEST_ROOT, test_mirror));
     authum_logs_set_clock(test_clock);
@@ -210,9 +380,20 @@ test_module_logger(void)
     CHECK(!authum_logger_is_enabled(&log, authum_logger_level_debug));
     authum_host_log_line(&host, 1, "via host_log_line");
     CHECK(test_file_contains("hello", TEST_DAY_ONE, "[error] via host_log_line"));
+
+    CHECK(authum_logger_open(&audit, &host, "audit"));
+    CHECK(authum_logger_is_enabled(&audit, authum_logger_level_debug));
+    authum_logger_debug(&audit, "admin %s did %s", "vega", "kick");
+    CHECK(test_file_contains("hello/audit", TEST_DAY_ONE, "[debug] admin vega did kick"));
+    authum_logger_close(&audit);
+    authum_logger_info(&audit, "after close");
+    CHECK(!test_file_contains("hello/audit", TEST_DAY_ONE, "after close"));
+
     authum_logger_close(&log);
     authum_logger_info(&log, "after close");
     CHECK(!test_file_contains("hello", TEST_DAY_ONE, "after close"));
+
+    CHECK(!authum_logger_open(&audit, authum_null, "audit"));
 
     authum_logs_deinit();
 }
@@ -235,6 +416,10 @@ main(void)
     test_reset();
     test_level_names();
     test_routing();
+    test_buffering();
+    test_journals();
+    test_reload();
+    test_prune();
     test_module_logger();
     return authum_check_report("logs");
 }

@@ -42,6 +42,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `authum_host_t.log` became `authum_host_t.logger` (a channel). New:
   `authum_logger_is_enabled`, `authum_logger_level_parse` / `_name`,
   `authum_path_ensure_dir`. The release zip ships a commented `authum.cfg`.
+  - Journals: `authum_logger_open(&log, host, "bans")` gives a module an extra
+    log, `logs/<module>/bans/YYYY-MM-DD.log`, with its own level
+    (`<module>.bans.log_level`).
+  - `log_keep_days`: daily files older than that are deleted (shipped cfg: 30).
+  - Lines are buffered and flushed every server frame; errors and worse go to
+    disk at once.
+  - `authum.cfg` is read again on every map change.
+- 32-bit Linux builds use `_FILE_OFFSET_BITS=64` (Authum, lh, authum_client):
+  `readdir()` failed with `EOVERFLOW` on file systems with 64-bit inode
+  numbers (XFS, btrfs, network mounts), so the `modules/` scan found nothing.
 - **Module ABI 1.0.0** (modules built for 0.x must be rebuilt):
   - Every table the host hands a module (`authum_host_t`, `authum_engine_t`,
     `authum_crypto_t`, the events / sandbox / commands ops) starts with

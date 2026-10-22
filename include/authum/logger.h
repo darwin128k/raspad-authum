@@ -21,6 +21,9 @@
  *
  * Lines below the configured level are dropped before formatting, so
  * ::authum_logger_debug in a hot path costs one call when debug is off.
+ *
+ * A task that wants its own file (bans, payments, an audit trail) opens a
+ * journal with ::authum_logger_open — same calls, its own folder and level.
  */
 
 #ifndef AUTHUM_LOGGER_H
@@ -54,7 +57,11 @@ extern "C"
      */
     struct authum_logger
     {
+        /** The module's main channel (from the host). */
         const authum_logger_channel_t *channel;
+        /** A journal opened by ::authum_logger_open. */
+        authum_logger_channel_t journal;
+        authum_bool_t owns_journal;
     };
     typedef struct authum_logger authum_logger_t;
 
@@ -62,7 +69,22 @@ extern "C"
     void
     authum_logger_init(authum_logger_t *self, const authum_host_t *host);
 
-    /** Drop the binding; later calls do nothing. */
+    /**
+     * Open journal @p name of this module: its own folder
+     * `logs/<module>/<name>/YYYY-MM-DD.log`, its own level
+     * (`<module>.<name>.log_level`, else the module's). Warnings and errors
+     * still reach the Authum log, tagged `[module/name]`. Use it like any
+     * logger; close it in `stop`. False when the host has no journals.
+     *
+     * ```c
+     * authum_logger_open(&g_bans, &g_host, "bans");
+     * authum_logger_info(&g_bans, "%s banned %s", admin, target);
+     * ```
+     */
+    authum_bool_t
+    authum_logger_open(authum_logger_t *self, const authum_host_t *host, const authum_char_t *name);
+
+    /** Drop the binding (and close a journal); later calls do nothing. */
     void
     authum_logger_close(authum_logger_t *self);
 

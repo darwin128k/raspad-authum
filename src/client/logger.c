@@ -4,6 +4,7 @@
 #include <authum/cstr.h>
 
 #include <stdio.h>
+#include <string.h>
 
 static const struct
 {
@@ -70,29 +71,76 @@ authum_logger_channel_is_enabled(const authum_logger_channel_t *channel,
                : authum_bool_true;
 }
 
+/** The channel @p self logs to: its journal, else the module's. */
+const authum_logger_channel_t *
+authum_logger_get_channel(const authum_logger_t *self)
+{
+    if (authum_null_eq(self))
+    {
+        return authum_null;
+    }
+    return self->owns_journal ? &self->journal : self->channel;
+}
+
 void
 authum_logger_init(authum_logger_t *self, const authum_host_t *host)
 {
     if (!authum_null_eq(self))
     {
+        memset(self, 0, sizeof *self);
         self->channel = authum_host_logger(host);
     }
+}
+
+authum_bool_t
+authum_logger_open(authum_logger_t *self, const authum_host_t *host, const authum_char_t *name)
+{
+    const authum_logger_channel_t *module;
+    authum_ptr journal;
+
+    if (authum_null_eq(self))
+    {
+        return authum_bool_false;
+    }
+    authum_logger_init(self, host);
+    module = self->channel;
+    if (authum_null_eq(module) || authum_null_eq(module->ops) ||
+        !AUTHUM_ABI_HAS(module->ops, open) || !AUTHUM_ABI_HAS(module->ops, close) ||
+        authum_null_eq(name) || name[0] == '\0')
+    {
+        self->channel = authum_null;
+        return authum_bool_false;
+    }
+    journal = module->ops->open(module->owner, name);
+    if (authum_null_eq(journal))
+    {
+        self->channel = authum_null;
+        return authum_bool_false;
+    }
+    self->journal.ops = module->ops;
+    self->journal.owner = journal;
+    self->owns_journal = authum_bool_true;
+    return authum_bool_true;
 }
 
 void
 authum_logger_close(authum_logger_t *self)
 {
-    if (!authum_null_eq(self))
+    if (authum_null_eq(self))
     {
-        self->channel = authum_null;
+        return;
     }
+    if (self->owns_journal)
+    {
+        self->journal.ops->close(self->journal.owner);
+    }
+    memset(self, 0, sizeof *self);
 }
 
 authum_bool_t
 authum_logger_is_enabled(const authum_logger_t *self, authum_logger_level_t level)
 {
-    return !authum_null_eq(self) ? authum_logger_channel_is_enabled(self->channel, level)
-                                 : authum_bool_false;
+    return authum_logger_channel_is_enabled(authum_logger_get_channel(self), level);
 }
 
 void
@@ -106,7 +154,7 @@ authum_logger_log_v(authum_logger_t *self, authum_logger_level_t level, const au
         return;
     }
     vsnprintf(buf, sizeof buf, fmt, ap);
-    authum_logger_channel_write(self->channel, level, buf);
+    authum_logger_channel_write(authum_logger_get_channel(self), level, buf);
 }
 
 void
