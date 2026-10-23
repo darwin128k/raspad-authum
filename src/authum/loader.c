@@ -110,8 +110,8 @@ authum_loader_ensure_shared_ext(lh_fs_path_t *path);
 
 /*
  * Resolve an ini entry to a shared image path.
- * Prefer a package folder: modules/qproto/ → modules/qproto/qproto.so|.dll
- * Else a bare file (optional extension appended for this OS).
+ * modules/qproto.so|.dll first (the entry plus this OS's extension), then the
+ * old package folder modules/qproto/qproto.so|.dll, else the entry as given.
  */
 lh_bool_t
 authum_loader_resolve_image(const lh_fs_path_t *base, const lh_fs_path_t *entry, lh_fs_path_t *out)
@@ -138,6 +138,30 @@ authum_loader_resolve_image(const lh_fs_path_t *base, const lh_fs_path_t *entry,
     {
         lh_fs_path_assign(lh_addr_of(candidate), entry);
     }
+
+    /* modules/qproto.so wins over the old modules/qproto/ folder: copying the
+     * new layout over an old install must load the new file. */
+    lh_fs_path_init(lh_addr_of(with_ext));
+    lh_fs_path_assign(lh_addr_of(with_ext), entry);
+    (void)authum_loader_ensure_shared_ext(lh_addr_of(with_ext));
+    lh_fs_path_init(lh_addr_of(leaf));
+    if (lh_null_ne(base))
+    {
+        (void)lh_fs_path_join(lh_addr_of(leaf), base, lh_addr_of(with_ext));
+    }
+    else
+    {
+        lh_fs_path_assign(lh_addr_of(leaf), lh_addr_of(with_ext));
+    }
+    lh_fs_path_deinit(lh_addr_of(with_ext));
+    if (authum_loader_path_is_file(lh_addr_of(leaf)))
+    {
+        lh_fs_path_assign(out, lh_addr_of(leaf));
+        lh_fs_path_deinit(lh_addr_of(leaf));
+        lh_fs_path_deinit(lh_addr_of(candidate));
+        return lh_bool_true;
+    }
+    lh_fs_path_deinit(lh_addr_of(leaf));
 
     if (authum_loader_path_is_dir(lh_addr_of(candidate)))
     {

@@ -221,7 +221,9 @@ hello
 ```
 
 That is `modules/hello.so` (`.dll` on Windows). The old package folder
-`modules/hello/hello.so` is still found, and wins when both exist. Modules are
+`modules/hello/hello.so` is still found when there is no `modules/hello.so`;
+the flat file wins when both exist, so copying a new install over an old one
+loads the new file. Modules are
 built by their own projects — Authum only loads them.
 
 No `.so` / `.dll` needed — Authum appends the native shared suffix. Use
