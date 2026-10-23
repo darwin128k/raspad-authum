@@ -33,7 +33,8 @@ Authum's part is the policy around that mechanism:
 - extra modules come from `configs/modules.list` when that file exists,
   otherwise from shared libraries in a directory named `modules` beside
   the image;
-- the host plugin file `authum_mm` is never opened as a child.
+- the host plugin file `authum_mm` (or `authum`, the standalone game library)
+  is never opened as a child.
 
 One module does not call another directly. There is no `dlsym` into a
 sibling and no shared function table; modules talk through the host's
@@ -134,7 +135,8 @@ Lines before any section, and under `[modules]` / `[any]`, apply on every
 OS. `[linux]` / `[win32]` only on that OS (Metamod keywords). Other
 section names are ignored. Relative paths join under `modules/` beside
 the image; absolute paths (`lh_fs_path_is_absolute`) are used as-is. The
-host file `authum_mm` is rejected by `authum_loader_load` and not opened.
+host file `authum_mm` (or `authum`) is rejected by `authum_loader_load` and
+not opened.
 
 When the file is present, an empty matching set succeeds with nothing
 loaded — the directory is not also scanned. A bad section header returns
@@ -146,7 +148,8 @@ For each entry in `modules/`:
 
 - directories and symlinks are skipped;
 - the name must end with the platform suffix (`.dll` / `.so`), case-insensitive;
-- the host file `authum_mm` plus that suffix is skipped and not opened;
+- the host file `authum_mm` (or `authum`) plus that suffix is skipped and
+  not opened;
 - anything else is passed to `authum_loader_load`.
 
 `authum_loader_load` requires the loader privilege. It then calls

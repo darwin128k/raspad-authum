@@ -149,48 +149,113 @@ else ()
             "Point this cache variable at an HLSDK tree before compiling plugin sources.")
 endif ()
 
-file(GLOB_RECURSE AUTHUM_SOURCES CONFIGURE_DEPENDS
+# Core: engine-independent host (loader, events, gate, log, sandbox, …), shared
+# by both the Metamod plugin and the standalone game library.
+file(GLOB_RECURSE AUTHUM_CORE_SOURCES CONFIGURE_DEPENDS
         "${CMAKE_SOURCE_DIR}/src/authum/*.c"
         "${CMAKE_SOURCE_DIR}/src/authum/*.cpp"
+)
+# The Metamod entry layer (Meta_Query/Attach, the DLL/engine hooks) — authum_mm only.
+file(GLOB AUTHUM_PLUGIN_SOURCES CONFIGURE_DEPENDS
+        "${CMAKE_SOURCE_DIR}/src/authum/plugin/*.c"
+        "${CMAKE_SOURCE_DIR}/src/authum/plugin/*.cpp"
+)
+list(REMOVE_ITEM AUTHUM_CORE_SOURCES ${AUTHUM_PLUGIN_SOURCES})
+# The standalone entry layer (game library in place of Metamod) — authum only.
+file(GLOB AUTHUM_STANDALONE_SOURCES CONFIGURE_DEPENDS
+        "${CMAKE_SOURCE_DIR}/src/standalone/*.cpp"
 )
 file(GLOB_RECURSE AUTHUM_HEADERS CONFIGURE_DEPENDS
         "${CMAKE_SOURCE_DIR}/include/authum/*.h"
         "${CMAKE_SOURCE_DIR}/include/authum/*.hpp"
 )
 
-if (NOT AUTHUM_SOURCES)
+if (NOT AUTHUM_CORE_SOURCES)
     message(STATUS "No sources under src/authum yet; plugin target is skipped.")
     return ()
 endif ()
 
-add_library(authum MODULE ${AUTHUM_SOURCES} ${AUTHUM_HEADERS})
-set_target_properties(authum PROPERTIES
-        PREFIX ""
-        OUTPUT_NAME "authum_mm"
-        CXX_EXTENSIONS ON
-)
-
-target_include_directories(authum PRIVATE
-        "${CMAKE_SOURCE_DIR}/include"
-)
-
 # Client API (cfg, path, host getters, sandbox, events, …) — same static lib modules link.
 add_subdirectory(client)
 
-target_link_libraries(authum PRIVATE metamod-p authum_client)
-authum_link_lh(authum)
+# Settings common to every Authum image (plugin and standalone).
+function (authum_configure_image target)
+    set_target_properties(${target} PROPERTIES PREFIX "" CXX_EXTENSIONS ON)
+    target_include_directories(${target} PRIVATE "${CMAKE_SOURCE_DIR}/include")
+    target_link_libraries(${target} PRIVATE metamod-p authum_client)
+    authum_link_lh(${target})
+    if (WIN32)
+        target_compile_definitions(${target} PRIVATE WIN32 _WINDOWS)
+    else ()
+        target_compile_definitions(${target} PRIVATE linux LINUX)
+        target_link_libraries(${target} PRIVATE m ${CMAKE_DL_LIBS})
+        if (NOT MSVC)
+            target_compile_options(${target} PRIVATE
+                    $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>
+                    $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
+                    -fvisibility=hidden
+            )
+        endif ()
+    endif ()
+endfunction ()
 
-if (WIN32)
-    target_compile_definitions(authum PRIVATE WIN32 _WINDOWS)
-else ()
-    target_compile_definitions(authum PRIVATE linux LINUX)
-    target_link_libraries(authum PRIVATE m)
-    if (NOT MSVC)
-        target_compile_options(authum PRIVATE
-                $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>
-                $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
-                -fvisibility=hidden
-        )
+# authum_mm: the Metamod-P plugin (default).
+add_library(authum MODULE ${AUTHUM_CORE_SOURCES} ${AUTHUM_PLUGIN_SOURCES} ${AUTHUM_HEADERS})
+set_target_properties(authum PROPERTIES OUTPUT_NAME "authum_mm")
+authum_configure_image(authum)
+
+# authum (standalone): Authum as the game library, no Metamod. Shares the core;
+# its own entry/forwarding layer lives under src/standalone/. The metamod-p
+# interface target only adds HLSDK + Metamod headers (types/macros), no linkage.
+option(AUTHUM_BUILD_STANDALONE "Build the standalone (no-Metamod) game library" ON)
+
+# The game library the standalone build wraps (Counter-Strike: cs.so).
+set(AUTHUM_GAME_DLL_NAME "cs.so" CACHE STRING
+        "File name of the game library the standalone build wraps (cs.so for Counter-Strike)")
+if (NOT WIN32)
+    # The engine resolves every map entity's spawn function by its class name
+    # (info_player_start, …) *in the game module* — the one it loaded, which is
+    # us. Those symbols live in the real game library, so it has to be part of
+    # our dependency tree: then dlsym on our handle finds them, the entities
+    # are spawned, and the game does not die on an empty entity hash.
+    #
+    # The dependency is recorded against a stub carrying the game's file name;
+    # at run time the loader finds the real library by that name in the game
+    # directory's dlls/ — Authum sits in <game dir>/addons/authum/, so
+    # $ORIGIN/../dlls is exactly that directory.
+    set(AUTHUM_GAME_STUB_DIR "${CMAKE_CURRENT_BINARY_DIR}/gamedll-stub")
+    file(WRITE "${AUTHUM_GAME_STUB_DIR}/empty.c"
+            "/* Stub: only the file name (the SONAME) matters at run time. */\n")
+    # Same flags as the rest of the build (32-bit for HLDS), so the stub is
+    # linkable into authum.so.
+    get_directory_property(_authum_compile_options COMPILE_OPTIONS)
+    add_custom_command(
+            OUTPUT "${AUTHUM_GAME_STUB_DIR}/${AUTHUM_GAME_DLL_NAME}"
+            COMMAND ${CMAKE_C_COMPILER} ${_authum_compile_options} -shared -fPIC
+                    "-Wl,-soname,${AUTHUM_GAME_DLL_NAME}"
+                    -o "${AUTHUM_GAME_STUB_DIR}/${AUTHUM_GAME_DLL_NAME}"
+                    "${AUTHUM_GAME_STUB_DIR}/empty.c"
+            DEPENDS "${AUTHUM_GAME_STUB_DIR}/empty.c"
+            COMMENT "Stub ${AUTHUM_GAME_DLL_NAME}: the standalone build's game dependency")
+    add_custom_target(authum_game_stub DEPENDS "${AUTHUM_GAME_STUB_DIR}/${AUTHUM_GAME_DLL_NAME}")
+endif ()
+
+if (AUTHUM_BUILD_STANDALONE AND AUTHUM_STANDALONE_SOURCES)
+    add_library(authum_standalone MODULE
+            ${AUTHUM_CORE_SOURCES} ${AUTHUM_STANDALONE_SOURCES} ${AUTHUM_HEADERS})
+    set_target_properties(authum_standalone PROPERTIES OUTPUT_NAME "authum")
+    authum_configure_image(authum_standalone)
+    if (NOT WIN32)
+        # --no-as-needed keeps the stub as a dependency (it exports nothing),
+        # and the run path points at the game directory's dlls/.
+        add_dependencies(authum_standalone authum_game_stub)
+        target_link_options(authum_standalone PRIVATE
+                "-Wl,--no-as-needed"
+                "-L${AUTHUM_GAME_STUB_DIR}"
+                "-l:${AUTHUM_GAME_DLL_NAME}")
+        set_target_properties(authum_standalone PROPERTIES
+                BUILD_RPATH "$ORIGIN/../../dlls;$ORIGIN/../.."
+                INSTALL_RPATH "$ORIGIN/../../dlls;$ORIGIN/../..")
     endif ()
 endif ()
 

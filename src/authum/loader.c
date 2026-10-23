@@ -46,13 +46,19 @@ authum_loader_is_shared_name(const lh_str_view_t *name)
     return lh_str_view_ends_with(name, lh_addr_of(ext), lh_bool_true);
 }
 
+/* The host image: the Metamod plugin (authum_mm.so) or the standalone game
+ * library (authum.so). Neither may be opened as a child of itself. */
 lh_bool_t
 authum_loader_is_host_image(const lh_fs_path_t *path)
 {
     lh_str_view_t ext;
     lh_str_view_t part;
     lh_str_view_t stem;
+    lh_str_view_t host_mm;
+    lh_str_view_t host_standalone;
+    lh_usize_t ext_size;
     lh_usize_t n;
+    lh_usize_t part_size;
 
     if (lh_fs_path_is_empty(path))
     {
@@ -64,19 +70,26 @@ authum_loader_is_host_image(const lh_fs_path_t *path)
         return lh_bool_false;
     }
     lh_fs_path_get_segment(path, lh_math_sub_one(n), lh_addr_of(part));
-    stem = lh_str_view_lit("authum_mm");
     lh_os_system_shared_get_ext(lh_addr_of(ext));
-    if (!lh_str_view_starts_with(lh_addr_of(part), lh_addr_of(stem), lh_bool_true))
-    {
-        return lh_bool_false;
-    }
     if (!lh_str_view_ends_with(lh_addr_of(part), lh_addr_of(ext), lh_bool_true))
     {
         return lh_bool_false;
     }
-    return lh_cast_static(lh_bool_t, lh_math_eq(lh_str_view_get_size(lh_addr_of(part)),
-                                                lh_str_view_get_size(lh_addr_of(stem)) +
-                                                    lh_str_view_get_size(lh_addr_of(ext))));
+    /* The file name without its extension. */
+    ext_size = lh_str_view_get_size(lh_addr_of(ext));
+    part_size = lh_str_view_get_size(lh_addr_of(part));
+    if (lh_math_lt(part_size, ext_size))
+    {
+        return lh_bool_false;
+    }
+    lh_str_view_from_offset(lh_addr_of(part), 0U, lh_math_sub(part_size, ext_size), lh_addr_of(stem));
+    host_mm = lh_str_view_lit("authum_mm");
+    if (lh_str_view_equals(lh_addr_of(stem), lh_addr_of(host_mm), lh_bool_true))
+    {
+        return lh_bool_true;
+    }
+    host_standalone = lh_str_view_lit("authum");
+    return lh_str_view_equals(lh_addr_of(stem), lh_addr_of(host_standalone), lh_bool_true);
 }
 
 lh_bool_t
@@ -779,7 +792,7 @@ authum_loader_resolve_name(authum_module_t *self, const char *name, lh_fs_path_t
     {
         lh_fs_path_deinit(lh_addr_of(modules));
         lh_fs_path_deinit(lh_addr_of(entry));
-        lh_os_set_last_error_lit(lh_os_error_code_path_empty, "no modules/ beside authum_mm");
+        lh_os_set_last_error_lit(lh_os_error_code_path_empty, "no modules/ beside the Authum image");
         return lh_bool_false;
     }
     name_view =

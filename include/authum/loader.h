@@ -5,9 +5,10 @@
  * The mechanism (open, method table, start, unload children) is lh.
  * Authum decides which paths: `configs/modules.list` beside the image when
  * present (each entry is `modules/<name>/<name>.so`), otherwise module folders in
- * `modules/` beside the image; skip
- * `authum_mm`. One rejected child does not fail the list. A missing
- * directory succeeds with nothing loaded.
+ * `modules/` beside the image; skip the host image (`authum_mm` for the
+ * Metamod plugin, `authum` for the standalone game library). One rejected
+ * child does not fail the list. A missing directory succeeds with nothing
+ * loaded.
  */
 
 #ifndef AUTHUM_LOADER_H
