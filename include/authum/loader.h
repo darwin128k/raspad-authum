@@ -3,8 +3,9 @@
  * @brief Authum's policy on top of ::lh_os_loader_t.
  *
  * The mechanism (open, method table, start, unload children) is lh.
- * Authum decides which paths: `modules.list` beside the image when present,
- * otherwise shared libraries in `modules/` beside the image; skip
+ * Authum decides which paths: `configs/modules.list` beside the image when
+ * present (each entry is `modules/<name>.so`), otherwise shared libraries in
+ * `modules/` beside the image; skip
  * `authum_mm`. One rejected child does not fail the list. A missing
  * directory succeeds with nothing loaded.
  */
@@ -27,7 +28,8 @@
 
 /**
  * @def AUTHUM_MODULES_LIST
- * @brief Optional load list beside a module image (Authum list dialect).
+ * @brief Optional load list, `configs/modules.list` beside a module image
+ *        (Authum list dialect).
  *
  * One path per line; optional `[linux]` / `[win32]` / `[modules]` / `[any]`
  * sections. Not INI — parsed with ::lh_str_line_reader_t in Authum.
@@ -90,7 +92,7 @@ lh_bool_t
 authum_loader_load_list(authum_module_t *self, const lh_fs_path_t *path);
 
 /**
- * @brief Load children for @p self: `modules.list` beside the image, else
+ * @brief Load children for @p self: `configs/modules.list` beside the image, else
  *        shared images from `modules/`.
  *
  * When `modules.list` is present, only that list is used (an empty matching

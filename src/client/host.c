@@ -40,29 +40,10 @@ authum_host_engine(const authum_host_t *host)
     return (!authum_null_eq(host) && AUTHUM_ABI_HAS(host, engine)) ? host->engine : authum_null;
 }
 
-const authum_char_t *
-authum_host_module_dir(const authum_host_t *host)
-{
-    return (!authum_null_eq(host) && AUTHUM_ABI_HAS(host, module_dir)) ? host->module_dir
-                                                                       : authum_null;
-}
-
-const authum_path_t *
-authum_host_env_module(const authum_host_t *host)
-{
-    return authum_env_module(authum_host_env(host));
-}
-
 const authum_path_t *
 authum_host_env_game(const authum_host_t *host)
 {
     return authum_env_game(authum_host_env(host));
-}
-
-const authum_char_t *
-authum_host_env_module_cstr(const authum_host_t *host)
-{
-    return authum_env_module_cstr(authum_host_env(host));
 }
 
 const authum_path_t *
@@ -98,34 +79,20 @@ authum_host_env_module_data(const authum_host_t *host)
 authum_bool_t
 authum_host_config_path(const authum_host_t *host, const authum_char_t *leaf, authum_path_t *out)
 {
-    authum_env_found_t found = authum_env_config_path(authum_host_env(host), leaf, out);
-    authum_char_t line[authum_path_capacity + 96];
+    return authum_env_config_path(authum_host_env(host), leaf, out);
+}
 
-    if (found == authum_env_found_legacy)
-    {
-        snprintf(line, sizeof line, "config %s is in the old module folder (%s); move it to %s",
-                 leaf, authum_path_as_cstr(out),
-                 authum_path_as_cstr_or_null(authum_host_env_configs(host)) != authum_null
-                     ? authum_path_as_cstr(authum_host_env_configs(host))
-                     : "configs/");
-        authum_logger_channel_write(authum_host_logger(host), authum_logger_level_warning, line);
-    }
-    return found != authum_env_found_none ? authum_bool_true : authum_bool_false;
+authum_bool_t
+authum_host_module_config_path(const authum_host_t *host, const authum_char_t *leaf,
+                               authum_path_t *out)
+{
+    return authum_env_module_config_path(authum_host_env(host), leaf, out);
 }
 
 authum_bool_t
 authum_host_data_path(const authum_host_t *host, const authum_char_t *leaf, authum_path_t *out)
 {
-    authum_env_found_t found = authum_env_data_path(authum_host_env(host), leaf, out);
-    authum_char_t line[authum_path_capacity + 64];
-
-    if (found == authum_env_found_legacy)
-    {
-        snprintf(line, sizeof line, "moved %s from the old module folder to %s", leaf,
-                 authum_path_as_cstr(out));
-        authum_logger_channel_write(authum_host_logger(host), authum_logger_level_notice, line);
-    }
-    return !authum_path_is_empty(out) ? authum_bool_true : authum_bool_false;
+    return authum_env_data_path(authum_host_env(host), leaf, out);
 }
 
 void
@@ -161,15 +128,6 @@ authum_host_set_env(authum_host_t *host, const authum_env_t *env)
     if (!authum_null_eq(host) && AUTHUM_ABI_FITS(host, env))
     {
         host->env = env;
-    }
-}
-
-void
-authum_host_set_module_dir(authum_host_t *host, const authum_char_t *module_dir)
-{
-    if (!authum_null_eq(host) && AUTHUM_ABI_FITS(host, module_dir))
-    {
-        host->module_dir = module_dir;
     }
 }
 

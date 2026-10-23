@@ -390,7 +390,6 @@ typedef struct test_module
     authum_host_t host;
     authum_env_t env;
     authum_path_t root;
-    authum_path_t dir;
     authum_path_t modules;
     authum_path_t configs;
     authum_path_t data;
@@ -462,12 +461,9 @@ test_load(test_module_t *m)
     authum_path_set_cstr(&m->root, TEST_ROOT);
     authum_path_join(&modules, &m->root, "modules");
     authum_path_ensure_dir(&modules);
-    authum_path_join(&m->dir, &modules, m->name);
-    authum_path_ensure_dir(&m->dir);
     memset(&m->env, 0, sizeof m->env);
     m->env.size = sizeof m->env;
     m->env.authum = &m->root;
-    m->env.module = &m->dir; /* the old per-module folder, as a fallback */
     authum_path_assign(&m->modules, &modules);
     m->env.modules = &m->modules;
     authum_path_join(&m->configs, &m->root, "configs");
@@ -644,9 +640,7 @@ main(void)
     authum_path_set_cstr(&root, TEST_ROOT);
     authum_path_ensure_dir(&root);
     remove(TEST_ROOT "/data/stats/stats.db");
-    remove(TEST_ROOT "/modules/stats/stats.db");
     remove(TEST_ROOT "/configs/settings.cfg");
-    remove(TEST_ROOT "/modules/settings/settings.cfg");
     CHECK(authum_logs_init(TEST_ROOT, authum_null));
 
     for (i = 0u; i < sizeof g_modules / sizeof g_modules[0]; ++i)

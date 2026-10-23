@@ -29,9 +29,9 @@ Authum's part is the policy around that mechanism:
 
 - identity and ABI live in an exported `authum_module_info_t`;
 - the method-table symbol is `authum_module_ops`;
-- extra modules come from `configs/modules.list` (or, the old place,
-  `modules.list` beside the image) when that file exists, otherwise from
-  shared libraries in a directory named `modules` beside the image;
+- extra modules come from `configs/modules.list` when that file exists,
+  otherwise from shared libraries in a directory named `modules` beside
+  the image;
 - the host plugin file `authum_mm` is never opened as a child.
 
 One module does not call another directly. There is no `dlsym` into a
@@ -105,9 +105,8 @@ The list does not invent paths. Authum finds paths and hands them over
 one at a time. `lh_os_loader_load` is what links a node.
 
 `authum_loader_load_modules` takes the image path, drops the last
-segment (`lh_fs_path_parent`), and looks for `configs/modules.list`, then
-`modules.list` beside the image (with a warning to move it). If one exists,
-only that list is used. If it is missing,
+segment (`lh_fs_path_parent`), and looks for `configs/modules.list`. If it
+exists, only that list is used. If it is missing,
 the name `modules` is joined and the directory is scanned (one level).
 A missing directory, or a path that is not a directory, succeeds with
 nothing loaded. An empty path is an error.
@@ -220,10 +219,7 @@ Example (see `deploy/configs/modules.list`):
 hello
 ```
 
-That is `modules/hello.so` (`.dll` on Windows). The old package folder
-`modules/hello/hello.so` is still found when there is no `modules/hello.so`;
-the flat file wins when both exist, so copying a new install over an old one
-loads the new file. Modules are
+That is `modules/hello.so` (`.dll` on Windows). Modules are
 built by their own projects — Authum only loads them.
 
 No `.so` / `.dll` needed — Authum appends the native shared suffix. Use

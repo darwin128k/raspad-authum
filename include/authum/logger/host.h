@@ -4,7 +4,7 @@
  *
  * One registry of channels: the host's own (`authum`, owner null) and one per
  * loaded module. Each channel writes `<root>/logs/<name>/YYYY-MM-DD.log`
- * (a new file when the date changes). Levels come from `<root>/authum.cfg`:
+ * (a new file when the date changes). Levels come from `<root>/configs/authum.cfg`:
  *
  * ```
  * log_level = info          # what reaches the files
@@ -45,7 +45,7 @@ extern "C"
     typedef time_t (*authum_logs_clock_fn)(void);
 
     /**
-     * Read `<root>/authum.cfg` and open the host channel. @p root is the
+     * Read `<root>/configs/authum.cfg` and open the host channel. @p root is the
      * directory of `authum_mm` (`addons/authum`). @p mirror may be null.
      */
     authum_bool_t

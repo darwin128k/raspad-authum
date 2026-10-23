@@ -54,10 +54,6 @@ extern "C"
          */
         const authum_env_t *env;
         /**
-         * @deprecated Prefer ::authum_host_env_module_cstr.
-         */
-        const authum_char_t *module_dir;
-        /**
          * Crypto ops (Rijndael + SHA subset from lh). Non-null on current hosts;
          * check before use if you support older `authum_mm`.
          */
@@ -95,9 +91,6 @@ extern "C"
     const authum_engine_t *
     authum_host_engine(const authum_host_t *host);
 
-    const authum_char_t *
-    authum_host_module_dir(const authum_host_t *host);
-
     const authum_sandbox_t *
     authum_host_sandbox(const authum_host_t *host);
 
@@ -108,13 +101,7 @@ extern "C"
     authum_host_commands(const authum_host_t *host);
 
     const authum_path_t *
-    authum_host_env_module(const authum_host_t *host);
-
-    const authum_path_t *
     authum_host_env_game(const authum_host_t *host);
-
-    const authum_char_t *
-    authum_host_env_module_cstr(const authum_host_t *host);
 
     const authum_path_t *
     authum_host_env_configs(const authum_host_t *host);
@@ -131,21 +118,17 @@ extern "C"
     const authum_path_t *
     authum_host_env_module_data(const authum_host_t *host);
 
-    /**
-     * Config file @p leaf of this module — see ::authum_env_config_path.
-     * True when it exists (@p out is where); a file still in the old
-     * `modules/<module>/` folder works and logs a warning to move it to
-     * `configs/`. False: @p out is where it belongs.
-     */
+    /** `configs/<leaf>` — see ::authum_env_config_path. True when it exists. */
     authum_bool_t
     authum_host_config_path(const authum_host_t *host, const authum_char_t *leaf,
                             authum_path_t *out);
 
-    /**
-     * Data file @p leaf of this module: `data/<module>/<leaf>`, folder created
-     * — see ::authum_env_data_path. A file found in the old module folder is
-     * moved there and logged. False only when there is no path at all.
-     */
+    /** `configs/<module>/<leaf>` — see ::authum_env_module_config_path. */
+    authum_bool_t
+    authum_host_module_config_path(const authum_host_t *host, const authum_char_t *leaf,
+                                   authum_path_t *out);
+
+    /** `data/<module>/<leaf>`, folder created — see ::authum_env_data_path. */
     authum_bool_t
     authum_host_data_path(const authum_host_t *host, const authum_char_t *leaf, authum_path_t *out);
 
@@ -162,9 +145,6 @@ extern "C"
 
     void
     authum_host_set_env(authum_host_t *host, const authum_env_t *env);
-
-    void
-    authum_host_set_module_dir(authum_host_t *host, const authum_char_t *module_dir);
 
     void
     authum_host_set_crypto(authum_host_t *host, const authum_crypto_t *crypto);
