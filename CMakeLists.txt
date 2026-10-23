@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 project(authum
-        DESCRIPTION "Metamod-P plugin for original HLDS"
+        DESCRIPTION "Authum as the HLDS game library"
         LANGUAGES C CXX
 )
 
@@ -14,7 +14,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # GoldSrc / original HLDS loads 32-bit modules.
 option(AUTHUM_FORCE_32BIT "Build for 32-bit HLDS" ON)
 
-set(AUTHUM_HLSDK_DIR "${CMAKE_SOURCE_DIR}/lib/metamod-p/hlsdk" CACHE PATH
+set(AUTHUM_HLSDK_DIR "${CMAKE_SOURCE_DIR}/lib/hlsdk" CACHE PATH
         "Half-Life SDK root (engine/, common/, dlls/, pm_shared/)")
 
 if (AUTHUM_FORCE_32BIT)
@@ -100,7 +100,7 @@ set(LH_BUILD_BENCH OFF CACHE BOOL "Build lh benchmarks" FORCE)
 set(LH_LIBRARY_OPTION_OS ON CACHE BOOL "lh OS backends (shared libraries, sockets)" FORCE)
 # <authum/sql.h> runs on lh/sql: SQLite compiled into lh, MySQL loaded at run time.
 set(LH_LIBRARY_OPTION_SQL_SQLITE ON CACHE BOOL "SQLite in lh for <authum/sql.h>" FORCE)
-# HLDS ships an old libgcc_s; bake the runtime into authum_mm.so.
+# HLDS ships an old libgcc_s; bake the runtime into authum.so.
 set(LH_STATIC_LIBGCC ON CACHE BOOL "static-libgcc for HLDS" FORCE)
 add_subdirectory("${AUTHUM_LH_DIR}" "${CMAKE_BINARY_DIR}/lh")
 
@@ -130,13 +130,12 @@ function(authum_link_lh target)
     endif ()
 endfunction()
 
-add_library(metamod-p INTERFACE)
-target_include_directories(metamod-p INTERFACE
-        "${CMAKE_SOURCE_DIR}/lib/metamod-p/metamod"
-)
-
+# The HLSDK headers (engine/, common/, dlls/, pm_shared/). Authum is the game
+# library itself: Metamod is not part of the build, only Valve's SDK headers
+# are — types and macros, no linkage.
+add_library(hlsdk INTERFACE)
 if (EXISTS "${AUTHUM_HLSDK_DIR}/engine" AND EXISTS "${AUTHUM_HLSDK_DIR}/common")
-    target_include_directories(metamod-p INTERFACE
+    target_include_directories(hlsdk INTERFACE
             "${AUTHUM_HLSDK_DIR}"
             "${AUTHUM_HLSDK_DIR}/engine"
             "${AUTHUM_HLSDK_DIR}/common"
@@ -146,22 +145,15 @@ if (EXISTS "${AUTHUM_HLSDK_DIR}/engine" AND EXISTS "${AUTHUM_HLSDK_DIR}/common")
 else ()
     message(WARNING
             "HLSDK not found at AUTHUM_HLSDK_DIR=${AUTHUM_HLSDK_DIR}. "
-            "Point this cache variable at an HLSDK tree before compiling plugin sources.")
+            "Point this cache variable at an HLSDK tree before compiling.")
 endif ()
 
-# Core: engine-independent host (loader, events, gate, log, sandbox, …), shared
-# by both the Metamod plugin and the standalone game library.
+# Core: the engine-independent host (loader, events, gate, log, sandbox, …).
 file(GLOB_RECURSE AUTHUM_CORE_SOURCES CONFIGURE_DEPENDS
         "${CMAKE_SOURCE_DIR}/src/authum/*.c"
         "${CMAKE_SOURCE_DIR}/src/authum/*.cpp"
 )
-# The Metamod entry layer (Meta_Query/Attach, the DLL/engine hooks) — authum_mm only.
-file(GLOB AUTHUM_PLUGIN_SOURCES CONFIGURE_DEPENDS
-        "${CMAKE_SOURCE_DIR}/src/authum/plugin/*.c"
-        "${CMAKE_SOURCE_DIR}/src/authum/plugin/*.cpp"
-)
-list(REMOVE_ITEM AUTHUM_CORE_SOURCES ${AUTHUM_PLUGIN_SOURCES})
-# The standalone entry layer (game library in place of Metamod) — authum only.
+# The entry layer: Authum as the HLDS game library (src/standalone/).
 file(GLOB AUTHUM_STANDALONE_SOURCES CONFIGURE_DEPENDS
         "${CMAKE_SOURCE_DIR}/src/standalone/*.cpp"
 )
@@ -171,18 +163,18 @@ file(GLOB_RECURSE AUTHUM_HEADERS CONFIGURE_DEPENDS
 )
 
 if (NOT AUTHUM_CORE_SOURCES)
-    message(STATUS "No sources under src/authum yet; plugin target is skipped.")
+    message(STATUS "No sources under src/authum yet; the target is skipped.")
     return ()
 endif ()
 
 # Client API (cfg, path, host getters, sandbox, events, …) — same static lib modules link.
 add_subdirectory(client)
 
-# Settings common to every Authum image (plugin and standalone).
+# Settings common to every Authum image.
 function (authum_configure_image target)
     set_target_properties(${target} PROPERTIES PREFIX "" CXX_EXTENSIONS ON)
     target_include_directories(${target} PRIVATE "${CMAKE_SOURCE_DIR}/include")
-    target_link_libraries(${target} PRIVATE metamod-p authum_client)
+    target_link_libraries(${target} PRIVATE hlsdk authum_client)
     authum_link_lh(${target})
     if (WIN32)
         target_compile_definitions(${target} PRIVATE WIN32 _WINDOWS)
@@ -198,16 +190,6 @@ function (authum_configure_image target)
         endif ()
     endif ()
 endfunction ()
-
-# authum_mm: the Metamod-P plugin (default).
-add_library(authum MODULE ${AUTHUM_CORE_SOURCES} ${AUTHUM_PLUGIN_SOURCES} ${AUTHUM_HEADERS})
-set_target_properties(authum PROPERTIES OUTPUT_NAME "authum_mm")
-authum_configure_image(authum)
-
-# authum (standalone): Authum as the game library, no Metamod. Shares the core;
-# its own entry/forwarding layer lives under src/standalone/. The metamod-p
-# interface target only adds HLSDK + Metamod headers (types/macros), no linkage.
-option(AUTHUM_BUILD_STANDALONE "Build the standalone (no-Metamod) game library" ON)
 
 # The game library the standalone build wraps (Counter-Strike: cs.so).
 set(AUTHUM_GAME_DLL_NAME "cs.so" CACHE STRING
@@ -236,30 +218,29 @@ if (NOT WIN32)
                     -o "${AUTHUM_GAME_STUB_DIR}/${AUTHUM_GAME_DLL_NAME}"
                     "${AUTHUM_GAME_STUB_DIR}/empty.c"
             DEPENDS "${AUTHUM_GAME_STUB_DIR}/empty.c"
-            COMMENT "Stub ${AUTHUM_GAME_DLL_NAME}: the standalone build's game dependency")
+            COMMENT "Stub ${AUTHUM_GAME_DLL_NAME}: the game dependency")
     add_custom_target(authum_game_stub DEPENDS "${AUTHUM_GAME_STUB_DIR}/${AUTHUM_GAME_DLL_NAME}")
 endif ()
 
-if (AUTHUM_BUILD_STANDALONE AND AUTHUM_STANDALONE_SOURCES)
-    add_library(authum_standalone MODULE
-            ${AUTHUM_CORE_SOURCES} ${AUTHUM_STANDALONE_SOURCES} ${AUTHUM_HEADERS})
-    set_target_properties(authum_standalone PROPERTIES OUTPUT_NAME "authum")
-    authum_configure_image(authum_standalone)
-    if (NOT WIN32)
-        # --no-as-needed keeps the stub as a dependency (it exports nothing),
-        # and the run path points at the game directory's dlls/.
-        add_dependencies(authum_standalone authum_game_stub)
-        target_link_options(authum_standalone PRIVATE
-                "-Wl,--no-as-needed"
-                "-L${AUTHUM_GAME_STUB_DIR}"
-                "-l:${AUTHUM_GAME_DLL_NAME}")
-        set_target_properties(authum_standalone PROPERTIES
-                BUILD_RPATH "$ORIGIN/../../dlls;$ORIGIN/../.."
-                INSTALL_RPATH "$ORIGIN/../../dlls;$ORIGIN/../..")
-    endif ()
+# authum: Authum as the HLDS game library (the image the engine loads).
+add_library(authum MODULE
+        ${AUTHUM_CORE_SOURCES} ${AUTHUM_STANDALONE_SOURCES} ${AUTHUM_HEADERS})
+set_target_properties(authum PROPERTIES OUTPUT_NAME "authum")
+authum_configure_image(authum)
+if (NOT WIN32 AND AUTHUM_STANDALONE_SOURCES)
+    # --no-as-needed keeps the stub as a dependency (it exports nothing),
+    # and the run path points at the game directory's dlls/.
+    add_dependencies(authum authum_game_stub)
+    target_link_options(authum PRIVATE
+            "-Wl,--no-as-needed"
+            "-L${AUTHUM_GAME_STUB_DIR}"
+            "-l:${AUTHUM_GAME_DLL_NAME}")
+    set_target_properties(authum PROPERTIES
+            BUILD_RPATH "$ORIGIN/../../dlls;$ORIGIN/../.."
+            INSTALL_RPATH "$ORIGIN/../../dlls;$ORIGIN/../..")
 endif ()
 
-# Authum builds authum_mm + authum_client (+ optional examples). Real modules
+# Authum builds authum.so + authum_client (+ optional examples). Real modules
 # are separate projects that link authum_client and drop into modules/ at runtime.
 option(AUTHUM_BUILD_EXAMPLES "Build example Authum modules under examples/" ON)
 if (AUTHUM_BUILD_EXAMPLES)

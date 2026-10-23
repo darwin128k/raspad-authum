@@ -16,7 +16,7 @@
  * | `authum version` | Authum + module ABI version |
  * | `authum <module> <name> [args…]` | Module command (<authum/commands.h>) |
  *
- * Output goes to the reply sink (`pfnServerPrint` in `authum_mm`), so an
+ * Output goes to the reply sink (`pfnServerPrint` in `authum`), so an
  * RCON client sees it. Module commands disappear after `unload` and return
  * after a successful `load` / `reload` — Qproto's `info` included.
  */

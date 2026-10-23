@@ -4,7 +4,7 @@
  *
  * Umbrella for <authum/crypto/rijndael.h> and <authum/crypto/sha.h>. The host
  * fills ::authum_host_t.crypto with an ops table implemented inside
- * `authum_mm` (static lh). Modules call the wrappers below the same way they
+ * `authum` (static lh). Modules call the wrappers below the same way they
  * would call `lh_crypto_*`, but pass the host crypto pointer.
  *
  * Not every lh crypto symbol is re-exported — only the session API modules need.

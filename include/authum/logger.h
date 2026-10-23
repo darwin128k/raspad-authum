@@ -17,7 +17,7 @@
  *   module's `log_level`;
  * - `addons/authum/logs/YYYY-MM-DD.log` (Authum's) — the module's warnings and
  *   errors too, tagged `[module]`;
- * - server console / Metamod log — lines at or above `log_console`.
+ * - server console — lines at or above `log_console`.
  *
  * Lines below the configured level are dropped before formatting, so
  * ::authum_logger_debug in a hot path costs one call when debug is off.

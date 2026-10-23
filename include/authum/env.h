@@ -2,7 +2,7 @@
  * @file env.h
  * @brief Where things live: the game, Authum, and this module's own folder.
  *
- * Filled by `authum_mm` from its own directory (and the engine game dir as a
+ * Filled by `authum` from its own directory (and the engine game dir as a
  * fallback). Paths are ::authum_path_t values owned by the host, valid until
  * `stop`. Absolute paths on the current volume when the host can resolve them.
  *
@@ -10,7 +10,7 @@
  * @code
  *   <game>/                        ← env->game
  *     addons/                      ← env->addons
- *       authum/                    ← env->authum: authum_mm.so
+ *       authum/                    ← env->authum: authum.so
  *         configs/                     authum.cfg, modules.list
  *         logs/                        Authum's own log
  *         modules/                 ← env->modules
@@ -58,7 +58,7 @@ extern "C"
         const authum_path_t *models;        /**< `game/models`. */
         const authum_path_t *sprites;       /**< `game/sprites`. */
         const authum_path_t *addons;        /**< `game/addons`. */
-        const authum_path_t *authum;        /**< `addons/authum`, where `authum_mm` is. */
+        const authum_path_t *authum;        /**< `addons/authum`, where `authum` is. */
         const authum_path_t *modules;       /**< `authum/modules`. */
         const authum_path_t *module;        /**< `modules/<module>`: this module's folder. */
         const authum_path_t *module_config; /**< `modules/<module>/configs`. */

@@ -11,7 +11,6 @@
 #include <authum/size.h>
 
 #include <extdll.h>
-#include <meta_api.h>
 
 #include <cstdio>
 #include <cstdlib>
@@ -19,8 +18,6 @@
 
 extern enginefuncs_t g_engfuncs;
 extern globalvars_t *gpGlobals;
-extern plugin_info_t Plugin_info;
-extern mutil_funcs_t *gpMetaUtilFuncs;
 
 namespace
 {
@@ -385,11 +382,13 @@ authum_engine_cvar_register_impl(const authum_char_t *name, const authum_char_t 
 authum_i32_t
 authum_engine_message_id_impl(const authum_char_t *name)
 {
-    if (gpMetaUtilFuncs == nullptr || gpMetaUtilFuncs->pfnGetUserMsgID == nullptr)
+    /* The engine's own registry: a name the game already registered keeps its
+     * id, so this is a lookup for every message in use. */
+    if (g_engfuncs.pfnRegUserMsg == nullptr || name == nullptr)
     {
         return 0;
     }
-    return gpMetaUtilFuncs->pfnGetUserMsgID(PLID, name, nullptr);
+    return g_engfuncs.pfnRegUserMsg(name, 0);
 }
 
 authum_bool_t

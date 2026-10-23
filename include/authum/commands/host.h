@@ -1,6 +1,6 @@
 /**
  * @file host.h
- * @brief Command registry inside `authum_mm` (not for modules).
+ * @brief Command registry inside `authum` (not for modules).
  */
 
 #ifndef AUTHUM_COMMANDS_HOST_H

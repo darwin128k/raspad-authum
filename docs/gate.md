@@ -34,7 +34,7 @@ fills `authum_host_t` and calls `authum_module_api.start`.
 
 ```
 addons/authum/
-  authum_mm.so
+  authum.so
   modules.list          # one folder name per line
   modules/
     <name>/

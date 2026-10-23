@@ -1,6 +1,6 @@
 /**
  * @file host.h
- * @brief Host side of ::authum_engine_t — implemented in `authum_mm` only.
+ * @brief Host side of ::authum_engine_t — implemented in `authum` only.
  *
  * The engine does not keep a player's address; `ClientConnect` is the only
  * place it is seen. The DLL hooks hand it here so

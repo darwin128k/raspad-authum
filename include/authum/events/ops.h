@@ -1,6 +1,6 @@
 /**
  * @file ops.h
- * @brief Host ops table behind ::authum_events_t (filled by `authum_mm`).
+ * @brief Host ops table behind ::authum_events_t (filled by `authum`).
  *
  * Modules call the `authum_events_*` functions in <authum/events.h>, never
  * these pointers. @p owner identifies the subscribing module so the host can

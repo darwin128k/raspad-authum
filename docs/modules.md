@@ -28,12 +28,12 @@ children of its own.
 Authum's part is the policy around that mechanism:
 
 - identity and ABI live in an exported `authum_module_info_t`;
-- a module exports `authum_module_api` (`start` / `stop`); `authum_mm`
+- a module exports `authum_module_api` (`start` / `stop`); `authum`
   itself is bound to lh through its own `authum_module_ops`;
 - extra modules come from `configs/modules.list` when that file exists,
   otherwise from shared libraries in a directory named `modules` beside
   the image;
-- the host plugin file `authum_mm` (or `authum`, the standalone game library)
+- the host plugin file `authum` (or `authum`, the standalone game library)
   is never opened as a child.
 
 One module does not call another directly. There is no `dlsym` into a
@@ -61,7 +61,7 @@ Every image that wants to be an Authum module exports two C symbols.
 | `name` | Required. A null name is rejected. |
 | `version` | The module's own SemVer. |
 | `datetime` | Build timestamp. |
-| `author`, `url`, `logtag` | Reported identity. Metamod's `plugin_info_t` for this host is filled from the same object. |
+| `author`, `url`, `logtag` | Reported identity — the host's own identity is the same object. |
 
 `start` may be `authum_module_start` and `stop` may be `authum_module_stop`.
 Both are exported from the host image, so a child built against that
@@ -135,7 +135,7 @@ Lines before any section, and under `[modules]` / `[any]`, apply on every
 OS. `[linux]` / `[win32]` only on that OS (Metamod keywords). Other
 section names are ignored. Relative paths join under `modules/` beside
 the image; absolute paths (`lh_fs_path_is_absolute`) are used as-is. The
-host file `authum_mm` (or `authum`) is rejected by `authum_loader_load` and
+host file `authum` (or `authum`) is rejected by `authum_loader_load` and
 not opened.
 
 When the file is present, an empty matching set succeeds with nothing
@@ -148,7 +148,7 @@ For each entry in `modules/`:
 
 - directories and symlinks are skipped;
 - the name must end with the platform suffix (`.dll` / `.so`), case-insensitive;
-- the host file `authum_mm` (or `authum`) plus that suffix is skipped and
+- the host file `authum` (or `authum`) plus that suffix is skipped and
   not opened;
 - anything else is passed to `authum_loader_load`.
 
@@ -206,7 +206,7 @@ loaded, so the same loader can be used again.
 ## 6. Layout beside an image
 
 ```
-authum_mm.dll
+authum.dll
 configs/modules.list        # optional; if present, replaces the dir scan
 modules/
     one.dll
@@ -214,7 +214,7 @@ modules/
     two.dll's own modules/  # loaded from two's start, if its start does that
 ```
 
-`configs/` and `modules/` of the host are siblings of `authum_mm.dll`,
+`configs/` and `modules/` of the host are siblings of `authum.dll`,
 not children of the process working directory.
 
 Example (see `deploy/configs/modules.list`):

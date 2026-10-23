@@ -1,6 +1,6 @@
 /**
  * @file ops.h
- * @brief Host ops table behind ::authum_sandbox_t (filled by `authum_mm`).
+ * @brief Host ops table behind ::authum_sandbox_t (filled by `authum`).
  *
  * Modules never call these directly — use the `authum_sandbox_*` functions in
  * <authum/sandbox.h>. The host implements them on lh's ownership tree

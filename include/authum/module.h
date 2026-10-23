@@ -14,13 +14,13 @@
 
 /**
  * @typedef authum_module_t
- * @brief The lh module object used inside `authum_mm`.
+ * @brief The lh module object used inside `authum`.
  */
 typedef lh_os_module_t authum_module_t;
 
 /**
  * @def AUTHUM_MODULE_OPS_SYM
- * @brief The ops table `authum_mm` itself exports to lh. Modules export
+ * @brief The ops table `authum` itself exports to lh. Modules export
  *        `authum_module_api` instead (<authum/module/api.h>).
  */
 #define AUTHUM_MODULE_OPS_SYM "authum_module_ops"

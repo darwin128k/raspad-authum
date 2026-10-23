@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - '4.0.0'
   workflow_dispatch:
 
 permissions:
@@ -18,11 +19,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-
-      - name: Metamod-P + HLSDK
-        run: |
-          git clone --depth 1 --branch v1.21p109 \
-            https://github.com/Bots-United/metamod-p.git lib/metamod-p
 
       - name: Install i386 toolchain
         run: |
@@ -39,36 +35,41 @@ jobs:
             -DAUTHUM_LH_LINK_MODE=needed
 
       - name: Build
-        run: cmake --build build --target authum_mm.so -j"$(nproc)"
+        run: cmake --build build --target authum.so -j"$(nproc)"
 
       - name: Test
         run: ctest --test-dir build --output-on-failure || true
 
-      - name: Pack Metamod layout
+      - name: Pack game-library layout
         run: |
-          strip --strip-unneeded build/authum_mm.so
-          rm -rf dist && mkdir -p dist/addons/authum
-          cp build/authum_mm.so dist/addons/authum/authum_mm.so
-          cp deploy/modules.list dist/addons/authum/modules.list
+          strip --strip-unneeded build/authum.so
+          rm -rf dist && mkdir -p dist/addons/authum/configs dist/addons/authum/modules
+          cp build/authum.so dist/addons/authum/authum.so
+          printf 'dlls/cs.so\n' > dist/addons/authum/gamedll.txt
+          cp deploy/configs/modules.list dist/addons/authum/configs/modules.list
+          cp deploy/configs/authum.cfg dist/addons/authum/configs/authum.cfg
           cat > dist/addons/authum/INSTALL.txt <<'EOF'
           Unpack into the game dir (cstrike/ or mod root) so you get:
 
-            addons/authum/authum_mm.so
-            addons/authum/modules.list
+            addons/authum/authum.so          the game library itself
+            addons/authum/gamedll.txt        the real game library (dlls/cs.so)
+            addons/authum/configs/modules.list   (which modules to load)
+            addons/authum/configs/authum.cfg     (log levels; logs go to addons/authum/logs/)
 
-          In addons/metamod/plugins.ini add:
-            linux addons/authum/authum_mm.so
+          In liblist.gam point the engine at Authum:
+            gamedll_linux "addons/authum/authum.so"
 
-          Drop Authum modules under addons/authum/modules/<name>/ and list them in modules.list.
+          Each module is a folder addons/authum/modules/<name>/ (<name>.so, configs/,
+          lang/, data/); list it in configs/modules.list.
           EOF
           # strip leading spaces from heredoc if any
           sed -i 's/^          //' dist/addons/authum/INSTALL.txt
-          (cd dist && zip -r ../authum-linux32-metamod.zip addons)
-          ls -la authum-linux32-metamod.zip
+          (cd dist && zip -r ../authum-linux32.zip addons)
+          ls -la authum-linux32.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: authum-linux32-metamod
-          path: authum-linux32-metamod.zip
+          name: authum-linux32
+          path: authum-linux32.zip
           if-no-files-found: error

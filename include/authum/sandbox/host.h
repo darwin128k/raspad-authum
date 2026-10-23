@@ -1,6 +1,6 @@
 /**
  * @file host.h
- * @brief Host side of ::authum_sandbox_t — implemented in `authum_mm` only.
+ * @brief Host side of ::authum_sandbox_t — implemented in `authum` only.
  *
  * The loader creates one root per module before `start` and destroys it after
  * `stop`. Modules must not call these; they use <authum/sandbox.h>.

@@ -1,6 +1,6 @@
 /**
  * @file host.h
- * @brief Host side of the event bus — implemented in `authum_mm` only.
+ * @brief Host side of the event bus — implemented in `authum` only.
  *
  * Modules use <authum/events.h>. The loader binds each module's
  * ::authum_events_t to these ops with the module as owner and calls

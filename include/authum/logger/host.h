@@ -1,6 +1,6 @@
 /**
  * @file host.h
- * @brief Host side of the log channels — implemented in `authum_mm` only.
+ * @brief Host side of the log channels — implemented in `authum` only.
  *
  * One registry of channels: the host's own (`authum`, owner null), writing
  * `<root>/logs/YYYY-MM-DD.log`, and one per loaded module, writing
@@ -9,7 +9,7 @@
  *
  * ```
  * log_level = info          # what reaches the files
- * log_console = warning     # what also goes to the server console / Metamod
+ * log_console = warning     # what also goes to the server console
  * log_keep_days = 30        # delete daily files older than this (0 = keep)
  * qproto.log_level = debug  # one module (or `authum.log_level` for the host)
  * qproto.bans.log_level = info  # one journal of a module
@@ -38,7 +38,7 @@ extern "C"
 {
 #endif
 
-    /** Where console-level lines go besides the files (Metamod log / console). */
+    /** Where console-level lines go besides the files (the server console). */
     typedef void (*authum_logs_mirror_fn)(authum_logger_level_t level, const authum_char_t *name,
                                           const authum_char_t *text);
 
@@ -47,7 +47,7 @@ extern "C"
 
     /**
      * Read `<root>/configs/authum.cfg` and open the host channel. @p root is the
-     * directory of `authum_mm` (`addons/authum`). @p mirror may be null.
+     * directory of `authum` (`addons/authum`). @p mirror may be null.
      */
     authum_bool_t
     authum_logs_init(const authum_char_t *root, authum_logs_mirror_fn mirror);

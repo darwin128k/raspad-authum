@@ -1,6 +1,6 @@
 # Authum module coding style
 
-Rules for **child modules** loaded by `authum_mm` (not for the Metamod host
+Rules for **child modules** loaded by `authum` (not for the host image
 itself). Same spirit as lh: snake_case, type-as-namespace, Authum’s own types
 on the Authum surface. Sample: [`examples/hello`](../examples/hello/).
 

@@ -23,6 +23,7 @@
 #include <eiface.h>
 
 #include <cstdio>
+#include <cstring>
 
 #include <lh/fs/path.h>
 #include <lh/os/module.h>
@@ -68,6 +69,29 @@ standalone_command(void)
                        nullptr);
 }
 
+/* Console-level lines also go to the server console (what `log_console` in
+ * authum.cfg asks for): the engine's print, tagged with the module's name. */
+void
+standalone_log_mirror(authum_logger_level_t /* level */, const authum_char_t *name,
+                      const authum_char_t *text)
+{
+    char line[1024];
+
+    if (text == nullptr || g_engfuncs.pfnServerPrint == nullptr)
+    {
+        return;
+    }
+    if (name != nullptr && std::strcmp(name, "authum") != 0)
+    {
+        std::snprintf(line, sizeof line, "[%s] %s", name, text);
+    }
+    else
+    {
+        std::snprintf(line, sizeof line, "%s", text);
+    }
+    g_engfuncs.pfnServerPrint(line);
+}
+
 /* Authum's own folder (addons/authum) holds the logs, next to the image. */
 void
 standalone_log_init(void)
@@ -78,7 +102,7 @@ standalone_log_init(void)
     lh_fs_path_init(&parent);
     if (image != nullptr && lh_fs_path_parent(&parent, image))
     {
-        (void)authum_log_init(&parent);
+        (void)authum_log_init_sink(&parent, standalone_log_mirror);
     }
     lh_fs_path_deinit(&parent);
 }

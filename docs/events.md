@@ -81,8 +81,8 @@ is not loaded, or nothing matched).
 
 ## 4. Player events from the host
 
-Authum hooks the game DLL (via Metamod) once and forwards to modules, so
-modules need no Metamod hooks of their own. Payload: `authum_event_client_t`.
+Authum hooks the game DLL once and forwards to modules, so
+modules need no hooks of their own. Payload: `authum_event_client_t`.
 
 | Event | When | Notes |
 |-------|------|-------|

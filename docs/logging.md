@@ -22,7 +22,7 @@ addons/authum/
 | Module line at or above the module's `log_level` | `modules/<module>/logs/YYYY-MM-DD.log` |
 | Module **warning or worse** | also Authum's `logs/YYYY-MM-DD.log`, tagged `[module]` |
 | Authum's own line (loader, gate, commands) | `logs/YYYY-MM-DD.log` |
-| Any line at or above `log_console` | also the server console and the HLDS log (through Metamod, `[AUTHUM]`) |
+| Any line at or above `log_console` | also the server console, tagged `[AUTHUM]` |
 
 A new file starts when the date changes; files older than `log_keep_days` are
 deleted then. Lines are buffered and reach the disk every server frame;

@@ -3,8 +3,8 @@
  * @file client.h
  * @brief Player lifecycle events published by the host (`authum.client.*`).
  *
- * Authum hooks the game DLL calls (via Metamod) once and forwards them to
- * modules, so no module needs its own Metamod hooks:
+ * Authum hooks the game DLL calls once and forwards them to
+ * modules, so no module needs its own hooks:
  *
  * | Event | When | Payload |
  * |-------|------|---------|

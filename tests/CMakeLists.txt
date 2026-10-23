@@ -1,6 +1,6 @@
 # Authum tests: plain C executables run by CTest. Host pieces (sandbox, events,
 # commands, logs) are compiled from src/authum together with lh, exactly as
-# authum_mm uses them.
+# authum uses them.
 
 add_library(authum_test_check STATIC check.c)
 target_include_directories(authum_test_check PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

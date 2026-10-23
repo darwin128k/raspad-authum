@@ -46,8 +46,8 @@ authum_loader_is_shared_name(const lh_str_view_t *name)
     return lh_str_view_ends_with(name, lh_addr_of(ext), lh_bool_true);
 }
 
-/* The host image: the Metamod plugin (authum_mm.so) or the standalone game
- * library (authum.so). Neither may be opened as a child of itself. */
+/* The host image: authum.so, the game library the engine loads. It may
+ * never be opened as a child of itself. */
 lh_bool_t
 authum_loader_is_host_image(const lh_fs_path_t *path)
 {
@@ -83,7 +83,7 @@ authum_loader_is_host_image(const lh_fs_path_t *path)
         return lh_bool_false;
     }
     lh_str_view_from_offset(lh_addr_of(part), 0U, lh_math_sub(part_size, ext_size), lh_addr_of(stem));
-    host_mm = lh_str_view_lit("authum_mm");
+    host_mm = lh_str_view_lit("authum");
     if (lh_str_view_equals(lh_addr_of(stem), lh_addr_of(host_mm), lh_bool_true))
     {
         return lh_bool_true;
