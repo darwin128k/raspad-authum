@@ -28,7 +28,8 @@ children of its own.
 Authum's part is the policy around that mechanism:
 
 - identity and ABI live in an exported `authum_module_info_t`;
-- the method-table symbol is `authum_module_ops`;
+- a module exports `authum_module_api` (`start` / `stop`); `authum_mm`
+  itself is bound to lh through its own `authum_module_ops`;
 - extra modules come from `configs/modules.list` when that file exists,
   otherwise from shared libraries in a directory named `modules` beside
   the image;
@@ -49,7 +50,7 @@ Every image that wants to be an Authum module exports two C symbols.
 | Symbol | Type | Role |
 |--------|------|------|
 | `authum_module_info` | `authum_module_info_t` | Who the module is, and which loader ABI it was built for. |
-| `authum_module_ops` | `lh_os_module_ops_t` | `start` and `stop`. lh looks this name up. An image without it is a plain library and is not kept. |
+| `authum_module_api` | `authum_module_api_t` | `start(host)` and `stop`. An image without it is not a module and is not kept. |
 
 `authum_module_info` fields:
 
@@ -154,7 +155,7 @@ For each entry in `modules/`:
 1. Allocates a module (`lh_os_module_create`).
 2. Sets its owner to this loader, so `start` can already see the parent.
 3. Opens the image.
-4. Reads `authum_module_ops`. No symbol: the module is destroyed and not linked.
+4. Reads `authum_module_api`. No symbol: the module is destroyed and not linked.
 5. Calls `start`. False: destroyed and not linked. A child whose `start`
    is `authum_module_start` loads its own children here, into its own
    list.

@@ -28,8 +28,4 @@
  */
 typedef authum_byte_t authum_bool_t;
 
-/* Historical spellings — prefer authum_bool_*. */
-#define AUTHUM_FALSE authum_bool_false
-#define AUTHUM_TRUE authum_bool_true
-
 #endif /* AUTHUM_BOOL_H */

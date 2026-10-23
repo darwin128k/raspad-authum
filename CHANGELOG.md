@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- A module must export `authum_module_api`; the loader no longer takes a
+  child that only exports lh's `authum_module_ops` (that table is now just
+  how `authum_mm` itself binds to lh). `AUTHUM_TRUE` / `AUTHUM_FALSE` are
+  gone: use `authum_bool_true` / `authum_bool_false`.
 - **AMX Mod X-style layout** in `addons/authum/`: `modules/<name>.so` (no
   folder per module), `configs/` for everything the admin edits
   (`authum.cfg`, `modules.list`, `<module>.cfg`, `configs/<module>/` for a

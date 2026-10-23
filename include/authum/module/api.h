@@ -26,7 +26,7 @@ extern "C"
      */
     typedef struct authum_module_api
     {
-        /** @return ::AUTHUM_TRUE to stay loaded. */
+        /** @return ::authum_bool_true to stay loaded. */
         authum_bool_t (*start)(authum_host_t *host);
         void (*stop)(void);
     } authum_module_api_t;
