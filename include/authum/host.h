@@ -39,7 +39,7 @@ extern "C"
         authum_usize_t size;
         /**
          * This module's log channel: the host files each line under
-         * `logs/<module>/` per `authum.cfg`. Use <authum/logger.h>.
+         * `modules/<module>/logs/` per `authum.cfg`. Use <authum/logger.h>.
          */
         const authum_logger_channel_t *logger;
         /**
@@ -103,32 +103,28 @@ extern "C"
     const authum_path_t *
     authum_host_env_game(const authum_host_t *host);
 
+    /** `modules/<module>`: this module's folder. */
     const authum_path_t *
-    authum_host_env_configs(const authum_host_t *host);
+    authum_host_env_module(const authum_host_t *host);
 
-    const authum_path_t *
-    authum_host_env_data(const authum_host_t *host);
-
-    const authum_path_t *
-    authum_host_env_lang(const authum_host_t *host);
-
+    /** `modules/<module>/configs`. */
     const authum_path_t *
     authum_host_env_module_config(const authum_host_t *host);
 
+    /** `modules/<module>/lang`: translations. */
+    const authum_path_t *
+    authum_host_env_module_lang(const authum_host_t *host);
+
+    /** `modules/<module>/data`: what the module writes. */
     const authum_path_t *
     authum_host_env_module_data(const authum_host_t *host);
 
-    /** `configs/<leaf>` — see ::authum_env_config_path. True when it exists. */
+    /** `modules/<module>/configs/<leaf>` — see ::authum_env_config_path. True when it exists. */
     authum_bool_t
     authum_host_config_path(const authum_host_t *host, const authum_char_t *leaf,
                             authum_path_t *out);
 
-    /** `configs/<module>/<leaf>` — see ::authum_env_module_config_path. */
-    authum_bool_t
-    authum_host_module_config_path(const authum_host_t *host, const authum_char_t *leaf,
-                                   authum_path_t *out);
-
-    /** `data/<module>/<leaf>`, folder created — see ::authum_env_data_path. */
+    /** `modules/<module>/data/<leaf>`, folder created — see ::authum_env_data_path. */
     authum_bool_t
     authum_host_data_path(const authum_host_t *host, const authum_char_t *leaf, authum_path_t *out);
 

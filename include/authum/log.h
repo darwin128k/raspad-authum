@@ -3,7 +3,7 @@
  * @brief Authum's own log on ::lh_runtime_logger, routed by <authum/logger/host.h>.
  *
  * Host lines (load OK/FAIL, attach, gate) land in
- * `logs/authum/YYYY-MM-DD.log` beside the plugin image, with modules'
+ * `logs/YYYY-MM-DD.log` beside the plugin image, with modules'
  * warnings and errors; console-level lines also go through Metamod.
  */
 

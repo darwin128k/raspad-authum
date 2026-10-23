@@ -69,8 +69,8 @@ jobs:
           In addons/metamod/plugins.ini add:
             linux addons/authum/authum_mm.so
 
-          Put modules in addons/authum/modules/<name>.so, their configs in
-          addons/authum/configs/, and list them in configs/modules.list.
+          Each module is a folder addons/authum/modules/<name>/ (<name>.so, configs/,
+          lang/, data/); list it in configs/modules.list.
           EOF
           sed -i 's/^          //' dist/addons/authum/INSTALL.txt
           (cd dist && zip -r ../authum-linux32-metamod.zip addons)

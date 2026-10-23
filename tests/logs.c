@@ -49,15 +49,33 @@ test_mirror(authum_logger_level_t level, const authum_char_t *name, const authum
     authum_cstr_copy(g_test_mirror_text, sizeof g_test_mirror_text, text);
 }
 
-/** `<root>/logs/<dir>/YYYY-MM-DD.log` for @p when. */
+/**
+ * The daily file of channel @p dir for @p when: `authum` is the host
+ * (`<root>/logs/`), `qproto` a module (`<root>/modules/qproto/logs/`),
+ * `qproto/bans` a journal (`<root>/modules/qproto/logs/bans/`).
+ */
 void
 test_log_path(authum_char_t *out, authum_usize_t out_size, const char *dir, time_t when)
 {
     char day[16];
+    char module[64];
+    const char *slash = strchr(dir, '/');
     struct tm *tm = localtime(&when);
 
     strftime(day, sizeof day, "%Y-%m-%d", tm);
-    snprintf(out, out_size, TEST_ROOT "/logs/%s/%s.log", dir, day);
+    if (strcmp(dir, "authum") == 0)
+    {
+        snprintf(out, out_size, TEST_ROOT "/logs/%s.log", day);
+    }
+    else if (slash != NULL)
+    {
+        snprintf(module, sizeof module, "%.*s", (int)(slash - dir), dir);
+        snprintf(out, out_size, TEST_ROOT "/modules/%s/logs/%s/%s.log", module, slash + 1, day);
+    }
+    else
+    {
+        snprintf(out, out_size, TEST_ROOT "/modules/%s/logs/%s.log", dir, day);
+    }
 }
 
 /** Whether @p path is on disk now (without flushing anything). */
@@ -186,9 +204,9 @@ test_routing(void)
 {
     CHECK(authum_logs_init(TEST_ROOT, test_mirror));
     authum_logs_set_clock(test_clock);
-    CHECK(authum_logs_open(&g_test_qproto, "qproto"));
-    CHECK(authum_logs_open(&g_test_quiet, "quiet"));
-    CHECK(authum_logs_open(&g_test_hello, "hello"));
+    CHECK(authum_logs_open(&g_test_qproto, "qproto", authum_null));
+    CHECK(authum_logs_open(&g_test_quiet, "quiet", authum_null));
+    CHECK(authum_logs_open(&g_test_hello, "hello", authum_null));
 
     /* Per-module level from the cfg. */
     CHECK(authum_logs_is_enabled(&g_test_qproto, authum_logger_level_debug));
@@ -244,7 +262,7 @@ test_buffering(void)
 {
     CHECK(authum_logs_init(TEST_ROOT, authum_null));
     authum_logs_set_clock(test_clock);
-    CHECK(authum_logs_open(&g_test_qproto, "qproto"));
+    CHECK(authum_logs_open(&g_test_qproto, "qproto", authum_null));
 
     authum_logs_write(&g_test_qproto, authum_logger_level_info, "buffered line");
     CHECK(!test_on_disk("qproto", TEST_DAY_ONE, "buffered line"));
@@ -273,8 +291,8 @@ test_journals(void)
 
     CHECK(authum_logs_init(TEST_ROOT, authum_null));
     authum_logs_set_clock(test_clock);
-    CHECK(authum_logs_open(&g_test_hello, "hello"));
-    CHECK(authum_logs_open(&g_test_qproto, "qproto"));
+    CHECK(authum_logs_open(&g_test_hello, "hello", authum_null));
+    CHECK(authum_logs_open(&g_test_qproto, "qproto", authum_null));
 
     audit = authum_logs_open_journal(&g_test_hello, "audit");
     CHECK(audit != authum_null);
@@ -314,7 +332,7 @@ void
 test_reload(void)
 {
     CHECK(authum_logs_init(TEST_ROOT, authum_null));
-    CHECK(authum_logs_open(&g_test_qproto, "qproto"));
+    CHECK(authum_logs_open(&g_test_qproto, "qproto", authum_null));
     CHECK(authum_logs_is_enabled(&g_test_qproto, authum_logger_level_debug));
 
     test_write_cfg("qproto.log_level = warning\n");
@@ -334,26 +352,27 @@ test_prune(void)
     authum_char_t old_path[256];
     authum_char_t recent_path[256];
 
-    test_mkdir(TEST_ROOT "/logs");
-    test_mkdir(TEST_ROOT "/logs/hello");
+    test_mkdir(TEST_ROOT "/modules");
+    test_mkdir(TEST_ROOT "/modules/hello");
+    test_mkdir(TEST_ROOT "/modules/hello/logs");
     test_log_path(old_path, sizeof old_path, "hello", TEST_DAY_ONE - 40 * TEST_DAY);
     test_log_path(recent_path, sizeof recent_path, "hello", TEST_DAY_ONE - 5 * TEST_DAY);
     test_touch(old_path);
     test_touch(recent_path);
-    test_touch(TEST_ROOT "/logs/hello/notes.txt");
+    test_touch(TEST_ROOT "/modules/hello/logs/notes.txt");
     CHECK(test_exists(old_path));
 
     CHECK(authum_logs_init(TEST_ROOT, authum_null));
     authum_logs_set_clock(test_clock);
-    CHECK(authum_logs_open(&g_test_hello, "hello"));
+    CHECK(authum_logs_open(&g_test_hello, "hello", authum_null));
     authum_logs_write(&g_test_hello, authum_logger_level_info, "prune trigger");
     authum_logs_deinit();
 
     CHECK(!test_exists(old_path));
     CHECK(test_exists(recent_path));
-    CHECK(test_exists(TEST_ROOT "/logs/hello/notes.txt")); /* not a daily file: kept */
+    CHECK(test_exists(TEST_ROOT "/modules/hello/logs/notes.txt")); /* not a daily file: kept */
     remove(recent_path);
-    remove(TEST_ROOT "/logs/hello/notes.txt");
+    remove(TEST_ROOT "/modules/hello/logs/notes.txt");
 }
 
 /* What a module does: authum_logger_* through the host's channel. */
@@ -367,7 +386,7 @@ test_module_logger(void)
 
     CHECK(authum_logs_init(TEST_ROOT, test_mirror));
     authum_logs_set_clock(test_clock);
-    CHECK(authum_logs_open(&g_test_hello, "hello"));
+    CHECK(authum_logs_open(&g_test_hello, "hello", authum_null));
 
     channel.ops = authum_logs_ops();
     channel.owner = &g_test_hello;

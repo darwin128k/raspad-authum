@@ -3,7 +3,7 @@
  * @brief Log channel the host hands each module (::authum_host_t.logger).
  *
  * The module only says what happened and how bad it is; the host decides
- * where it goes (its file under `logs/<module>/`, `authum.log`, the server
+ * where it goes (its file under `modules/<module>/logs/`, Authum's log, the server
  * console) from `authum.cfg`. Use it through <authum/logger.h>.
  */
 
@@ -30,7 +30,7 @@ extern "C"
         /** Whether a line at @p level would go anywhere — skip formatting otherwise. */
         authum_bool_t (*is_enabled)(authum_ptr owner, authum_logger_level_t level);
         /**
-         * Open the module's journal @p name (`logs/<module>/<name>/`); the
+         * Open the module's journal @p name (`modules/<module>/logs/<name>/`); the
          * result is the owner for `write` / `is_enabled`. Null on failure.
          */
         authum_ptr (*open)(authum_ptr owner, const authum_char_t *name);

@@ -85,22 +85,23 @@ AUTHUM_MODULE_EXPORT const authum_module_api_t authum_module_api = {
 ```
 cstrike/addons/authum/
   authum_mm.so
-  modules/example.so
-  configs/
-    modules.list               # one name per line: example
-    example.cfg                # optional; other files in configs/example/
-  data/example/                # what the module writes (created at load)
-  logs/example/                # the module's log
+  configs/modules.list         # one name per line: example
+  modules/example/             # the module's sandbox
+    example.so
+    configs/example.cfg        # optional, the admin's
+    lang/                      # translations
+    data/                      # what the module writes (created at load)
+    logs/                      # the module's log
 ```
 
 `modules.list`: see [modules.md](modules.md). Console: `authum`. Logs:
-`addons/authum/logs/<module>/YYYY-MM-DD.log`, levels in
+`addons/authum/modules/<module>/logs/YYYY-MM-DD.log`, levels in
 `addons/authum/configs/authum.cfg` ([logging.md](logging.md)).
 
 Paths: `authum_host_config_path(host, "example.cfg", &path)` →
-`configs/example.cfg`; `authum_host_module_config_path(host, "list.ini", &path)`
-→ `configs/example/list.ini`; `authum_host_data_path(host, "example.db", &path)`
-→ `data/example/example.db` (folder created).
+`modules/example/configs/example.cfg`; `authum_host_data_path(host,
+"example.db", &path)` → `modules/example/data/example.db` (folder created);
+translations in `authum_host_env_module_lang(host)`.
 
 ---
 
@@ -117,8 +118,8 @@ survives Authum's internal changes.
 | `authum_logger_*` / `authum_host_log_line` | the module's log — [logging.md](logging.md) |
 | `authum_host_engine` / game dir / print / command | engine facade (no HLSDK) |
 | `authum_host_engine_funcs` / `authum_host_globals` | escape hatch → HLSDK types |
-| `authum_host_env` / `authum_host_env_configs` / `_data` / `_lang` / `_game` / … | `authum_path_t` roots |
-| `authum_host_config_path` / `_module_config_path` / `_data_path` | a module's files |
+| `authum_host_env` / `authum_host_env_module` / `_module_config` / `_module_lang` / `_module_data` / `_game` / … | `authum_path_t` roots |
+| `authum_host_config_path` / `_data_path` | a module's files in its sandbox |
 | `authum_host_crypto` | Rijndael + SHA (`<authum/crypto.h>`) |
 | `authum_host_sandbox` | Module memory freed at unload — [sandbox.md](sandbox.md) |
 | `authum_host_events` / `authum_host_subscribe` / `authum_host_publish` | Event bus — [events.md](events.md) |
@@ -142,7 +143,7 @@ survives Authum's internal changes.
 
 Paths in `env` are absolute (current volume, native separators). Configs:
 `authum_host_config_path`; data the module writes: `authum_host_data_path`;
-translations: `authum_host_env_lang`. `authum_path_join` appends a leaf.
+translations: `authum_host_env_module_lang`. `authum_path_join` appends a leaf.
 
 **Config:** defaults on `g_mod_config = { … }`, then
 `authum_cfg_apply_items` from an `authum_cfg_item_t[]`. Keys that need a custom
@@ -188,7 +189,7 @@ private utilities. Not the host runtime.
 
 Use **`authum_logger_t`** (`<authum/logger.h>`): `authum_logger_init(&log,
 &g_host)` in `start`, then `authum_logger_info` / `_warning` / `_debug` / ….
-The module only picks the level; Authum writes `logs/<module>/YYYY-MM-DD.log`
+The module only picks the level; Authum writes `modules/<module>/logs/YYYY-MM-DD.log`
 and copies warnings and errors to its own log, as `authum.cfg` says. No
 logging keys in the module's cfg, no files of its own, no console prints for
 diagnostics. Details: [logging.md](logging.md).
@@ -215,7 +216,7 @@ diagnostics. Details: [logging.md](logging.md).
 - [ ] `#include <authum/client.h>` (no lh in a pure client)
 - [ ] `authum_module_info.abi` = `AUTHUM_MODULE_ABI` (`1.0.0`); host kept with `authum_host_copy`, non-null `name`
 - [ ] `authum_module_api` exported; `start` returns `authum_bool_false` only on hard failure
-- [ ] Listed in `configs/modules.list`; image is `modules/<name>.so`; config `configs/<name>.cfg`, data via `authum_host_data_path`
+- [ ] Listed in `configs/modules.list`; everything in `modules/<name>/`: `<name>.so`, `configs/`, `lang/`, `data/` (via `authum_host_config_path` / `_data_path`)
 - [ ] Folder `foo` → `foo.so` / `foo.dll`
 - [ ] Not a Metamod `plugins.ini` entry
 - [ ] Logs via host facade

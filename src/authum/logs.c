@@ -54,6 +54,8 @@ struct authum_logs_channel
     long day;
     /** Written since the last flush. */
     authum_bool_t dirty;
+    /** Where the daily files go: logs/, modules/<module>/logs/, or a journal's folder in it. */
+    authum_path_t dir;
 };
 
 authum_path_t authum_logs_root;
@@ -179,26 +181,27 @@ authum_logs_set_name(authum_char_t *out, authum_usize_t out_size, const authum_c
     }
 }
 
-/** `logs/<module>[/<journal>]`, created on the way. */
+/** Create @p dir and up to @p depth missing parents above it. */
+authum_bool_t
+authum_logs_ensure_tree(const authum_path_t *dir, int depth)
+{
+    authum_path_t parent;
+
+    if (authum_path_ensure_dir(dir))
+    {
+        return authum_bool_true;
+    }
+    return (depth > 0 && authum_path_parent(&parent, dir) &&
+            authum_logs_ensure_tree(&parent, depth - 1) && authum_path_ensure_dir(dir))
+               ? authum_bool_true
+               : authum_bool_false;
+}
+
 authum_bool_t
 authum_logs_channel_dir(const authum_logs_channel_t *channel, authum_path_t *out)
 {
-    authum_path_t logs;
-    authum_path_t module;
-
-    if (!authum_path_join(&logs, &authum_logs_root, "logs") || !authum_path_ensure_dir(&logs))
-    {
-        return authum_bool_false;
-    }
-    if (authum_null_eq(channel->parent))
-    {
-        return (authum_path_join(out, &logs, channel->name) && authum_path_ensure_dir(out))
-                   ? authum_bool_true
-                   : authum_bool_false;
-    }
-    return (authum_path_join(&module, &logs, channel->parent->name) &&
-            authum_path_ensure_dir(&module) && authum_path_join(out, &module, channel->name) &&
-            authum_path_ensure_dir(out))
+    /* logs/, modules/<module>/logs/ or a journal's folder in it: create what is missing. */
+    return (authum_path_assign(out, &channel->dir) && authum_logs_ensure_tree(out, 3))
                ? authum_bool_true
                : authum_bool_false;
 }
@@ -465,8 +468,12 @@ authum_logs_write(authum_ptr owner, authum_logger_level_t level, const authum_ch
 }
 
 authum_logs_channel_t *
-authum_logs_add(authum_ptr owner, authum_logs_channel_t *parent, const authum_char_t *name)
+authum_logs_add(authum_ptr owner, authum_logs_channel_t *parent, const authum_char_t *name,
+                const authum_char_t *module_dir)
 {
+    authum_path_t base;
+    authum_path_t modules;
+
     authum_logs_channel_t *channel;
     authum_cfg_t cfg;
 
@@ -487,6 +494,22 @@ authum_logs_add(authum_ptr owner, authum_logs_channel_t *parent, const authum_ch
     else
     {
         snprintf(channel->tag, sizeof channel->tag, "%s/%s", parent->name, channel->name);
+    }
+    /* journal: <module logs>/<journal>; module: <module_dir>/logs, by default
+     * modules/<name>/logs */
+    if (!authum_null_eq(parent))
+    {
+        (void)authum_path_join(&channel->dir, &parent->dir, channel->name);
+    }
+    else if (!authum_null_eq(module_dir) && module_dir[0] != 0 &&
+             authum_path_set_cstr(&base, module_dir))
+    {
+        (void)authum_path_join(&channel->dir, &base, "logs");
+    }
+    else if (authum_path_join(&modules, &authum_logs_root, "modules") &&
+             authum_path_join(&base, &modules, channel->name))
+    {
+        (void)authum_path_join(&channel->dir, &base, "logs");
     }
     if (authum_logs_cfg_open(&cfg))
     {
@@ -520,7 +543,7 @@ authum_logs_free(authum_logs_channel_t *channel)
 }
 
 authum_bool_t
-authum_logs_open(authum_ptr owner, const authum_char_t *name)
+authum_logs_open(authum_ptr owner, const authum_char_t *name, const authum_char_t *module_dir)
 {
     if (authum_null_eq(owner) || authum_null_eq(name))
     {
@@ -530,8 +553,9 @@ authum_logs_open(authum_ptr owner, const authum_char_t *name)
     {
         return authum_bool_true;
     }
-    return !authum_null_eq(authum_logs_add(owner, authum_null, name)) ? authum_bool_true
-                                                                      : authum_bool_false;
+    return !authum_null_eq(authum_logs_add(owner, authum_null, name, module_dir))
+               ? authum_bool_true
+               : authum_bool_false;
 }
 
 void
@@ -578,7 +602,7 @@ authum_logs_open_journal(authum_ptr owner, const authum_char_t *name)
             return channel->owner;
         }
     }
-    channel = authum_logs_add(authum_null, module, clean);
+    channel = authum_logs_add(authum_null, module, clean, authum_null);
     return !authum_null_eq(channel) ? channel->owner : authum_null;
 }
 
@@ -612,6 +636,7 @@ authum_logs_init(const authum_char_t *root, authum_logs_mirror_fn mirror)
     memset(&authum_logs_host, 0, sizeof authum_logs_host);
     authum_logs_set_name(authum_logs_host.name, sizeof authum_logs_host.name, "authum");
     authum_cstr_copy(authum_logs_host.tag, sizeof authum_logs_host.tag, "authum");
+    (void)authum_path_join(&authum_logs_host.dir, &authum_logs_root, "logs");
     authum_logs_read_cfg();
     authum_logs_ready = authum_bool_true;
     return authum_bool_true;

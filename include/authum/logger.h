@@ -13,9 +13,9 @@
  * The module never picks a file or a console: every line goes to the host
  * channel (::authum_host_t.logger), and `authum.cfg` routes it:
  *
- * - `addons/authum/logs/<module>/YYYY-MM-DD.log` — everything at or above the
+ * - `addons/authum/modules/<module>/logs/YYYY-MM-DD.log` — everything at or above the
  *   module's `log_level`;
- * - `addons/authum/logs/authum/YYYY-MM-DD.log` — the module's warnings and
+ * - `addons/authum/logs/YYYY-MM-DD.log` (Authum's) — the module's warnings and
  *   errors too, tagged `[module]`;
  * - server console / Metamod log — lines at or above `log_console`.
  *
@@ -71,7 +71,7 @@ extern "C"
 
     /**
      * Open journal @p name of this module: its own folder
-     * `logs/<module>/<name>/YYYY-MM-DD.log`, its own level
+     * `modules/<module>/logs/<name>/YYYY-MM-DD.log`, its own level
      * (`<module>.<name>.log_level`, else the module's). Warnings and errors
      * still reach the Authum log, tagged `[module/name]`. Use it like any
      * logger; close it in `stop`. False when the host has no journals.

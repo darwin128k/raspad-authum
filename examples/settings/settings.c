@@ -1,7 +1,7 @@
 /**
  * settings — a module's own config file.
  *
- * addons/authum/configs/settings.cfg, flat `key = value` (found with
+ * addons/authum/modules/settings/configs/settings.cfg, flat `key = value` (found with
  * authum_host_config_path, which also reads an old modules/settings/ copy):
  *   - defaults live in the C struct, so a missing file or key is fine;
  *   - plain keys come from one table (authum_cfg_apply_items);
@@ -86,7 +86,7 @@ settings_load(void)
     authum_cfg_t cfg;
 
     g_settings = g_settings_defaults;
-    /* addons/authum/configs/settings.cfg */
+    /* modules/settings/configs/settings.cfg */
     if (!authum_host_config_path(&g_settings_host, "settings.cfg", &path) ||
         !authum_cfg_open(&cfg, &path))
     {
