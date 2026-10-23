@@ -20,7 +20,7 @@ on the Authum surface. Sample: [`examples/hello`](../examples/hello/).
 | Small modules | A module holds only its own logic. Engine access, memory lifetime, config parsing, inter-module talk, console commands are Authum's job (host facade, sandbox, cfg, events, commands) |
 | No engine commands | `authum <module> <name>` via [commands.md](commands.md); never `pfnAddServerCommand` (clashes with AMXX / others, crashes after unload) |
 
-Config *file* keys use the same snake_case as C fields (`enable_revemu`, `logging_mode`, …).
+Config *file* keys use the same snake_case as C fields (`enable_revemu`, `max_bans`, …).
 
 ---
 

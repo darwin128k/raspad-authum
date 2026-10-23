@@ -9,7 +9,7 @@
  * | `authum` / `authum list` / `authum status` | Loaded modules + running state |
  * | `authum info` | Authum itself |
  * | `authum info <module>` | One module (version, path, commands) |
- * | `authum load <module>` | Load from `modules/<module>/` |
+ * | `authum load <module>` | Load `modules/<module>.so` |
  * | `authum unload <module>` | Stop + unload (temporary off) |
  * | `authum reload <module>` | Unload then load again |
  * | `authum help` | Built-ins + every module command |

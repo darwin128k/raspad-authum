@@ -7,7 +7,7 @@ under it:
 authum / list / status       loaded modules (RUNNING)
 authum info                  Authum version + how many modules
 authum info <module>         one module: version, path, commands yes/no
-authum load <module>         load from modules/<module>/
+authum load <module>         load modules/<module>.so
 authum unload <module>       stop + unload (temporary off — like meta unload)
 authum reload <module>       unload then load again
 authum help                  built-ins + every module command

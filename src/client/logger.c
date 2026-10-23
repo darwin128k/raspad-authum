@@ -1,164 +1,125 @@
 #include <authum/logger.h>
 
+#include <authum/abi.h>
 #include <authum/cstr.h>
 
-#include <errno.h>
-#include <sys/stat.h>
+#include <stdio.h>
+#include <string.h>
 
-authum_logger_file_split_t
-authum_logger_file_split_parse(const authum_char_t *value)
+static const struct
 {
-    if (authum_cstr_eq(value, "session", authum_bool_true) ||
-        authum_cstr_eq(value, "sessions", authum_bool_true) ||
-        authum_cstr_eq(value, "1", authum_bool_true))
-    {
-        return authum_logger_file_split_session;
-    }
-    return authum_logger_file_split_full;
-}
+    const authum_char_t *name;
+    authum_logger_level_t level;
+} authum_logger_level_names[] = {
+    {"emergency", authum_logger_level_emergency}, {"alert", authum_logger_level_alert},
+    {"critical", authum_logger_level_critical},   {"error", authum_logger_level_error},
+    {"warning", authum_logger_level_warning},     {"notice", authum_logger_level_notice},
+    {"info", authum_logger_level_info},           {"debug", authum_logger_level_debug},
+    {"crit", authum_logger_level_critical},       {"err", authum_logger_level_error},
+    {"warn", authum_logger_level_warning},
+};
 
 authum_bool_t
-authum_logger_ensure_dir(const authum_char_t *dir)
+authum_logger_level_parse(const authum_char_t *name, authum_logger_level_t *out)
 {
-    struct stat st;
+    authum_usize_t i;
 
-    if (authum_null_eq(dir) || dir[0] == '\0')
+    if (authum_null_eq(name) || authum_null_eq(out))
     {
         return authum_bool_false;
     }
-    if (stat(dir, &st) == 0)
+    for (i = 0u; i < sizeof authum_logger_level_names / sizeof authum_logger_level_names[0]; ++i)
     {
-        return S_ISDIR(st.st_mode) ? authum_bool_true : authum_bool_false;
+        if (authum_cstr_eq(name, authum_logger_level_names[i].name, authum_bool_true))
+        {
+            *out = authum_logger_level_names[i].level;
+            return authum_bool_true;
+        }
     }
-    if (mkdir(dir, 0755) == 0)
-    {
-        return authum_bool_true;
-    }
-    return (errno == EEXIST) ? authum_bool_true : authum_bool_false;
+    return authum_bool_false;
 }
 
-authum_bool_t
-authum_logger_build_module_path(const authum_host_t *host, const authum_char_t *tag,
-                                authum_logger_file_split_t split, authum_path_t *out)
+const authum_char_t *
+authum_logger_level_name(authum_logger_level_t level)
 {
-    authum_path_t logs_dir;
-    authum_char_t leaf[64];
-    const authum_char_t *stem;
-    time_t now;
-    struct tm *tm;
-
-    if (authum_null_eq(host) || authum_null_eq(out))
-    {
-        return authum_bool_false;
-    }
-
-    stem = (authum_null_eq(tag) || tag[0] == '\0') ? "module" : tag;
-
-    if (split == authum_logger_file_split_session)
-    {
-        if (!authum_path_join(&logs_dir, authum_host_env_module(host), "logs"))
-        {
-            return authum_bool_false;
-        }
-        if (!authum_logger_ensure_dir(authum_path_as_cstr(&logs_dir)))
-        {
-            return authum_bool_false;
-        }
-        now = time(NULL);
-        tm = localtime(&now);
-        if (tm == NULL)
-        {
-            snprintf(leaf, sizeof leaf, "%s-%ld.log", stem, (long)now);
-        }
-        else
-        {
-            snprintf(leaf, sizeof leaf, "%s-%04d%02d%02d-%02d%02d%02d.log", stem,
-                     tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min,
-                     tm->tm_sec);
-        }
-        return authum_path_join(out, &logs_dir, leaf) ? authum_bool_true : authum_bool_false;
-    }
-
-    snprintf(leaf, sizeof leaf, "%s.log", stem);
-    return authum_path_join(out, authum_host_env_module(host), leaf) ? authum_bool_true
-                                                                     : authum_bool_false;
-}
-
-authum_bool_t
-authum_logger_open_module_file(authum_logger_t *self, authum_logger_file_split_t split,
-                               authum_path_t *out)
-{
-    authum_path_t path;
-    authum_path_t *dest;
-
-    if (authum_null_eq(self) || authum_null_eq(self->host))
-    {
-        return authum_bool_false;
-    }
-
-    dest = authum_null_eq(out) ? &path : out;
-    if (!authum_logger_build_module_path(self->host, self->tag, split, dest))
-    {
-        return authum_bool_false;
-    }
-    return authum_logger_open_file(self, authum_path_as_cstr(dest));
+    return level <= authum_logger_level_debug ? authum_logger_level_names[level].name : "?";
 }
 
 void
-authum_logger_init(authum_logger_t *self, const authum_host_t *host, authum_logger_sink_t sinks,
-                   const authum_char_t *tag)
+authum_logger_channel_write(const authum_logger_channel_t *channel, authum_logger_level_t level,
+                            const authum_char_t *text)
+{
+    if (!authum_null_eq(channel) && !authum_null_eq(channel->ops) &&
+        AUTHUM_ABI_HAS(channel->ops, write) && !authum_null_eq(text))
+    {
+        channel->ops->write(channel->owner, level, text);
+    }
+}
+
+authum_bool_t
+authum_logger_channel_is_enabled(const authum_logger_channel_t *channel,
+                                 authum_logger_level_t level)
+{
+    if (authum_null_eq(channel) || authum_null_eq(channel->ops) ||
+        !AUTHUM_ABI_HAS(channel->ops, write))
+    {
+        return authum_bool_false;
+    }
+    /* A host without the filter takes every line. */
+    return AUTHUM_ABI_HAS(channel->ops, is_enabled)
+               ? channel->ops->is_enabled(channel->owner, level)
+               : authum_bool_true;
+}
+
+/** The channel @p self logs to: its journal, else the module's. */
+const authum_logger_channel_t *
+authum_logger_get_channel(const authum_logger_t *self)
 {
     if (authum_null_eq(self))
     {
-        return;
+        return authum_null;
     }
-    self->host = host;
-    self->sinks = sinks;
-    self->level_flags = (authum_logger_level_flags_t)authum_logger_level_flags_all;
-    self->tag = tag;
-    self->file = authum_null;
+    return self->owns_journal ? &self->journal : self->channel;
 }
 
 void
-authum_logger_set_level_flags(authum_logger_t *self, authum_logger_level_flags_t flags)
+authum_logger_init(authum_logger_t *self, const authum_host_t *host)
 {
     if (!authum_null_eq(self))
     {
-        self->level_flags = flags;
-    }
-}
-
-void
-authum_logger_set_sinks(authum_logger_t *self, authum_logger_sink_t sinks)
-{
-    if (!authum_null_eq(self))
-    {
-        self->sinks = sinks;
+        memset(self, 0, sizeof *self);
+        self->channel = authum_host_logger(host);
     }
 }
 
 authum_bool_t
-authum_logger_open_file(authum_logger_t *self, const authum_char_t *path)
+authum_logger_open(authum_logger_t *self, const authum_host_t *host, const authum_char_t *name)
 {
-    if (authum_null_eq(self) || authum_null_eq(path) || path[0] == '\0')
+    const authum_logger_channel_t *module;
+    authum_ptr journal;
+
+    if (authum_null_eq(self))
     {
         return authum_bool_false;
     }
-    if (!authum_null_eq(self->file))
+    authum_logger_init(self, host);
+    module = self->channel;
+    if (authum_null_eq(module) || authum_null_eq(module->ops) ||
+        !AUTHUM_ABI_HAS(module->ops, open) || !AUTHUM_ABI_HAS(module->ops, close) ||
+        authum_null_eq(name) || name[0] == '\0')
     {
-        fclose(self->file);
-        self->file = authum_null;
-    }
-    self->file = fopen(path, "a");
-    if (authum_null_eq(self->file))
-    {
+        self->channel = authum_null;
         return authum_bool_false;
     }
-    setvbuf(self->file, authum_null, _IONBF, 0);
+    journal = module->ops->open(module->owner, name);
+    if (authum_null_eq(journal))
     {
-        time_t t = time(authum_null);
-        fprintf(self->file, "\n---- log opened %s", ctime(&t));
+        self->channel = authum_null;
+        return authum_bool_false;
     }
+    self->journal.ops = module->ops;
+    self->journal.owner = journal;
+    self->owns_journal = authum_bool_true;
     return authum_bool_true;
 }
 
@@ -169,13 +130,17 @@ authum_logger_close(authum_logger_t *self)
     {
         return;
     }
-    if (!authum_null_eq(self->file))
+    if (self->owns_journal)
     {
-        fclose(self->file);
-        self->file = authum_null;
+        self->journal.ops->close(self->journal.owner);
     }
-    self->host = authum_null;
-    self->sinks = authum_logger_sink_none;
+    memset(self, 0, sizeof *self);
+}
+
+authum_bool_t
+authum_logger_is_enabled(const authum_logger_t *self, authum_logger_level_t level)
+{
+    return authum_logger_channel_is_enabled(authum_logger_get_channel(self), level);
 }
 
 void
@@ -183,67 +148,13 @@ authum_logger_log_v(authum_logger_t *self, authum_logger_level_t level, const au
                     va_list ap)
 {
     authum_char_t buf[authum_logger_line_max];
-    authum_char_t host_line[authum_logger_line_max + 64];
-    authum_char_t console_line[authum_logger_line_max + 64];
-    int is_error;
 
-    if (authum_null_eq(self) || authum_null_eq(fmt))
+    if (authum_null_eq(fmt) || !authum_logger_is_enabled(self, level))
     {
         return;
     }
-    if ((self->level_flags & (authum_logger_level_flags_t)(1u << level)) == 0u)
-    {
-        return;
-    }
-    if ((self->sinks &
-         (authum_logger_sink_console | authum_logger_sink_file | authum_logger_sink_host)) == 0u)
-    {
-        return;
-    }
-
     vsnprintf(buf, sizeof buf, fmt, ap);
-    is_error = (level <= authum_logger_level_error) ? 1 : 0;
-
-    if ((self->sinks & authum_logger_sink_host) != 0u && !authum_null_eq(self->host))
-    {
-        if (!authum_null_eq(self->tag) && self->tag[0] != '\0')
-        {
-            snprintf(host_line, sizeof host_line, "[%s] %s", self->tag, buf);
-            authum_host_log_line(self->host, is_error, host_line);
-        }
-        else
-        {
-            authum_host_log_line(self->host, is_error, buf);
-        }
-    }
-
-    if ((self->sinks & authum_logger_sink_file) != 0u && !authum_null_eq(self->file))
-    {
-        time_t t = time(authum_null);
-        struct tm *lt = localtime(&t);
-        if (!authum_null_eq(lt))
-        {
-            fprintf(self->file, "[%02d:%02d:%02d] %s\n", lt->tm_hour, lt->tm_min, lt->tm_sec, buf);
-        }
-        else
-        {
-            fprintf(self->file, "%s\n", buf);
-        }
-    }
-
-    if ((self->sinks & authum_logger_sink_console) != 0u && !authum_null_eq(self->host) &&
-        !authum_null_eq(authum_host_engine(self->host)))
-    {
-        if (!authum_null_eq(self->tag) && self->tag[0] != '\0')
-        {
-            snprintf(console_line, sizeof console_line, "[%s] %s\n", self->tag, buf);
-        }
-        else
-        {
-            snprintf(console_line, sizeof console_line, "%s\n", buf);
-        }
-        authum_host_server_print(self->host, console_line);
-    }
+    authum_logger_channel_write(authum_logger_get_channel(self), level, buf);
 }
 
 void
@@ -263,17 +174,14 @@ authum_logger_hex_dump(authum_logger_t *self, const authum_char_t *label, authum
     authum_char_t line[128];
     authum_usize_t i;
 
-    if (authum_null_eq(self) || authum_null_eq(label))
-    {
-        return;
-    }
-    if (authum_null_eq(data) && len != 0u)
+    if (authum_null_eq(label) || (authum_null_eq(data) && len != 0u) ||
+        !authum_logger_is_enabled(self, authum_logger_level_debug))
     {
         return;
     }
 
     p = (const authum_byte_t *)data;
-    authum_logger_info(self, "%s (%u bytes):", label, (unsigned)len);
+    authum_logger_debug(self, "%s (%u bytes):", label, (unsigned)len);
 
     for (i = 0u; i < len; i += 16u)
     {
@@ -283,6 +191,6 @@ authum_logger_hex_dump(authum_logger_t *self, const authum_char_t *label, authum
         {
             pos += snprintf(line + pos, sizeof line - (authum_usize_t)pos, "%02x ", p[i + j]);
         }
-        authum_logger_info(self, "%s", line);
+        authum_logger_debug(self, "%s", line);
     }
 }

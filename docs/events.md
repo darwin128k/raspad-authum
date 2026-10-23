@@ -96,7 +96,8 @@ Fields: `index` (entity index 1…maxClients — AMXX `id`), `userid`, `name`,
 `reject_reason`.
 
 | `authum.client.command` | `ClientCommand` | Payload `authum_event_client_command_t`: `client`, `argc`, `argv[16][128]`, `args` (the line after the command). Set `block = authum_bool_true` and the game DLL never sees the command |
-| `authum.client.cvar_value` | `CvarValue2` | Payload `authum_event_client_cvar_t`: `client`, `request_id`, `cvar`, `value` — the answer to `pfnQueryClientCvarValue2` (via the `engine_funcs` escape hatch) |
+| `authum.client.kill` | `ClientKill` (the `kill` command) | Payload `authum_event_client_t`; set `allow = authum_bool_false` to refuse the suicide |
+| `authum.client.cvar_value` | `CvarValue2` | Payload `authum_event_client_cvar_t`: `client`, `request_id`, `cvar`, `value` — the answer to `authum_host_query_cvar(host, index, "cvar", request_id)` |
 
 Map and frame events, payload `authum_event_server_t` (`<authum/event/server.h>`):
 `map`, `max_clients`, `edict_count` (activate), `game_time`, `frame_time`,
@@ -106,7 +107,51 @@ Map and frame events, payload `authum_event_server_t` (`<authum/event/server.h>`
 |-------|------|-------|
 | `authum.server.activate` | after the game DLL's `ServerActivate` | The map is spawned; a good place to reset per-map state |
 | `authum.server.deactivate` | `ServerDeactivate` | Map change or shutdown |
-| `authum.server.frame` | `StartFrame` | Every tick — keep handlers short |
+| `authum.server.frame` | `StartFrame` | Every tick — keep handlers short (for "every N seconds" use `<authum/timer.h>`) |
+| `authum.server.precache` | worldspawn's `Spawn` | The map is loading: the only moment `authum_host_precache_model` / `_sound` / `_generic` work (0 otherwise) |
+| `authum.server.shutdown` | `GameShutdown` | The server is quitting |
+
+The HLDS log, payload `authum_event_server_log_t` (`text`, `game_time`,
+`unix_time`):
+
+| Event | When | Notes |
+|-------|------|-------|
+| `authum.server.log` | a line the game writes to the log (`log on`) | The lines stats are made of: `"Vega<2><STEAM_0:1:1><CT>" killed "Gordon<3><…><TERRORIST>" with "ak47"`, `World triggered "Round_Start"`. Read-only; Authum's own lines are not reported |
+
+### Game messages
+
+`authum.message.<Name>` — one event per user message the game sends:
+`authum.message.DeathMsg`, `authum.message.SayText`, `authum.message.TextMsg`,
+… Payload `authum_event_message_t` (`<authum/event/message.h>`): `name`,
+`msg_id`, `dest`, `index` (the receiver for one-player messages), `argc` and
+the arguments, read with `authum_event_message_get_i32` / `_get_float` /
+`_get_string` (index from 0, as the game writes them).
+
+A handler may change arguments (`authum_event_message_set_*`) or set
+`block = authum_bool_true`: nobody receives the message.
+
+```c
+/* DeathMsg: killer, victim, headshot, weapon */
+authum_event_result_t
+mymod_on_death(const authum_char_t *name, authum_ptr payload, authum_ptr user)
+{
+    const authum_event_message_t *ev = payload;
+    if (ev->size < sizeof *ev)
+        return authum_event_result_continue;
+    int killer = authum_event_message_get_i32(ev, 0);
+    int victim = authum_event_message_get_i32(ev, 1);
+    const authum_char_t *weapon = authum_event_message_get_string(ev, 3);
+    /* … */
+    return authum_event_result_continue;
+}
+
+authum_host_subscribe(host, AUTHUM_EVENT_MESSAGE_PREFIX "DeathMsg", mymod_on_death, authum_null);
+```
+
+Only messages someone subscribed to are held back, so the rest cost nothing.
+A held message is sent again after the handlers ran: other Metamod plugins
+that hook messages see it on both passes. Messages a handler sends itself are
+not reported again, so a `SayText` handler can send `SayText`.
 
 A ban module, for example:
 

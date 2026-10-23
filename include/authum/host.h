@@ -13,12 +13,14 @@
 #ifndef AUTHUM_HOST_H
 #define AUTHUM_HOST_H
 
+#include <authum/abi.h>
 #include <authum/char.h>
 #include <authum/commands.h>
 #include <authum/crypto.h>
 #include <authum/engine.h>
 #include <authum/env.h>
 #include <authum/events.h>
+#include <authum/logger/ops.h>
 #include <authum/null.h>
 #include <authum/ptr.h>
 #include <authum/sandbox.h>
@@ -29,12 +31,17 @@ extern "C"
 {
 #endif
 
-    typedef void (*authum_host_log_fn)(int is_error, const authum_char_t *line);
     typedef authum_ptr (*authum_host_get_ptr_fn)(void);
 
     typedef struct authum_host
     {
-        authum_host_log_fn log;
+        /** sizeof this table as built by the host — see <authum/abi.h>. */
+        authum_usize_t size;
+        /**
+         * This module's log channel: the host files each line under
+         * `modules/<module>/logs/` per `authum.cfg`. Use <authum/logger.h>.
+         */
+        const authum_logger_channel_t *logger;
         /**
          * Escape hatch: `enginefuncs_t *` / `globalvars_t *` (cast in the module).
          * Prefer ::authum_host_engine for the common subset — no HLSDK required.
@@ -46,10 +53,6 @@ extern "C"
          * Non-null on current hosts; individual fields may be null if unknown.
          */
         const authum_env_t *env;
-        /**
-         * @deprecated Prefer ::authum_host_env_module_cstr.
-         */
-        const authum_char_t *module_dir;
         /**
          * Crypto ops (Rijndael + SHA subset from lh). Non-null on current hosts;
          * check before use if you support older `authum_mm`.
@@ -70,8 +73,8 @@ extern "C"
 
     /* --- getters (modules: only these) --------------------------------------- */
 
-    authum_host_log_fn
-    authum_host_get_log(const authum_host_t *host);
+    const authum_logger_channel_t *
+    authum_host_logger(const authum_host_t *host);
 
     authum_host_get_ptr_fn
     authum_host_engine_funcs(const authum_host_t *host);
@@ -88,9 +91,6 @@ extern "C"
     const authum_engine_t *
     authum_host_engine(const authum_host_t *host);
 
-    const authum_char_t *
-    authum_host_module_dir(const authum_host_t *host);
-
     const authum_sandbox_t *
     authum_host_sandbox(const authum_host_t *host);
 
@@ -101,18 +101,37 @@ extern "C"
     authum_host_commands(const authum_host_t *host);
 
     const authum_path_t *
-    authum_host_env_module(const authum_host_t *host);
-
-    const authum_path_t *
     authum_host_env_game(const authum_host_t *host);
 
-    const authum_char_t *
-    authum_host_env_module_cstr(const authum_host_t *host);
+    /** `modules/<module>`: this module's folder. */
+    const authum_path_t *
+    authum_host_env_module(const authum_host_t *host);
+
+    /** `modules/<module>/configs`. */
+    const authum_path_t *
+    authum_host_env_module_config(const authum_host_t *host);
+
+    /** `modules/<module>/lang`: translations. */
+    const authum_path_t *
+    authum_host_env_module_lang(const authum_host_t *host);
+
+    /** `modules/<module>/data`: what the module writes. */
+    const authum_path_t *
+    authum_host_env_module_data(const authum_host_t *host);
+
+    /** `modules/<module>/configs/<leaf>` — see ::authum_env_config_path. True when it exists. */
+    authum_bool_t
+    authum_host_config_path(const authum_host_t *host, const authum_char_t *leaf,
+                            authum_path_t *out);
+
+    /** `modules/<module>/data/<leaf>`, folder created — see ::authum_env_data_path. */
+    authum_bool_t
+    authum_host_data_path(const authum_host_t *host, const authum_char_t *leaf, authum_path_t *out);
 
     /* --- setters (module-owned copies, e.g. clear on stop) ------------------- */
 
     void
-    authum_host_set_log(authum_host_t *host, authum_host_log_fn log);
+    authum_host_set_logger(authum_host_t *host, const authum_logger_channel_t *logger);
 
     void
     authum_host_set_engine_funcs(authum_host_t *host, authum_host_get_ptr_fn fn);
@@ -122,9 +141,6 @@ extern "C"
 
     void
     authum_host_set_env(authum_host_t *host, const authum_env_t *env);
-
-    void
-    authum_host_set_module_dir(authum_host_t *host, const authum_char_t *module_dir);
 
     void
     authum_host_set_crypto(authum_host_t *host, const authum_crypto_t *crypto);
@@ -145,6 +161,14 @@ extern "C"
     void
     authum_host_clear(authum_host_t *host);
 
+    /**
+     * Keep the host passed to `start`: copies what both sides know (the
+     * smaller `size`), zeroes the rest. Use it instead of `*dst = *src` — a
+     * module built against newer headers would read past an older host's table.
+     */
+    void
+    authum_host_copy(authum_host_t *dst, const authum_host_t *src);
+
     /* --- engine ops via host (no `host->engine` at call sites) ---------------- */
 
     void
@@ -160,6 +184,176 @@ extern "C"
     /** `kick #userid "reason"` (reason sanitized; empty → plain kick). */
     void
     authum_host_kick(const authum_host_t *host, authum_i32_t userid, const authum_char_t *reason);
+
+    /* Same as the `authum_engine_*` of the same name on ::authum_host_engine. */
+
+    authum_i32_t
+    authum_host_max_clients(const authum_host_t *host);
+
+    authum_float_t
+    authum_host_game_time(const authum_host_t *host);
+
+    void
+    authum_host_get_map_name(const authum_host_t *host, authum_char_t *buf,
+                             authum_usize_t buf_size);
+
+    authum_bool_t
+    authum_host_cvar_get(const authum_host_t *host, const authum_char_t *name, authum_char_t *buf,
+                         authum_usize_t buf_size);
+
+    authum_bool_t
+    authum_host_cvar_set(const authum_host_t *host, const authum_char_t *name,
+                         const authum_char_t *value);
+
+    authum_bool_t
+    authum_host_client_is_connected(const authum_host_t *host, authum_i32_t index);
+
+    authum_i32_t
+    authum_host_client_userid(const authum_host_t *host, authum_i32_t index);
+
+    authum_i32_t
+    authum_host_client_index_by_userid(const authum_host_t *host, authum_i32_t userid);
+
+    authum_bool_t
+    authum_host_client_get_name(const authum_host_t *host, authum_i32_t index, authum_char_t *buf,
+                                authum_usize_t buf_size);
+
+    authum_bool_t
+    authum_host_client_get_auth_id(const authum_host_t *host, authum_i32_t index,
+                                   authum_char_t *buf, authum_usize_t buf_size);
+
+    authum_bool_t
+    authum_host_client_get_address(const authum_host_t *host, authum_i32_t index,
+                                   authum_char_t *buf, authum_usize_t buf_size);
+
+    authum_bool_t
+    authum_host_client_get_info(const authum_host_t *host, authum_i32_t index,
+                                const authum_char_t *key, authum_char_t *buf,
+                                authum_usize_t buf_size);
+
+    authum_bool_t
+    authum_host_client_print(const authum_host_t *host, authum_i32_t index, authum_i32_t kind,
+                             const authum_char_t *text);
+
+    authum_bool_t
+    authum_host_client_command(const authum_host_t *host, authum_i32_t index,
+                               const authum_char_t *cmd);
+
+    authum_bool_t
+    authum_host_client_get_stats(const authum_host_t *host, authum_i32_t index, authum_i32_t *ping,
+                                 authum_i32_t *loss);
+
+    authum_bool_t
+    authum_host_client_set_info(const authum_host_t *host, authum_i32_t index,
+                                const authum_char_t *key, const authum_char_t *value);
+
+    authum_bool_t
+    authum_host_client_chat(const authum_host_t *host, authum_i32_t index, authum_i32_t sender,
+                            const authum_char_t *text);
+
+    authum_bool_t
+    authum_host_cvar_register(const authum_host_t *host, const authum_char_t *name,
+                              const authum_char_t *value, authum_i32_t flags);
+
+    authum_i32_t
+    authum_host_cvar_get_i32(const authum_host_t *host, const authum_char_t *name,
+                             authum_i32_t fallback);
+
+    authum_float_t
+    authum_host_cvar_get_float(const authum_host_t *host, const authum_char_t *name,
+                               authum_float_t fallback);
+
+    authum_i32_t
+    authum_host_message_id(const authum_host_t *host, const authum_char_t *name);
+
+    authum_bool_t
+    authum_host_message_begin(const authum_host_t *host, authum_i32_t dest, authum_i32_t msg_id,
+                              authum_i32_t index);
+
+    void
+    authum_host_message_write_byte(const authum_host_t *host, authum_i32_t value);
+
+    void
+    authum_host_message_write_char(const authum_host_t *host, authum_i32_t value);
+
+    void
+    authum_host_message_write_short(const authum_host_t *host, authum_i32_t value);
+
+    void
+    authum_host_message_write_long(const authum_host_t *host, authum_i32_t value);
+
+    void
+    authum_host_message_write_entity(const authum_host_t *host, authum_i32_t index);
+
+    void
+    authum_host_message_write_angle(const authum_host_t *host, authum_float_t value);
+
+    void
+    authum_host_message_write_coord(const authum_host_t *host, authum_float_t value);
+
+    void
+    authum_host_message_write_string(const authum_host_t *host, const authum_char_t *text);
+
+    void
+    authum_host_message_end(const authum_host_t *host);
+
+    authum_i32_t
+    authum_host_precache_model(const authum_host_t *host, const authum_char_t *path);
+
+    authum_i32_t
+    authum_host_precache_sound(const authum_host_t *host, const authum_char_t *path);
+
+    authum_i32_t
+    authum_host_precache_generic(const authum_host_t *host, const authum_char_t *path);
+
+    authum_i32_t
+    authum_host_entity_max(const authum_host_t *host);
+
+    authum_bool_t
+    authum_host_entity_is_valid(const authum_host_t *host, authum_i32_t index);
+
+    authum_bool_t
+    authum_host_entity_get_classname(const authum_host_t *host, authum_i32_t index,
+                                     authum_char_t *buf, authum_usize_t buf_size);
+
+    authum_i32_t
+    authum_host_entity_find_by_classname(const authum_host_t *host, authum_i32_t start,
+                                         const authum_char_t *classname);
+
+    authum_bool_t
+    authum_host_entity_get_float(const authum_host_t *host, authum_i32_t index, authum_i32_t field,
+                                 authum_float_t *out);
+
+    authum_bool_t
+    authum_host_entity_set_float(const authum_host_t *host, authum_i32_t index, authum_i32_t field,
+                                 authum_float_t value);
+
+    authum_bool_t
+    authum_host_entity_get_i32(const authum_host_t *host, authum_i32_t index, authum_i32_t field,
+                               authum_i32_t *out);
+
+    authum_bool_t
+    authum_host_entity_set_i32(const authum_host_t *host, authum_i32_t index, authum_i32_t field,
+                               authum_i32_t value);
+
+    authum_bool_t
+    authum_host_entity_get_vector(const authum_host_t *host, authum_i32_t index, authum_i32_t field,
+                                  authum_float_t *out);
+
+    authum_bool_t
+    authum_host_entity_set_vector(const authum_host_t *host, authum_i32_t index, authum_i32_t field,
+                                  const authum_float_t *value);
+
+    authum_bool_t
+    authum_host_client_is_alive(const authum_host_t *host, authum_i32_t index);
+
+    authum_bool_t
+    authum_host_client_is_bot(const authum_host_t *host, authum_i32_t index);
+
+    /** Ask a client for a cvar; see ::authum_engine_query_cvar. */
+    authum_bool_t
+    authum_host_query_cvar(const authum_host_t *host, authum_i32_t index, const authum_char_t *cvar,
+                           authum_i32_t request_id);
 
     void
     authum_host_log_line(const authum_host_t *host, int is_error, const authum_char_t *line);

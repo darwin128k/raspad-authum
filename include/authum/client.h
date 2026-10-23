@@ -20,6 +20,7 @@
 #include <authum/detour.h>
 #include <authum/env.h>
 #include <authum/event/client.h>
+#include <authum/event/message.h>
 #include <authum/event/server.h>
 #include <authum/events.h>
 #include <authum/export.h>
@@ -36,6 +37,7 @@
 #include <authum/sandbox.h>
 #include <authum/size.h>
 #include <authum/sql.h>
+#include <authum/timer.h>
 #include <authum/symbol.h>
 #include <authum/version.h>
 

@@ -73,20 +73,20 @@ Wrong:
 
 struct mymod_config {
     authum_bool_t enable_foo;
-    authum_u32_t  logging_sinks;
+    authum_u32_t  max_bans;
     authum_char_t greeting[64];
 };
 typedef struct mymod_config mymod_config_t;
 
 mymod_config_t g_mymod_config = {
     .enable_foo = authum_bool_true,
-    .logging_sinks = 4u, /* authum.log (host); 2 = private file, 6 = both */
+    .max_bans = 1000u,
     .greeting = "hello",
 };
 
 static const authum_cfg_item_t g_mymod_config_items[] = {
     { "enable_foo", authum_cfg_kind_bool, &g_mymod_config.enable_foo, 0 },
-    { "logging_mode", authum_cfg_kind_u32, &g_mymod_config.logging_sinks, 0 },
+    { "max_bans", authum_cfg_kind_u32, &g_mymod_config.max_bans, 0 },
     { "greeting", authum_cfg_kind_cstr, g_mymod_config.greeting,
       sizeof g_mymod_config.greeting },
 };
@@ -97,9 +97,8 @@ mymod_config_load(authum_host_t *host)
     authum_path_t path;
     authum_cfg_t cfg;
 
-    authum_path_clear(&path);
-    if (!authum_path_set(&path, authum_host_env_module(host)) ||
-        !authum_path_join(&path, "mymod.cfg") ||
+    /* addons/authum/modules/mymod/configs/mymod.cfg */
+    if (!authum_host_config_path(host, "mymod.cfg", &path) ||
         !authum_cfg_open(&cfg, &path)) {
         /* defaults already on g_mymod_config */
         return;
@@ -209,10 +208,10 @@ lookup — copy if you need them longer.
 Prefer host-filled roots, not ad-hoc `char *` or `getcwd`:
 
 ```c
-const authum_path_t *mod = authum_host_env_module(host);
 authum_path_t path;
-authum_path_set(&path, mod);
-authum_path_join(&path, "mymod.cfg");
+authum_host_config_path(host, "mymod.cfg", &path);      /* modules/mymod/configs/mymod.cfg */
+authum_host_config_path(host, "whitelist.ini", &path);  /* modules/mymod/configs/whitelist.ini */
+authum_host_data_path(host, "mymod.db", &path);         /* modules/mymod/data/mymod.db */
 ```
 
 Never read `host->env` / `host->engine` fields directly — only

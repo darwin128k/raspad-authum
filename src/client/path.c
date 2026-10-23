@@ -1,5 +1,7 @@
 #include <authum/path.h>
 
+#include "os/os.h"
+
 void
 authum_path_clear(authum_path_t *self)
 {
@@ -216,4 +218,11 @@ authum_path_parent(authum_path_t *self, const authum_path_t *path)
     self->data[cut] = '\0';
     self->size = cut;
     return authum_bool_true;
+}
+
+authum_bool_t
+authum_path_ensure_dir(const authum_path_t *self)
+{
+    return authum_path_is_empty(self) ? authum_bool_false
+                                      : authum_os_dir_ensure(authum_path_as_cstr(self));
 }

@@ -49,7 +49,11 @@ extern "C"
     authum_bool_t
     authum_sandbox_is_valid(const authum_sandbox_t *self);
 
-    /** Zeroed block of @p size bytes owned by the sandbox root. Null on failure. */
+    /**
+     * Zeroed block of @p size bytes owned by the sandbox root. Null when
+     * @p size is half the address space or more. Running out of memory is
+     * not reported: the host ends the server process.
+     */
     authum_ptr
     authum_sandbox_alloc(const authum_sandbox_t *self, authum_usize_t size);
 
@@ -61,7 +65,11 @@ extern "C"
     authum_sandbox_alloc_under(const authum_sandbox_t *self, authum_ptr parent,
                                authum_usize_t size);
 
-    /** Resize @p ptr (null @p ptr → ::authum_sandbox_alloc). Tail is not zeroed. */
+    /**
+     * Resize @p ptr (null @p ptr → ::authum_sandbox_alloc). Tail is not zeroed.
+     * Null (and @p ptr left as it was) for the same sizes as
+     * ::authum_sandbox_alloc; the block may move, its children follow it.
+     */
     authum_ptr
     authum_sandbox_realloc(const authum_sandbox_t *self, authum_ptr ptr, authum_usize_t size);
 

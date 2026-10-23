@@ -9,6 +9,14 @@ Headers: `<authum/sandbox.h>`, `<authum/array.h>`. Implementation on the host
 side: lh's ownership tree (`lh_memory_tree`, talloc model) — freeing a block
 frees everything it owns, destructors run first.
 
+What it is not: isolation. The module runs in the server process like any
+Metamod plugin; a module that crashes takes the server down. The sandbox
+guarantees one thing — no memory of the module survives its unload.
+
+Cost: each block carries a 32-byte header, and an allocate + free pair costs
+about twice a bare `malloc` + `free` (some 40–55 ns more on small blocks,
+i386, glibc). Nothing else: engine calls do not go through the sandbox.
+
 ---
 
 ## 1. Allocate from the module sandbox
@@ -30,6 +38,10 @@ mymod_conn_t *conn = authum_sandbox_alloc_under(sb, state, sizeof *conn);
 
 Freeing early is fine and often right (a disconnected client's data). Not
 freeing is also fine — unload takes care of it.
+
+A size of half the address space or more gets null back. Running out of memory
+is not reported: the host ends the server process, so there is no null to
+check after an ordinary allocation.
 
 ---
 

@@ -24,8 +24,37 @@ if (AUTHUM_FORCE_32BIT)
                     "HLDS plugins must be 32-bit. Use a Win32 generator (e.g. -A Win32).")
         endif ()
     else ()
+        # A 64-bit-only toolchain (MSYS2 mingw64, Linux without multilib) takes
+        # -m32 when compiling and only fails at the first link. Find out now.
+        include(CheckCSourceCompiles)
+        set(CMAKE_REQUIRED_FLAGS "-m32")
+        check_c_source_compiles("int main(void) { return sizeof(void *) == 4 ? 0 : 1; }"
+                AUTHUM_CAN_LINK_M32)
+        unset(CMAKE_REQUIRED_FLAGS)
+        if (NOT AUTHUM_CAN_LINK_M32)
+            if (MINGW)
+                set(_authum_m32_hint
+                        "This MinGW (${CMAKE_C_COMPILER}) has no 32-bit libraries. Use the "
+                        "32-bit one: cmake --preset windows-mingw32 (MSYS2 C:/msys64/mingw32, "
+                        "pacman -S mingw-w64-i686-gcc mingw-w64-i686-ninja).")
+            else ()
+                set(_authum_m32_hint
+                        "Install 32-bit libraries, e.g. on Debian/Ubuntu: "
+                        "apt install gcc-multilib g++-multilib.")
+            endif ()
+            message(FATAL_ERROR
+                    "HLDS plugins must be 32-bit, but ${CMAKE_C_COMPILER} cannot link with -m32.\n"
+                    ${_authum_m32_hint}
+                    "\nDelete the build directory before configuring again.")
+        endif ()
         add_compile_options(-m32 -march=i686 -msse2)
         add_link_options(-m32)
+        # 64-bit file offsets and inode numbers in Authum's own code (stat,
+        # lseek): a 32-bit build otherwise gets EOVERFLOW on XFS / btrfs /
+        # network mounts. lh sets the same for itself.
+        if (NOT WIN32)
+            add_compile_definitions(_FILE_OFFSET_BITS=64)
+        endif ()
     endif ()
 endif ()
 
@@ -169,7 +198,7 @@ endif ()
 # are separate projects that link authum_client and drop into modules/ at runtime.
 option(AUTHUM_BUILD_EXAMPLES "Build example Authum modules under examples/" ON)
 if (AUTHUM_BUILD_EXAMPLES)
-    add_subdirectory(examples/hello)
+    add_subdirectory(examples)
 endif ()
 
 option(AUTHUM_BUILD_TESTS "Build Authum tests (ctest)" ON)

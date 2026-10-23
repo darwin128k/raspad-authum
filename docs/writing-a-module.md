@@ -4,7 +4,8 @@ An Authum module is a shared library (`.so` / `.dll`) that the host
 `authum_mm` loads. It is **not** a Metamod plugin. Metamod only loads
 Authum once; everything else hangs under Authum.
 
-See [architecture.md](architecture.md). Sample: [`examples/hello`](../examples/hello/).
+See [architecture.md](architecture.md). Templates to copy: [`examples/`](../examples/) — start from
+[`skeleton`](../examples/skeleton/), take pieces from the topic examples.
 
 ### Language requirement
 
@@ -16,7 +17,7 @@ Do not ship module code as C++ (no classes, namespaces, templates, references,
 `nullptr`, C++ headers). The host Metamod plugin (`authum_mm`) may remain C++ /
 mixed; only the loadable child modules are constrained to C + snake_case.
 Config *file* keys use snake_case matching C fields (e.g. `enable_revemu`,
-`logging_mode`) — not PascalCase.
+`max_bans`) — not PascalCase.
 
 **Naming / enums / types:** full rules in [module-style.md](module-style.md).
 In short — type-as-namespace like lh (`qproto_log_mode_console`, not
@@ -24,7 +25,7 @@ In short — type-as-namespace like lh (`qproto_log_mode_console`, not
 
 ---
 
-## 1. What you export (ABI 0.3)
+## 1. What you export (ABI 1.0)
 
 Include **`#include <authum/client.h>`** only. Do **not** include lh or link
 `liblh` unless you opt into the escape hatch.
@@ -34,8 +35,11 @@ Include **`#include <authum/client.h>`** only. Do **not** include lh or link
 | `authum_module_info` | `authum_module_info_t` | Name, SemVer, ABI, … |
 | `authum_module_api` | `authum_module_api_t` | `.start(host)` / `.stop()` |
 
-ABI: `AUTHUM_MODULE_ABI` = `0.3.0` (0.3 added the sandbox and the event bus to
-the host facade; 0.2 modules must be rebuilt).
+ABI: `AUTHUM_MODULE_ABI` = `1.0.0`. Every table the host passes starts with
+`size` and only grows at the end, so a 1.x module loads on any 1.x host: a
+function the host is too old for answers "not available" (false / 0 / empty
+string) instead of crashing. Only a major bump means rebuilding. See
+`<authum/abi.h>`.
 
 ```c
 #include <authum/client.h>
@@ -57,7 +61,7 @@ example_start(authum_host_t *host)
 {
     if (authum_null_eq(host))
         return authum_bool_false;
-    g_example_host = *host;
+    authum_host_copy(&g_example_host, host);
     authum_host_log_line(&g_example_host, 0, "[example] start");
     return authum_bool_true;
 }
@@ -81,38 +85,65 @@ AUTHUM_MODULE_EXPORT const authum_module_api_t authum_module_api = {
 ```
 cstrike/addons/authum/
   authum_mm.so
-  modules.list                 # one path per line, e.g. example
-  modules/example/
+  configs/modules.list         # one name per line: example
+  modules/example/             # the module's sandbox
     example.so
-    example.cfg                # optional
+    configs/example.cfg        # optional, the admin's
+    lang/                      # translations
+    data/                      # what the module writes (created at load)
+    logs/                      # the module's log
 ```
 
-`modules.list`: see [modules.md](modules.md). Console: `authum`. Log:
-`addons/authum/authum.log`.
+`modules.list`: see [modules.md](modules.md). Console: `authum`. Logs:
+`addons/authum/modules/<module>/logs/YYYY-MM-DD.log`, levels in
+`addons/authum/configs/authum.cfg` ([logging.md](logging.md)).
+
+Paths: `authum_host_config_path(host, "example.cfg", &path)` →
+`modules/example/configs/example.cfg`; `authum_host_data_path(host,
+"example.db", &path)` → `modules/example/data/example.db` (folder created);
+translations in `authum_host_env_module_lang(host)`.
 
 ---
 
 ## 3. Host facade
 
 Children do **not** get `GiveFnptrsToDll`. The host passes `authum_host_t`
-into `start` (valid until `stop`):
+into `start` (valid until `stop`). Keep it with `authum_host_copy(&g_host, host)`
+— never `g_host = *host`, which reads past the table of an older host. Prefer
+these accessors to the `engine_funcs` escape hatch: what goes through them
+survives Authum's internal changes.
 
 | Accessor | Purpose |
 |----------|---------|
-| `authum_host_log_line` / logger sinks | → `authum.log` |
+| `authum_logger_*` / `authum_host_log_line` | the module's log — [logging.md](logging.md) |
 | `authum_host_engine` / game dir / print / command | engine facade (no HLSDK) |
 | `authum_host_engine_funcs` / `authum_host_globals` | escape hatch → HLSDK types |
-| `authum_host_env` / `authum_host_env_module` / `_game` / … | `authum_path_t` roots |
-| `authum_host_env_module_cstr` | deprecated C string of module dir |
+| `authum_host_env` / `authum_host_env_module` / `_module_config` / `_module_lang` / `_module_data` / `_game` / … | `authum_path_t` roots |
+| `authum_host_config_path` / `_data_path` | a module's files in its sandbox |
 | `authum_host_crypto` | Rijndael + SHA (`<authum/crypto.h>`) |
 | `authum_host_sandbox` | Module memory freed at unload — [sandbox.md](sandbox.md) |
 | `authum_host_events` / `authum_host_subscribe` / `authum_host_publish` | Event bus — [events.md](events.md) |
 | `authum_host_kick` | `kick #userid "reason"` (sanitized) |
+| `authum_host_max_clients` / `_game_time` / `_get_map_name` | current map |
+| `authum_host_cvar_get` / `_cvar_set` | server cvars |
+| `authum_host_client_is_connected` / `_userid` / `_index_by_userid` | player slots (entity index 1 … maxClients, as in `authum.client.*`) |
+| `authum_host_client_get_name` / `_auth_id` / `_address` / `_info` | who the player is (`_info` reads `setinfo` keys) |
+| `authum_host_client_print` | text to one player or everyone (`authum_engine_print_console` / `_center` / `_chat`) |
+| `authum_host_client_command` | run a command in the player's console |
+| `authum_host_query_cvar` | Ask a client for a cvar; the answer is `authum.client.cvar_value` — [events.md](events.md) |
+| `authum_host_client_chat` | colored chat line (`SayText`: `\x01` default, `\x04` green, `\x03` team color) |
+| `authum_host_client_get_stats` / `_set_info` | ping and loss; set a `setinfo` key |
+| `authum_host_client_is_alive` / `_is_bot` | state of a player slot |
+| `authum_host_cvar_register` / `_cvar_get_i32` / `_cvar_get_float` | the module's own server cvars (`mymod_enabled 1` in server.cfg) |
+| `authum_host_message_id` / `_message_begin` / `_write_*` / `_end` | send any user message — `<authum/engine/message.h>` |
+| `authum_host_precache_model` / `_sound` / `_generic` | from an `authum.server.precache` handler only |
+| `authum_host_entity_*` | entity fields: health, frags, flags, origin, … — `<authum/engine/entity.h>` |
+| `authum_timer_add` / `_remove` | "in 5 s", "every 30 s" — `<authum/timer.h>` |
 | `authum_host_command_add[_all]` | `authum <module> <name>` console / RCON commands — [commands.md](commands.md) |
 
-Paths in `env` are absolute when the host can resolve them from the module image
-(current volume, native separators). Prefer `authum_host_env_module(host)` for
-cfg/logs; `authum_path_join` appends a leaf.
+Paths in `env` are absolute (current volume, native separators). Configs:
+`authum_host_config_path`; data the module writes: `authum_host_data_path`;
+translations: `authum_host_env_module_lang`. `authum_path_join` appends a leaf.
 
 **Config:** defaults on `g_mod_config = { … }`, then
 `authum_cfg_apply_items` from an `authum_cfg_item_t[]`. Keys that need a custom
@@ -156,14 +187,12 @@ private utilities. Not the host runtime.
 
 ## 4. Logging
 
-Prefer **`authum_logger_t`** (`<authum/logger.h>`): lh-like levels + sink
-bricks (`host` / `console` / `file`). Do not invent a parallel
-`mymod_log()` unless you truly need a custom design — then write it from
-scratch or reuse the same bricks (`authum_host_log_line`,
-`authum_engine_server_print`, `FILE *`).
-
-Never assume a process-wide `lh_runtime_logger()` is `authum.log`.
-Policy: [logging.md](logging.md).
+Use **`authum_logger_t`** (`<authum/logger.h>`): `authum_logger_init(&log,
+&g_host)` in `start`, then `authum_logger_info` / `_warning` / `_debug` / ….
+The module only picks the level; Authum writes `modules/<module>/logs/YYYY-MM-DD.log`
+and copies warnings and errors to its own log, as `authum.cfg` says. No
+logging keys in the module's cfg, no files of its own, no console prints for
+diagnostics. Details: [logging.md](logging.md).
 
 ---
 
@@ -185,9 +214,9 @@ Policy: [logging.md](logging.md).
 - [ ] Strict snake_case; enums `{type}_leaf` ([module-style.md](module-style.md))
 - [ ] Authum foundation types on Authum / public ABI
 - [ ] `#include <authum/client.h>` (no lh in a pure client)
-- [ ] `authum_module_info.abi` = `AUTHUM_MODULE_ABI` (`0.3.0`), non-null `name`
+- [ ] `authum_module_info.abi` = `AUTHUM_MODULE_ABI` (`1.0.0`); host kept with `authum_host_copy`, non-null `name`
 - [ ] `authum_module_api` exported; `start` returns `authum_bool_false` only on hard failure
-- [ ] Listed in `modules.list` / under `modules/`
+- [ ] Listed in `configs/modules.list`; everything in `modules/<name>/`: `<name>.so`, `configs/`, `lang/`, `data/` (via `authum_host_config_path` / `_data_path`)
 - [ ] Folder `foo` → `foo.so` / `foo.dll`
 - [ ] Not a Metamod `plugins.ini` entry
 - [ ] Logs via host facade

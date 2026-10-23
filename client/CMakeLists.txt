@@ -37,6 +37,13 @@ endif ()
 file(GLOB_RECURSE AUTHUM_CLIENT_SOURCES CONFIGURE_DEPENDS
 	"${CMAKE_CURRENT_SOURCE_DIR}/../src/client/*.c"
 )
+# src/client/os/<platform>/ is the only place that knows the OS: build the
+# target's one and drop the other.
+if (WIN32)
+	list(FILTER AUTHUM_CLIENT_SOURCES EXCLUDE REGEX "/src/client/os/posix/")
+else ()
+	list(FILTER AUTHUM_CLIENT_SOURCES EXCLUDE REGEX "/src/client/os/win/")
+endif ()
 
 set(AUTHUM_MONOCYPHER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../lib/monocypher")
 if (NOT EXISTS "${AUTHUM_MONOCYPHER_DIR}/monocypher.c")
@@ -68,7 +75,10 @@ target_include_directories(authum_client
 
 target_link_libraries(authum_client PUBLIC authum_monocypher lh)
 # The MySQL client is loaded with dlopen/LoadLibrary — libdl on Unix.
-if (NOT WIN32)
+# iphlpapi lists the interface addresses for <authum/net.h> on Windows.
+if (WIN32)
+	target_link_libraries(authum_client PUBLIC iphlpapi)
+else ()
 	target_link_libraries(authum_client PUBLIC ${CMAKE_DL_LIBS})
 endif ()
 # lh is linked into every module: keep its symbols local to that module.
@@ -92,5 +102,9 @@ if (NOT MSVC)
 		target_link_options(authum_client PRIVATE -m32)
 		target_compile_options(authum_monocypher PRIVATE -m32 -march=i686 -msse2)
 		target_link_options(authum_monocypher PRIVATE -m32)
+		if (NOT WIN32)
+			# stat() / lseek() in a 32-bit build; lh sets the same for itself.
+			target_compile_definitions(authum_client PRIVATE _FILE_OFFSET_BITS=64)
+		endif ()
 	endif ()
 endif ()

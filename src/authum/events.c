@@ -165,6 +165,7 @@ authum_events_host_publish_as(authum_ptr owner, const authum_char_t *name, authu
 }
 
 const authum_events_ops_t authum_events_host_ops_table = {
+    .size = sizeof(authum_events_ops_t),
     .subscribe = authum_events_host_subscribe,
     .unsubscribe = authum_events_host_unsubscribe,
     .publish = authum_events_host_publish_as,
@@ -195,6 +196,25 @@ authum_events_host_drop_owner(authum_ptr owner)
         }
     }
     authum_events_sweep();
+}
+
+authum_bool_t
+authum_events_host_has(const authum_char_t *name)
+{
+    authum_events_sub_t *sub;
+
+    if (authum_null_eq(name))
+    {
+        return authum_bool_false;
+    }
+    for (sub = authum_events_head; !authum_null_eq(sub); sub = sub->next)
+    {
+        if (!sub->dead && strcmp(sub->name, name) == 0)
+        {
+            return authum_bool_true;
+        }
+    }
+    return authum_bool_false;
 }
 
 authum_usize_t

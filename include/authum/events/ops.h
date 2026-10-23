@@ -12,6 +12,7 @@
 
 #include <authum/bool.h>
 #include <authum/char.h>
+#include <authum/abi.h>
 #include <authum/event/handler.h>
 #include <authum/event/result.h>
 #include <authum/ptr.h>
@@ -23,6 +24,8 @@ extern "C"
 
     struct authum_events_ops
     {
+        /** sizeof this table as built by the host — see <authum/abi.h>. */
+        authum_usize_t size;
         authum_bool_t (*subscribe)(authum_ptr owner, const authum_char_t *name,
                                    authum_event_handler_fn fn, authum_ptr user);
         authum_bool_t (*unsubscribe)(authum_ptr owner, const authum_char_t *name,

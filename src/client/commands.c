@@ -5,7 +5,7 @@
 authum_bool_t
 authum_commands_add(const authum_commands_t *self, const authum_command_def_t *def)
 {
-    if (authum_null_eq(self) || authum_null_eq(self->ops) || self->ops->add == 0 ||
+    if (authum_null_eq(self) || authum_null_eq(self->ops) || !AUTHUM_ABI_HAS(self->ops, add) ||
         authum_null_eq(self->scope) || authum_null_eq(def))
     {
         return authum_bool_false;
@@ -36,7 +36,7 @@ authum_commands_add_all(const authum_commands_t *self, const authum_command_def_
 authum_bool_t
 authum_commands_remove(const authum_commands_t *self, const authum_char_t *name)
 {
-    if (authum_null_eq(self) || authum_null_eq(self->ops) || self->ops->remove == 0 ||
+    if (authum_null_eq(self) || authum_null_eq(self->ops) || !AUTHUM_ABI_HAS(self->ops, remove) ||
         authum_null_eq(self->scope) || authum_null_eq(name))
     {
         return authum_bool_false;

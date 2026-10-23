@@ -151,6 +151,7 @@ authum_commands_host_remove(authum_ptr owner, const authum_char_t *scope, const 
 }
 
 const authum_commands_ops_t authum_commands_host_ops_table = {
+    .size = sizeof(authum_commands_ops_t),
     .add = authum_commands_host_add,
     .remove = authum_commands_host_remove,
 };
