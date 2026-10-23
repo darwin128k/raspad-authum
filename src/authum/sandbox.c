@@ -9,8 +9,14 @@
 #include <lh/memory/tree.h>
 #include <lh/null.h>
 #include <lh/runtime/allocator.h>
+#include <lh/size/limits.h>
 
 #include <string.h>
+
+/* lh treats a failed allocation as fatal and ends the process. A size no heap
+ * could ever give (half the address space or more — a module's arithmetic gone
+ * wrong) must not take the server down: refuse it with null instead. */
+#define AUTHUM_SANDBOX_SIZE_MAX (LH_USIZE_T_MAX / 2u)
 
 lh_ptr
 authum_sandbox_heap_alloc(lh_self_ptr self, lh_usize_t size)
@@ -34,7 +40,7 @@ authum_sandbox_host_alloc(authum_ptr parent, authum_usize_t size)
 {
     authum_ptr ptr;
 
-    if (lh_null_eq(parent))
+    if (lh_null_eq(parent) || (lh_usize_t)size >= AUTHUM_SANDBOX_SIZE_MAX)
     {
         return lh_null;
     }
@@ -49,7 +55,7 @@ authum_sandbox_host_alloc(authum_ptr parent, authum_usize_t size)
 authum_ptr
 authum_sandbox_host_realloc(authum_ptr ptr, authum_usize_t size)
 {
-    if (lh_null_eq(ptr))
+    if (lh_null_eq(ptr) || (lh_usize_t)size >= AUTHUM_SANDBOX_SIZE_MAX)
     {
         return lh_null;
     }
