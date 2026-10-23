@@ -440,50 +440,40 @@ test_env_exists(const char *path)
 void
 test_env_paths(void)
 {
-    authum_path_t root, configs, data, module_config, module_data, out;
+    authum_path_t root, module, module_config, module_data, out;
     authum_env_t env;
 
     authum_path_set_cstr(&root, TEST_ENV_ROOT);
-    authum_path_join(&configs, &root, "configs");
-    authum_path_join(&module_config, &configs, "foo");
-    authum_path_join(&data, &root, "data");
-    authum_path_join(&module_data, &data, "foo");
-    CHECK(authum_path_ensure_dir(&root) && authum_path_ensure_dir(&configs) &&
+    authum_path_join(&module, &root, "foo");
+    authum_path_join(&module_config, &module, "configs");
+    authum_path_join(&module_data, &module, "data");
+    CHECK(authum_path_ensure_dir(&root) && authum_path_ensure_dir(&module) &&
           authum_path_ensure_dir(&module_config));
-    remove(TEST_ENV_ROOT "/configs/foo.cfg");
-    remove(TEST_ENV_ROOT "/configs/foo/extra.ini");
+    remove(TEST_ENV_ROOT "/foo/configs/foo.cfg");
 
     memset(&env, 0, sizeof env);
     env.size = sizeof env;
-    env.configs = &configs;
+    env.module = &module;
     env.module_config = &module_config;
-    env.data = &data;
     env.module_data = &module_data;
 
     /* configs/<leaf>: the path either way, true once the file is there. */
     CHECK(!authum_env_config_path(&env, "foo.cfg", &out));
-    CHECK_STR(authum_path_as_cstr(&out), TEST_ENV_ROOT "/configs/foo.cfg");
-    test_env_touch(TEST_ENV_ROOT "/configs/foo.cfg", "x\n");
+    CHECK_STR(authum_path_as_cstr(&out), TEST_ENV_ROOT "/foo/configs/foo.cfg");
+    test_env_touch(TEST_ENV_ROOT "/foo/configs/foo.cfg", "x\n");
     CHECK(authum_env_config_path(&env, "foo.cfg", &out));
 
-    /* configs/<module>/<leaf>: a module's other files. */
-    CHECK(!authum_env_module_config_path(&env, "extra.ini", &out));
-    CHECK_STR(authum_path_as_cstr(&out), TEST_ENV_ROOT "/configs/foo/extra.ini");
-    test_env_touch(TEST_ENV_ROOT "/configs/foo/extra.ini", "x\n");
-    CHECK(authum_env_module_config_path(&env, "extra.ini", &out));
-    CHECK(!authum_env_config_path(&env, "extra.ini", &out)); /* not in configs/ itself */
-
-    /* data/<module>/<leaf>: the folder is made, the file is the module's business. */
+    /* data/<leaf>: the folder is made, the file is the module's business. */
     CHECK(authum_env_data_path(&env, "foo.db", &out));
-    CHECK_STR(authum_path_as_cstr(&out), TEST_ENV_ROOT "/data/foo/foo.db");
-    test_env_touch(TEST_ENV_ROOT "/data/foo/foo.db", "db\n");
-    CHECK(test_env_exists(TEST_ENV_ROOT "/data/foo/foo.db"));
+    CHECK_STR(authum_path_as_cstr(&out), TEST_ENV_ROOT "/foo/data/foo.db");
+    test_env_touch(TEST_ENV_ROOT "/foo/data/foo.db", "db\n");
+    CHECK(test_env_exists(TEST_ENV_ROOT "/foo/data/foo.db"));
 
     /* Bad input and an older host's env (no size): no paths, no crash. */
     CHECK(!authum_env_config_path(&env, "", &out));
     CHECK(!authum_env_data_path(&env, authum_null, &out));
     env.size = 0u;
-    CHECK(authum_env_configs(&env) == authum_null);
+    CHECK(authum_env_module(&env) == authum_null);
     CHECK(!authum_env_config_path(&env, "foo.cfg", &out));
     CHECK(!authum_env_data_path(&env, "foo.db", &out));
     CHECK(!authum_env_config_path(authum_null, "foo.cfg", &out));

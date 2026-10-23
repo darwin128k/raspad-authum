@@ -47,27 +47,21 @@ authum_host_env_game(const authum_host_t *host)
 }
 
 const authum_path_t *
-authum_host_env_configs(const authum_host_t *host)
+authum_host_env_module(const authum_host_t *host)
 {
-    return authum_env_configs(authum_host_env(host));
-}
-
-const authum_path_t *
-authum_host_env_data(const authum_host_t *host)
-{
-    return authum_env_data(authum_host_env(host));
-}
-
-const authum_path_t *
-authum_host_env_lang(const authum_host_t *host)
-{
-    return authum_env_lang(authum_host_env(host));
+    return authum_env_module(authum_host_env(host));
 }
 
 const authum_path_t *
 authum_host_env_module_config(const authum_host_t *host)
 {
     return authum_env_module_config(authum_host_env(host));
+}
+
+const authum_path_t *
+authum_host_env_module_lang(const authum_host_t *host)
+{
+    return authum_env_module_lang(authum_host_env(host));
 }
 
 const authum_path_t *
@@ -80,13 +74,6 @@ authum_bool_t
 authum_host_config_path(const authum_host_t *host, const authum_char_t *leaf, authum_path_t *out)
 {
     return authum_env_config_path(authum_host_env(host), leaf, out);
-}
-
-authum_bool_t
-authum_host_module_config_path(const authum_host_t *host, const authum_char_t *leaf,
-                               authum_path_t *out)
-{
-    return authum_env_module_config_path(authum_host_env(host), leaf, out);
 }
 
 authum_bool_t

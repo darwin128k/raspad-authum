@@ -16,10 +16,10 @@ Headers: `<authum/path.h>`, `<authum/env.h>`, `<authum/host.h>`.
 | `authum_host_env_addons` | `…/addons` |
 | `authum_host_env_authum` | `…/addons/authum` |
 | `authum_host_env_modules` | `…/addons/authum/modules` |
-| `authum_host_env_configs` | `…/addons/authum/configs` — what the admin edits |
-| `authum_host_env_module_config` | `configs/<module>` — a module's extra config files |
-| `authum_host_env_data` / `_module_data` | `…/addons/authum/data`, `data/<module>` — what the module writes |
-| `authum_host_env_lang` | `data/lang` — translations |
+| `authum_host_env_module` | `…/modules/<module>` — the module's own folder |
+| `authum_host_env_module_config` | `…/modules/<module>/configs` — the admin's |
+| `authum_host_env_module_lang` | `…/modules/<module>/lang` — translations |
+| `authum_host_env_module_data` | `…/modules/<module>/data` — what the module writes |
 | `authum_host_env_models` / `_sprites` | Content trees when needed |
 
 Always via `authum_host_*` — never `host->env->…`.
@@ -48,6 +48,5 @@ authum_path_join(&path, authum_host_env_module_data(host), "cache.bin");
 ## With config / logging
 
 For files use `authum_host_config_path(host, "qproto.cfg", &path)`
-(`configs/qproto.cfg`), `authum_host_module_config_path(host, "whitelist.ini",
-&path)` (`configs/<module>/whitelist.ini`) and
-`authum_host_data_path(host, "bans.db", &path)` (`data/<module>/bans.db`). Full cfg workflow: [cfg.md](cfg.md). Logger sinks: [logging.md](logging.md).
+(`modules/qproto/configs/qproto.cfg`; `whitelist.ini` the same way) and
+`authum_host_data_path(host, "bans.db", &path)` (`modules/<module>/data/bans.db`). Full cfg workflow: [cfg.md](cfg.md). Logger sinks: [logging.md](logging.md).

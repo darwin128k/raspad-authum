@@ -2,9 +2,10 @@
  * @file host.h
  * @brief Host side of the log channels — implemented in `authum_mm` only.
  *
- * One registry of channels: the host's own (`authum`, owner null) and one per
- * loaded module. Each channel writes `<root>/logs/<name>/YYYY-MM-DD.log`
- * (a new file when the date changes). Levels come from `<root>/configs/authum.cfg`:
+ * One registry of channels: the host's own (`authum`, owner null), writing
+ * `<root>/logs/YYYY-MM-DD.log`, and one per loaded module, writing
+ * `modules/<module>/logs/YYYY-MM-DD.log` (a new file when the date changes). Levels come from
+ * `<root>/configs/authum.cfg`:
  *
  * ```
  * log_level = info          # what reaches the files
@@ -14,7 +15,7 @@
  * qproto.bans.log_level = info  # one journal of a module
  * ```
  *
- * A module may also open named journals: `logs/<module>/<name>/YYYY-MM-DD.log`.
+ * A module may also open named journals: `modules/<module>/logs/<name>/YYYY-MM-DD.log`.
  * The file is re-read on every map change (::authum_logs_reload).
  *
  * A module's warnings and worse are copied into the `authum` channel, tagged
@@ -59,9 +60,13 @@ extern "C"
     const authum_logger_ops_t *
     authum_logs_ops(void);
 
-    /** Start a channel for module @p owner named @p name (its `log_level` is read now). */
+    /**
+     * Start a channel for module @p owner named @p name (its `log_level` is read
+     * now), writing under `@p module_dir/logs` — or `modules/<name>/logs` when
+     * @p module_dir is null.
+     */
     authum_bool_t
-    authum_logs_open(authum_ptr owner, const authum_char_t *name);
+    authum_logs_open(authum_ptr owner, const authum_char_t *name, const authum_char_t *module_dir);
 
     /** End @p owner's channel (after the module's `stop`). */
     void

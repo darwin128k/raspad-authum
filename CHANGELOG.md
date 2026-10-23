@@ -22,19 +22,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   child that only exports lh's `authum_module_ops` (that table is now just
   how `authum_mm` itself binds to lh). `AUTHUM_TRUE` / `AUTHUM_FALSE` are
   gone: use `authum_bool_true` / `authum_bool_false`.
-- **AMX Mod X-style layout** in `addons/authum/`: `modules/<name>.so` (no
-  folder per module), `configs/` for everything the admin edits
-  (`authum.cfg`, `modules.list`, `<module>.cfg`, `configs/<module>/` for a
-  module's other files), `data/<module>/` for what a module writes,
-  `data/lang/` for translations. `authum_env_t` starts with `size` and gains
-  `configs`, `data`, `lang`, `module_config`, `module_data` (`module` and
-  `authum_host_t.module_dir` are gone); its roots come from `authum_mm`'s
-  directory. Files: `authum_host_config_path` (`configs/<file>`),
-  `authum_host_module_config_path` (`configs/<module>/<file>`),
-  `authum_host_data_path` (`data/<module>/<file>`, folder created).
-  `modules.list` and `authum.cfg` are read from `configs/` only; a
-  `modules.list` entry is `modules/<name>.so` only. The release zip ships
-  `configs/`.
+- **Every module is a sandbox**: `addons/authum/modules/<name>/` holds
+  `<name>.so`, `configs/` (the admin's), `lang/` (translations), `data/`
+  (what the module writes) and `logs/`. Install or remove a module by its
+  folder; an update replaces the image and `lang/`, never `configs/`,
+  `data/` or `logs/`. Authum keeps only its own: `configs/authum.cfg`,
+  `configs/modules.list`, `logs/`. `authum_env_t` starts with `size`;
+  `module` is the module's folder, with `module_config`, `module_lang`,
+  `module_data` (created at load); `authum_host_t.module_dir` is gone.
+  `authum_host_config_path` → `modules/<name>/configs/<file>`,
+  `authum_host_data_path` → `modules/<name>/data/<file>`. A
+  `modules.list` entry `qproto` loads `modules/qproto/qproto.so`; without
+  the list every module folder is loaded. The release zip ships `configs/`.
 - Everything authum_client asks of the OS (directories, page protection,
   library symbols, interface addresses) sits behind `src/client/os/os.h`, with
   one implementation in `os/posix/` and one in `os/win/`; CMake builds the
@@ -44,10 +43,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with `-m32`, instead of at the first link.
 
 - **Logging is decided by Authum, not by each module.** Every module writes
-  `addons/authum/logs/<module>/YYYY-MM-DD.log` (a new file each day);
+  `modules/<module>/logs/YYYY-MM-DD.log` (a new file each day);
   Authum's own lines and every module's warnings and errors (tagged
-  `[module]`) go to `logs/authum/`. Levels live in one new file,
-  `addons/authum/authum.cfg`: `log_level`, `log_console` (what also reaches
+  `[module]`) go to `addons/authum/logs/`. Levels live in one new file,
+  `addons/authum/configs/authum.cfg`: `log_level`, `log_console` (what also reaches
   the server console / HLDS log through Metamod) and `<module>.log_level`.
   `addons/authum/authum.log` is gone. A module just calls
   `authum_logger_init(&log, host)` and `authum_logger_info` / … ; lines below
@@ -60,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `authum_logger_is_enabled`, `authum_logger_level_parse` / `_name`,
   `authum_path_ensure_dir`. The release zip ships a commented `authum.cfg`.
   - Journals: `authum_logger_open(&log, host, "bans")` gives a module an extra
-    log, `logs/<module>/bans/YYYY-MM-DD.log`, with its own level
+    log, `modules/<module>/logs/bans/YYYY-MM-DD.log`, with its own level
     (`<module>.bans.log_level`).
   - `log_keep_days`: daily files older than that are deleted (shipped cfg: 30).
   - Lines are buffered and flushed every server frame; errors and worse go to

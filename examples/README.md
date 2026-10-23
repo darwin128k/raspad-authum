@@ -46,13 +46,13 @@ target_link_libraries(mymod PRIVATE authum_client)
 ```text
 addons/authum/
   configs/modules.list         ← one line per module: welcome
-  configs/settings.cfg         (settings only, optional)
-  modules/welcome.so
-  data/stats/stats.db          (written by stats)
+  modules/welcome/welcome.so
+  modules/settings/configs/settings.cfg   (settings only, optional)
+  modules/stats/data/stats.db             (written by stats)
 ```
 
 Then `authum status` in the server console. Each module logs to
-`addons/authum/logs/<name>/`; levels are set in `addons/authum/configs/authum.cfg`.
+`addons/authum/modules/<name>/logs/`; levels are set in `addons/authum/configs/authum.cfg`.
 
 More: [docs/writing-a-module.md](../docs/writing-a-module.md),
 [docs/events.md](../docs/events.md), [docs/logging.md](../docs/logging.md).

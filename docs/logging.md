@@ -10,19 +10,18 @@ logging keys, file paths or console switches.
 
 ```text
 addons/authum/
-  authum.cfg
-  logs/
-    authum/2026-10-22.log    ← Authum itself + every module's warnings and errors
-    qproto/2026-10-22.log    ← one folder per module, one file per day
-    qproto/bans/2026-10-22.log  ← a journal the module opened
-    hello/2026-10-22.log
+  configs/authum.cfg
+  logs/2026-10-22.log               ← Authum itself + every module's warnings and errors
+  modules/qproto/logs/2026-10-22.log       ← each module in its own folder, a file per day
+  modules/qproto/logs/bans/2026-10-22.log  ← a journal the module opened
+  modules/hello/logs/2026-10-22.log
 ```
 
 | Line | Goes to |
 |------|---------|
-| Module line at or above the module's `log_level` | `logs/<module>/YYYY-MM-DD.log` |
-| Module **warning or worse** | also `logs/authum/…`, tagged `[module]` |
-| Authum's own line (loader, gate, commands) | `logs/authum/…` |
+| Module line at or above the module's `log_level` | `modules/<module>/logs/YYYY-MM-DD.log` |
+| Module **warning or worse** | also Authum's `logs/YYYY-MM-DD.log`, tagged `[module]` |
+| Authum's own line (loader, gate, commands) | `logs/YYYY-MM-DD.log` |
 | Any line at or above `log_console` | also the server console and the HLDS log (through Metamod, `[AUTHUM]`) |
 
 A new file starts when the date changes; files older than `log_keep_days` are
@@ -34,7 +33,7 @@ looks like:
 [15:30:02] [warning] [qproto] ban list not found, starting empty
 ```
 
-(the `[qproto]` tag only appears in `logs/authum/`).
+(the `[qproto]` tag only appears in Authum's own `logs/`).
 
 ---
 
@@ -104,8 +103,8 @@ authum_logger_info(&g_bans, "%s banned %s", admin, target);
 authum_logger_close(&g_bans);                          /* stop */
 ```
 
-It writes `logs/<module>/bans/YYYY-MM-DD.log` at `<module>.bans.log_level`
-(default: the module's level); its warnings and errors reach `logs/authum/`
+It writes `modules/<module>/logs/bans/YYYY-MM-DD.log` at `<module>.bans.log_level`
+(default: the module's level); its warnings and errors reach Authum's `logs/`
 tagged `[module/bans]`. Opening the same name twice shares the journal. A
 journal the module forgets to close is closed after `stop`.
 

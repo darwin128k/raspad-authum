@@ -43,21 +43,9 @@ authum_env_modules(const authum_env_t *env)
 }
 
 const authum_path_t *
-authum_env_configs(const authum_env_t *env)
+authum_env_module(const authum_env_t *env)
 {
-    return AUTHUM_ENV_GET(env, configs);
-}
-
-const authum_path_t *
-authum_env_data(const authum_env_t *env)
-{
-    return AUTHUM_ENV_GET(env, data);
-}
-
-const authum_path_t *
-authum_env_lang(const authum_env_t *env)
-{
-    return AUTHUM_ENV_GET(env, lang);
+    return AUTHUM_ENV_GET(env, module);
 }
 
 const authum_path_t *
@@ -67,14 +55,19 @@ authum_env_module_config(const authum_env_t *env)
 }
 
 const authum_path_t *
+authum_env_module_lang(const authum_env_t *env)
+{
+    return AUTHUM_ENV_GET(env, module_lang);
+}
+
+const authum_path_t *
 authum_env_module_data(const authum_env_t *env)
 {
     return AUTHUM_ENV_GET(env, module_data);
 }
 
-/** `dir/leaf` into @p out; true when that file exists. */
 authum_bool_t
-authum_env_file_in(const authum_path_t *dir, const authum_char_t *leaf, authum_path_t *out)
+authum_env_config_path(const authum_env_t *env, const authum_char_t *leaf, authum_path_t *out)
 {
     FILE *file;
 
@@ -83,8 +76,8 @@ authum_env_file_in(const authum_path_t *dir, const authum_char_t *leaf, authum_p
         return authum_bool_false;
     }
     authum_path_clear(out);
-    if (authum_null_eq(dir) || authum_null_eq(leaf) || leaf[0] == '\0' ||
-        !authum_path_join(out, dir, leaf))
+    if (authum_null_eq(authum_env_module_config(env)) || authum_null_eq(leaf) || leaf[0] == '\0' ||
+        !authum_path_join(out, authum_env_module_config(env), leaf))
     {
         return authum_bool_false;
     }
@@ -95,19 +88,6 @@ authum_env_file_in(const authum_path_t *dir, const authum_char_t *leaf, authum_p
     }
     fclose(file);
     return authum_bool_true;
-}
-
-authum_bool_t
-authum_env_config_path(const authum_env_t *env, const authum_char_t *leaf, authum_path_t *out)
-{
-    return authum_env_file_in(authum_env_configs(env), leaf, out);
-}
-
-authum_bool_t
-authum_env_module_config_path(const authum_env_t *env, const authum_char_t *leaf,
-                              authum_path_t *out)
-{
-    return authum_env_file_in(authum_env_module_config(env), leaf, out);
 }
 
 authum_bool_t
@@ -124,7 +104,6 @@ authum_env_data_path(const authum_env_t *env, const authum_char_t *leaf, authum_
     {
         return authum_bool_false;
     }
-    (void)authum_path_ensure_dir(authum_env_data(env));
     (void)authum_path_ensure_dir(data);
     return authum_path_join(out, data, leaf);
 }

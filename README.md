@@ -48,7 +48,7 @@ Ready Linux binary: download `authum_mm.so` from
 1. Put into `cstrike/addons/authum/`:
    - `authum_mm.so`
    - `configs/modules.list` (one module name per line) and `configs/authum.cfg`
-   - `modules/<name>.so` (built by that module’s own project)
+   - `modules/<name>/<name>.so` (built by that module’s own project)
 2. In `addons/metamod/plugins.ini`:
 
 ```text
@@ -63,18 +63,19 @@ Layout:
 cstrike/addons/metamod/plugins.ini   →  linux addons/authum/authum_mm.so
 cstrike/addons/authum/
   authum_mm.so
-  modules/                           ← one .so per module: qproto.so, gatekeeper.so, …
-  configs/                           ← everything the admin edits
-    authum.cfg                       ← log levels
-    modules.list                     ← which modules to load
-    qproto.cfg  gatekeeper.cfg  …    ← one <module>.cfg per module
-    gatekeeper/whitelist.ini         ← a module's other files
-  data/                              ← what modules write themselves (databases, keys)
-    gatekeeper/  qproto/  lang/
-  logs/<authum|module>/YYYY-MM-DD.log ← written at runtime
+  configs/                           ← Authum's: authum.cfg (log levels), modules.list
+  logs/YYYY-MM-DD.log                ← Authum's log + every module's warnings and errors
+  modules/                           ← one sandbox per module
+    qproto/
+      qproto.so
+      configs/                       ← the admin's: qproto.cfg, …
+      lang/                          ← translations
+      data/                          ← what the module writes (databases, keys)
+      logs/YYYY-MM-DD.log            ← the module's log
 ```
 
-Back up `configs/` and `data/`; the rest is replaced by an update.
+Install or remove a module = copy or delete its folder. An update replaces the
+`.so` and `lang/`; it never touches `configs/`, `data/` or `logs/`.
 
 ## Docs
 

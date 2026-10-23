@@ -109,47 +109,60 @@ lh_bool_t
 authum_loader_ensure_shared_ext(lh_fs_path_t *path);
 
 /*
- * Resolve a modules.list entry to a shared image path: the entry as given
- * when that file exists (`qproto.so`), else the entry plus this OS's
- * extension (`qproto` → modules/qproto.so|.dll).
+ * Resolve a modules.list entry to a module image: the entry as given when it
+ * names a file (`qproto/qproto.so`), else the module folder
+ * modules/<name>/<name>.so|.dll for `qproto`.
  */
 lh_bool_t
 authum_loader_resolve_image(const lh_fs_path_t *base, const lh_fs_path_t *entry, lh_fs_path_t *out)
 {
-    lh_fs_path_t candidate;
-    lh_fs_path_t with_ext;
+    lh_fs_path_t folder;
+    lh_fs_path_t leaf;
+    lh_str_t leaf_text;
+    lh_str_view_t name;
+    lh_str_view_t ext;
+    lh_str_view_t leaf_view;
+    lh_usize_t n;
     lh_bool_t ok;
 
-    lh_fs_path_init(lh_addr_of(candidate));
+    lh_fs_path_init(lh_addr_of(folder));
     if (lh_null_ne(base))
     {
-        ok = lh_fs_path_join(lh_addr_of(candidate), base, entry);
+        ok = lh_fs_path_join(lh_addr_of(folder), base, entry);
     }
     else
     {
-        lh_fs_path_assign(lh_addr_of(candidate), entry);
+        lh_fs_path_assign(lh_addr_of(folder), entry);
         ok = lh_bool_true;
     }
-    if (ok && !authum_loader_path_is_file(lh_addr_of(candidate)))
+    if (ok && authum_loader_path_is_file(lh_addr_of(folder)))
     {
-        lh_fs_path_init(lh_addr_of(with_ext));
-        lh_fs_path_assign(lh_addr_of(with_ext), entry);
-        (void)authum_loader_ensure_shared_ext(lh_addr_of(with_ext));
-        if (lh_null_ne(base))
-        {
-            ok = lh_fs_path_join(lh_addr_of(candidate), base, lh_addr_of(with_ext));
-        }
-        else
-        {
-            lh_fs_path_assign(lh_addr_of(candidate), lh_addr_of(with_ext));
-        }
-        lh_fs_path_deinit(lh_addr_of(with_ext));
+        lh_fs_path_assign(out, lh_addr_of(folder));
+        lh_fs_path_deinit(lh_addr_of(folder));
+        return lh_bool_true;
     }
-    if (ok)
+
+    /* modules/qproto/ + qproto.so */
+    n = lh_fs_path_get_segment_count(entry);
+    if (!ok || lh_math_is_zero(n))
     {
-        lh_fs_path_assign(out, lh_addr_of(candidate));
+        lh_fs_path_deinit(lh_addr_of(folder));
+        return lh_bool_false;
     }
-    lh_fs_path_deinit(lh_addr_of(candidate));
+    lh_fs_path_get_segment(entry, lh_math_sub_one(n), lh_addr_of(name));
+    lh_os_system_shared_get_ext(lh_addr_of(ext));
+    lh_str_init(lh_addr_of(leaf_text));
+    lh_str_append(lh_addr_of(leaf_text), lh_str_view_get_data(lh_addr_of(name)),
+                  lh_str_view_get_size(lh_addr_of(name)));
+    lh_str_append(lh_addr_of(leaf_text), lh_str_view_get_data(lh_addr_of(ext)),
+                  lh_str_view_get_size(lh_addr_of(ext)));
+    lh_str_as_view(lh_addr_of(leaf_text), lh_addr_of(leaf_view));
+    lh_fs_path_init(lh_addr_of(leaf));
+    lh_fs_path_set(lh_addr_of(leaf), leaf_view, lh_fs_path_style_posix);
+    ok = lh_fs_path_join(out, lh_addr_of(folder), lh_addr_of(leaf));
+    lh_fs_path_deinit(lh_addr_of(leaf));
+    lh_str_deinit(lh_addr_of(leaf_text));
+    lh_fs_path_deinit(lh_addr_of(folder));
     return ok;
 }
 
@@ -348,16 +361,10 @@ authum_loader_scan(authum_module_t *self, const lh_fs_path_t *dir, const lh_fs_p
         {
             break;
         }
-        if (lh_math_eq(kind, lh_fs_kind_dir) || lh_math_eq(kind, lh_fs_kind_symlink))
-        {
-            continue;
-        }
-        if (!authum_loader_is_shared_name(lh_addr_of(entry)))
-        {
-            continue;
-        }
+        /* Every module is a folder: modules/<name>/<name>.so|.dll. */
         lh_fs_path_set(lh_addr_of(name), entry, lh_fs_path_style_posix);
-        if (!lh_fs_path_join(lh_addr_of(full), dir, lh_addr_of(name)))
+        if (!authum_loader_resolve_image(dir, lh_addr_of(name), lh_addr_of(full)) ||
+            !authum_loader_path_is_file(lh_addr_of(full)))
         {
             continue;
         }

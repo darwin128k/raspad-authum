@@ -31,10 +31,9 @@ typedef struct authum_child_paths
     authum_path_t addons;
     authum_path_t authum;
     authum_path_t modules;
-    authum_path_t configs;
-    authum_path_t data;
-    authum_path_t lang;
+    authum_path_t module;
     authum_path_t module_config;
+    authum_path_t module_lang;
     authum_path_t module_data;
 } authum_child_paths_t;
 
@@ -162,17 +161,16 @@ authum_child_bind_parent(authum_path_t *slot, const authum_path_t **field,
 }
 
 /**
- * Roots come from authum_mm's own directory (addons/authum): modules/,
- * configs/, data/ beside it, game two levels up. The engine game dir is a
- * fallback when the walk cannot reach game.
+ * Roots come from authum_mm's own directory (addons/authum), game two levels
+ * up; the engine game dir is a fallback. The module's own folder is the one
+ * its image is in (modules/<module>/), with configs/, lang/ and data/ inside.
  */
 void
-authum_child_fill_env(authum_child_data_t *data)
+authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
 {
     authum_env_t *env = &data->env;
     authum_child_paths_t *paths = &data->paths;
     authum_path_t up;
-    const authum_char_t *name = data->info->name;
 
     memset(env, 0, sizeof(*env));
     memset(paths, 0, sizeof(*paths));
@@ -200,15 +198,13 @@ authum_child_fill_env(authum_child_data_t *data)
 
     authum_child_fill_under_game(data);
 
-    authum_child_bind_join(&paths->configs, &env->configs, env->authum, "configs");
-    authum_child_bind_join(&paths->data, &env->data, env->authum, "data");
-    authum_child_bind_join(&paths->lang, &env->lang, env->data, "lang");
-    authum_child_bind_join(&paths->module_config, &env->module_config, env->configs, name);
-    authum_child_bind_join(&paths->module_data, &env->module_data, env->data, name);
+    authum_child_bind_parent(&paths->module, &env->module, lh_os_module_get_path(child));
+    authum_child_bind_join(&paths->module_config, &env->module_config, env->module, "configs");
+    authum_child_bind_join(&paths->module_lang, &env->module_lang, env->module, "lang");
+    authum_child_bind_join(&paths->module_data, &env->module_data, env->module, "data");
     /* What the module writes always has a place; configs are the admin's. */
     if (!lh_null_eq(env->module_data))
     {
-        (void)authum_path_ensure_dir(env->data);
         (void)authum_path_ensure_dir(env->module_data);
     }
 }
@@ -242,7 +238,6 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
 
     data->logger.ops = authum_logs_ops();
     data->logger.owner = data;
-    (void)authum_logs_open(data, data->info->name);
     out->logger = &data->logger;
 
     data->commands.ops = authum_commands_host_ops();
@@ -258,7 +253,8 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
         out->globals = (authum_host_get_ptr_fn)lh_os_module_get_sym(parent, "authum_globals");
     }
 
-    authum_child_fill_env(data);
+    authum_child_fill_env(child, data);
+    (void)authum_logs_open(data, data->info->name, authum_path_as_cstr_or_null(data->env.module));
 }
 
 /** After `stop` (or a failed `start`): drop the module's subscriptions and

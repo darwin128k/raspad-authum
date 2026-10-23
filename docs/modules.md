@@ -220,7 +220,9 @@ Example (see `deploy/configs/modules.list`):
 hello
 ```
 
-That is `modules/hello.so` (`.dll` on Windows). Modules are
+That is the module folder `modules/hello/` and its image `modules/hello/hello.so`
+(`.dll` on Windows). Without `modules.list`, every folder `modules/<name>/` with
+a `<name>.so` in it is loaded. Modules are
 built by their own projects — Authum only loads them.
 
 No `.so` / `.dll` needed — Authum appends the native shared suffix. Use
