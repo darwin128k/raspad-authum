@@ -18,6 +18,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **AMX Mod X-style layout** in `addons/authum/`: `modules/<name>.so` (no
+  folder per module), `configs/` for everything the admin edits
+  (`authum.cfg`, `modules.list`, `<module>.cfg`, `configs/<module>/` for a
+  module's other files), `data/<module>/` for what a module writes,
+  `data/lang/` for translations. `authum_env_t` starts with `size` and gains
+  `configs`, `data`, `lang`, `module_config`, `module_data`; its roots now
+  come from `authum_mm`'s directory, so flat and old per-folder modules see
+  the same tree. `authum_host_config_path` (configs/, configs/<module>/, then
+  the old module folder with a warning) and `authum_host_data_path`
+  (data/<module>/, moving a file left in the old folder) find files.
+  `modules.list` and `authum.cfg` are read from `configs/` first; beside
+  `authum_mm.so` still works, with a warning. The release zip ships
+  `configs/`.
 - Everything authum_client asks of the OS (directories, page protection,
   library symbols, interface addresses) sits behind `src/client/os/os.h`, with
   one implementation in `os/posix/` and one in `os/win/`; CMake builds the

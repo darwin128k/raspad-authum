@@ -1,8 +1,8 @@
 /**
  * settings — a module's own config file.
  *
- * addons/authum/modules/settings/settings.cfg (next to the .so), flat
- * `key = value`:
+ * addons/authum/configs/settings.cfg, flat `key = value` (found with
+ * authum_host_config_path, which also reads an old modules/settings/ copy):
  *   - defaults live in the C struct, so a missing file or key is fine;
  *   - plain keys come from one table (authum_cfg_apply_items);
  *   - a key with its own rules (`mode`, one of three words) is read after the
@@ -10,7 +10,7 @@
  *   - `authum settings show` prints what is in effect, `authum settings
  *     reload` reads the file again without reloading the module.
  *
- * Logging levels are not module settings: they live in addons/authum/authum.cfg.
+ * Logging levels are not module settings: they live in addons/authum/configs/authum.cfg.
  */
 
 #include <authum/client.h>
@@ -86,7 +86,8 @@ settings_load(void)
     authum_cfg_t cfg;
 
     g_settings = g_settings_defaults;
-    if (!authum_path_join(&path, authum_host_env_module(&g_settings_host), "settings.cfg") ||
+    /* configs/settings.cfg (an old modules/settings/settings.cfg still works). */
+    if (!authum_host_config_path(&g_settings_host, "settings.cfg", &path) ||
         !authum_cfg_open(&cfg, &path))
     {
         authum_logger_notice(&g_settings_log, "no settings.cfg, using defaults");

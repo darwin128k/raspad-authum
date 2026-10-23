@@ -1,3 +1,3 @@
-# Beside authum_mm.so — one module path per line (folder under modules/).
+# addons/authum/configs/modules.list — one module per line: modules/<name>.so.
 # Example (build/ship the module yourself; Authum does not compile it):
 # qproto
