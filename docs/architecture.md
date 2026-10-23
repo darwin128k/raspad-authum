@@ -16,15 +16,15 @@ not ship a process-wide `lh.so` for modules.
 
 | Layer | Who | Copies |
 |-------|-----|--------|
-| Host facade (`authum_host_t`: log, engfuncs, globals, `env`, `crypto`, `engine`, `sandbox`, `events`, `commands`) | `authum_mm` | **One** per module — passed into `authum_module_api.start` |
-| Client API (`authum_client` static lib: host getters, cfg, path, cstr, logger, sandbox, array, events) | `src/client/*.c` | Linked into `authum_mm` and into every module; headers only declare |
+| Host facade (`authum_host_t`: log, engfuncs, globals, `env`, `crypto`, `engine`, `sandbox`, `events`, `commands`) | `authum` | **One** per module — passed into `authum_module_api.start` |
+| Client API (`authum_client` static lib: host getters, cfg, path, cstr, logger, sandbox, array, events) | `src/client/*.c` | Linked into `authum` and into every module; headers only declare |
 | Foundation types (`authum_byte_t`, `authum_usize_t`, `authum_bool_t`, …) | Authum headers | Same idea as lh types; modules never include lh |
-| Sandbox (`authum/sandbox.h`) | ops in `authum_mm` on `lh_memory_tree` | One root per module, freed after `stop` — [sandbox.md](sandbox.md) |
-| Event bus (`authum/events.h`) | ops in `authum_mm` | Forwards + queries between modules; host publishes `authum.client.*` — [events.md](events.md) |
-| Commands (`authum/commands.h`) | registry in `authum_mm` | One engine command `authum`; modules add `authum <module> <name>` — [commands.md](commands.md) |
-| Crypto facade (`authum/crypto/…`, same shape as lh, subset only) | ops in `authum_mm` | Modules call Authum names; lh stays inside the host |
-| Engine facade (`authum/engine.h` — game dir / print / command / kick) | ops in `authum_mm` | Modules need no HLSDK for the common subset |
-| lh + HLSDK inside Authum | linked / includes in `authum_mm` | Implementation detail of the host |
+| Sandbox (`authum/sandbox.h`) | ops in `authum` on `lh_memory_tree` | One root per module, freed after `stop` — [sandbox.md](sandbox.md) |
+| Event bus (`authum/events.h`) | ops in `authum` | Forwards + queries between modules; host publishes `authum.client.*` — [events.md](events.md) |
+| Commands (`authum/commands.h`) | registry in `authum` | One engine command `authum`; modules add `authum <module> <name>` — [commands.md](commands.md) |
+| Crypto facade (`authum/crypto/…`, same shape as lh, subset only) | ops in `authum` | Modules call Authum names; lh stays inside the host |
+| Engine facade (`authum/engine.h` — game dir / print / command / kick) | ops in `authum` | Modules need no HLSDK for the common subset |
+| lh + HLSDK inside Authum | linked / includes in `authum` | Implementation detail of the host |
 | Full lh / HLSDK / other libs in a module | that module’s `.so` | Optional, **private** escape hatch |
 
 ## Client module contract (ABI 1.0)

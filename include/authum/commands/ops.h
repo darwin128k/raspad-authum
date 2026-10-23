@@ -1,6 +1,6 @@
 /**
  * @file ops.h
- * @brief Host ops table behind ::authum_commands_t (filled by `authum_mm`).
+ * @brief Host ops table behind ::authum_commands_t (filled by `authum`).
  *
  * Modules call the `authum_commands_*` functions in <authum/commands.h>,
  * never these pointers.

@@ -10,8 +10,8 @@ LICENSE, and mark the changed files with a clear notice that you changed them
 ---------------------------------------------------------------------------
 Third-party software
 
-This product includes Metamod-P (Bots-United/metamod-p) and HLSDK headers
-used to build the Metamod host plugin.
+This product includes HLSDK headers (lib/hlsdk), Valve's Half-Life SDK:
+the engine and game types Authum compiles against.
 
 This product includes lh (https://github.com/darwin128K/lh), linked into
 the host and into authum_client (JSON and SQL); no lh type reaches the module

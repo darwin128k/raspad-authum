@@ -2,7 +2,6 @@
 #include <authum/logger/host.h>
 
 #include <extdll.h>
-#include <meta_api.h>
 
 #include <lh/cast/static.h>
 #include <lh/config.h>
@@ -22,10 +21,6 @@
 #include <cstdarg>
 #include <cstring>
 
-extern plugin_info_t Plugin_info;
-extern meta_globals_t *gpMetaGlobals;
-extern mutil_funcs_t *gpMetaUtilFuncs;
-
 namespace
 {
 
@@ -33,28 +28,6 @@ enum
 {
     authum_log_line_max = 1024
 };
-
-/* Console-level lines: Metamod prints them to the server console and the HLDS
- * log, tagged [AUTHUM]; a module's lines get its name too. */
-void
-authum_log_mirror_metamod(authum_logger_level_t level, const authum_char_t *name,
-                          const authum_char_t *text)
-{
-    const char *tag = std::strcmp(name, "authum") == 0 ? "" : name;
-
-    if (gpMetaUtilFuncs == nullptr || gpMetaGlobals == nullptr)
-    {
-        return;
-    }
-    if (level <= authum_logger_level_error)
-    {
-        LOG_ERROR(PLID, "%s%s%s%s", *tag ? "[" : "", tag, *tag ? "] " : "", text);
-    }
-    else
-    {
-        LOG_MESSAGE(PLID, "%s%s%s%s", *tag ? "[" : "", tag, *tag ? "] " : "", text);
-    }
-}
 
 /* lh's runtime logger (the host's own lines and lh's) feeds the `authum` channel. */
 lh_ssize_t
@@ -77,7 +50,7 @@ authum_log_emit(lh_self_ptr /* self */, lh_logger_level_t level, lh_str_cptr fmt
 } // namespace
 
 lh_bool_t
-authum_log_init(const lh_fs_path_t *image_dir)
+authum_log_init_sink(const lh_fs_path_t *image_dir, authum_logs_mirror_fn sink)
 {
     lh_str_t scratch;
     lh_str_cptr root;
@@ -90,11 +63,16 @@ authum_log_init(const lh_fs_path_t *image_dir)
     authum_log_deinit();
 
     root = lh_fs_path_to_cstr(image_dir, lh_fs_path_style_posix, lh_addr_of(scratch));
-    ok = (root != lh_null && authum_logs_init(root, authum_log_mirror_metamod)) ? lh_bool_true
-                                                                                : lh_bool_false;
+    ok = (root != lh_null && authum_logs_init(root, sink)) ? lh_bool_true : lh_bool_false;
     lh_str_deinit(lh_addr_of(scratch));
     lh_logger_init(lh_runtime_logger(), lh_logger_level_flags_all, authum_log_emit, lh_null);
     return ok;
+}
+
+lh_bool_t
+authum_log_init(const lh_fs_path_t *image_dir)
+{
+    return authum_log_init_sink(image_dir, lh_null);
 }
 
 void

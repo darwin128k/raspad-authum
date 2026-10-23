@@ -1,7 +1,7 @@
 /*
  * The host's own identity — the object the loader binds the host image
- * through (::authum_module_info). Both builds export it: the Metamod plugin
- * (authum_mm.so) and the standalone game library (authum.so). The image must
+ * through (::authum_module_info). The host image exports it — it is the
+ * game library the engine loads. The image must
  * export the symbol: the loader reads it from the host image, and an
  * undefined one keeps the .so from loading at all.
  */

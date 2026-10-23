@@ -3,7 +3,7 @@
  * @brief Path separator for Authum module path helpers.
  *
  * Modules always join with `/`. Host-filled ::authum_env_t strings use the
- * platform-native form (via lh inside `authum_mm`); `/` still works with
+ * platform-native form (via lh inside `authum`); `/` still works with
  * `fopen` on Windows HLDS.
  */
 

@@ -45,7 +45,7 @@ RCON client receives.
   `authum_module_info.name`, so a module cannot claim another module's words.
 - **Unload safety.** The engine has no way to remove a server command. A
   command whose code lived in an unloaded `.so` crashes the server the next
-  time someone types it. Authum's `authum` handler lives in `authum_mm` and
+  time someone types it. Authum's `authum` handler lives in `authum` and
   only dispatches into modules that are loaded right now; a module's commands
   are dropped after its `stop`.
 

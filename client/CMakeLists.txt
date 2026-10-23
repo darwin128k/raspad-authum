@@ -2,7 +2,7 @@
 # (host getters, cfg, path, cstr, logger, sandbox, array, events, sql, json, …).
 # Headers in include/ only declare; code lives in src/client/ and ships as
 # this static library. Modules link `authum_client`; they never compile Authum
-# `.c` files themselves. No Metamod. `authum_mm` links it too.
+# `.c` files themselves. No Metamod. `authum` links it too.
 #
 # JSON and SQL run on lh (lh/json, lh/sql) linked statically: no lh type
 # reaches a module's headers, and --exclude-libs keeps lh's symbols out of the

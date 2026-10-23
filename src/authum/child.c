@@ -161,7 +161,7 @@ authum_child_bind_parent(authum_path_t *slot, const authum_path_t **field,
 }
 
 /**
- * Roots come from authum_mm's own directory (addons/authum), game two levels
+ * Roots come from authum's own directory (addons/authum), game two levels
  * up; the engine game dir is a fallback. The module's own folder is the one
  * its image is in (modules/<module>/), with configs/, lang/ and data/ inside.
  */
@@ -209,7 +209,7 @@ authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
     }
 }
 
-/* Implemented in crypto.c / engine_server.cpp (linked into authum_mm). */
+/* Implemented in crypto.c / engine_server.cpp (linked into authum). */
 const authum_crypto_t *
 authum_crypto(void);
 const authum_engine_t *

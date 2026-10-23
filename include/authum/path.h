@@ -7,7 +7,7 @@
  * (`qproto.cfg`, `sprites/foo.spr`, …).
  *
  * Host-filled env paths use the platform-native form (via lh inside
- * `authum_mm`). Module joins always insert `/` (::authum_path_sep); `/`
+ * `authum`). Module joins always insert `/` (::authum_path_sep); `/`
  * still works with `fopen` on Windows HLDS.
  */
 

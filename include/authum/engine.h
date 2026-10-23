@@ -2,7 +2,7 @@
  * @file engine.h
  * @brief Host engine facade for modules — the engfuncs modules need, no HLSDK.
  *
- * Full `enginefuncs_t` / `globalvars_t` stay inside `authum_mm`. Modules go
+ * Full `enginefuncs_t` / `globalvars_t` stay inside `authum`. Modules go
  * through ::authum_engine_t on ::authum_host_t.engine (or the `authum_host_*`
  * shortcuts). Raw pointers remain on the host as an escape hatch
  * (`engine_funcs` / `globals`) for modules that link HLSDK privately — every

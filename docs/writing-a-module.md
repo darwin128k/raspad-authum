@@ -1,8 +1,8 @@
 # Writing an Authum module
 
 An Authum module is a shared library (`.so` / `.dll`) that the host
-`authum_mm` loads. It is **not** a Metamod plugin. Metamod only loads
-Authum once; everything else hangs under Authum.
+`authum` loads. It is **not** a Metamod plugin: the engine loads Authum
+once, everything else hangs under Authum.
 
 See [architecture.md](architecture.md). Templates to copy: [`examples/`](../examples/) — start from
 [`skeleton`](../examples/skeleton/), take pieces from the topic examples.
@@ -14,7 +14,7 @@ identifiers (functions, types, struct fields, globals), and must use **Authum’
 own types** (`authum_bool_t`, `authum_usize_t`, `authum_byte_t`, `authum_ptr`,
 …) — not raw libc/`size_t` on the Authum API surface, and never `<lh/…>`.
 Do not ship module code as C++ (no classes, namespaces, templates, references,
-`nullptr`, C++ headers). The host Metamod plugin (`authum_mm`) may remain C++ /
+`nullptr`, C++ headers). The host image (`authum.so`) may remain C++ /
 mixed; only the loadable child modules are constrained to C + snake_case.
 Config *file* keys use snake_case matching C fields (e.g. `enable_revemu`,
 `max_bans`) — not PascalCase.
@@ -84,7 +84,7 @@ AUTHUM_MODULE_EXPORT const authum_module_api_t authum_module_api = {
 
 ```
 cstrike/addons/authum/
-  authum_mm.so
+  authum.so
   configs/modules.list         # one name per line: example
   modules/example/             # the module's sandbox
     example.so
@@ -218,10 +218,10 @@ diagnostics. Details: [logging.md](logging.md).
 - [ ] `authum_module_api` exported; `start` returns `authum_bool_false` only on hard failure
 - [ ] Listed in `configs/modules.list`; everything in `modules/<name>/`: `<name>.so`, `configs/`, `lang/`, `data/` (via `authum_host_config_path` / `_data_path`)
 - [ ] Folder `foo` → `foo.so` / `foo.dll`
-- [ ] Not a Metamod `plugins.ini` entry
+- [ ] Not a `plugins.ini` entry
 - [ ] Logs via host facade
 - [ ] Long-lived memory from the sandbox ([sandbox.md](sandbox.md))
-- [ ] Talks to other modules only via events ([events.md](events.md)); no Metamod hooks of its own for player connect/disconnect
+- [ ] Talks to other modules only via events ([events.md](events.md)); no hooks of its own for player connect/disconnect
 - [ ] Console / RCON commands via `authum_host_command_add` — never `pfnAddServerCommand` ([commands.md](commands.md))
 - [ ] Config: defaults + `authum_cfg_apply_items`; custom keys after the table ([cfg.md](cfg.md))
 - [ ] Links `authum_client` from `lib/authum/client` (no Authum `.c` in the module)

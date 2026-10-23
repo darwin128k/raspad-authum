@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [4.0.0] - 2026-10-24
 
+### Changed
+
+- **Metamod is gone — Authum is the game library and nothing else.** The
+  Metamod-P plugin image (`authum_mm.so`, `src/authum/plugin/`) is removed, the
+  core no longer speaks Metamod (no `plugin_info_t`, no `meta_globals_t`, no
+  Metamod console mirror — the host mirrors console-level lines to the engine
+  console itself), and the HLSDK headers are vendored on their own
+  (`lib/hlsdk`) instead of arriving with Metamod-P. One build, one image:
+  `authum.so`.
+
 ### Added
 
 - **Standalone build: Authum as the game library** (`authum.so`, Linux i386),

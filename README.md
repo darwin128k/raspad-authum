@@ -19,9 +19,11 @@
 
 ## What it is
 
-Metamod-P **host** for original (32-bit) HLDS. Builds only `authum_mm` — child
-modules (e.g. [qproto](https://github.com/darwin128k/raspad-qproto)) are separate
-projects dropped under `modules/`.
+Authum **as the HLDS game library** — the engine loads `authum.so` where the
+game library used to be, and Authum loads the real game behind it. Builds only
+`authum` — child modules (e.g.
+[qproto](https://github.com/darwin128k/raspad-qproto)) are separate projects
+dropped under `modules/`.
 
 - Loads modules from `modules.list` (Authum line format) or scans `modules/`
 - Connect gate scaffolding for children
@@ -37,32 +39,35 @@ projects dropped under `modules/`.
 | Branch | Meaning |
 |--------|---------|
 | `master` | Mainline |
-| `1.0.0` | Freeze — gate + host log + `modules.list` |
-| `0.1.0` | Freeze — loader only |
+| `4.0.0` | The game-library line: Authum as the game library (no Metamod) |
+| `3.0.0` | Freeze — the Metamod-P host |
+| `2.0.1`, `2.0.0`, `1.0.0` | Earlier freezes |
 
 ## Install
 
-Ready Linux binary: download `authum_mm.so` from
+Ready Linux binary: download `authum-linux32.zip` from
 [Releases](https://github.com/darwin128k/raspad-authum/releases).
 
-1. Put into `cstrike/addons/authum/`:
-   - `authum_mm.so`
+1. Unpack into the game dir (`cstrike/`) — you get `addons/authum/`:
+   - `authum.so` (the game library)
+   - `gamedll.txt` — the real game library, one line (`dlls/cs.so`)
    - `configs/modules.list` (one module name per line) and `configs/authum.cfg`
    - `modules/<name>/<name>.so` (built by that module’s own project)
-2. In `addons/metamod/plugins.ini`:
+2. In `liblist.gam`, point the engine at Authum:
 
 ```text
-linux addons/authum/authum_mm.so
+gamedll_linux "addons/authum/authum.so"
 ```
 
-3. `meta list` → `authum` RUN; console `authum` lists children
+3. The server console shows the map loading; `authum` lists the children
 
 Layout:
 
 ```text
-cstrike/addons/metamod/plugins.ini   →  linux addons/authum/authum_mm.so
+cstrike/liblist.gam                 →  gamedll_linux "addons/authum/authum.so"
 cstrike/addons/authum/
-  authum_mm.so
+  authum.so                          ← the host image: the game library now
+  gamedll.txt                        ← the real game library (dlls/cs.so)
   configs/                           ← Authum's: authum.cfg (log levels), modules.list
   logs/YYYY-MM-DD.log                ← Authum's log + every module's warnings and errors
   modules/                           ← one sandbox per module
@@ -79,9 +84,10 @@ Install or remove a module = copy or delete its folder. An update replaces the
 
 ## Standalone: Authum as the game library
 
-`authum.so` is Authum **without Metamod**: the engine loads it where the game
-library used to be, and Authum loads the real game behind it. Same layout for
-the admin's files — `addons/authum/` with `configs/`, `logs/`, `modules/`.
+The build *is* the game library: the engine loads `addons/authum/authum.so`
+where the game used to be, and Authum loads the real game behind it. Same
+layout for the admin's files — `addons/authum/` with `configs/`, `logs/`,
+`modules/`.
 
 ```text
 cstrike/addons/authum/authum.so      ← the host image (the game library now)
@@ -123,8 +129,8 @@ git submodule update --init --recursive
 any other `lib/lh/VERSION`. To build against another lh tree (one being
 worked on next to Authum), pass `-DAUTHUM_LH_DIR=/path/to/lh`.
 
-You still need Metamod-P (+ HLSDK headers) under `lib/metamod-p`
-(see `AUTHUM_HLSDK_DIR` in `CMakeLists.txt`).
+The HLSDK headers live in `lib/hlsdk` (vendored). Point the build at another
+tree with `-DAUTHUM_HLSDK_DIR=/path/to/hlsdk`.
 
 ## Build
 
@@ -152,8 +158,13 @@ Optional: `-DAUTHUM_LH_LINK_MODE=needed` (default) or `whole`.
 `LH_STATIC_LIBGCC` is forced on so the module does not depend on the host’s
 `libgcc_s` (HLDS).
 
-Linux CI builds `authum_mm.so` on `master` only. Tag `v*` publishes the `.so`
-as a release asset. Output: `build-linux32/authum_mm.so`.
+The game library the image wraps is named by file name — `cs.so` for
+Counter-Strike (`-DAUTHUM_GAME_DLL_NAME=cs.so`); at run time it is found in
+the game directory’s `dlls/`.
+
+Linux CI builds `authum.so` on `master` and `4.0.0`. Tag `v*` publishes
+`authum-linux32.zip` (the whole `addons/authum/` layout) as a release asset.
+Output: `build-linux32/authum.so`.
 
 
 ## Acknowledgements / sources
@@ -162,8 +173,7 @@ Authum builds on (and vendors where noted) the following:
 
 | Component | Role | License / upstream |
 |-----------|------|--------------------|
-| **Metamod-P** | Host plugin API (`lib/metamod-p`, CI clone) | [Bots-United/metamod-p](https://github.com/Bots-United/metamod-p) |
-| **HLSDK** | Engine / game headers (via Metamod-P tree) | Valve HLSDK (as shipped with Metamod-P) |
+| **HLSDK** | Engine / game headers (`lib/hlsdk`, vendored) | Valve HLSDK |
 | **lh** | Host internals; JSON and SQL behind `<authum/json.h>` / `<authum/sql.h>` (`lib/lh` submodule, branch `0.4.0`) | [darwin128K/lh](https://github.com/darwin128K/lh) |
 | **SQLite** | 3.46.1 amalgamation for `<authum/sql.h>`, vendored in lh (`lib/lh/lib/sqlite`) | [sqlite.org](https://www.sqlite.org/) ([copyright](https://www.sqlite.org/copyright.html)) |
 | **Monocypher** | Ed25519 signatures behind `<authum/crypto/ed25519.h>` (`lib/monocypher`, 4.0.2) | BSD-2-Clause / CC0 — [monocypher.org](https://monocypher.org/) |

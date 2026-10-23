@@ -4,7 +4,7 @@
  *
  * Unlike Rijndael / SHA, this is not a host facade: the code ships inside
  * `authum_client` (vendored Monocypher in `lib/monocypher`), so a module gets
- * it without a newer `authum_mm` and without an ABI bump. Modules never
+ * it without a newer `authum` and without an ABI bump. Modules never
  * include `monocypher.h`.
  */
 

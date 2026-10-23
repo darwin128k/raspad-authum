@@ -2,7 +2,7 @@
  * @file host.h
  * @brief Host facade passed into ::authum_module_api.start (no lh dependency).
  *
- * Filled by `authum_mm`. Pointers are valid for the life of the loaded module
+ * Filled by `authum`. Pointers are valid for the life of the loaded module
  * (until `stop`). Escape hatch: link your own lh / other libs privately.
  *
  * Modules must not read or write ::authum_host_t fields directly — use the
@@ -55,12 +55,12 @@ extern "C"
         const authum_env_t *env;
         /**
          * Crypto ops (Rijndael + SHA subset from lh). Non-null on current hosts;
-         * check before use if you support older `authum_mm`.
+         * check before use if you support older `authum`.
          */
         const authum_crypto_t *crypto;
         /**
          * Engine ops (game dir / server print / server command). Non-null on
-         * current hosts; check before use if you support older `authum_mm`.
+         * current hosts; check before use if you support older `authum`.
          */
         const authum_engine_t *engine;
         /** This module's memory sandbox; freed by the host after `stop`. */

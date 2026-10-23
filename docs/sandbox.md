@@ -10,7 +10,7 @@ side: lh's ownership tree (`lh_memory_tree`, talloc model) — freeing a block
 frees everything it owns, destructors run first.
 
 What it is not: isolation. The module runs in the server process like any
-Metamod plugin; a module that crashes takes the server down. The sandbox
+game library; a module that crashes takes the server down. The sandbox
 guarantees one thing — no memory of the module survives its unload.
 
 Cost: each block carries a 32-byte header, and an allocate + free pair costs
