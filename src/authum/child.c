@@ -351,7 +351,6 @@ lh_os_module_t *
 authum_child_load(lh_os_loader_t *loader, const lh_fs_path_t *path)
 {
     lh_os_module_t *child;
-    const lh_os_module_ops_t *ops;
 
     child = lh_os_module_create();
     if (lh_null_eq(child))
@@ -366,21 +365,14 @@ authum_child_load(lh_os_loader_t *loader, const lh_fs_path_t *path)
         return lh_null;
     }
 
-    if (!lh_null_eq(lh_os_module_get_sym(child, AUTHUM_MODULE_API_SYM)))
+    /* A module exports authum_module_api; anything else is not one. */
+    if (lh_null_eq(lh_os_module_get_sym(child, AUTHUM_MODULE_API_SYM)))
     {
-        lh_os_module_set_ops(child, &authum_child_ops);
+        lh_os_set_last_error_lit(authum_error_code_missing_info, "missing authum_module_api");
+        lh_os_module_destroy(child);
+        return lh_null;
     }
-    else
-    {
-        ops = lh_ptr_cast(const lh_os_module_ops_t,
-                          lh_os_module_get_sym(child, AUTHUM_MODULE_OPS_SYM));
-        if (lh_null_eq(ops))
-        {
-            lh_os_module_destroy(child);
-            return lh_null;
-        }
-        lh_os_module_set_ops(child, ops);
-    }
+    lh_os_module_set_ops(child, &authum_child_ops);
 
     if (!lh_os_module_start(child))
     {
