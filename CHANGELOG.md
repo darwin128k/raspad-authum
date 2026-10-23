@@ -7,8 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Standalone build: Authum as the game library** (`authum.so`, Linux i386),
+  no Metamod in between. The engine loads it where the game library used to
+  be (`liblist.gam`: `gamedll_linux "addons/authum/authum.so"`), Authum loads
+  the real game behind it and overlays its event hooks on the game's
+  callbacks. The layout for the admin is the Metamod one: `addons/authum/`
+  with `configs/`, `logs/` and `modules/`. The real game library is named in
+  `addons/authum/gamedll.txt`; the build links it in
+  (`-DAUTHUM_GAME_DLL_NAME=cs.so`) because the engine resolves every map
+  entity's spawn function by its class name in the game module. See
+  [docs/standalone.md](docs/standalone.md).
+
 ### Fixed
 
+- The host image's `authum_module_info` lives in the core now: the standalone
+  build did not define it, and an undefined symbol keeps the image from
+  loading at all.
+- The loader rejects the host image by name (`authum_mm`, `authum`), so the
+  standalone image cannot be opened as its own child module.
 - Windows build (MinGW): `authum_logger_ensure_dir` used the POSIX two-argument
   `mkdir`; the symbol test looked for `libc.so.6`, which exists only on Linux.
 - `authum_net_ipv4_internal` / `_external` list the interfaces on Windows too

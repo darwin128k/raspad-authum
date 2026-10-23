@@ -77,12 +77,28 @@ cstrike/addons/authum/
 Install or remove a module = copy or delete its folder. An update replaces the
 `.so` and `lang/`; it never touches `configs/`, `data/` or `logs/`.
 
+## Standalone: Authum as the game library
+
+`authum.so` is Authum **without Metamod**: the engine loads it where the game
+library used to be, and Authum loads the real game behind it. Same layout for
+the admin's files — `addons/authum/` with `configs/`, `logs/`, `modules/`.
+
+```text
+cstrike/addons/authum/authum.so      ← the host image (the game library now)
+cstrike/addons/authum/gamedll.txt    ← the real game library: dlls/cs.so
+cstrike/liblist.gam                  ←  gamedll_linux "addons/authum/authum.so"
+```
+
+Linux (i386) only. See [docs/standalone.md](docs/standalone.md) for the
+engine's contract with the game module and the build options.
+
 ## Docs
 
 | Doc | |
 |-----|--|
 | [CHANGELOG.md](CHANGELOG.md) | Releases |
 | [docs/architecture.md](docs/architecture.md) | Host facade + optional private deps |
+| [docs/standalone.md](docs/standalone.md) | Authum as the game library (no Metamod) |
 | [examples/](examples/) | Module templates: skeleton, events, engine, chat filter, cvar check, config, SQLite, module-to-module bus |
 | [docs/README.md](docs/README.md) | Index |
 | [docs/writing-a-module.md](docs/writing-a-module.md) | Write your own module |
