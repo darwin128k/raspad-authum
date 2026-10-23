@@ -109,121 +109,48 @@ lh_bool_t
 authum_loader_ensure_shared_ext(lh_fs_path_t *path);
 
 /*
- * Resolve an ini entry to a shared image path.
- * modules/qproto.so|.dll first (the entry plus this OS's extension), then the
- * old package folder modules/qproto/qproto.so|.dll, else the entry as given.
+ * Resolve a modules.list entry to a shared image path: the entry as given
+ * when that file exists (`qproto.so`), else the entry plus this OS's
+ * extension (`qproto` → modules/qproto.so|.dll).
  */
 lh_bool_t
 authum_loader_resolve_image(const lh_fs_path_t *base, const lh_fs_path_t *entry, lh_fs_path_t *out)
 {
     lh_fs_path_t candidate;
-    lh_fs_path_t leaf;
     lh_fs_path_t with_ext;
-    lh_str_t leaf_text;
-    lh_str_view_t name;
-    lh_str_view_t ext;
-    lh_str_view_t leaf_view;
-    lh_usize_t n;
+    lh_bool_t ok;
 
     lh_fs_path_init(lh_addr_of(candidate));
     if (lh_null_ne(base))
     {
-        if (!lh_fs_path_join(lh_addr_of(candidate), base, entry))
-        {
-            lh_fs_path_deinit(lh_addr_of(candidate));
-            return lh_bool_false;
-        }
+        ok = lh_fs_path_join(lh_addr_of(candidate), base, entry);
     }
     else
     {
         lh_fs_path_assign(lh_addr_of(candidate), entry);
+        ok = lh_bool_true;
     }
-
-    /* modules/qproto.so wins over the old modules/qproto/ folder: copying the
-     * new layout over an old install must load the new file. */
-    lh_fs_path_init(lh_addr_of(with_ext));
-    lh_fs_path_assign(lh_addr_of(with_ext), entry);
-    (void)authum_loader_ensure_shared_ext(lh_addr_of(with_ext));
-    lh_fs_path_init(lh_addr_of(leaf));
-    if (lh_null_ne(base))
+    if (ok && !authum_loader_path_is_file(lh_addr_of(candidate)))
     {
-        (void)lh_fs_path_join(lh_addr_of(leaf), base, lh_addr_of(with_ext));
-    }
-    else
-    {
-        lh_fs_path_assign(lh_addr_of(leaf), lh_addr_of(with_ext));
-    }
-    lh_fs_path_deinit(lh_addr_of(with_ext));
-    if (authum_loader_path_is_file(lh_addr_of(leaf)))
-    {
-        lh_fs_path_assign(out, lh_addr_of(leaf));
-        lh_fs_path_deinit(lh_addr_of(leaf));
-        lh_fs_path_deinit(lh_addr_of(candidate));
-        return lh_bool_true;
-    }
-    lh_fs_path_deinit(lh_addr_of(leaf));
-
-    if (authum_loader_path_is_dir(lh_addr_of(candidate)))
-    {
-        n = lh_fs_path_get_segment_count(entry);
-        if (lh_math_is_zero(n))
+        lh_fs_path_init(lh_addr_of(with_ext));
+        lh_fs_path_assign(lh_addr_of(with_ext), entry);
+        (void)authum_loader_ensure_shared_ext(lh_addr_of(with_ext));
+        if (lh_null_ne(base))
         {
-            lh_fs_path_deinit(lh_addr_of(candidate));
-            return lh_bool_false;
+            ok = lh_fs_path_join(lh_addr_of(candidate), base, lh_addr_of(with_ext));
         }
-        lh_fs_path_get_segment(entry, lh_math_sub_one(n), lh_addr_of(name));
-        lh_os_system_shared_get_ext(lh_addr_of(ext));
-        lh_str_init(lh_addr_of(leaf_text));
-        lh_str_append(lh_addr_of(leaf_text), lh_str_view_get_data(lh_addr_of(name)),
-                      lh_str_view_get_size(lh_addr_of(name)));
-        lh_str_append(lh_addr_of(leaf_text), lh_str_view_get_data(lh_addr_of(ext)),
-                      lh_str_view_get_size(lh_addr_of(ext)));
-        lh_str_as_view(lh_addr_of(leaf_text), lh_addr_of(leaf_view));
-        lh_fs_path_init(lh_addr_of(leaf));
-        lh_fs_path_set(lh_addr_of(leaf), leaf_view, lh_fs_path_style_posix);
-        if (!lh_fs_path_join(out, lh_addr_of(candidate), lh_addr_of(leaf)))
+        else
         {
-            lh_fs_path_deinit(lh_addr_of(leaf));
-            lh_str_deinit(lh_addr_of(leaf_text));
-            lh_fs_path_deinit(lh_addr_of(candidate));
-            return lh_bool_false;
+            lh_fs_path_assign(lh_addr_of(candidate), lh_addr_of(with_ext));
         }
-        lh_fs_path_deinit(lh_addr_of(leaf));
-        lh_str_deinit(lh_addr_of(leaf_text));
-        lh_fs_path_deinit(lh_addr_of(candidate));
-        return lh_bool_true;
+        lh_fs_path_deinit(lh_addr_of(with_ext));
     }
-
-    if (authum_loader_path_is_file(lh_addr_of(candidate)))
+    if (ok)
     {
         lh_fs_path_assign(out, lh_addr_of(candidate));
-        lh_fs_path_deinit(lh_addr_of(candidate));
-        return lh_bool_true;
     }
-
-    /* Not a dir yet — try native extension on the entry path. */
-    lh_fs_path_init(lh_addr_of(with_ext));
-    lh_fs_path_assign(lh_addr_of(with_ext), entry);
-    (void)authum_loader_ensure_shared_ext(lh_addr_of(with_ext));
     lh_fs_path_deinit(lh_addr_of(candidate));
-    lh_fs_path_init(lh_addr_of(candidate));
-    if (lh_null_ne(base))
-    {
-        if (!lh_fs_path_join(lh_addr_of(candidate), base, lh_addr_of(with_ext)))
-        {
-            lh_fs_path_deinit(lh_addr_of(with_ext));
-            lh_fs_path_deinit(lh_addr_of(candidate));
-            return lh_bool_false;
-        }
-    }
-    else
-    {
-        lh_fs_path_assign(lh_addr_of(candidate), lh_addr_of(with_ext));
-    }
-    lh_fs_path_deinit(lh_addr_of(with_ext));
-    lh_fs_path_assign(out, lh_addr_of(candidate));
-    lh_fs_path_deinit(lh_addr_of(candidate));
-    return lh_bool_true;
+    return ok;
 }
 
 void
@@ -676,26 +603,15 @@ authum_loader_load_modules(authum_module_t *self)
         return lh_bool_true;
     }
 
-    /* configs/modules.list; the old place beside authum_mm still works. */
     lh_fs_path_set(lh_addr_of(sub), lh_str_view_lit("configs/" AUTHUM_MODULES_LIST),
                    lh_fs_path_style_posix);
-    if (!lh_fs_path_join(lh_addr_of(ini), lh_addr_of(parent), lh_addr_of(sub)) ||
-        !authum_loader_path_is_file(lh_addr_of(ini)))
+    if (!lh_fs_path_join(lh_addr_of(ini), lh_addr_of(parent), lh_addr_of(sub)))
     {
-        lh_fs_path_set(lh_addr_of(sub), lh_str_view_lit(AUTHUM_MODULES_LIST),
-                       lh_fs_path_style_posix);
-        if (!lh_fs_path_join(lh_addr_of(ini), lh_addr_of(parent), lh_addr_of(sub)))
-        {
-            lh_fs_path_deinit(lh_addr_of(sub));
-            lh_fs_path_deinit(lh_addr_of(parent));
-            lh_fs_path_deinit(lh_addr_of(dir));
-            lh_fs_path_deinit(lh_addr_of(ini));
-            return lh_bool_false;
-        }
-        if (authum_loader_path_is_file(lh_addr_of(ini)))
-        {
-            authum_log_warning("modules.list beside authum_mm: move it to configs/modules.list");
-        }
+        lh_fs_path_deinit(lh_addr_of(sub));
+        lh_fs_path_deinit(lh_addr_of(parent));
+        lh_fs_path_deinit(lh_addr_of(dir));
+        lh_fs_path_deinit(lh_addr_of(ini));
+        return lh_bool_false;
     }
     if (authum_loader_path_is_file(lh_addr_of(ini)))
     {

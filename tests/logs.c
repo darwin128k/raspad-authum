@@ -123,7 +123,7 @@ test_file_exists(const char *dir, time_t when)
 void
 test_write_cfg(const char *text)
 {
-    FILE *cfg = fopen(TEST_ROOT "/authum.cfg", "w");
+    FILE *cfg = fopen(TEST_ROOT "/configs/authum.cfg", "w");
 
     CHECK(cfg != NULL);
     if (cfg != NULL)
@@ -177,6 +177,7 @@ test_reset(void)
         remove(path);
     }
     test_mkdir(TEST_ROOT);
+    test_mkdir(TEST_ROOT "/configs");
     test_write_cfg(g_test_cfg);
 }
 

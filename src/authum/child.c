@@ -31,7 +31,6 @@ typedef struct authum_child_paths
     authum_path_t addons;
     authum_path_t authum;
     authum_path_t modules;
-    authum_path_t module;
     authum_path_t configs;
     authum_path_t data;
     authum_path_t lang;
@@ -163,13 +162,12 @@ authum_child_bind_parent(authum_path_t *slot, const authum_path_t **field,
 }
 
 /**
- * Roots come from authum_mm's own directory (addons/authum), so a module in
- * modules/qproto.so and one in the old modules/qproto/qproto.so see the same
- * configs/, data/ and logs/. `module` stays the directory of the module's
- * image. The engine game dir is a fallback when the walk cannot reach game.
+ * Roots come from authum_mm's own directory (addons/authum): modules/,
+ * configs/, data/ beside it, game two levels up. The engine game dir is a
+ * fallback when the walk cannot reach game.
  */
 void
-authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
+authum_child_fill_env(authum_child_data_t *data)
 {
     authum_env_t *env = &data->env;
     authum_child_paths_t *paths = &data->paths;
@@ -180,9 +178,7 @@ authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
     memset(paths, 0, sizeof(*paths));
     env->size = sizeof(*env);
     data->host.env = env;
-    data->host.module_dir = lh_null;
 
-    authum_child_bind_parent(&paths->module, &env->module, lh_os_module_get_path(child));
     authum_child_bind_parent(&paths->authum, &env->authum, lh_os_module_get_path(&authum));
     if (!lh_null_eq(env->authum) && authum_path_parent(&up, env->authum))
     {
@@ -215,8 +211,6 @@ authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
         (void)authum_path_ensure_dir(env->data);
         (void)authum_path_ensure_dir(env->module_data);
     }
-
-    data->host.module_dir = authum_path_as_cstr_or_null(env->module);
 }
 
 /* Implemented in crypto.c / engine_server.cpp (linked into authum_mm). */
@@ -235,7 +229,6 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     out->engine_funcs = lh_null;
     out->globals = lh_null;
     out->env = lh_null;
-    out->module_dir = lh_null;
     out->crypto = authum_crypto();
     out->engine = authum_engine();
 
@@ -265,7 +258,7 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
         out->globals = (authum_host_get_ptr_fn)lh_os_module_get_sym(parent, "authum_globals");
     }
 
-    authum_child_fill_env(child, data);
+    authum_child_fill_env(data);
 }
 
 /** After `stop` (or a failed `start`): drop the module's subscriptions and

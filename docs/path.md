@@ -20,7 +20,6 @@ Headers: `<authum/path.h>`, `<authum/env.h>`, `<authum/host.h>`.
 | `authum_host_env_module_config` | `configs/<module>` — a module's extra config files |
 | `authum_host_env_data` / `_module_data` | `…/addons/authum/data`, `data/<module>` — what the module writes |
 | `authum_host_env_lang` | `data/lang` — translations |
-| `authum_host_env_module` | Directory of the module's image (`modules/`, or the old `modules/qproto/`) |
 | `authum_host_env_models` / `_sprites` | Content trees when needed |
 
 Always via `authum_host_*` — never `host->env->…`.
@@ -34,9 +33,8 @@ separators). If that fails, engine game-dir fallback may still fill `game`.
 
 ```c
 authum_path_t path;
-authum_path_set(&path, authum_host_env_module(host));
-authum_path_join(&path, "mymod.cfg");
-/* fopen(authum_path_as_cstr(&path), "r") or authum_cfg_open(&cfg, &path) */
+authum_path_join(&path, authum_host_env_module_data(host), "cache.bin");
+/* fopen(authum_path_as_cstr(&path), "rb") */
 ```
 
 - Capacity: `authum_path_capacity` (see `<authum/path/capacity.h>`).
@@ -49,7 +47,7 @@ authum_path_join(&path, "mymod.cfg");
 
 ## With config / logging
 
-For files use `authum_host_config_path(host, "qproto.cfg", &path)` (configs/,
-then configs/<module>/, then the old module folder) and
-`authum_host_data_path(host, "bans.db", &path)` (data/<module>/, moving a file
-left in the old folder). Full cfg workflow: [cfg.md](cfg.md). Logger sinks: [logging.md](logging.md).
+For files use `authum_host_config_path(host, "qproto.cfg", &path)`
+(`configs/qproto.cfg`), `authum_host_module_config_path(host, "whitelist.ini",
+&path)` (`configs/<module>/whitelist.ini`) and
+`authum_host_data_path(host, "bans.db", &path)` (`data/<module>/bans.db`). Full cfg workflow: [cfg.md](cfg.md). Logger sinks: [logging.md](logging.md).

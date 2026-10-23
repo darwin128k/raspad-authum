@@ -74,9 +74,7 @@ cstrike/addons/authum/
   logs/<authum|module>/YYYY-MM-DD.log ← written at runtime
 ```
 
-Back up `configs/` and `data/`; the rest is replaced by an update. The old
-layout (`modules/<name>/<name>.so` with its cfg beside it, `modules.list` and
-`authum.cfg` next to `authum_mm.so`) still loads, with a warning to move files.
+Back up `configs/` and `data/`; the rest is replaced by an update.
 
 ## Docs
 

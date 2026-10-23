@@ -97,9 +97,8 @@ mymod_config_load(authum_host_t *host)
     authum_path_t path;
     authum_cfg_t cfg;
 
-    authum_path_clear(&path);
-    if (!authum_path_set(&path, authum_host_env_module(host)) ||
-        !authum_path_join(&path, "mymod.cfg") ||
+    /* addons/authum/configs/mymod.cfg */
+    if (!authum_host_config_path(host, "mymod.cfg", &path) ||
         !authum_cfg_open(&cfg, &path)) {
         /* defaults already on g_mymod_config */
         return;
@@ -209,10 +208,10 @@ lookup — copy if you need them longer.
 Prefer host-filled roots, not ad-hoc `char *` or `getcwd`:
 
 ```c
-const authum_path_t *mod = authum_host_env_module(host);
 authum_path_t path;
-authum_path_set(&path, mod);
-authum_path_join(&path, "mymod.cfg");
+authum_host_config_path(host, "mymod.cfg", &path);              /* configs/mymod.cfg */
+authum_host_module_config_path(host, "whitelist.ini", &path);   /* configs/mymod/whitelist.ini */
+authum_host_data_path(host, "mymod.db", &path);                 /* data/mymod/mymod.db */
 ```
 
 Never read `host->env` / `host->engine` fields directly — only

@@ -97,10 +97,10 @@ cstrike/addons/authum/
 `addons/authum/logs/<module>/YYYY-MM-DD.log`, levels in
 `addons/authum/configs/authum.cfg` ([logging.md](logging.md)).
 
-Find files with `authum_host_config_path(host, "example.cfg", &path)` (looks in
-`configs/`, `configs/example/`, then the old `modules/example/` folder) and
-`authum_host_data_path(host, "example.db", &path)` (`data/example/`, moving a
-file left in the old folder) — never join `authum_host_env_module` by hand.
+Paths: `authum_host_config_path(host, "example.cfg", &path)` →
+`configs/example.cfg`; `authum_host_module_config_path(host, "list.ini", &path)`
+→ `configs/example/list.ini`; `authum_host_data_path(host, "example.db", &path)`
+→ `data/example/example.db` (folder created).
 
 ---
 
@@ -117,8 +117,8 @@ survives Authum's internal changes.
 | `authum_logger_*` / `authum_host_log_line` | the module's log — [logging.md](logging.md) |
 | `authum_host_engine` / game dir / print / command | engine facade (no HLSDK) |
 | `authum_host_engine_funcs` / `authum_host_globals` | escape hatch → HLSDK types |
-| `authum_host_env` / `authum_host_env_module` / `_game` / … | `authum_path_t` roots |
-| `authum_host_env_module_cstr` | deprecated C string of module dir |
+| `authum_host_env` / `authum_host_env_configs` / `_data` / `_lang` / `_game` / … | `authum_path_t` roots |
+| `authum_host_config_path` / `_module_config_path` / `_data_path` | a module's files |
 | `authum_host_crypto` | Rijndael + SHA (`<authum/crypto.h>`) |
 | `authum_host_sandbox` | Module memory freed at unload — [sandbox.md](sandbox.md) |
 | `authum_host_events` / `authum_host_subscribe` / `authum_host_publish` | Event bus — [events.md](events.md) |

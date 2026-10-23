@@ -72,8 +72,8 @@ hello_start(authum_host_t *host)
     }
     authum_host_copy(&g_hello_host, host);
     authum_logger_init(&g_hello_log, &g_hello_host);
-    authum_logger_info(&g_hello_log, "start, module dir %s",
-                       authum_path_as_cstr(authum_host_env_module(&g_hello_host)));
+    authum_logger_info(&g_hello_log, "start, data dir %s",
+                       authum_path_as_cstr(authum_host_env_module_data(&g_hello_host)));
 
     /* Each item is a name buffer; the storage lives in this module's sandbox. */
     authum_array_init(&g_hello_seen, authum_host_sandbox(&g_hello_host),

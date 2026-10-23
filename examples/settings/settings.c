@@ -86,7 +86,7 @@ settings_load(void)
     authum_cfg_t cfg;
 
     g_settings = g_settings_defaults;
-    /* configs/settings.cfg (an old modules/settings/settings.cfg still works). */
+    /* addons/authum/configs/settings.cfg */
     if (!authum_host_config_path(&g_settings_host, "settings.cfg", &path) ||
         !authum_cfg_open(&cfg, &path))
     {
