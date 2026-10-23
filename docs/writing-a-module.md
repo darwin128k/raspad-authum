@@ -85,15 +85,22 @@ AUTHUM_MODULE_EXPORT const authum_module_api_t authum_module_api = {
 ```
 cstrike/addons/authum/
   authum_mm.so
-  modules.list                 # one path per line, e.g. example
-  modules/example/
-    example.so
-    example.cfg                # optional
+  modules/example.so
+  configs/
+    modules.list               # one name per line: example
+    example.cfg                # optional; other files in configs/example/
+  data/example/                # what the module writes (created at load)
+  logs/example/                # the module's log
 ```
 
 `modules.list`: see [modules.md](modules.md). Console: `authum`. Logs:
-`addons/authum/logs/<module>/YYYY-MM-DD.log`, levels in `addons/authum/authum.cfg`
-([logging.md](logging.md)).
+`addons/authum/logs/<module>/YYYY-MM-DD.log`, levels in
+`addons/authum/configs/authum.cfg` ([logging.md](logging.md)).
+
+Find files with `authum_host_config_path(host, "example.cfg", &path)` (looks in
+`configs/`, `configs/example/`, then the old `modules/example/` folder) and
+`authum_host_data_path(host, "example.db", &path)` (`data/example/`, moving a
+file left in the old folder) — never join `authum_host_env_module` by hand.
 
 ---
 
@@ -133,9 +140,9 @@ survives Authum's internal changes.
 | `authum_timer_add` / `_remove` | "in 5 s", "every 30 s" — `<authum/timer.h>` |
 | `authum_host_command_add[_all]` | `authum <module> <name>` console / RCON commands — [commands.md](commands.md) |
 
-Paths in `env` are absolute when the host can resolve them from the module image
-(current volume, native separators). Prefer `authum_host_env_module(host)` for
-cfg/logs; `authum_path_join` appends a leaf.
+Paths in `env` are absolute (current volume, native separators). Configs:
+`authum_host_config_path`; data the module writes: `authum_host_data_path`;
+translations: `authum_host_env_lang`. `authum_path_join` appends a leaf.
 
 **Config:** defaults on `g_mod_config = { … }`, then
 `authum_cfg_apply_items` from an `authum_cfg_item_t[]`. Keys that need a custom
@@ -208,7 +215,7 @@ diagnostics. Details: [logging.md](logging.md).
 - [ ] `#include <authum/client.h>` (no lh in a pure client)
 - [ ] `authum_module_info.abi` = `AUTHUM_MODULE_ABI` (`1.0.0`); host kept with `authum_host_copy`, non-null `name`
 - [ ] `authum_module_api` exported; `start` returns `authum_bool_false` only on hard failure
-- [ ] Listed in `modules.list` / under `modules/`
+- [ ] Listed in `configs/modules.list`; image is `modules/<name>.so`; config `configs/<name>.cfg`, data via `authum_host_data_path`
 - [ ] Folder `foo` → `foo.so` / `foo.dll`
 - [ ] Not a Metamod `plugins.ini` entry
 - [ ] Logs via host facade

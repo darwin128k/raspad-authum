@@ -1,7 +1,7 @@
 # Logging
 
 A module says **what happened and how bad it is**. Authum decides **where it
-goes**, from one file, `addons/authum/authum.cfg`. No module has its own
+goes**, from one file, `addons/authum/configs/authum.cfg`. No module has its own
 logging keys, file paths or console switches.
 
 ---

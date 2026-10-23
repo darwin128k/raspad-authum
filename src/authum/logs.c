@@ -92,7 +92,11 @@ authum_logs_cfg_open(authum_cfg_t *cfg)
 {
     authum_path_t path;
 
-    return (authum_path_join(&path, &authum_logs_root, "authum.cfg") && authum_cfg_open(cfg, &path))
+    /* configs/authum.cfg; the old place beside authum_mm still works. */
+    return ((authum_path_join(&path, &authum_logs_root, "configs/authum.cfg") &&
+             authum_cfg_open(cfg, &path)) ||
+            (authum_path_join(&path, &authum_logs_root, "authum.cfg") &&
+             authum_cfg_open(cfg, &path)))
                ? authum_bool_true
                : authum_bool_false;
 }

@@ -391,6 +391,11 @@ typedef struct test_module
     authum_env_t env;
     authum_path_t root;
     authum_path_t dir;
+    authum_path_t modules;
+    authum_path_t configs;
+    authum_path_t data;
+    authum_path_t module_config;
+    authum_path_t module_data;
     authum_sandbox_t sandbox;
     authum_events_t events;
     authum_commands_t commands;
@@ -460,8 +465,21 @@ test_load(test_module_t *m)
     authum_path_join(&m->dir, &modules, m->name);
     authum_path_ensure_dir(&m->dir);
     memset(&m->env, 0, sizeof m->env);
+    m->env.size = sizeof m->env;
     m->env.authum = &m->root;
-    m->env.module = &m->dir;
+    m->env.module = &m->dir; /* the old per-module folder, as a fallback */
+    authum_path_assign(&m->modules, &modules);
+    m->env.modules = &m->modules;
+    authum_path_join(&m->configs, &m->root, "configs");
+    authum_path_ensure_dir(&m->configs);
+    m->env.configs = &m->configs;
+    authum_path_join(&m->data, &m->root, "data");
+    authum_path_ensure_dir(&m->data);
+    m->env.data = &m->data;
+    authum_path_join(&m->module_config, &m->configs, m->name);
+    m->env.module_config = &m->module_config;
+    authum_path_join(&m->module_data, &m->data, m->name);
+    m->env.module_data = &m->module_data;
 
     m->sandbox.ops = authum_sandbox_host_ops();
     m->sandbox.root = authum_sandbox_host_root_create();
@@ -596,6 +614,19 @@ test_write_file(const char *path, const char *text)
     }
 }
 
+authum_bool_t
+test_exists(const char *path)
+{
+    FILE *file = fopen(path, "rb");
+
+    if (file == NULL)
+    {
+        return authum_bool_false;
+    }
+    fclose(file);
+    return authum_bool_true;
+}
+
 test_module_t g_modules[] = {
     {"skeleton"}, {"hello"},  {"welcome"},    {"chatfilter"},  {"cvarguard"}, {"settings"},
     {"stats"},    {"scores"}, {"scoreboard"}, {"deathnotice"}, {"announcer"},
@@ -612,7 +643,9 @@ main(void)
 
     authum_path_set_cstr(&root, TEST_ROOT);
     authum_path_ensure_dir(&root);
+    remove(TEST_ROOT "/data/stats/stats.db");
     remove(TEST_ROOT "/modules/stats/stats.db");
+    remove(TEST_ROOT "/configs/settings.cfg");
     remove(TEST_ROOT "/modules/settings/settings.cfg");
     CHECK(authum_logs_init(TEST_ROOT, authum_null));
 
@@ -668,17 +701,20 @@ main(void)
     /* settings: defaults, then a file, then a bad value that is refused. */
     CHECK(test_run("settings", "show", 0u, authum_null));
     CHECK(strstr(g_out, "mode         = normal") != NULL);
-    test_write_file(TEST_ROOT "/modules/settings/settings.cfg",
+    test_write_file(TEST_ROOT "/configs/settings.cfg",
                     "greeting = hi there\nmax_warnings = 7\nmode = HARD\n");
     CHECK(test_run("settings", "reload", 0u, authum_null));
     CHECK(test_run("settings", "show", 0u, authum_null));
     CHECK(strstr(g_out, "mode         = hard") != NULL);
     CHECK(strstr(g_out, "max_warnings = 7") != NULL);
     CHECK(strstr(g_out, "greeting     = hi there") != NULL);
-    test_write_file(TEST_ROOT "/modules/settings/settings.cfg", "mode = impossible\n");
+    test_write_file(TEST_ROOT "/configs/settings.cfg", "mode = impossible\n");
     CHECK(test_run("settings", "reload", 0u, authum_null));
     CHECK(test_run("settings", "show", 0u, authum_null));
     CHECK(strstr(g_out, "mode         = normal") != NULL); /* defaults again, bad mode ignored */
+
+    /* stats keeps its database under data/stats/. */
+    CHECK(test_exists(TEST_ROOT "/data/stats/stats.db"));
 
     /* Lists. */
     CHECK(test_run("welcome", "players", 0u, authum_null));

@@ -36,6 +36,8 @@ authum_log_deinit(void);
 void
 authum_log_info(const char *fmt, ...);
 void
+authum_log_warning(const char *fmt, ...);
+void
 authum_log_error(const char *fmt, ...);
 
 LH_COMPILER_EXTERN_C_END

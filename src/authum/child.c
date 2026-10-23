@@ -32,6 +32,11 @@ typedef struct authum_child_paths
     authum_path_t authum;
     authum_path_t modules;
     authum_path_t module;
+    authum_path_t configs;
+    authum_path_t data;
+    authum_path_t lang;
+    authum_path_t module_config;
+    authum_path_t module_data;
 } authum_child_paths_t;
 
 typedef struct authum_child_data
@@ -141,55 +146,51 @@ authum_child_fill_under_game(authum_child_data_t *data)
     }
 }
 
+/** Bind @p field to the directory holding @p image (an lh path), or leave it null. */
+void
+authum_child_bind_parent(authum_path_t *slot, const authum_path_t **field,
+                         const lh_fs_path_t *image)
+{
+    lh_fs_path_t parent;
+
+    lh_fs_path_init(lh_addr_of(parent));
+    if (!lh_fs_path_is_empty(image) && lh_fs_path_parent(lh_addr_of(parent), image))
+    {
+        authum_child_bind_lh_path(slot, field, lh_addr_of(parent),
+                                  lh_os_system_fs_path_style_native());
+    }
+    lh_fs_path_deinit(lh_addr_of(parent));
+}
+
 /**
- * Walk image → module → modules → authum → addons → game, then fill models /
- * sprites (and any missing middle dirs) from game. Engine game-dir is a
- * fallback when the walk cannot reach game.
+ * Roots come from authum_mm's own directory (addons/authum), so a module in
+ * modules/qproto.so and one in the old modules/qproto/qproto.so see the same
+ * configs/, data/ and logs/. `module` stays the directory of the module's
+ * image. The engine game dir is a fallback when the walk cannot reach game.
  */
 void
 authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
 {
-    const lh_fs_path_t *image;
-    lh_fs_path_t walk;
-    lh_fs_path_style_t style;
     authum_env_t *env = &data->env;
     authum_child_paths_t *paths = &data->paths;
-    authum_path_t *slots[5];
-    const authum_path_t **fields[5];
-    size_t i;
+    authum_path_t up;
+    const authum_char_t *name = data->info->name;
 
     memset(env, 0, sizeof(*env));
     memset(paths, 0, sizeof(*paths));
+    env->size = sizeof(*env);
     data->host.env = env;
     data->host.module_dir = lh_null;
 
-    style = lh_os_system_fs_path_style_native();
-    image = lh_os_module_get_path(child);
-    if (!lh_fs_path_is_empty(image))
+    authum_child_bind_parent(&paths->module, &env->module, lh_os_module_get_path(child));
+    authum_child_bind_parent(&paths->authum, &env->authum, lh_os_module_get_path(&authum));
+    if (!lh_null_eq(env->authum) && authum_path_parent(&up, env->authum))
     {
-        lh_fs_path_init(lh_addr_of(walk));
-        if (lh_fs_path_parent(lh_addr_of(walk), image))
+        authum_child_bind_path(&paths->addons, &env->addons, authum_path_as_cstr(&up));
+        if (authum_path_parent(&up, env->addons))
         {
-            slots[0] = &paths->module;
-            slots[1] = &paths->modules;
-            slots[2] = &paths->authum;
-            slots[3] = &paths->addons;
-            slots[4] = &paths->game;
-            fields[0] = &env->module;
-            fields[1] = &env->modules;
-            fields[2] = &env->authum;
-            fields[3] = &env->addons;
-            fields[4] = &env->game;
-            for (i = 0; i < 5u; ++i)
-            {
-                authum_child_bind_lh_path(slots[i], fields[i], lh_addr_of(walk), style);
-                if (i + 1u < 5u && !lh_fs_path_parent(lh_addr_of(walk), lh_addr_of(walk)))
-                {
-                    break;
-                }
-            }
+            authum_child_bind_path(&paths->game, &env->game, authum_path_as_cstr(&up));
         }
-        lh_fs_path_deinit(lh_addr_of(walk));
     }
 
     if (lh_null_eq(env->game) && !lh_null_eq(data->host.engine))
@@ -202,6 +203,19 @@ authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
     }
 
     authum_child_fill_under_game(data);
+
+    authum_child_bind_join(&paths->configs, &env->configs, env->authum, "configs");
+    authum_child_bind_join(&paths->data, &env->data, env->authum, "data");
+    authum_child_bind_join(&paths->lang, &env->lang, env->data, "lang");
+    authum_child_bind_join(&paths->module_config, &env->module_config, env->configs, name);
+    authum_child_bind_join(&paths->module_data, &env->module_data, env->data, name);
+    /* What the module writes always has a place; configs are the admin's. */
+    if (!lh_null_eq(env->module_data))
+    {
+        (void)authum_path_ensure_dir(env->data);
+        (void)authum_path_ensure_dir(env->module_data);
+    }
+
     data->host.module_dir = authum_path_as_cstr_or_null(env->module);
 }
 

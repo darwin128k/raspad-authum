@@ -116,6 +116,39 @@ extern "C"
     const authum_char_t *
     authum_host_env_module_cstr(const authum_host_t *host);
 
+    const authum_path_t *
+    authum_host_env_configs(const authum_host_t *host);
+
+    const authum_path_t *
+    authum_host_env_data(const authum_host_t *host);
+
+    const authum_path_t *
+    authum_host_env_lang(const authum_host_t *host);
+
+    const authum_path_t *
+    authum_host_env_module_config(const authum_host_t *host);
+
+    const authum_path_t *
+    authum_host_env_module_data(const authum_host_t *host);
+
+    /**
+     * Config file @p leaf of this module — see ::authum_env_config_path.
+     * True when it exists (@p out is where); a file still in the old
+     * `modules/<module>/` folder works and logs a warning to move it to
+     * `configs/`. False: @p out is where it belongs.
+     */
+    authum_bool_t
+    authum_host_config_path(const authum_host_t *host, const authum_char_t *leaf,
+                            authum_path_t *out);
+
+    /**
+     * Data file @p leaf of this module: `data/<module>/<leaf>`, folder created
+     * — see ::authum_env_data_path. A file found in the old module folder is
+     * moved there and logged. False only when there is no path at all.
+     */
+    authum_bool_t
+    authum_host_data_path(const authum_host_t *host, const authum_char_t *leaf, authum_path_t *out);
+
     /* --- setters (module-owned copies, e.g. clear on stop) ------------------- */
 
     void

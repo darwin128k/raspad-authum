@@ -652,14 +652,26 @@ authum_loader_load_modules(authum_module_t *self)
         return lh_bool_true;
     }
 
-    lh_fs_path_set(lh_addr_of(sub), lh_str_view_lit(AUTHUM_MODULES_LIST), lh_fs_path_style_posix);
-    if (!lh_fs_path_join(lh_addr_of(ini), lh_addr_of(parent), lh_addr_of(sub)))
+    /* configs/modules.list; the old place beside authum_mm still works. */
+    lh_fs_path_set(lh_addr_of(sub), lh_str_view_lit("configs/" AUTHUM_MODULES_LIST),
+                   lh_fs_path_style_posix);
+    if (!lh_fs_path_join(lh_addr_of(ini), lh_addr_of(parent), lh_addr_of(sub)) ||
+        !authum_loader_path_is_file(lh_addr_of(ini)))
     {
-        lh_fs_path_deinit(lh_addr_of(sub));
-        lh_fs_path_deinit(lh_addr_of(parent));
-        lh_fs_path_deinit(lh_addr_of(dir));
-        lh_fs_path_deinit(lh_addr_of(ini));
-        return lh_bool_false;
+        lh_fs_path_set(lh_addr_of(sub), lh_str_view_lit(AUTHUM_MODULES_LIST),
+                       lh_fs_path_style_posix);
+        if (!lh_fs_path_join(lh_addr_of(ini), lh_addr_of(parent), lh_addr_of(sub)))
+        {
+            lh_fs_path_deinit(lh_addr_of(sub));
+            lh_fs_path_deinit(lh_addr_of(parent));
+            lh_fs_path_deinit(lh_addr_of(dir));
+            lh_fs_path_deinit(lh_addr_of(ini));
+            return lh_bool_false;
+        }
+        if (authum_loader_path_is_file(lh_addr_of(ini)))
+        {
+            authum_log_warning("modules.list beside authum_mm: move it to configs/modules.list");
+        }
     }
     if (authum_loader_path_is_file(lh_addr_of(ini)))
     {

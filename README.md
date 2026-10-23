@@ -47,8 +47,8 @@ Ready Linux binary: download `authum_mm.so` from
 
 1. Put into `cstrike/addons/authum/`:
    - `authum_mm.so`
-   - `modules.list` (one module folder name per line)
-   - `modules/<name>/<name>.so` (built by that module’s own project)
+   - `configs/modules.list` (one module name per line) and `configs/authum.cfg`
+   - `modules/<name>.so` (built by that module’s own project)
 2. In `addons/metamod/plugins.ini`:
 
 ```text
@@ -63,12 +63,20 @@ Layout:
 cstrike/addons/metamod/plugins.ini   →  linux addons/authum/authum_mm.so
 cstrike/addons/authum/
   authum_mm.so
-  modules.list
-  authum.cfg                         ← log levels
-  modules/<name>/
-    <name>.so
+  modules/                           ← one .so per module: qproto.so, gatekeeper.so, …
+  configs/                           ← everything the admin edits
+    authum.cfg                       ← log levels
+    modules.list                     ← which modules to load
+    qproto.cfg  gatekeeper.cfg  …    ← one <module>.cfg per module
+    gatekeeper/whitelist.ini         ← a module's other files
+  data/                              ← what modules write themselves (databases, keys)
+    gatekeeper/  qproto/  lang/
   logs/<authum|module>/YYYY-MM-DD.log ← written at runtime
 ```
+
+Back up `configs/` and `data/`; the rest is replaced by an update. The old
+layout (`modules/<name>/<name>.so` with its cfg beside it, `modules.list` and
+`authum.cfg` next to `authum_mm.so`) still loads, with a warning to move files.
 
 ## Docs
 

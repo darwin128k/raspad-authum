@@ -408,6 +408,105 @@ test_event_message(void)
     CHECK_STR(authum_event_message_get_string(&ev, 1), "knife");
 }
 
+/* --- configs/ and data/ with the old modules/<module>/ folder as a fallback --- */
+
+#define TEST_ENV_ROOT "authum_env_test_root"
+
+void
+test_env_touch(const char *path, const char *text)
+{
+    FILE *file = fopen(path, "w");
+
+    if (file != NULL)
+    {
+        fputs(text, file);
+        fclose(file);
+    }
+}
+
+authum_bool_t
+test_env_exists(const char *path)
+{
+    FILE *file = fopen(path, "rb");
+
+    if (file == NULL)
+    {
+        return authum_bool_false;
+    }
+    fclose(file);
+    return authum_bool_true;
+}
+
+void
+test_env_paths(void)
+{
+    authum_path_t root, modules, legacy, configs, data, module_config, module_data, out;
+    authum_env_t env;
+
+    authum_path_set_cstr(&root, TEST_ENV_ROOT);
+    authum_path_join(&modules, &root, "modules");
+    authum_path_join(&legacy, &modules, "foo");
+    authum_path_join(&configs, &root, "configs");
+    authum_path_join(&module_config, &configs, "foo");
+    authum_path_join(&data, &root, "data");
+    authum_path_join(&module_data, &data, "foo");
+    CHECK(authum_path_ensure_dir(&root) && authum_path_ensure_dir(&modules) &&
+          authum_path_ensure_dir(&legacy) && authum_path_ensure_dir(&configs) &&
+          authum_path_ensure_dir(&module_config));
+    remove(TEST_ENV_ROOT "/configs/foo.cfg");
+    remove(TEST_ENV_ROOT "/configs/foo/extra.ini");
+    remove(TEST_ENV_ROOT "/data/foo/foo.db");
+    test_env_touch(TEST_ENV_ROOT "/modules/foo/foo.cfg", "old\n");
+    test_env_touch(TEST_ENV_ROOT "/modules/foo/foo.db", "db\n");
+
+    memset(&env, 0, sizeof env);
+    env.size = sizeof env;
+    env.modules = &modules;
+    env.module = &legacy; /* an old modules/foo/foo.so */
+    env.configs = &configs;
+    env.module_config = &module_config;
+    env.data = &data;
+    env.module_data = &module_data;
+
+    /* Only in the old folder: found there, flagged. */
+    CHECK(authum_env_config_path(&env, "foo.cfg", &out) == authum_env_found_legacy);
+    CHECK_STR(authum_path_as_cstr(&out), TEST_ENV_ROOT "/modules/foo/foo.cfg");
+    /* In configs/ it wins. */
+    test_env_touch(TEST_ENV_ROOT "/configs/foo.cfg", "new\n");
+    CHECK(authum_env_config_path(&env, "foo.cfg", &out) == authum_env_found_here);
+    CHECK_STR(authum_path_as_cstr(&out), TEST_ENV_ROOT "/configs/foo.cfg");
+    /* A module's other files: configs/<module>/. */
+    test_env_touch(TEST_ENV_ROOT "/configs/foo/extra.ini", "x\n");
+    CHECK(authum_env_config_path(&env, "extra.ini", &out) == authum_env_found_here);
+    CHECK_STR(authum_path_as_cstr(&out), TEST_ENV_ROOT "/configs/foo/extra.ini");
+    /* Nowhere: where it belongs. */
+    CHECK(authum_env_config_path(&env, "missing.cfg", &out) == authum_env_found_none);
+    CHECK_STR(authum_path_as_cstr(&out), TEST_ENV_ROOT "/configs/missing.cfg");
+
+    /* Data: moved out of the old folder once, then found in place. */
+    CHECK(authum_env_data_path(&env, "foo.db", &out) == authum_env_found_legacy);
+    CHECK_STR(authum_path_as_cstr(&out), TEST_ENV_ROOT "/data/foo/foo.db");
+    CHECK(test_env_exists(TEST_ENV_ROOT "/data/foo/foo.db"));
+    CHECK(!test_env_exists(TEST_ENV_ROOT "/modules/foo/foo.db"));
+    CHECK(authum_env_data_path(&env, "foo.db", &out) == authum_env_found_here);
+    CHECK(authum_env_data_path(&env, "new.db", &out) == authum_env_found_none);
+    CHECK_STR(authum_path_as_cstr(&out), TEST_ENV_ROOT "/data/foo/new.db");
+
+    /* A module right in modules/ has no old folder: modules/ is not searched. */
+    test_env_touch(TEST_ENV_ROOT "/modules/bar.cfg", "shared dir\n");
+    env.module = &modules;
+    CHECK(authum_env_config_path(&env, "bar.cfg", &out) == authum_env_found_none);
+
+    /* An older host's env (no size): no paths, nothing found, no crash. */
+    env.size = 0u;
+    CHECK(authum_env_configs(&env) == authum_null);
+    CHECK(authum_env_config_path(&env, "foo.cfg", &out) == authum_env_found_none);
+    CHECK(authum_env_config_path(authum_null, "foo.cfg", &out) == authum_env_found_none);
+
+    remove(TEST_ENV_ROOT "/modules/foo/foo.cfg");
+    remove(TEST_ENV_ROOT "/modules/bar.cfg");
+}
+
 /* A host built before a function existed hands a shorter table. */
 void
 test_abi_size(void)
@@ -782,6 +881,7 @@ main(void)
     test_engine_messages();
     test_event_message();
     test_engine_entities();
+    test_env_paths();
     test_abi_size();
     test_host_copy();
     test_abi_version();

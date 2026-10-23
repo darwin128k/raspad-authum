@@ -119,6 +119,15 @@ authum_log_info(const char *fmt, ...)
 }
 
 void
+authum_log_warning(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    (void)lh_logger_log_v(lh_runtime_logger(), lh_logger_level_warning, fmt, ap);
+    va_end(ap);
+}
+
+void
 authum_log_error(const char *fmt, ...)
 {
     va_list ap;

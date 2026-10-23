@@ -1,7 +1,7 @@
 /**
  * stats — SQLite plus a journal.
  *
- *   - stats.db next to the module: one row per auth id with its visit count;
+ *   - data/stats/stats.db: one row per auth id with its visit count;
  *   - every visit is written to a journal, logs/stats/visits/YYYY-MM-DD.log,
  *     apart from the module's own log;
  *   - the player sees "visit #N" in chat;
@@ -150,7 +150,8 @@ stats_start(authum_host_t *host)
     authum_logger_open(&g_stats_visits, &g_stats_host, "visits");
 
     authum_sql_init(&g_stats_db);
-    if (!authum_path_join(&path, authum_host_env_module(&g_stats_host), "stats.db") ||
+    /* data/stats/stats.db: what a module writes lives under data/. */
+    if (!authum_host_data_path(&g_stats_host, "stats.db", &path) ||
         !authum_sql_open_sqlite(&g_stats_db, authum_path_as_cstr(&path)) ||
         !authum_sql_exec(&g_stats_db, "CREATE TABLE IF NOT EXISTS visits ("
                                       "auth_id TEXT PRIMARY KEY, name TEXT NOT NULL, "
