@@ -28,10 +28,11 @@ children of its own.
 Authum's part is the policy around that mechanism:
 
 - identity and ABI live in an exported `authum_module_info_t`;
-- the method-table symbol is `authum_module_ops`;
-- extra modules come from `modules.list` beside the image when that file
-  exists, otherwise from shared libraries in a directory named `modules`
-  beside the image;
+- a module exports `authum_module_api` (`start` / `stop`); `authum_mm`
+  itself is bound to lh through its own `authum_module_ops`;
+- extra modules come from `configs/modules.list` when that file exists,
+  otherwise from shared libraries in a directory named `modules` beside
+  the image;
 - the host plugin file `authum_mm` is never opened as a child.
 
 One module does not call another directly. There is no `dlsym` into a
@@ -49,13 +50,13 @@ Every image that wants to be an Authum module exports two C symbols.
 | Symbol | Type | Role |
 |--------|------|------|
 | `authum_module_info` | `authum_module_info_t` | Who the module is, and which loader ABI it was built for. |
-| `authum_module_ops` | `lh_os_module_ops_t` | `start` and `stop`. lh looks this name up. An image without it is a plain library and is not kept. |
+| `authum_module_api` | `authum_module_api_t` | `start(host)` and `stop`. An image without it is not a module and is not kept. |
 
 `authum_module_info` fields:
 
 | Field | Meaning |
 |-------|---------|
-| `abi` | Loader contract. Accepted when `lh_version_is_compatible` against the host's `AUTHUM_MODULE_ABI` (`0.3.0`). |
+| `abi` | Loader contract. Accepted when `authum_version_is_abi_compatible` against the host's `AUTHUM_MODULE_ABI` (`1.0.0`): same major (0.x: same minor). |
 | `name` | Required. A null name is rejected. |
 | `version` | The module's own SemVer. |
 | `datetime` | Build timestamp. |
@@ -105,8 +106,8 @@ The list does not invent paths. Authum finds paths and hands them over
 one at a time. `lh_os_loader_load` is what links a node.
 
 `authum_loader_load_modules` takes the image path, drops the last
-segment (`lh_fs_path_parent`), and looks for `modules.list` beside the
-image. If that file exists, only that list is used. If it is missing,
+segment (`lh_fs_path_parent`), and looks for `configs/modules.list`. If it
+exists, only that list is used. If it is missing,
 the name `modules` is joined and the directory is scanned (one level).
 A missing directory, or a path that is not a directory, succeeds with
 nothing loaded. An empty path is an error.
@@ -154,7 +155,7 @@ For each entry in `modules/`:
 1. Allocates a module (`lh_os_module_create`).
 2. Sets its owner to this loader, so `start` can already see the parent.
 3. Opens the image.
-4. Reads `authum_module_ops`. No symbol: the module is destroyed and not linked.
+4. Reads `authum_module_api`. No symbol: the module is destroyed and not linked.
 5. Calls `start`. False: destroyed and not linked. A child whose `start`
    is `authum_module_start` loads its own children here, into its own
    list.
@@ -203,24 +204,25 @@ loaded, so the same loader can be used again.
 
 ```
 authum_mm.dll
-modules.list                # optional; if present, replaces the dir scan
+configs/modules.list        # optional; if present, replaces the dir scan
 modules/
     one.dll
     two.dll
     two.dll's own modules/  # loaded from two's start, if its start does that
 ```
 
-`modules.list` and `modules/` of the host are siblings of `authum_mm.dll`,
+`configs/` and `modules/` of the host are siblings of `authum_mm.dll`,
 not children of the process working directory.
 
-Example (see `deploy/modules.list`):
+Example (see `deploy/configs/modules.list`):
 
 ```
 hello
 ```
 
-That is the package folder `modules/hello/`. Authum loads
-`hello.so` or `hello.dll` inside it for the current OS. Modules are
+That is the module folder `modules/hello/` and its image `modules/hello/hello.so`
+(`.dll` on Windows). Without `modules.list`, every folder `modules/<name>/` with
+a `<name>.so` in it is loaded. Modules are
 built by their own projects — Authum only loads them.
 
 No `.so` / `.dll` needed — Authum appends the native shared suffix. Use

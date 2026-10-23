@@ -2,6 +2,7 @@
 #include <authum/error/code.h>
 #include <authum/events/host.h>
 #include <authum/host.h>
+#include <authum/logger/host.h>
 #include <authum/sandbox/host.h>
 #include <authum/module.h>
 #include <authum/module/api.h>
@@ -31,6 +32,9 @@ typedef struct authum_child_paths
     authum_path_t authum;
     authum_path_t modules;
     authum_path_t module;
+    authum_path_t module_config;
+    authum_path_t module_lang;
+    authum_path_t module_data;
 } authum_child_paths_t;
 
 typedef struct authum_child_data
@@ -43,6 +47,7 @@ typedef struct authum_child_data
     authum_sandbox_t sandbox;
     authum_events_t events;
     authum_commands_t commands;
+    authum_logger_channel_t logger;
 } authum_child_data_t;
 
 const authum_module_info_t *
@@ -139,55 +144,47 @@ authum_child_fill_under_game(authum_child_data_t *data)
     }
 }
 
+/** Bind @p field to the directory holding @p image (an lh path), or leave it null. */
+void
+authum_child_bind_parent(authum_path_t *slot, const authum_path_t **field,
+                         const lh_fs_path_t *image)
+{
+    lh_fs_path_t parent;
+
+    lh_fs_path_init(lh_addr_of(parent));
+    if (!lh_fs_path_is_empty(image) && lh_fs_path_parent(lh_addr_of(parent), image))
+    {
+        authum_child_bind_lh_path(slot, field, lh_addr_of(parent),
+                                  lh_os_system_fs_path_style_native());
+    }
+    lh_fs_path_deinit(lh_addr_of(parent));
+}
+
 /**
- * Walk image → module → modules → authum → addons → game, then fill models /
- * sprites (and any missing middle dirs) from game. Engine game-dir is a
- * fallback when the walk cannot reach game.
+ * Roots come from authum_mm's own directory (addons/authum), game two levels
+ * up; the engine game dir is a fallback. The module's own folder is the one
+ * its image is in (modules/<module>/), with configs/, lang/ and data/ inside.
  */
 void
 authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
 {
-    const lh_fs_path_t *image;
-    lh_fs_path_t walk;
-    lh_fs_path_style_t style;
     authum_env_t *env = &data->env;
     authum_child_paths_t *paths = &data->paths;
-    authum_path_t *slots[5];
-    const authum_path_t **fields[5];
-    size_t i;
+    authum_path_t up;
 
     memset(env, 0, sizeof(*env));
     memset(paths, 0, sizeof(*paths));
+    env->size = sizeof(*env);
     data->host.env = env;
-    data->host.module_dir = lh_null;
 
-    style = lh_os_system_fs_path_style_native();
-    image = lh_os_module_get_path(child);
-    if (!lh_fs_path_is_empty(image))
+    authum_child_bind_parent(&paths->authum, &env->authum, lh_os_module_get_path(&authum));
+    if (!lh_null_eq(env->authum) && authum_path_parent(&up, env->authum))
     {
-        lh_fs_path_init(lh_addr_of(walk));
-        if (lh_fs_path_parent(lh_addr_of(walk), image))
+        authum_child_bind_path(&paths->addons, &env->addons, authum_path_as_cstr(&up));
+        if (authum_path_parent(&up, env->addons))
         {
-            slots[0] = &paths->module;
-            slots[1] = &paths->modules;
-            slots[2] = &paths->authum;
-            slots[3] = &paths->addons;
-            slots[4] = &paths->game;
-            fields[0] = &env->module;
-            fields[1] = &env->modules;
-            fields[2] = &env->authum;
-            fields[3] = &env->addons;
-            fields[4] = &env->game;
-            for (i = 0; i < 5u; ++i)
-            {
-                authum_child_bind_lh_path(slots[i], fields[i], lh_addr_of(walk), style);
-                if (i + 1u < 5u && !lh_fs_path_parent(lh_addr_of(walk), lh_addr_of(walk)))
-                {
-                    break;
-                }
-            }
+            authum_child_bind_path(&paths->game, &env->game, authum_path_as_cstr(&up));
         }
-        lh_fs_path_deinit(lh_addr_of(walk));
     }
 
     if (lh_null_eq(env->game) && !lh_null_eq(data->host.engine))
@@ -200,7 +197,16 @@ authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
     }
 
     authum_child_fill_under_game(data);
-    data->host.module_dir = authum_path_as_cstr_or_null(env->module);
+
+    authum_child_bind_parent(&paths->module, &env->module, lh_os_module_get_path(child));
+    authum_child_bind_join(&paths->module_config, &env->module_config, env->module, "configs");
+    authum_child_bind_join(&paths->module_lang, &env->module_lang, env->module, "lang");
+    authum_child_bind_join(&paths->module_data, &env->module_data, env->module, "data");
+    /* What the module writes always has a place; configs are the admin's. */
+    if (!lh_null_eq(env->module_data))
+    {
+        (void)authum_path_ensure_dir(env->module_data);
+    }
 }
 
 /* Implemented in crypto.c / engine_server.cpp (linked into authum_mm). */
@@ -215,11 +221,10 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     authum_module_t *parent;
     authum_host_t *out = &data->host;
 
-    out->log = lh_null;
+    out->size = sizeof(*out);
     out->engine_funcs = lh_null;
     out->globals = lh_null;
     out->env = lh_null;
-    out->module_dir = lh_null;
     out->crypto = authum_crypto();
     out->engine = authum_engine();
 
@@ -231,6 +236,10 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     data->events.owner = data;
     out->events = &data->events;
 
+    data->logger.ops = authum_logs_ops();
+    data->logger.owner = data;
+    out->logger = &data->logger;
+
     data->commands.ops = authum_commands_host_ops();
     data->commands.owner = data;
     data->commands.scope = data->info->name;
@@ -239,13 +248,13 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     parent = lh_os_module_get_parent(child);
     if (!lh_null_eq(parent))
     {
-        out->log = (authum_host_log_fn)lh_os_module_get_sym(parent, "authum_host_log");
         out->engine_funcs =
             (authum_host_get_ptr_fn)lh_os_module_get_sym(parent, "authum_engine_funcs");
         out->globals = (authum_host_get_ptr_fn)lh_os_module_get_sym(parent, "authum_globals");
     }
 
     authum_child_fill_env(child, data);
+    (void)authum_logs_open(data, data->info->name, authum_path_as_cstr_or_null(data->env.module));
 }
 
 /** After `stop` (or a failed `start`): drop the module's subscriptions and
@@ -255,6 +264,7 @@ authum_child_release(authum_child_data_t *data)
 {
     authum_commands_host_drop_owner(data);
     authum_events_host_drop_owner(data);
+    authum_logs_close(data);
     authum_sandbox_host_root_destroy(data->sandbox.root);
     lh_runtime_allocator_free(data);
 }
@@ -291,7 +301,7 @@ authum_child_start(authum_module_t *self)
         lh_os_set_last_error_lit(authum_error_code_invalid_info, "invalid module info/api");
         return lh_bool_false;
     }
-    if (!authum_version_is_compatible(&data->info->abi, &required))
+    if (!authum_version_is_abi_compatible(&data->info->abi, &required))
     {
         lh_runtime_allocator_free(data);
         lh_os_set_last_error_lit(authum_error_code_incompatible_abi, "incompatible module abi");
@@ -337,7 +347,6 @@ lh_os_module_t *
 authum_child_load(lh_os_loader_t *loader, const lh_fs_path_t *path)
 {
     lh_os_module_t *child;
-    const lh_os_module_ops_t *ops;
 
     child = lh_os_module_create();
     if (lh_null_eq(child))
@@ -352,21 +361,14 @@ authum_child_load(lh_os_loader_t *loader, const lh_fs_path_t *path)
         return lh_null;
     }
 
-    if (!lh_null_eq(lh_os_module_get_sym(child, AUTHUM_MODULE_API_SYM)))
+    /* A module exports authum_module_api; anything else is not one. */
+    if (lh_null_eq(lh_os_module_get_sym(child, AUTHUM_MODULE_API_SYM)))
     {
-        lh_os_module_set_ops(child, &authum_child_ops);
+        lh_os_set_last_error_lit(authum_error_code_missing_info, "missing authum_module_api");
+        lh_os_module_destroy(child);
+        return lh_null;
     }
-    else
-    {
-        ops = lh_ptr_cast(const lh_os_module_ops_t,
-                          lh_os_module_get_sym(child, AUTHUM_MODULE_OPS_SYM));
-        if (lh_null_eq(ops))
-        {
-            lh_os_module_destroy(child);
-            return lh_null;
-        }
-        lh_os_module_set_ops(child, ops);
-    }
+    lh_os_module_set_ops(child, &authum_child_ops);
 
     if (!lh_os_module_start(child))
     {

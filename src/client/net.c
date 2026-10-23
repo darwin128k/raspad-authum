@@ -2,13 +2,9 @@
 
 #include <authum/null.h>
 
-#include <stdio.h>
+#include "os/os.h"
 
-#if !defined(_WIN32)
-#include <arpa/inet.h>
-#include <ifaddrs.h>
-#include <netinet/in.h>
-#endif
+#include <stdio.h>
 
 authum_bool_t
 authum_net_ipv4_is_loopback(authum_u32_t ip)
@@ -63,60 +59,51 @@ authum_net_ipv4_format(authum_u32_t ip, authum_char_t *buf, authum_usize_t buf_s
                                                              : authum_bool_false;
 }
 
+/** What ::authum_net_ipv4_collect gathers while the OS lists addresses. */
+typedef struct authum_net_ipv4_list
+{
+    authum_bool_t external;
+    authum_u32_t *out;
+    authum_usize_t max;
+    authum_usize_t count;
+} authum_net_ipv4_list_t;
+
+void
+authum_net_ipv4_add(authum_u32_t ip, authum_ptr user)
+{
+    authum_net_ipv4_list_t *list = (authum_net_ipv4_list_t *)user;
+    authum_usize_t i;
+
+    if (authum_net_ipv4_is_loopback(ip) || authum_net_ipv4_is_external(ip) != list->external)
+    {
+        return;
+    }
+    /* Aliases repeat an address; count it once (only what fits is checked). */
+    for (i = 0u; i < list->count && i < list->max; i++)
+    {
+        if (list->out[i] == ip)
+        {
+            return;
+        }
+    }
+    if (list->count < list->max && !authum_null_eq(list->out))
+    {
+        list->out[list->count] = ip;
+    }
+    list->count++;
+}
+
 authum_usize_t
 authum_net_ipv4_collect(authum_bool_t external, authum_u32_t *out, authum_usize_t max)
 {
-#if defined(_WIN32)
-    (void)external;
-    (void)out;
-    (void)max;
-    return 0u;
-#else
-    struct ifaddrs *list;
-    struct ifaddrs *it;
-    authum_usize_t count = 0u;
+    authum_net_ipv4_list_t list;
 
-    if (getifaddrs(&list) != 0)
-    {
-        return 0u;
-    }
-    for (it = list; it; it = it->ifa_next)
-    {
-        authum_u32_t ip;
-        authum_usize_t i;
-        authum_bool_t seen = authum_bool_false;
-
-        if (!it->ifa_addr || it->ifa_addr->sa_family != AF_INET)
-        {
-            continue;
-        }
-        ip = (authum_u32_t)ntohl(((const struct sockaddr_in *)it->ifa_addr)->sin_addr.s_addr);
-        if (authum_net_ipv4_is_loopback(ip) || authum_net_ipv4_is_external(ip) != external)
-        {
-            continue;
-        }
-        /* Aliases repeat an address; count it once (only what fits is checked). */
-        for (i = 0u; i < count && i < max; i++)
-        {
-            if (out[i] == ip)
-            {
-                seen = authum_bool_true;
-                break;
-            }
-        }
-        if (seen)
-        {
-            continue;
-        }
-        if (count < max && !authum_null_eq(out))
-        {
-            out[count] = ip;
-        }
-        count++;
-    }
-    freeifaddrs(list);
-    return count;
-#endif
+    list.external = external;
+    list.out = out;
+    list.max = authum_null_eq(out) ? 0u : max;
+    list.count = 0u;
+    authum_os_ipv4_each(authum_net_ipv4_add, &list);
+    return list.count;
 }
 
 authum_usize_t

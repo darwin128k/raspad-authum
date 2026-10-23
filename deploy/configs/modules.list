@@ -1,0 +1,3 @@
+# addons/authum/configs/modules.list — one module per line: modules/<name>/<name>.so.
+# Example (build/ship the module yourself; Authum does not compile it):
+# qproto

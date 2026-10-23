@@ -1,5 +1,5 @@
 # Authum tests: plain C executables run by CTest. Host pieces (sandbox, events,
-# commands) are compiled from src/authum together with lh, exactly as
+# commands, logs) are compiled from src/authum together with lh, exactly as
 # authum_mm uses them.
 
 add_library(authum_test_check STATIC check.c)
@@ -13,6 +13,7 @@ add_library(authum_test_host STATIC
         "${CMAKE_SOURCE_DIR}/src/authum/sandbox.c"
         "${CMAKE_SOURCE_DIR}/src/authum/events.c"
         "${CMAKE_SOURCE_DIR}/src/authum/commands.c"
+        "${CMAKE_SOURCE_DIR}/src/authum/logs.c"
 )
 target_include_directories(authum_test_host PUBLIC "${CMAKE_SOURCE_DIR}/include")
 target_link_libraries(authum_test_host PUBLIC lh authum_client)
@@ -28,3 +29,24 @@ add_test(NAME authum_events COMMAND authum_test_events)
 add_executable(authum_test_commands commands.c)
 target_link_libraries(authum_test_commands PRIVATE authum_test_host authum_test_check)
 add_test(NAME authum_commands COMMAND authum_test_commands)
+
+add_executable(authum_test_timers timers.c)
+target_link_libraries(authum_test_timers PRIVATE authum_test_host authum_test_check)
+add_test(NAME authum_timers COMMAND authum_test_timers)
+
+add_executable(authum_test_logs logs.c)
+target_link_libraries(authum_test_logs PRIVATE authum_test_host authum_test_check)
+add_test(NAME authum_logs COMMAND authum_test_logs)
+
+# Smoke test of examples/: loads every built example module.
+if (AUTHUM_BUILD_EXAMPLES)
+    add_executable(authum_test_examples examples.c)
+    target_link_libraries(authum_test_examples PRIVATE authum_test_host authum_test_check
+            ${CMAKE_DL_LIBS})
+    target_compile_definitions(authum_test_examples PRIVATE
+            AUTHUM_TEST_EXAMPLES_DIR="${CMAKE_BINARY_DIR}/examples"
+            AUTHUM_TEST_MODULE_SUFFIX="${CMAKE_SHARED_MODULE_SUFFIX}")
+    add_dependencies(authum_test_examples skeleton hello welcome chatfilter cvarguard settings
+            stats scores scoreboard deathnotice announcer)
+    add_test(NAME authum_examples COMMAND authum_test_examples)
+endif ()

@@ -19,7 +19,7 @@ authum_sandbox_alloc(const authum_sandbox_t *self, authum_usize_t size)
 authum_ptr
 authum_sandbox_alloc_under(const authum_sandbox_t *self, authum_ptr parent, authum_usize_t size)
 {
-    if (!authum_sandbox_is_valid(self) || self->ops->alloc == 0)
+    if (!authum_sandbox_is_valid(self) || !AUTHUM_ABI_HAS(self->ops, alloc))
     {
         return authum_null;
     }
@@ -33,7 +33,7 @@ authum_sandbox_realloc(const authum_sandbox_t *self, authum_ptr ptr, authum_usiz
     {
         return authum_sandbox_alloc(self, size);
     }
-    if (!authum_sandbox_is_valid(self) || self->ops->realloc == 0)
+    if (!authum_sandbox_is_valid(self) || !AUTHUM_ABI_HAS(self->ops, realloc))
     {
         return authum_null;
     }
@@ -43,7 +43,7 @@ authum_sandbox_realloc(const authum_sandbox_t *self, authum_ptr ptr, authum_usiz
 void
 authum_sandbox_free(const authum_sandbox_t *self, authum_ptr ptr)
 {
-    if (authum_null_eq(ptr) || !authum_sandbox_is_valid(self) || self->ops->free == 0)
+    if (authum_null_eq(ptr) || !authum_sandbox_is_valid(self) || !AUTHUM_ABI_HAS(self->ops, free))
     {
         return;
     }
@@ -54,7 +54,8 @@ void
 authum_sandbox_set_destructor(const authum_sandbox_t *self, authum_ptr ptr,
                               authum_sandbox_destructor_fn fn)
 {
-    if (authum_null_eq(ptr) || !authum_sandbox_is_valid(self) || self->ops->set_destructor == 0)
+    if (authum_null_eq(ptr) || !authum_sandbox_is_valid(self) ||
+        !AUTHUM_ABI_HAS(self->ops, set_destructor))
     {
         return;
     }

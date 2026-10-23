@@ -11,7 +11,7 @@
 | [sandbox.md](sandbox.md) | Per-module memory sandbox (freed at unload), nested sandboxes, `authum_array_t` |
 | [events.md](events.md) | Event bus: forwards + queries between modules, `authum.client.*` player events |
 | [commands.md](commands.md) | `authum <module> <cmd>` console / RCON commands ? why modules never register engine commands |
-| [../examples/](../examples/) | Working `hello` module (`authum/host.h`) |
+| [../examples/](../examples/) | Module templates, one topic each, all exercised by `tests/examples.c` |
 | [modules.md](modules.md) | Loader model, `modules.list`, directory scan, host lifetime |
 | [logging.md](logging.md) | Where logs go today and the planned host/module logging policy |
 | [gate.md](gate.md) | Connect gate / external auth modules |

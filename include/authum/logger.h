@@ -1,15 +1,29 @@
 /**
  * @file logger.h
- * @brief Standard module logger — lh-shaped levels, Authum sinks (no lh link).
+ * @brief Module logger — PSR-3 levels; the host decides where lines go.
  *
- * Modules own an ::authum_logger_t (stack or static). Wire it once from
- * `start` with the host + sink mask; then use ::authum_logger_info / `_error`
- * / … . Want something else? Write your own, or call the same bricks
- * (`authum_host_log_line`, ::authum_host_server_print, `FILE *`) yourself.
+ * ```c
+ * authum_logger_t g_log;
  *
- * Not a process-wide singleton: each module (and each logger instance) is
- * independent. The host’s `authum.log` is only reached through
- * ::authum_logger_sink_host.
+ * authum_logger_init(&g_log, &g_host);       // in start
+ * authum_logger_info(&g_log, "loaded %d bans", count);
+ * authum_logger_close(&g_log);               // in stop
+ * ```
+ *
+ * The module never picks a file or a console: every line goes to the host
+ * channel (::authum_host_t.logger), and `authum.cfg` routes it:
+ *
+ * - `addons/authum/modules/<module>/logs/YYYY-MM-DD.log` — everything at or above the
+ *   module's `log_level`;
+ * - `addons/authum/logs/YYYY-MM-DD.log` (Authum's) — the module's warnings and
+ *   errors too, tagged `[module]`;
+ * - server console / Metamod log — lines at or above `log_console`.
+ *
+ * Lines below the configured level are dropped before formatting, so
+ * ::authum_logger_debug in a hot path costs one call when debug is off.
+ *
+ * A task that wants its own file (bans, payments, an audit trail) opens a
+ * journal with ::authum_logger_open — same calls, its own folder and level.
  */
 
 #ifndef AUTHUM_LOGGER_H
@@ -17,21 +31,14 @@
 
 #include <authum/bool.h>
 #include <authum/char.h>
-#include <authum/engine.h>
 #include <authum/host.h>
-#include <authum/logger/file/split.h>
 #include <authum/logger/level.h>
-#include <authum/logger/level/flags.h>
-#include <authum/logger/sink.h>
+#include <authum/logger/ops.h>
 #include <authum/null.h>
-#include <authum/path.h>
 #include <authum/ptr.h>
 #include <authum/size.h>
 
 #include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -40,67 +47,50 @@ extern "C"
 
     enum
     {
+        /** Longest line after formatting; the rest is cut. */
         authum_logger_line_max = 1024
     };
 
     /**
      * @struct authum_logger
-     * @brief Module-owned logger: level filter + sink mask + optional file.
+     * @brief Module-owned handle on the host's log channel.
      */
     struct authum_logger
     {
-        const authum_host_t *host;
-        authum_logger_sink_t sinks;
-        authum_logger_level_flags_t level_flags;
-        /** Short name for prefixes (`qproto` → `[qproto] …` on host / console). */
-        const authum_char_t *tag;
-        FILE *file;
+        /** The module's main channel (from the host). */
+        const authum_logger_channel_t *channel;
+        /** A journal opened by ::authum_logger_open. */
+        authum_logger_channel_t journal;
+        authum_bool_t owns_journal;
     };
     typedef struct authum_logger authum_logger_t;
 
+    /** Bind @p self to @p host's log channel (keep @p host alive until close). */
     void
-    authum_logger_init(authum_logger_t *self, const authum_host_t *host, authum_logger_sink_t sinks,
-                       const authum_char_t *tag);
-
-    void
-    authum_logger_set_level_flags(authum_logger_t *self, authum_logger_level_flags_t flags);
-
-    void
-    authum_logger_set_sinks(authum_logger_t *self, authum_logger_sink_t sinks);
+    authum_logger_init(authum_logger_t *self, const authum_host_t *host);
 
     /**
-     * @brief Open/append a private transcript. Enables nothing by itself — set
-     *        ::authum_logger_sink_file in @c sinks.
-     */
-    authum_bool_t
-    authum_logger_open_file(authum_logger_t *self, const authum_char_t *path);
-
-    /**
-     * @brief Create @p dir if missing (one level). Idempotent when it already exists.
-     */
-    authum_bool_t
-    authum_logger_ensure_dir(const authum_char_t *dir);
-
-    /**
-     * @brief Build a private log path under ::authum_host_env_module.
+     * Open journal @p name of this module: its own folder
+     * `modules/<module>/logs/<name>/YYYY-MM-DD.log`, its own level
+     * (`<module>.<name>.log_level`, else the module's). Warnings and errors
+     * still reach the Authum log, tagged `[module/name]`. Use it like any
+     * logger; close it in `stop`. False when the host has no journals.
      *
-     * @p tag is the file stem (`qproto` → `qproto.log` / `logs/qproto-….log`).
-     * Empty/null @p tag falls back to `"module"`.
+     * ```c
+     * authum_logger_open(&g_bans, &g_host, "bans");
+     * authum_logger_info(&g_bans, "%s banned %s", admin, target);
+     * ```
      */
     authum_bool_t
-    authum_logger_build_module_path(const authum_host_t *host, const authum_char_t *tag,
-                                    authum_logger_file_split_t split, authum_path_t *out);
+    authum_logger_open(authum_logger_t *self, const authum_host_t *host, const authum_char_t *name);
 
-    /**
-     * @brief Open a private file via ::authum_logger_build_module_path using
-     *        @c self->host and @c self->tag. Optional @p out receives the path.
-     */
-    authum_bool_t
-    authum_logger_open_module_file(authum_logger_t *self, authum_logger_file_split_t split,
-                                   authum_path_t *out);
-
+    /** Drop the binding (and close a journal); later calls do nothing. */
     void
     authum_logger_close(authum_logger_t *self);
+
+    /** Whether a line at @p level would be recorded anywhere. */
+    authum_bool_t
+    authum_logger_is_enabled(const authum_logger_t *self, authum_logger_level_t level);
 
     void
     authum_logger_log_v(authum_logger_t *self, authum_logger_level_t level,
@@ -127,9 +117,31 @@ extern "C"
 #define authum_logger_debug(self, ...)                                                             \
     authum_logger_log((self), authum_logger_level_debug, __VA_ARGS__)
 
+    /** Log @p len bytes of @p data as hex at debug level, 16 per line. */
     void
     authum_logger_hex_dump(authum_logger_t *self, const authum_char_t *label, authum_ptr data,
                            authum_usize_t len);
+
+    /* --- channel bricks (what the logger and authum_host_log_line call) ------ */
+
+    void
+    authum_logger_channel_write(const authum_logger_channel_t *channel, authum_logger_level_t level,
+                                const authum_char_t *text);
+
+    authum_bool_t
+    authum_logger_channel_is_enabled(const authum_logger_channel_t *channel,
+                                     authum_logger_level_t level);
+
+    /**
+     * Level from its name (`debug`, `info`, `warning`, … as in PSR-3;
+     * `warn` / `err` / `crit` accepted). False when @p name is none of them.
+     */
+    authum_bool_t
+    authum_logger_level_parse(const authum_char_t *name, authum_logger_level_t *out);
+
+    /** Lower-case PSR-3 name of @p level (`"warning"`), `"?"` when out of range. */
+    const authum_char_t *
+    authum_logger_level_name(authum_logger_level_t level);
 
 #ifdef __cplusplus
 }

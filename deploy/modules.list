@@ -1,3 +1,0 @@
-# Beside authum_mm.so — one module path per line (folder under modules/).
-# Example (build/ship the module yourself; Authum does not compile it):
-# qproto

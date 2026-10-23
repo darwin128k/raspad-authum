@@ -27,11 +27,11 @@
 static META_FUNCTIONS g_meta_functions = {
     nullptr,            /* GetEntityAPI */
     nullptr,            /* GetEntityAPI_Post */
-    GetEntityAPI2,      /* ClientConnect … ClientCommand, ServerDeactivate, StartFrame */
+    GetEntityAPI2,      /* Client*, Spawn, ServerDeactivate, StartFrame */
     GetEntityAPI2_Post, /* ServerActivate */
-    GetNewDLLFunctions, /* CvarValue2 */
+    GetNewDLLFunctions, /* CvarValue2, GameShutdown */
     nullptr,            /* GetNewDLLFunctions_Post */
-    GetEngineFunctions, /* nothing hooked yet */
+    GetEngineFunctions, /* user messages, AlertMessage (log lines) */
     nullptr,            /* GetEngineFunctions_Post */
 };
 

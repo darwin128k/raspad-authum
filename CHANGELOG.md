@@ -7,7 +7,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Windows build (MinGW): `authum_logger_ensure_dir` used the POSIX two-argument
+  `mkdir`; the symbol test looked for `libc.so.6`, which exists only on Linux.
+- `authum_net_ipv4_internal` / `_external` list the interfaces on Windows too
+  (they were always empty there).
+- `authum_engine_query_cvar` had a raw NUL byte in a character literal, so git
+  took `src/client/engine.c` for a binary file.
+
 ### Changed
+
+- A module must export `authum_module_api`; the loader no longer takes a
+  child that only exports lh's `authum_module_ops` (that table is now just
+  how `authum_mm` itself binds to lh). `AUTHUM_TRUE` / `AUTHUM_FALSE` are
+  gone: use `authum_bool_true` / `authum_bool_false`.
+- **Every module is a sandbox**: `addons/authum/modules/<name>/` holds
+  `<name>.so`, `configs/` (the admin's), `lang/` (translations), `data/`
+  (what the module writes) and `logs/`. Install or remove a module by its
+  folder; an update replaces the image and `lang/`, never `configs/`,
+  `data/` or `logs/`. Authum keeps only its own: `configs/authum.cfg`,
+  `configs/modules.list`, `logs/`. `authum_env_t` starts with `size`;
+  `module` is the module's folder, with `module_config`, `module_lang`,
+  `module_data` (created at load); `authum_host_t.module_dir` is gone.
+  `authum_host_config_path` → `modules/<name>/configs/<file>`,
+  `authum_host_data_path` → `modules/<name>/data/<file>`. A
+  `modules.list` entry `qproto` loads `modules/qproto/qproto.so`; without
+  the list every module folder is loaded. The release zip ships `configs/`.
+- Everything authum_client asks of the OS (directories, page protection,
+  library symbols, interface addresses) sits behind `src/client/os/os.h`, with
+  one implementation in `os/posix/` and one in `os/win/`; CMake builds the
+  target's. The rest of `src/client` has no `#if _WIN32`. No API change.
+- `CMakePresets.json` with `linux32` and `windows-mingw32` (configure, build,
+  test). Configure fails at once, with a hint, when the compiler cannot link
+  with `-m32`, instead of at the first link.
+
+- **Logging is decided by Authum, not by each module.** Every module writes
+  `modules/<module>/logs/YYYY-MM-DD.log` (a new file each day);
+  Authum's own lines and every module's warnings and errors (tagged
+  `[module]`) go to `addons/authum/logs/`. Levels live in one new file,
+  `addons/authum/configs/authum.cfg`: `log_level`, `log_console` (what also reaches
+  the server console / HLDS log through Metamod) and `<module>.log_level`.
+  `addons/authum/authum.log` is gone. A module just calls
+  `authum_logger_init(&log, host)` and `authum_logger_info` / … ; lines below
+  the level are dropped before formatting. Removed: sinks
+  (`authum_logger_sink_*`, `logging_mode`-style masks), private files
+  (`authum_logger_open_file`, `open_module_file`, `build_module_path`,
+  `file_split_*`), `set_level_flags` / `set_sinks` / `ensure_dir`,
+  `authum_host_get_log` / `set_log` and the host's `authum_host_log` export.
+  `authum_host_t.log` became `authum_host_t.logger` (a channel). New:
+  `authum_logger_is_enabled`, `authum_logger_level_parse` / `_name`,
+  `authum_path_ensure_dir`. The release zip ships a commented `authum.cfg`.
+  - Journals: `authum_logger_open(&log, host, "bans")` gives a module an extra
+    log, `modules/<module>/logs/bans/YYYY-MM-DD.log`, with its own level
+    (`<module>.bans.log_level`).
+  - `log_keep_days`: daily files older than that are deleted (shipped cfg: 30).
+  - Lines are buffered and flushed every server frame; errors and worse go to
+    disk at once.
+  - `authum.cfg` is read again on every map change.
+- 32-bit Linux builds use `_FILE_OFFSET_BITS=64` (Authum, lh, authum_client):
+  `readdir()` failed with `EOVERFLOW` on file systems with 64-bit inode
+  numbers (XFS, btrfs, network mounts), so the `modules/` scan found nothing.
+- **Module ABI 1.0.0** (modules built for 0.x must be rebuilt):
+  - Every table the host hands a module (`authum_host_t`, `authum_engine_t`,
+    `authum_crypto_t`, the events / sandbox / commands ops) starts with
+    `authum_usize_t size`; functions are only appended, and the client
+    wrappers call one only when the host's table reaches it
+    (`AUTHUM_ABI_HAS`, `<authum/abi.h>`). Adding a function is now a minor
+    bump: a 1.x module loads on any 1.x host (`authum_version_is_abi_compatible`).
+  - Keep the host with `authum_host_copy(&g_host, host)`, not `g_host = *host`.
+  - `authum_engine_t` covers what modules took from raw `engine_funcs`:
+    `max_clients`, `game_time`, `get_map_name`, `cvar_get` / `cvar_set`,
+    `client_is_connected`, `client_userid`, `client_index_by_userid`,
+    `client_get_name` / `_auth_id` / `_address` / `_info`, `client_print`
+    (console / center / chat, 0 = everyone), `client_command`,
+    `query_client_cvar` — each with `authum_engine_*` and `authum_host_*`
+    wrappers. Players are addressed by entity index, as in `authum.client.*`.
 
 - `<authum/json.h>` and `<authum/sql.h>` run on lh (`lh/json`, `lh/sql`) linked
   into `authum_client`; vendored cJSON (unused) and SQLite (`lib/cjson`,
@@ -27,6 +102,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Engine facade, more of what modules took from raw `engine_funcs`:
+  user messages (`authum_engine_message_id` / `_begin` / `_write_byte` …
+  `_write_string` / `_end`, destinations and argument kinds in
+  `<authum/engine/message.h>`), `authum_engine_client_chat` (colored chat
+  through the game's `SayText`), `cvar_register` (a module's own server cvar,
+  `authum_engine_cvar_*` flags) with `cvar_get_i32` / `cvar_get_float`,
+  `client_get_stats` (ping, loss) and `client_set_info` — each with an
+  `authum_host_*` shortcut.
+- Game user messages as events: subscribe to `authum.message.<Name>`
+  (`authum.message.DeathMsg`, `SayText`, …) to read the whole message
+  (`<authum/event/message.h>`, `authum_event_message_get_*`), change its
+  arguments (`_set_*`) or `block` it. Only messages someone listens to are
+  held back; a held message is sent again after the handlers, so other
+  Metamod plugins hooking messages see it twice. The plugin now hooks
+  `GetEngineFunctions` (MessageBegin … MessageEnd, AlertMessage).
+- `authum.server.log`: every line of the HLDS log (`log on`) — the kill /
+  round / team lines stats are built from (`authum_event_server_log_t`).
+- `authum.client.kill` (`ClientKill`; `allow = false` refuses it),
+  `authum.server.precache` (worldspawn's `Spawn`) with
+  `authum_engine_precache_model` / `_sound` / `_generic` — 0 outside the
+  precache window instead of the engine's Host_Error — and
+  `authum.server.shutdown` (`GameShutdown`).
+- Entities without HLSDK (`<authum/engine/entity.h>`): `entity_max`,
+  `entity_is_valid`, `entity_get_classname`, `entity_find_by_classname`,
+  `entity_get_float` / `_set_float` (health, armor, frags, gravity, max speed,
+  take damage, …), `entity_get_i32` / `_set_i32` (flags, dead, buttons,
+  weapons, render mode, …), `entity_get_vector` / `_set_vector` (origin —
+  set through SET_ORIGIN — velocity, angles, view angle, mins / maxs — set
+  through SET_SIZE — …), with `authum_entity_flag_*` / `authum_entity_dead_*`
+  values; `authum_engine_client_is_alive` / `_is_bot`. Field numbers never
+  change; game private data (a CS player's money or team) stays behind the
+  `engine_funcs` escape hatch.
+- `<authum/timer.h>`: `authum_timer_add(host, delay, interval, fn, user)` /
+  `_remove` / `_clear` / `_count` — module timers on server frames, counting
+  across map changes, dropped with the module.
+- `examples/`: module templates, one topic each, all loaded and exercised by
+  the new CTest `authum_examples` (real event bus, commands, sandbox and logs,
+  a fake engine): `skeleton` (the empty template), `hello` (updated to the
+  new logger), `welcome` (player / map events, engine facade), `chatfilter`
+  (block a client command), `cvarguard` (client cvar query, kick),
+  `settings` (module cfg with defaults, a checked key, reload), `stats`
+  (SQLite + a journal), `scores` + `scoreboard` (two modules over the event
+  bus with a types-only header), `deathnotice` (`DeathMsg`, colored chat,
+  module cvars, refusing `kill`), `announcer` (timers, precache, HLDS log
+  lines, entity fields). Built with `-Wall -Wextra`, warning-free.
 - More host events from Metamod hooks: `authum.client.command` (`ClientCommand`,
   a handler can block it), `authum.client.cvar_value` (`CvarValue2`, the answer
   to `QueryClientCvarValue2`), and `<authum/event/server.h>` with
@@ -35,6 +155,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `GetEntityAPI2_Post` and `GetNewDLLFunctions`.
 - `<authum/float.h>` — `authum_float_t` (mirrors `lh_float_t`); event payloads
   use it for `game_time` / `frame_time`.
+- `authum_host_query_cvar` / `authum_engine_query_cvar` — ask a client for a
+  cvar by entity index; the answer comes as `authum.client.cvar_value` with the
+  same `request_id`.
 - `authum_sql_stmt_bind_i64` / `authum_sql_stmt_column_i64` — 64-bit integers
   (SteamID64, row ids) in `<authum/sql.h>`.
 - `<authum/crypto/ed25519.h>` — Ed25519 (RFC 8032) key pair / sign / check +

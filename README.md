@@ -25,7 +25,7 @@ projects dropped under `modules/`.
 
 - Loads modules from `modules.list` (Authum line format) or scans `modules/`
 - Connect gate scaffolding for children
-- Client modules: `authum/client.h` (ABI **0.3**, no lh type in its headers);
+- Client modules: `authum/client.h` (ABI **1.0**, no lh type in its headers);
   host passes `authum_host_t` into `start` (sandbox, events, commands)
 - Server command `authum` — status / load / unload / module commands
 - Static `lh` in the host (`AUTHUM_LH_LINK_MODE=needed|whole`); `authum_client`
@@ -47,7 +47,7 @@ Ready Linux binary: download `authum_mm.so` from
 
 1. Put into `cstrike/addons/authum/`:
    - `authum_mm.so`
-   - `modules.list` (one module folder name per line)
+   - `configs/modules.list` (one module name per line) and `configs/authum.cfg`
    - `modules/<name>/<name>.so` (built by that module’s own project)
 2. In `addons/metamod/plugins.ini`:
 
@@ -63,11 +63,19 @@ Layout:
 cstrike/addons/metamod/plugins.ini   →  linux addons/authum/authum_mm.so
 cstrike/addons/authum/
   authum_mm.so
-  modules.list
-  modules/<name>/
-    <name>.so
-  authum.log                         ← written at runtime
+  configs/                           ← Authum's: authum.cfg (log levels), modules.list
+  logs/YYYY-MM-DD.log                ← Authum's log + every module's warnings and errors
+  modules/                           ← one sandbox per module
+    qproto/
+      qproto.so
+      configs/                       ← the admin's: qproto.cfg, …
+      lang/                          ← translations
+      data/                          ← what the module writes (databases, keys)
+      logs/YYYY-MM-DD.log            ← the module's log
 ```
+
+Install or remove a module = copy or delete its folder. An update replaces the
+`.so` and `lang/`; it never touches `configs/`, `data/` or `logs/`.
 
 ## Docs
 
@@ -75,7 +83,7 @@ cstrike/addons/authum/
 |-----|--|
 | [CHANGELOG.md](CHANGELOG.md) | Releases |
 | [docs/architecture.md](docs/architecture.md) | Host facade + optional private deps |
-| [examples/](examples/) | `hello` module |
+| [examples/](examples/) | Module templates: skeleton, events, engine, chat filter, cvar check, config, SQLite, module-to-module bus |
 | [docs/README.md](docs/README.md) | Index |
 | [docs/writing-a-module.md](docs/writing-a-module.md) | Write your own module |
 | [docs/modules.md](docs/modules.md) | Loader / `modules.list` |
@@ -104,10 +112,25 @@ You still need Metamod-P (+ HLSDK headers) under `lib/metamod-p`
 
 ## Build
 
+HLDS loads 32-bit modules only. `CMakePresets.json` picks the toolchain for the
+host system:
+
 ```sh
-cmake -S . -B build-linux32 -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build-linux32
+# Linux (gcc-multilib / g++-multilib)
+cmake --preset linux32
+cmake --build --preset linux32
+ctest --preset linux32
+
+# Windows (MSYS2 C:/msys64/mingw32: pacman -S mingw-w64-i686-gcc mingw-w64-i686-ninja)
+cmake --preset windows-mingw32
+cmake --build --preset windows-mingw32
+ctest --preset windows-mingw32
 ```
+
+The build goes to `build-<preset>/`. Without presets, pass a 32-bit capable
+compiler yourself (`cmake -S . -B build-linux32 -G Ninja -DCMAKE_BUILD_TYPE=Release`).
+A compiler that cannot link with `-m32` (MSYS2 `mingw64`, Linux without
+multilib) is refused at configure time, not at the first link.
 
 Optional: `-DAUTHUM_LH_LINK_MODE=needed` (default) or `whole`.
 `LH_STATIC_LIBGCC` is forced on so the module does not depend on the host’s

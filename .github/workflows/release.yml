@@ -55,19 +55,22 @@ jobs:
       - name: Pack Metamod layout
         run: |
           strip --strip-unneeded build/authum_mm.so
-          rm -rf dist && mkdir -p dist/addons/authum
+          rm -rf dist && mkdir -p dist/addons/authum/configs dist/addons/authum/modules
           cp build/authum_mm.so dist/addons/authum/authum_mm.so
-          cp deploy/modules.list dist/addons/authum/modules.list
+          cp deploy/configs/modules.list dist/addons/authum/configs/modules.list
+          cp deploy/configs/authum.cfg dist/addons/authum/configs/authum.cfg
           cat > dist/addons/authum/INSTALL.txt <<'EOF'
           Unpack into the game dir (cstrike/ or mod root) so you get:
 
             addons/authum/authum_mm.so
-            addons/authum/modules.list
+            addons/authum/configs/modules.list   (which modules to load)
+            addons/authum/configs/authum.cfg     (log levels; logs go to addons/authum/logs/)
 
           In addons/metamod/plugins.ini add:
             linux addons/authum/authum_mm.so
 
-          Drop Authum modules under addons/authum/modules/<name>/ and list them in modules.list.
+          Each module is a folder addons/authum/modules/<name>/ (<name>.so, configs/,
+          lang/, data/); list it in configs/modules.list.
           EOF
           sed -i 's/^          //' dist/addons/authum/INSTALL.txt
           (cd dist && zip -r ../authum-linux32-metamod.zip addons)

@@ -1,5 +1,7 @@
+#include <authum/engine/host.h>
 #include <authum/event/client.h>
 #include <authum/event/server.h>
+#include <authum/logger/host.h>
 #include <authum/events/host.h>
 
 #include <extdll.h>
@@ -59,9 +61,11 @@ authum_dllapi_client_connect(edict_t *entity, const char *name, const char *addr
 
     authum_dllapi_client_fill(&ev, entity, name);
     authum_dllapi_copy(ev.address, sizeof(ev.address), address);
+    authum_engine_host_set_client_address(ev.index, address);
     (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_CONNECT, &ev);
     if (!ev.allow)
     {
+        authum_engine_host_set_client_address(ev.index, nullptr);
         authum_dllapi_copy(reject_reason, 128,
                            ev.reject_reason[0] != '\0' ? ev.reject_reason : "Connection refused.");
         RETURN_META_VALUE(MRES_SUPERCEDE, FALSE);
@@ -101,6 +105,22 @@ authum_dllapi_client_disconnect(edict_t *entity)
 
     authum_dllapi_client_fill(&ev, entity, nullptr);
     (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_DISCONNECT, &ev);
+    authum_engine_host_set_client_address(ev.index, nullptr);
+    RETURN_META(MRES_IGNORED);
+}
+
+/* `kill` in the console; a handler may refuse it with allow = false. */
+void
+authum_dllapi_client_kill(edict_t *entity)
+{
+    authum_event_client_t ev;
+
+    authum_dllapi_client_fill(&ev, entity, nullptr);
+    (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_KILL, &ev);
+    if (!ev.allow)
+    {
+        RETURN_META(MRES_SUPERCEDE);
+    }
     RETURN_META(MRES_IGNORED);
 }
 
@@ -144,12 +164,32 @@ authum_dllapi_server_fill(authum_event_server_t *ev)
     ev->frame_time = gpGlobals->frametime;
 }
 
+/* worldspawn is the first entity of a map: precaching is allowed from here
+ * until ServerActivate. */
+int
+authum_dllapi_spawn(edict_t *entity)
+{
+    authum_event_server_t ev;
+
+    if (entity == nullptr || gpGlobals == nullptr ||
+        std::strcmp(STRING(entity->v.classname), "worldspawn") != 0)
+    {
+        RETURN_META_VALUE(MRES_IGNORED, 0);
+    }
+    authum_engine_host_set_precache(authum_bool_true);
+    authum_dllapi_server_fill(&ev);
+    (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_PRECACHE, &ev);
+    RETURN_META_VALUE(MRES_IGNORED, 0);
+}
+
 /* Post hook: the game DLL has spawned the map by now. */
 void
 authum_dllapi_server_activate_post(edict_t * /* edicts */, int edict_count, int client_max)
 {
     authum_event_server_t ev;
 
+    authum_engine_host_set_precache(authum_bool_false);
+    authum_logs_reload(); /* authum.cfg edits apply from the next map */
     authum_dllapi_server_fill(&ev);
     ev.edict_count = edict_count;
     ev.max_clients = client_max;
@@ -174,6 +214,18 @@ authum_dllapi_start_frame(void)
 
     authum_dllapi_server_fill(&ev);
     (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_FRAME, &ev);
+    authum_logs_flush();
+    RETURN_META(MRES_IGNORED);
+}
+
+void
+authum_dllapi_game_shutdown(void)
+{
+    authum_event_server_t ev;
+
+    authum_dllapi_server_fill(&ev);
+    (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_SHUTDOWN, &ev);
+    authum_logs_flush();
     RETURN_META(MRES_IGNORED);
 }
 
@@ -213,6 +265,8 @@ GetEntityAPI2(DLL_FUNCTIONS *pFunctionTable, int *interfaceVersion)
     g_function_table.pfnClientPutInServer = authum_dllapi_client_put_in_server;
     g_function_table.pfnClientUserInfoChanged = authum_dllapi_client_user_info_changed;
     g_function_table.pfnClientCommand = authum_dllapi_client_command;
+    g_function_table.pfnClientKill = authum_dllapi_client_kill;
+    g_function_table.pfnSpawn = authum_dllapi_spawn;
     g_function_table.pfnServerDeactivate = authum_dllapi_server_deactivate;
     g_function_table.pfnStartFrame = authum_dllapi_start_frame;
     lh_memory_copy(pFunctionTable, sizeof(DLL_FUNCTIONS), lh_addr_of(g_function_table),
@@ -257,6 +311,7 @@ GetNewDLLFunctions(NEW_DLL_FUNCTIONS *pNewFunctionTable, int *interfaceVersion)
         return FALSE;
     }
     g_new_function_table.pfnCvarValue2 = authum_dllapi_cvar_value2;
+    g_new_function_table.pfnGameShutdown = authum_dllapi_game_shutdown;
     lh_memory_copy(pNewFunctionTable, sizeof(NEW_DLL_FUNCTIONS), lh_addr_of(g_new_function_table),
                    sizeof(NEW_DLL_FUNCTIONS));
     return TRUE;

@@ -32,6 +32,13 @@ extern "C"
     void
     authum_events_host_drop_owner(authum_ptr owner);
 
+    /**
+     * Whether anyone listens to @p name — lets a hook skip work (buffering a
+     * user message) nobody would see.
+     */
+    authum_bool_t
+    authum_events_host_has(const authum_char_t *name);
+
     /** Live subscriptions (for diagnostics and tests). */
     authum_usize_t
     authum_events_host_count(void);

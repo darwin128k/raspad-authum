@@ -1,6 +1,7 @@
 /**
  * @file client.c
- * @brief authum_client: cstr, path, cfg, engine kick, ed25519, detour, symbol, json, sql.
+ * @brief authum_client: cstr, path, cfg, engine kick/cvar query, ed25519, detour, symbol, json,
+ * sql.
  */
 
 #include <check.h>
@@ -10,11 +11,14 @@
 #include <authum/cstr.h>
 #include <authum/detour.h>
 #include <authum/engine.h>
+#include <authum/event/message.h>
+#include <authum/host.h>
 #include <authum/json.h>
 #include <authum/net.h>
 #include <authum/path.h>
 #include <authum/sql.h>
 #include <authum/symbol.h>
+#include <authum/version.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -129,12 +133,440 @@ test_engine_kick(void)
     authum_engine_t engine;
 
     memset(&engine, 0, sizeof engine);
+    engine.size = sizeof engine;
     engine.server_command = test_engine_record_command;
     authum_engine_kick(&engine, 7, "bad \"guy\"; quit\n");
     CHECK_STR(g_last_command, "kick #7 \"bad  guy   quit \"\n");
     authum_engine_kick(&engine, 3, authum_null);
     CHECK_STR(g_last_command, "kick #3\n");
     authum_engine_kick(authum_null, 1, "x");
+}
+
+authum_i32_t g_last_cvar_index;
+authum_i32_t g_last_cvar_request;
+authum_char_t g_last_cvar[64];
+
+authum_bool_t
+test_engine_record_cvar(authum_i32_t index, const authum_char_t *cvar, authum_i32_t request_id)
+{
+    g_last_cvar_index = index;
+    g_last_cvar_request = request_id;
+    authum_cstr_copy(g_last_cvar, sizeof g_last_cvar, cvar);
+    return index == 2 ? authum_bool_true : authum_bool_false;
+}
+
+void
+test_engine_query_cvar(void)
+{
+    authum_engine_t engine;
+
+    memset(&engine, 0, sizeof engine);
+    engine.size = sizeof engine;
+    CHECK(!authum_engine_query_cvar(&engine, 2, "rate", 1));
+    engine.query_client_cvar = test_engine_record_cvar;
+    CHECK(authum_engine_query_cvar(&engine, 2, "cl_updaterate", 42));
+    CHECK(g_last_cvar_index == 2);
+    CHECK(g_last_cvar_request == 42);
+    CHECK_STR(g_last_cvar, "cl_updaterate");
+    CHECK(!authum_engine_query_cvar(&engine, 5, "rate", 1));
+    CHECK(!authum_engine_query_cvar(&engine, 2, "", 1));
+    CHECK(!authum_engine_query_cvar(&engine, 2, authum_null, 1));
+    CHECK(!authum_engine_query_cvar(authum_null, 2, "rate", 1));
+}
+
+/* --- user messages and cvars through a fake engine ------------------------ */
+
+authum_char_t g_msg_log[256];
+
+void
+test_msg_log(const authum_char_t *text)
+{
+    authum_usize_t used = strlen(g_msg_log);
+
+    snprintf(g_msg_log + used, sizeof g_msg_log - used, "%s;", text);
+}
+
+authum_i32_t
+test_msg_id(const authum_char_t *name)
+{
+    return strcmp(name, "SayText") == 0 ? 76 : 0;
+}
+
+authum_bool_t
+test_msg_begin(authum_i32_t dest, authum_i32_t msg_id, authum_i32_t index)
+{
+    authum_char_t line[64];
+
+    if (index == 9)
+    {
+        return authum_bool_false; /* nobody in slot 9 */
+    }
+    snprintf(line, sizeof line, "begin %d %d %d", (int)dest, (int)msg_id, (int)index);
+    test_msg_log(line);
+    return authum_bool_true;
+}
+
+void
+test_msg_write(authum_i32_t kind, authum_i32_t value, authum_float_t real,
+               const authum_char_t *text)
+{
+    authum_char_t line[96];
+
+    snprintf(line, sizeof line, "w%d %d %.2f %s", (int)kind, (int)value, (double)real,
+             text != NULL ? text : "-");
+    test_msg_log(line);
+}
+
+void
+test_msg_end(void)
+{
+    test_msg_log("end");
+}
+
+authum_bool_t
+test_cvar_get(const authum_char_t *name, authum_char_t *buf, authum_usize_t buf_size)
+{
+    const authum_char_t *value = strcmp(name, "a") == 0   ? "12"
+                                 : strcmp(name, "b") == 0 ? "0.25"
+                                 : strcmp(name, "c") == 0 ? "x"
+                                                          : NULL;
+
+    if (value == NULL)
+    {
+        return authum_bool_false;
+    }
+    authum_cstr_copy(buf, buf_size, value);
+    return authum_bool_true;
+}
+
+void
+test_engine_messages(void)
+{
+    authum_engine_t engine;
+
+    memset(&engine, 0, sizeof engine);
+    engine.size = sizeof engine;
+    engine.message_id = test_msg_id;
+    engine.message_begin = test_msg_begin;
+    engine.message_write = test_msg_write;
+    engine.message_end = test_msg_end;
+    engine.cvar_get = test_cvar_get;
+
+    g_msg_log[0] = '\0';
+    CHECK(authum_engine_client_chat(&engine, 3, 3, "hi"));
+    CHECK_STR(g_msg_log, "begin 1 76 3;w0 3 0.00 -;w6 0 0.00 hi;end;");
+
+    g_msg_log[0] = '\0';
+    CHECK(authum_engine_client_chat(&engine, 0, 0, "all")); /* everyone: dest all */
+    CHECK_STR(g_msg_log, "begin 2 76 0;w0 0 0.00 -;w6 0 0.00 all;end;");
+
+    /* A refused begin: the writes and the end after it go nowhere. */
+    g_msg_log[0] = '\0';
+    CHECK(!authum_engine_client_chat(&engine, 9, 0, "x"));
+    CHECK(!authum_engine_message_begin(&engine, authum_message_dest_one, 76, 9));
+    authum_engine_message_write_coord(&engine, 1.5f);
+    authum_engine_message_end(&engine);
+    CHECK_STR(g_msg_log, "");
+
+    g_msg_log[0] = '\0';
+    CHECK(authum_engine_message_begin(&engine, authum_message_dest_all, 76, 0));
+    authum_engine_message_write_coord(&engine, 1.5f);
+    authum_engine_message_write_string(&engine, authum_null);
+    authum_engine_message_end(&engine);
+    CHECK_STR(g_msg_log, "begin 2 76 0;w5 0 1.50 -;w6 0 0.00 ;end;");
+
+    CHECK(authum_engine_message_id(&engine, "DeathMsg") == 0);
+    CHECK(!authum_engine_message_begin(&engine, authum_message_dest_all, 0, 0)); /* no id */
+    engine.message_id = 0;
+    CHECK(!authum_engine_client_chat(&engine, 1, 1, "no SayText")); /* host without it */
+
+    CHECK(authum_engine_cvar_get_i32(&engine, "a", 5) == 12);
+    CHECK(authum_engine_cvar_get_i32(&engine, "c", 5) == 5); /* not a number */
+    CHECK(authum_engine_cvar_get_i32(&engine, "missing", 5) == 5);
+    CHECK(authum_engine_cvar_get_float(&engine, "b", 1.0f) == 0.25f);
+    CHECK(authum_engine_cvar_get_float(&engine, "c", 1.0f) == 1.0f);
+}
+
+/* --- entities through a fake engine: slot 1 alive, 2 dead, 3 a bot ---------- */
+
+authum_float_t g_ent_health[4] = {0.0f, 100.0f, 0.0f, 35.0f};
+authum_i32_t g_ent_dead[4] = {0, authum_entity_dead_no, authum_entity_dead_dead,
+                              authum_entity_dead_no};
+authum_i32_t g_ent_flags[4] = {0, authum_entity_flag_client, authum_entity_flag_client,
+                               authum_entity_flag_client | authum_entity_flag_fake_client};
+
+authum_bool_t
+test_ent_connected(authum_i32_t index)
+{
+    return index >= 1 && index <= 3 ? authum_bool_true : authum_bool_false;
+}
+
+authum_bool_t
+test_ent_get_float(authum_i32_t index, authum_i32_t field, authum_float_t *out)
+{
+    if (index < 0 || index > 3 || field != authum_entity_float_health)
+    {
+        return authum_bool_false;
+    }
+    *out = g_ent_health[index];
+    return authum_bool_true;
+}
+
+authum_bool_t
+test_ent_get_i32(authum_i32_t index, authum_i32_t field, authum_i32_t *out)
+{
+    if (index < 0 || index > 3)
+    {
+        return authum_bool_false;
+    }
+    if (field == authum_entity_i32_dead)
+    {
+        *out = g_ent_dead[index];
+        return authum_bool_true;
+    }
+    if (field == authum_entity_i32_flags)
+    {
+        *out = g_ent_flags[index];
+        return authum_bool_true;
+    }
+    return authum_bool_false;
+}
+
+void
+test_engine_entities(void)
+{
+    authum_engine_t engine;
+    authum_float_t health = -1.0f;
+    authum_float_t vector[3] = {1.0f, 2.0f, 3.0f};
+    authum_i32_t flags = -1;
+    authum_char_t classname[16];
+
+    memset(&engine, 0, sizeof engine);
+    engine.size = sizeof engine;
+    engine.client_is_connected = test_ent_connected;
+    engine.entity_get_float = test_ent_get_float;
+    engine.entity_get_i32 = test_ent_get_i32;
+
+    CHECK(authum_engine_client_is_alive(&engine, 1));
+    CHECK(!authum_engine_client_is_alive(&engine, 2)); /* dead */
+    CHECK(authum_engine_client_is_alive(&engine, 3));
+    CHECK(!authum_engine_client_is_alive(&engine, 4)); /* nobody there */
+    CHECK(!authum_engine_client_is_bot(&engine, 1));
+    CHECK(authum_engine_client_is_bot(&engine, 3));
+
+    CHECK(authum_engine_entity_get_float(&engine, 3, authum_entity_float_health, &health));
+    CHECK(health == 35.0f);
+    CHECK(!authum_engine_entity_get_float(&engine, 3, authum_entity_float_armor, &health));
+    CHECK(health == 0.0f); /* a refused read leaves 0, not the old value */
+    CHECK(authum_engine_entity_get_i32(&engine, 3, authum_entity_i32_flags, &flags));
+    CHECK((flags & authum_entity_flag_fake_client) != 0);
+
+    /* Functions this fake engine does not have: false, and outputs zeroed. */
+    CHECK(!authum_engine_entity_get_vector(&engine, 1, authum_entity_vector_origin, vector));
+    CHECK(vector[0] == 0.0f && vector[1] == 0.0f && vector[2] == 0.0f);
+    CHECK(!authum_engine_entity_set_float(&engine, 1, authum_entity_float_health, 1.0f));
+    CHECK(!authum_engine_entity_get_classname(&engine, 1, classname, sizeof classname));
+    CHECK_STR(classname, "");
+    CHECK(authum_engine_entity_find_by_classname(&engine, 0, "player") == 0);
+    CHECK(authum_engine_entity_max(authum_null) == 0);
+    CHECK(!authum_engine_client_is_alive(authum_null, 1));
+}
+
+void
+test_event_message(void)
+{
+    authum_event_message_t ev;
+
+    memset(&ev, 0, sizeof ev);
+    ev.size = sizeof ev;
+    ev.argc = 3;
+    ev.args[0].kind = authum_message_arg_byte;
+    ev.args[0].value = 2;
+    ev.args[1].kind = authum_message_arg_string;
+    ev.args[1].text = 0u;
+    memcpy(ev.text, "ak47", 5);
+    ev.text_used = 5u;
+    ev.args[2].kind = authum_message_arg_coord;
+    ev.args[2].real = 1.5f;
+
+    CHECK(authum_event_message_get_i32(&ev, 0) == 2);
+    CHECK_STR(authum_event_message_get_string(&ev, 1), "ak47");
+    CHECK(authum_event_message_get_float(&ev, 2) == 1.5f);
+    CHECK_STR(authum_event_message_get_string(&ev, 0), ""); /* not a string */
+    CHECK(authum_event_message_get_i32(&ev, 3) == 0);       /* out of range */
+
+    CHECK(authum_event_message_set_i32(&ev, 0, 7) && authum_event_message_get_i32(&ev, 0) == 7);
+    CHECK(!authum_event_message_set_i32(&ev, 1, 7)); /* a string stays a string */
+    CHECK(authum_event_message_set_string(&ev, 1, "knife"));
+    CHECK_STR(authum_event_message_get_string(&ev, 1), "knife");
+    CHECK(!authum_event_message_set_string(&ev, 0, "x"));
+    CHECK(authum_event_message_set_float(&ev, 2, -3.0f));
+    CHECK(authum_event_message_get_float(&ev, 2) == -3.0f);
+
+    ev.text_used = authum_event_message_text_max - 2u; /* no room left */
+    CHECK(!authum_event_message_set_string(&ev, 1, "longer"));
+    CHECK_STR(authum_event_message_get_string(&ev, 1), "knife");
+}
+
+/* --- configs/ and data/ ---------------------------------------------------- */
+
+#define TEST_ENV_ROOT "authum_env_test_root"
+
+void
+test_env_touch(const char *path, const char *text)
+{
+    FILE *file = fopen(path, "w");
+
+    if (file != NULL)
+    {
+        fputs(text, file);
+        fclose(file);
+    }
+}
+
+authum_bool_t
+test_env_exists(const char *path)
+{
+    FILE *file = fopen(path, "rb");
+
+    if (file == NULL)
+    {
+        return authum_bool_false;
+    }
+    fclose(file);
+    return authum_bool_true;
+}
+
+void
+test_env_paths(void)
+{
+    authum_path_t root, module, module_config, module_data, out;
+    authum_env_t env;
+
+    authum_path_set_cstr(&root, TEST_ENV_ROOT);
+    authum_path_join(&module, &root, "foo");
+    authum_path_join(&module_config, &module, "configs");
+    authum_path_join(&module_data, &module, "data");
+    CHECK(authum_path_ensure_dir(&root) && authum_path_ensure_dir(&module) &&
+          authum_path_ensure_dir(&module_config));
+    remove(TEST_ENV_ROOT "/foo/configs/foo.cfg");
+
+    memset(&env, 0, sizeof env);
+    env.size = sizeof env;
+    env.module = &module;
+    env.module_config = &module_config;
+    env.module_data = &module_data;
+
+    /* configs/<leaf>: the path either way, true once the file is there. */
+    CHECK(!authum_env_config_path(&env, "foo.cfg", &out));
+    CHECK_STR(authum_path_as_cstr(&out), TEST_ENV_ROOT "/foo/configs/foo.cfg");
+    test_env_touch(TEST_ENV_ROOT "/foo/configs/foo.cfg", "x\n");
+    CHECK(authum_env_config_path(&env, "foo.cfg", &out));
+
+    /* data/<leaf>: the folder is made, the file is the module's business. */
+    CHECK(authum_env_data_path(&env, "foo.db", &out));
+    CHECK_STR(authum_path_as_cstr(&out), TEST_ENV_ROOT "/foo/data/foo.db");
+    test_env_touch(TEST_ENV_ROOT "/foo/data/foo.db", "db\n");
+    CHECK(test_env_exists(TEST_ENV_ROOT "/foo/data/foo.db"));
+
+    /* Bad input and an older host's env (no size): no paths, no crash. */
+    CHECK(!authum_env_config_path(&env, "", &out));
+    CHECK(!authum_env_data_path(&env, authum_null, &out));
+    env.size = 0u;
+    CHECK(authum_env_module(&env) == authum_null);
+    CHECK(!authum_env_config_path(&env, "foo.cfg", &out));
+    CHECK(!authum_env_data_path(&env, "foo.db", &out));
+    CHECK(!authum_env_config_path(authum_null, "foo.cfg", &out));
+}
+
+/* A host built before a function existed hands a shorter table. */
+void
+test_abi_size(void)
+{
+    authum_engine_t engine;
+    authum_char_t buf[16];
+
+    memset(&engine, 0, sizeof engine);
+    engine.server_command = test_engine_record_command;
+    engine.query_client_cvar = test_engine_record_cvar;
+
+    engine.size = 0u; /* no size: nothing is called */
+    g_last_command[0] = '\0';
+    authum_engine_server_command(&engine, "a\n");
+    CHECK_STR(g_last_command, "");
+
+    /* Ends right after server_command: that works, later fields do not. */
+    engine.size = (authum_usize_t)((const char *)&engine.server_command - (const char *)&engine) +
+                  sizeof engine.server_command;
+    CHECK(AUTHUM_ABI_FITS(&engine, server_command));
+    CHECK(!AUTHUM_ABI_FITS(&engine, max_clients));
+    authum_engine_server_command(&engine, "b\n");
+    CHECK_STR(g_last_command, "b\n");
+    CHECK(!authum_engine_query_cvar(&engine, 2, "rate", 1));
+    CHECK(authum_engine_max_clients(&engine) == 0);
+    memcpy(buf, "junk", 5);
+    CHECK(!authum_engine_client_get_name(&engine, 1, buf, sizeof buf));
+    CHECK_STR(buf, ""); /* a refused getter still leaves a valid string */
+
+    engine.size = sizeof engine;
+    CHECK(AUTHUM_ABI_HAS(&engine, query_client_cvar));
+    CHECK(!AUTHUM_ABI_HAS(&engine, max_clients)); /* in the table, but not set */
+    CHECK(authum_engine_query_cvar(&engine, 2, "rate", 1));
+}
+
+void
+test_host_copy(void)
+{
+    authum_host_t src;
+    authum_host_t dst;
+    authum_engine_t engine;
+
+    memset(&engine, 0, sizeof engine);
+    engine.size = sizeof engine;
+    memset(&src, 0, sizeof src);
+    src.size = sizeof src;
+    src.engine = &engine;
+    src.commands = (const authum_commands_t *)&engine; /* any non-null marker */
+
+    authum_host_copy(&dst, &src);
+    CHECK(dst.size == sizeof dst);
+    CHECK(authum_host_engine(&dst) == &engine);
+    CHECK(authum_host_commands(&dst) == src.commands);
+
+    /* An older host: its table stops before `commands`. */
+    src.size = (authum_usize_t)((const char *)&src.commands - (const char *)&src);
+    memset(&dst, 0xff, sizeof dst);
+    authum_host_copy(&dst, &src);
+    CHECK(dst.size == src.size);
+    CHECK(authum_host_engine(&dst) == &engine);
+    CHECK(authum_host_commands(&dst) == authum_null);
+    CHECK(dst.commands == authum_null); /* zeroed, not garbage */
+
+    authum_host_clear(&dst);
+    CHECK(authum_host_engine(&dst) == authum_null);
+    CHECK(dst.size == src.size);
+
+    authum_host_copy(&dst, authum_null);
+    CHECK(dst.size == 0u);
+}
+
+void
+test_abi_version(void)
+{
+    const authum_version_t v1_0 = AUTHUM_VERSION(1, 0, 0);
+    const authum_version_t v1_3 = AUTHUM_VERSION(1, 3, 2);
+    const authum_version_t v2_0 = AUTHUM_VERSION(2, 0, 0);
+    const authum_version_t v0_3 = AUTHUM_VERSION(0, 3, 0);
+    const authum_version_t v0_4 = AUTHUM_VERSION(0, 4, 0);
+    const authum_version_t v0_4_1 = AUTHUM_VERSION(0, 4, 1);
+
+    CHECK(authum_version_is_abi_compatible(&v1_0, &v1_3)); /* old module, new host */
+    CHECK(authum_version_is_abi_compatible(&v1_3, &v1_0)); /* new module, old host */
+    CHECK(!authum_version_is_abi_compatible(&v1_0, &v2_0));
+    CHECK(!authum_version_is_abi_compatible(&v0_4, &v1_0));
+    CHECK(!authum_version_is_abi_compatible(&v0_3, &v0_4));
+    CHECK(authum_version_is_abi_compatible(&v0_4_1, &v0_4));
+    CHECK(!authum_version_is_abi_compatible(authum_null, &v1_0));
 }
 
 void
@@ -247,14 +679,23 @@ test_detour(void)
     CHECK(!authum_detour_attach(authum_null, (authum_ptr)fn, (authum_ptr)&test_detour_hook));
 }
 
+#if defined(_WIN32)
+#    define TEST_SYMBOL_LIBRARY "kernel32.dll"
+#    define TEST_SYMBOL_NAME "lstrlenA"
+#else
+#    define TEST_SYMBOL_LIBRARY "libc.so.6"
+#    define TEST_SYMBOL_NAME "strlen"
+#endif
+
 void
 test_symbol(void)
 {
     authum_bool_t via_dynsym = authum_bool_false;
 
-    CHECK(authum_symbol_find("libc.so.6", "strlen", &via_dynsym) != authum_null);
+    CHECK(authum_symbol_find(TEST_SYMBOL_LIBRARY, TEST_SYMBOL_NAME, &via_dynsym) != authum_null);
     CHECK(via_dynsym);
-    CHECK(authum_symbol_find("libc.so.6", "authum_no_such_symbol", &via_dynsym) == authum_null);
+    CHECK(authum_symbol_find(TEST_SYMBOL_LIBRARY, "authum_no_such_symbol", &via_dynsym) ==
+          authum_null);
     CHECK(!via_dynsym);
     CHECK(authum_symbol_find("authum_not_loaded.so", "strlen", authum_null) == authum_null);
     CHECK(authum_symbol_find_engine("SVC_Info", authum_null) == authum_null);
@@ -408,6 +849,14 @@ main(void)
     test_path();
     test_cfg();
     test_engine_kick();
+    test_engine_query_cvar();
+    test_engine_messages();
+    test_event_message();
+    test_engine_entities();
+    test_env_paths();
+    test_abi_size();
+    test_host_copy();
+    test_abi_version();
     test_ed25519();
     test_detour();
     test_symbol();

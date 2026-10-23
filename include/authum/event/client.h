@@ -14,6 +14,7 @@
  * | ::AUTHUM_EVENT_CLIENT_DISCONNECT | `ClientDisconnect` | ::authum_event_client_t: index, userid, name, auth_id, times |
  * | ::AUTHUM_EVENT_CLIENT_COMMAND | `ClientCommand` (`say`, `menuselect`, …) | ::authum_event_client_command_t; a handler may set `block` |
  * | ::AUTHUM_EVENT_CLIENT_CVAR_VALUE | `CvarValue2`, the answer to `QueryClientCvarValue2` | ::authum_event_client_cvar_t |
+ * | ::AUTHUM_EVENT_CLIENT_KILL | `ClientKill`, the `kill` command | ::authum_event_client_t; set `allow = false` to refuse |
  *
  * `index` is the engine entity index (1 … maxClients), the same number AMXX
  * calls `id`.
@@ -40,6 +41,7 @@ extern "C"
 #define AUTHUM_EVENT_CLIENT_DISCONNECT "authum.client.disconnect"
 #define AUTHUM_EVENT_CLIENT_COMMAND "authum.client.command"
 #define AUTHUM_EVENT_CLIENT_CVAR_VALUE "authum.client.cvar_value"
+#define AUTHUM_EVENT_CLIENT_KILL "authum.client.kill"
 
     enum
     {
