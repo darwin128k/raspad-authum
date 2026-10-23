@@ -5,7 +5,7 @@
 <h1 align="center">Authum</h1>
 
 <p align="center">
-  <b>2.0.0</b> — Metamod-P plugin host for classic HLDS<br>
+  <b>4.0.0</b> — Metamod-P plugin host for classic HLDS<br>
   loads child modules from <code>modules.list</code> / <code>modules/</code>
 </p>
 
