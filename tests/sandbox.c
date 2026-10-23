@@ -93,6 +93,44 @@ test_sandbox_nested(void)
     CHECK(authum_sandbox_alloc(authum_null, 4u) == authum_null);
 }
 
+/* A block that moves on realloc takes its children along: freeing the tree
+ * afterwards must reach them through the new address (GCC 11 + LTO once left
+ * them pointing at the freed block). */
+void
+test_sandbox_realloc_with_children(void)
+{
+    authum_sandbox_t sb = test_sandbox_root();
+    authum_ptr parent = authum_sandbox_alloc(&sb, 16u);
+    authum_ptr moved;
+    int i;
+
+    for (i = 0; i < 3; ++i) {
+        authum_ptr child = authum_sandbox_alloc_under(&sb, parent, 8u);
+        authum_sandbox_set_destructor(&sb, child, test_sandbox_count_destroy);
+    }
+    moved = authum_sandbox_realloc(&sb, parent, 1u << 16);
+    CHECK(moved != authum_null);
+
+    g_destroyed = 0;
+    authum_sandbox_free(&sb, moved);
+    CHECK(g_destroyed == 3);
+    authum_sandbox_host_root_destroy(sb.root);
+}
+
+/* A size no heap can give is refused, not fatal. */
+void
+test_sandbox_absurd_size(void)
+{
+    authum_sandbox_t sb = test_sandbox_root();
+    authum_ptr p = authum_sandbox_alloc(&sb, 8u);
+
+    CHECK(authum_sandbox_alloc(&sb, (authum_usize_t)-1) == authum_null);
+    CHECK(authum_sandbox_alloc(&sb, (authum_usize_t)-1 / 2u) == authum_null);
+    CHECK(authum_sandbox_realloc(&sb, p, (authum_usize_t)-1 - 8u) == authum_null);
+    CHECK(authum_sandbox_alloc(&sb, 8u) != authum_null);
+    authum_sandbox_host_root_destroy(sb.root);
+}
+
 struct test_item
 {
     authum_i32_t id;
@@ -144,6 +182,8 @@ main(void)
 {
     test_sandbox_alloc_and_unload();
     test_sandbox_nested();
+    test_sandbox_realloc_with_children();
+    test_sandbox_absurd_size();
     test_array();
     return authum_check_report("sandbox");
 }
