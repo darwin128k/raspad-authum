@@ -2,12 +2,9 @@
  * The DLL_FUNCTIONS Authum hands the engine: Authum's wrappers for the calls
  * modules care about, each of which publishes an Authum event and then (unless
  * a handler blocked it) calls the real game's function. Everything else is the
- * game's own pointer, copied in gamedll_fill_table.
- *
- * This is the standalone counterpart of src/authum/plugin/dllapi.cpp: same
- * events, but it calls the game directly instead of returning MRES_* to Metamod.
+ * game's own pointer, copied in hooks_fill_entity_table.
  */
-#include "gamedll.h"
+#include "game.h"
 #include "hooks.h"
 
 #include <authum/engine/host.h>
@@ -29,7 +26,7 @@ extern globalvars_t *gpGlobals;
 #    define STRING(offset) (static_cast<const char *>(gpGlobals->pStringBase) + static_cast<int>(offset))
 #endif
 
-namespace authum_standalone
+namespace authum_gamedll
 {
 void shutdown(void); /* defined in entry.cpp: brings Authum down */
 
@@ -331,4 +328,4 @@ hooks_fill_new_table(NEW_DLL_FUNCTIONS *out, int *interface_version)
     return true;
 }
 
-} // namespace authum_standalone
+} // namespace authum_gamedll

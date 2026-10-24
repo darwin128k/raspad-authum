@@ -55,7 +55,7 @@ authum_loader_is_host_image(const lh_fs_path_t *path)
     lh_str_view_t part;
     lh_str_view_t stem;
     lh_str_view_t host_mm;
-    lh_str_view_t host_standalone;
+    lh_str_view_t host_image;
     lh_usize_t ext_size;
     lh_usize_t n;
     lh_usize_t part_size;
@@ -88,8 +88,8 @@ authum_loader_is_host_image(const lh_fs_path_t *path)
     {
         return lh_bool_true;
     }
-    host_standalone = lh_str_view_lit("authum");
-    return lh_str_view_equals(lh_addr_of(stem), lh_addr_of(host_standalone), lh_bool_true);
+    host_image = lh_str_view_lit("authum");
+    return lh_str_view_equals(lh_addr_of(stem), lh_addr_of(host_image), lh_bool_true);
 }
 
 lh_bool_t

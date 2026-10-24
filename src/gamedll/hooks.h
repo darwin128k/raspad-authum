@@ -1,9 +1,9 @@
 /*
  * Authum's event-publishing overlay over the game's DLL_FUNCTIONS /
- * NEW_DLL_FUNCTIONS tables, for the standalone (no-Metamod) build.
+ * NEW_DLL_FUNCTIONS tables.
  */
-#ifndef AUTHUM_STANDALONE_HOOKS_H
-#define AUTHUM_STANDALONE_HOOKS_H
+#ifndef AUTHUM_GAMEDLL_HOOKS_H
+#define AUTHUM_GAMEDLL_HOOKS_H
 
 #include <extdll.h>
 
@@ -11,7 +11,7 @@
 extern "C" void authum_logs_flush(void);
 extern "C" void authum_logs_reload(void);
 
-namespace authum_standalone
+namespace authum_gamedll
 {
 /* Fill @p out with the game's entity table, Authum's hooks overlaid. The
  * game's own pointers are kept for later forwarding. */
@@ -20,6 +20,6 @@ bool hooks_fill_entity_table(DLL_FUNCTIONS *out, int interface_version);
 /* Same for NEW_DLL_FUNCTIONS (CvarValue2, GameShutdown). */
 bool hooks_fill_new_table(NEW_DLL_FUNCTIONS *out, int *interface_version);
 
-} // namespace authum_standalone
+} // namespace authum_gamedll
 
-#endif /* AUTHUM_STANDALONE_HOOKS_H */
+#endif /* AUTHUM_GAMEDLL_HOOKS_H */

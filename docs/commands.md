@@ -115,6 +115,6 @@ arrive as one argument.
 
 ## Host side
 
-`src/authum/commands.c` (registry, tests in `tests/commands.c`),
-`src/authum/console.c` (built-ins and routing), `src/authum/plugin/meta.cpp`
-(the one `REG_SVR_COMMAND`).
+`src/host/commands.c` (registry, tests in `tests/commands.c`),
+`src/host/console.c` (built-ins and routing), `src/gamedll/entry.cpp`
+(the one `pfnAddServerCommand`).

@@ -1,4 +1,4 @@
-#include "gamedll.h"
+#include "game.h"
 
 #include <authum/log.h>
 #include <authum/module.h>
@@ -18,7 +18,7 @@
 
 extern enginefuncs_t g_engfuncs;
 
-namespace authum_standalone
+namespace authum_gamedll
 {
 namespace
 {
@@ -126,7 +126,7 @@ read_gamedll_name(const char *dir, char *out, size_t out_size)
     f = std::fopen(path, "r");
     if (f == nullptr)
     {
-        authum_log_error("standalone: no %s beside authum.so (looked at %s)",
+        authum_log_error("gamedll: no %s beside authum.so (looked at %s)",
                          authum_gamedll_file, path);
         std::snprintf(out, out_size, "%s", authum_gamedll_default);
         return false;
@@ -143,7 +143,7 @@ read_gamedll_name(const char *dir, char *out, size_t out_size)
         return true;
     }
     std::fclose(f);
-    authum_log_error("standalone: %s is empty", path);
+    authum_log_error("gamedll: %s is empty", path);
     std::snprintf(out, out_size, "%s", authum_gamedll_default);
     return false;
 }
@@ -153,7 +153,7 @@ read_gamedll_name(const char *dir, char *out, size_t out_size)
  * The engine looks an entity's spawn function up by class name
  * (info_player_start, …) *in the game module* — the one it loaded, which is
  * us. So the class names have to be found there: we export them ourselves
- * (src/standalone/game_classes.cpp) and each trampoline forwards to the game.
+ * (src/gamedll/game_classes.cpp) and each trampoline forwards to the game.
  */
 bool
 open_game(const char *path)
@@ -197,7 +197,7 @@ gamedll_load(enginefuncs_t *engine_funcs, globalvars_t *globals)
     }
     if (!host_dir(dir, sizeof dir))
     {
-        authum_log_error("standalone: cannot find Authum's own folder");
+        authum_log_error("gamedll: cannot find Authum's own folder");
         return false;
     }
     (void)read_gamedll_name(dir, name, sizeof name); /* e.g. "dlls/cs.so" */
@@ -214,15 +214,15 @@ gamedll_load(enginefuncs_t *engine_funcs, globalvars_t *globals)
 
     if (!open_game(full))
     {
-        authum_log_error("standalone: cannot load game DLL %s", full);
+        authum_log_error("gamedll: cannot load game DLL %s", full);
         return false;
     }
-    authum_log_info("standalone: game DLL %s", full);
+    authum_log_info("gamedll: game DLL %s", full);
 
     give = reinterpret_cast<give_fn_t>(gamedll_symbol("GiveFnptrsToDll"));
     if (give == nullptr)
     {
-        authum_log_error("standalone: game DLL has no GiveFnptrsToDll");
+        authum_log_error("gamedll: game DLL has no GiveFnptrsToDll");
         return false;
     }
     give(engine_funcs, globals);
@@ -254,7 +254,7 @@ gamedll_entity_api(DLL_FUNCTIONS *out, int interface_version)
         int v = interface_version;
         return api2(out, &v) != 0;
     }
-    authum_log_error("standalone: game DLL exports neither GetEntityAPI nor GetEntityAPI2");
+    authum_log_error("gamedll: game DLL exports neither GetEntityAPI nor GetEntityAPI2");
     return false;
 }
 
@@ -273,4 +273,4 @@ gamedll_symbol(const char *name)
     return g_game_open ? lh_os_shared_get_sym(lh_addr_of(g_game), name) : nullptr;
 }
 
-} // namespace authum_standalone
+} // namespace authum_gamedll

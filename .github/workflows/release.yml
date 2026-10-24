@@ -83,7 +83,7 @@ jobs:
             echo "The engine loads \`addons/authum/authum.so\` as the game library;"
             echo "the real game is named in \`addons/authum/gamedll.txt\`."
             echo
-            echo "See docs/standalone.md for the whole story."
+            echo "See docs/gamedll.md for the whole story."
           } > "$NOTES"
           gh release create "$TAG" authum-linux32.zip \
             --title "Authum ${TAG}" \

@@ -3,7 +3,7 @@
  * @brief What authum_client needs from the operating system (not public ABI).
  *
  * One implementation per platform: `os/posix/` and `os/win/`. CMake compiles
- * the one for the target, so the rest of src/client has no `#if _WIN32`.
+ * the one for the target, so the rest of src/api has no `#if _WIN32`.
  */
 
 #ifndef AUTHUM_CLIENT_OS_H

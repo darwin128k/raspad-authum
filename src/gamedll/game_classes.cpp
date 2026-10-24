@@ -6,7 +6,7 @@
  * exports has to be exported by us too — each one forwards to the game.
  */
 
-#include "gamedll.h"
+#include "game.h"
 
 #include <authum/export.h>
 
@@ -20,7 +20,7 @@ namespace
 void *
 class_symbol(const char *name)
 {
-    return authum_standalone::gamedll_symbol(name);
+    return authum_gamedll::gamedll_symbol(name);
 }
 } // namespace
 
