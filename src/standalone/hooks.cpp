@@ -202,6 +202,20 @@ h_spawn(edict_t *entity)
         server_fill(&ev);
         (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_PRECACHE, &ev);
     }
+    /* The engine spawns every entity through this slot. The game's own
+     * `Spawn` is the old-style entry; the modern one is `DispatchSpawn`
+     * (the game exports it as a C++ name) — that is the one Metamod puts
+     * here as well. */
+    {
+        typedef void (*dispatch_fn_t)(edict_t *);
+        dispatch_fn_t dispatch =
+            reinterpret_cast<dispatch_fn_t>(gamedll_symbol("_Z13DispatchSpawnP7edict_s"));
+        if (dispatch != nullptr)
+        {
+            dispatch(entity);
+            return 1;
+        }
+    }
     return g_game_dll.pfnSpawn != nullptr ? g_game_dll.pfnSpawn(entity) : 0;
 }
 

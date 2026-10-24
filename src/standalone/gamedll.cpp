@@ -7,11 +7,11 @@
 #include <lh/fs/path/style.h>
 #include <lh/null.h>
 #include <lh/os/module.h>
+#include <lh/os/shared.h>
 #include <lh/str.h>
 #include <lh/util/addr.h>
 #include <lh/util/str/ptr.h>
 
-#include <dlfcn.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -27,7 +27,9 @@ typedef int (*get_entity_api_t)(DLL_FUNCTIONS *, int);  /* old: version by value
 typedef int (*get_entity_api2_t)(DLL_FUNCTIONS *, int *);
 typedef int (*get_new_dll_funcs_t)(NEW_DLL_FUNCTIONS *, int *);
 
-void *g_game = nullptr;
+/* The real game library, open through lh's OS layer (dlopen / LoadLibrary). */
+lh_os_shared_t g_game;
+bool g_game_open = false;
 
 /* The real game DLL is named in Authum's own file, next to authum.so.
  *
@@ -139,25 +141,36 @@ read_gamedll_name(const char *dir, char *out, size_t out_size)
     std::snprintf(out, out_size, "%s", authum_gamedll_default);
     return false;
 }
-/* Open the real game library.
+/* Open the real game library, through lh's OS layer — the same call on both
+ * platforms (dlopen / LoadLibrary).
  *
- * The build links it into authum.so (a stub carries its file name), so the
- * loader already has it in our dependency tree — that is what makes the
- * engine's class lookups (info_player_start, …) find the game's spawn
- * functions through our handle. Take *that* object: dlopen by file name with
- * RTLD_NOLOAD finds the loaded one instead of loading a second copy (two
- * copies would mean two sets of game globals). If it is not linked in, fall
- * back to the path from gamedll.txt. */
-void *
-open_game(const char *file_name, const char *path)
+ * The engine looks an entity's spawn function up by class name
+ * (info_player_start, …) *in the game module* — the one it loaded, which is
+ * us. So the class names have to be found there: we export them ourselves
+ * (src/standalone/game_classes.c) and each trampoline forwards to the game.
+ */
+bool
+open_game(const char *path)
 {
-    void *handle = dlopen(file_name, RTLD_NOW | RTLD_GLOBAL | RTLD_NOLOAD);
+    lh_fs_path_t image;
+    lh_str_t text;
+    lh_str_view_t view;
+    lh_bool_t ok;
 
-    if (handle != nullptr)
+    lh_os_shared_init(lh_addr_of(g_game));
+    lh_fs_path_init(lh_addr_of(image));
+    lh_str_init(lh_addr_of(text));
+    lh_str_append(lh_addr_of(text), path, std::strlen(path));
+    lh_str_as_view(lh_addr_of(text), lh_addr_of(view));
+    lh_fs_path_set(lh_addr_of(image), view, lh_fs_path_style_posix);
+    ok = lh_os_shared_open(lh_addr_of(g_game), lh_addr_of(image));
+    if (ok)
     {
-        return handle;
+        g_game_open = true;
     }
-    return dlopen(path, RTLD_NOW | RTLD_GLOBAL);
+    lh_str_deinit(lh_addr_of(text));
+    lh_fs_path_deinit(lh_addr_of(image));
+    return ok == lh_bool_true;
 }
 } // namespace
 
@@ -167,7 +180,6 @@ gamedll_load(enginefuncs_t *engine_funcs, globalvars_t *globals)
     char game_dir[256] = "cstrike";
     char dir[512];
     char name[256];
-    char file[128];
     char full[800];
     give_fn_t give;
 
@@ -184,17 +196,7 @@ gamedll_load(enginefuncs_t *engine_funcs, globalvars_t *globals)
     }
     (void)read_gamedll_name(dir, name, sizeof name); /* e.g. "dlls/cs.so" */
 
-    /* The file name (cs.so) is how the loader knows the library; the path is
-     * where it lives inside the game directory (dlls/cs.so). */
-    {
-        const char *slash = std::strrchr(name, '/');
-        std::snprintf(file, sizeof file, "%s", slash != nullptr ? slash + 1 : name);
-    }
-    if (file[0] == '\0')
-    {
-        authum_log_error("standalone: empty game DLL name in gamedll.txt");
-        return false;
-    }
+    /* The path is relative to the game dir, the way liblist.gam resolves it. */
     if (name[0] == '/')
     {
         std::snprintf(full, sizeof full, "%s", name); /* absolute: as it is */
@@ -204,10 +206,9 @@ gamedll_load(enginefuncs_t *engine_funcs, globalvars_t *globals)
         std::snprintf(full, sizeof full, "%s/%s", game_dir, name);
     }
 
-    g_game = open_game(file, full);
-    if (g_game == nullptr)
+    if (!open_game(full))
     {
-        authum_log_error("standalone: cannot load game DLL %s: %s", full, dlerror());
+        authum_log_error("standalone: cannot load game DLL %s", full);
         return false;
     }
     authum_log_info("standalone: game DLL %s", full);
@@ -263,7 +264,7 @@ gamedll_new_functions(NEW_DLL_FUNCTIONS *out, int *interface_version)
 void *
 gamedll_symbol(const char *name)
 {
-    return g_game != nullptr ? dlsym(g_game, name) : nullptr;
+    return g_game_open ? lh_os_shared_get_sym(lh_addr_of(g_game), name) : nullptr;
 }
 
 } // namespace authum_standalone
