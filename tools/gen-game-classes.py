@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the entity-class trampolines for the standalone build.
+"""Generate the entity-class trampolines for the game-library layer.
 
 The engine looks an entity's spawn function up *in the game module* — the
 library it loaded as the game. When that module is Authum (we stand in for
@@ -9,7 +9,7 @@ be exported by us, each forwarding to the real game.
 The list is the game library's own plain C exports; this script reads them
 off a game library and writes the C file.
 
-    tools/gen-game-classes.py <game.so|game.dll> > src/standalone/game_classes.c
+    tools/gen-game-classes.py <game.so|game.dll> > src/gamedll/game_classes.cpp
 
 Names we implement ourselves are skipped — the engine finds those in
 Authum already.
@@ -94,7 +94,7 @@ def main() -> int:
  * exports has to be exported by us too — each one forwards to the game.
  */
 
-#include "gamedll.h"
+#include "game.h"
 
 #include <authum/export.h>
 
@@ -108,7 +108,7 @@ namespace
 void *
 class_symbol(const char *name)
 {
-    return authum_standalone::gamedll_symbol(name);
+    return authum_gamedll::gamedll_symbol(name);
 }
 } // namespace
 

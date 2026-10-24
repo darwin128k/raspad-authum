@@ -1,4 +1,4 @@
-# Standalone: Authum as the game library
+# Authum as the game library
 
 `authum.so` is Authum **as the HLDS game library** — no Metamod in between.
 The engine loads it where the game library used to be, Authum loads the real
@@ -19,7 +19,7 @@ cstrike/addons/authum/
 
 ## Install
 
-1. Build it: `cmake --build build-linux32 --target authum_standalone`
+1. Build it: `cmake --build build-linux32 --target authum_gamedll`
    (the image is `build-linux32/authum.so`).
 2. Put it in `<game dir>/addons/authum/authum.so`.
 3. Name the real game library in `<game dir>/addons/authum/gamedll.txt` —
@@ -71,10 +71,10 @@ failure Metamod-R hit on ReHLDS, see
 The list is generated from the game library:
 
 ```sh
-python3 tools/gen-game-classes.py /path/to/cs.so > src/standalone/game_classes.cpp
+python3 tools/gen-game-classes.py /path/to/cs.so > src/gamedll/game_classes.cpp
 ```
 
-`src/standalone/game_classes.cpp` is checked in (the classes of Counter-Strike
+`src/gamedll/game_classes.cpp` is checked in (the classes of Counter-Strike
 1.6 — 195 of them); regenerate it for another game.
 
 ## Limits

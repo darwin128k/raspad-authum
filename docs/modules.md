@@ -33,7 +33,7 @@ Authum's part is the policy around that mechanism:
 - extra modules come from `configs/modules.list` when that file exists,
   otherwise from shared libraries in a directory named `modules` beside
   the image;
-- the host plugin file `authum` (or `authum`, the standalone game library)
+- the host image `authum` (the game library)
   is never opened as a child.
 
 One module does not call another directly. There is no `dlsym` into a

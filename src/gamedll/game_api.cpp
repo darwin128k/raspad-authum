@@ -13,7 +13,7 @@
  * _Z13DispatchSpawnP7edict_s), the engine looks for the plain ones. Standing
  * in for Metamod, Authum exports the plain names and forwards them.
  */
-#include "gamedll.h"
+#include "game.h"
 
 #include <authum/export.h>
 
@@ -29,11 +29,11 @@ namespace
 void *
 find_game_symbol(const char *plain, const char *mangled)
 {
-    void *symbol = authum_standalone::gamedll_symbol(plain);
+    void *symbol = authum_gamedll::gamedll_symbol(plain);
 
     if (symbol == nullptr)
     {
-        symbol = authum_standalone::gamedll_symbol(mangled);
+        symbol = authum_gamedll::gamedll_symbol(mangled);
     }
     return symbol;
 }

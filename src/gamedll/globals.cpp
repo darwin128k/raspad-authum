@@ -1,8 +1,8 @@
 /*
  * Globals the Authum core (engine_server.cpp, log.cpp) links against,
- * defined here for the standalone build.
+ * defined here, in the game-library layer.
  *
- * The engine's function table and globals are filled by the standalone
+ * The engine's function table and globals are filled by Authum's
  * GiveFnptrsToDll. Metamod is not part of the build: there is no plugin_info_t,
  * no meta_globals_t — the host is the game library itself.
  */

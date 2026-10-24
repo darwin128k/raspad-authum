@@ -1,6 +1,6 @@
 # Authum client library: every function a module calls on the Authum API
 # (host getters, cfg, path, cstr, logger, sandbox, array, events, sql, json, …).
-# Headers in include/ only declare; code lives in src/client/ and ships as
+# Headers in include/ only declare; code lives in src/api/ and ships as
 # this static library. Modules link `authum_client`; they never compile Authum
 # `.c` files themselves. No Metamod. `authum` links it too.
 #
@@ -35,14 +35,14 @@ if (NOT TARGET lh)
 endif ()
 
 file(GLOB_RECURSE AUTHUM_CLIENT_SOURCES CONFIGURE_DEPENDS
-	"${CMAKE_CURRENT_SOURCE_DIR}/../src/client/*.c"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../src/api/*.c"
 )
-# src/client/os/<platform>/ is the only place that knows the OS: build the
+# src/api/os/<platform>/ is the only place that knows the OS: build the
 # target's one and drop the other.
 if (WIN32)
-	list(FILTER AUTHUM_CLIENT_SOURCES EXCLUDE REGEX "/src/client/os/posix/")
+	list(FILTER AUTHUM_CLIENT_SOURCES EXCLUDE REGEX "/src/api/os/posix/")
 else ()
-	list(FILTER AUTHUM_CLIENT_SOURCES EXCLUDE REGEX "/src/client/os/win/")
+	list(FILTER AUTHUM_CLIENT_SOURCES EXCLUDE REGEX "/src/api/os/win/")
 endif ()
 
 set(AUTHUM_MONOCYPHER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../lib/monocypher")

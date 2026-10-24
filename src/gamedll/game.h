@@ -1,13 +1,13 @@
 /*
- * The real game library behind standalone Authum: the DLL Authum loads and
+ * The real game library behind Authum: the DLL Authum loads and
  * forwards to, the way the engine would have loaded it directly.
  */
-#ifndef AUTHUM_STANDALONE_GAMEDLL_H
-#define AUTHUM_STANDALONE_GAMEDLL_H
+#ifndef AUTHUM_GAMEDLL_GAME_H
+#define AUTHUM_GAMEDLL_GAME_H
 
 #include <extdll.h>
 
-namespace authum_standalone
+namespace authum_gamedll
 {
 /* Load the real game library named in addons/authum/gamedll.txt, and hand it
  * the engine's functions. Returns false and logs if the library is missing or
@@ -25,6 +25,6 @@ bool gamedll_new_functions(NEW_DLL_FUNCTIONS *out, int *interface_version);
 /* Any symbol exported by the game DLL (entity classnames, Server_Get…). */
 void *gamedll_symbol(const char *name);
 
-} // namespace authum_standalone
+} // namespace authum_gamedll
 
-#endif /* AUTHUM_STANDALONE_GAMEDLL_H */
+#endif /* AUTHUM_GAMEDLL_GAME_H */

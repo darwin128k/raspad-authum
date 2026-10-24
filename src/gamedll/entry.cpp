@@ -1,5 +1,5 @@
 /*
- * Standalone entry: Authum as the HLDS game library, no Metamod.
+ * Entry: Authum as the HLDS game library.
  *
  * The engine loads this .so as the game DLL (liblist.gam gamedll_linux). We
  * take the engine's functions, load the real game DLL behind us, bring Authum
@@ -10,7 +10,7 @@
  * path is what says where gamedll.txt and the logs live), then the log opens,
  * then the real game DLL is loaded and handed the engine's functions.
  */
-#include "gamedll.h"
+#include "game.h"
 #include "hooks.h"
 
 #include <authum/console.h>
@@ -66,7 +66,7 @@ bool g_loader_up = false; /* the loader bound Authum's own image */
 bool g_started = false;   /* modules are up */
 
 void
-standalone_command(void)
+authum_command(void)
 {
     const authum_char_t *argv[64];
     authum_usize_t argc = 0u;
@@ -90,7 +90,7 @@ standalone_command(void)
 /* Console-level lines also go to the server console (what `log_console` in
  * authum.cfg asks for): the engine's print, tagged with the module's name. */
 void
-standalone_log_mirror(authum_logger_level_t /* level */, const authum_char_t *name,
+log_mirror(authum_logger_level_t /* level */, const authum_char_t *name,
                       const authum_char_t *text)
 {
     char line[1024];
@@ -112,7 +112,7 @@ standalone_log_mirror(authum_logger_level_t /* level */, const authum_char_t *na
 
 /* Authum's own folder (addons/authum) holds the logs, next to the image. */
 void
-standalone_log_init(void)
+log_init(void)
 {
     const lh_fs_path_t *image = lh_os_module_get_path(&authum);
     lh_fs_path_t parent;
@@ -120,31 +120,31 @@ standalone_log_init(void)
     lh_fs_path_init(&parent);
     if (image != nullptr && lh_fs_path_parent(&parent, image))
     {
-        (void)authum_log_init_sink(&parent, standalone_log_mirror);
+        (void)authum_log_init_sink(&parent, log_mirror);
     }
     lh_fs_path_deinit(&parent);
 }
 
 void
-standalone_start(void)
+start_host(void)
 {
     if (g_started)
     {
         return;
     }
-    authum_log_info("Authum standalone starting");
+    authum_log_info("Authum starting");
     (void)authum_loader_load_modules(&authum);
     if (authum_gate_init() != lh_bool_true)
     {
-        authum_log_error("standalone: connect gate init failed");
+        authum_log_error("gamedll: connect gate init failed");
     }
-    g_engfuncs.pfnAddServerCommand(const_cast<char *>("authum"), standalone_command);
+    g_engfuncs.pfnAddServerCommand(const_cast<char *>("authum"), authum_command);
     authum_log_info("server command: authum  (authum help — module commands)");
     g_started = true;
 }
 } // namespace
 
-namespace authum_standalone
+namespace authum_gamedll
 {
 void
 shutdown(void)
@@ -161,7 +161,7 @@ shutdown(void)
     }
     authum_log_deinit();
 }
-} // namespace authum_standalone
+} // namespace authum_gamedll
 
 AUTHUM_ENTRY void AUTHUM_GIVE_CALL
 GiveFnptrsToDll(enginefuncs_t *engine_funcs, globalvars_t *globals)
@@ -173,21 +173,21 @@ GiveFnptrsToDll(enginefuncs_t *engine_funcs, globalvars_t *globals)
      * and the logs live (addons/authum), whatever the engine's cwd is. */
     if (authum_loader_init() != lh_bool_true)
     {
-        authum_log_error("standalone: loader init failed");
+        authum_log_error("gamedll: loader init failed");
         return;
     }
     g_loader_up = true;
 
-    standalone_log_init();
+    log_init();
 
     /* The real game DLL sits behind us: its path is in gamedll.txt, beside
      * authum.so, because liblist.gam now names Authum instead. */
-    if (!authum_standalone::gamedll_load(engine_funcs, globals))
+    if (!authum_gamedll::gamedll_load(engine_funcs, globals))
     {
         return;
     }
 
-    standalone_start();
+    start_host();
 }
 
 AUTHUM_ENTRY int
@@ -197,7 +197,7 @@ GetEntityAPI2(DLL_FUNCTIONS *table, int *interface_version)
     {
         return 0;
     }
-    return authum_standalone::hooks_fill_entity_table(table, *interface_version) ? 1 : 0;
+    return authum_gamedll::hooks_fill_entity_table(table, *interface_version) ? 1 : 0;
 }
 
 AUTHUM_ENTRY int
@@ -207,7 +207,7 @@ GetEntityAPI(DLL_FUNCTIONS *table, int interface_version)
     {
         return 0;
     }
-    return authum_standalone::hooks_fill_entity_table(table, interface_version) ? 1 : 0;
+    return authum_gamedll::hooks_fill_entity_table(table, interface_version) ? 1 : 0;
 }
 
 AUTHUM_ENTRY int
@@ -217,7 +217,7 @@ GetNewDLLFunctions(NEW_DLL_FUNCTIONS *table, int *interface_version)
     {
         return 0;
     }
-    return authum_standalone::hooks_fill_new_table(table, interface_version) ? 1 : 0;
+    return authum_gamedll::hooks_fill_new_table(table, interface_version) ? 1 : 0;
 }
 
 /* The map's first entity is spawned via dlsym(gamedll, "worldspawn"); that
@@ -228,7 +228,7 @@ AUTHUM_ENTRY void
 worldspawn(entvars_t *pev)
 {
     typedef void (*entity_fn_t)(entvars_t *);
-    entity_fn_t fn = reinterpret_cast<entity_fn_t>(authum_standalone::gamedll_symbol("worldspawn"));
+    entity_fn_t fn = reinterpret_cast<entity_fn_t>(authum_gamedll::gamedll_symbol("worldspawn"));
     if (fn != nullptr)
     {
         fn(pev);
@@ -243,6 +243,6 @@ Server_GetBlendingInterface(int version, void **ppinterface, void *pstudio, floa
 {
     typedef int (*blend_fn_t)(int, void **, void *, float (*)[3][4], float (*)[128][3][4]);
     blend_fn_t fn =
-        reinterpret_cast<blend_fn_t>(authum_standalone::gamedll_symbol("Server_GetBlendingInterface"));
+        reinterpret_cast<blend_fn_t>(authum_gamedll::gamedll_symbol("Server_GetBlendingInterface"));
     return fn != nullptr ? fn(version, ppinterface, pstudio, rotationmatrix, bonetransform) : 0;
 }

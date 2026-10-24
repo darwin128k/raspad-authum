@@ -19,7 +19,7 @@
 /**
  * @brief Export of the host image's own entry points.
  *
- * The standalone image is the game library: the engine resolves its symbols
+ * The host image is the game library: the engine resolves its symbols
  * by name (GiveFnptrsToDll, the entity class names, …), so they must be
  * exported. On Windows that means __declspec(dllexport) — a visibility
  * attribute is not enough for a DLL.
