@@ -9,9 +9,9 @@
 
 namespace authum_standalone
 {
-/* Load the real game DLL named in cstrike/liblist.gam (gamedll_linux), from a
- * directory beside authum.so, and hand it the engine's functions. Returns
- * false and logs if the DLL is missing or has no GiveFnptrsToDll. */
+/* Load the real game library named in addons/authum/gamedll.txt, and hand it
+ * the engine's functions. Returns false and logs if the library is missing or
+ * has no GiveFnptrsToDll. */
 bool gamedll_load(enginefuncs_t *engine_funcs, globalvars_t *globals);
 
 /* The game's entity-API table (its own pointers), filled on first request.
