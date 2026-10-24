@@ -153,7 +153,7 @@ read_gamedll_name(const char *dir, char *out, size_t out_size)
  * The engine looks an entity's spawn function up by class name
  * (info_player_start, …) *in the game module* — the one it loaded, which is
  * us. So the class names have to be found there: we export them ourselves
- * (src/gamedll/game_classes.cpp) and each trampoline forwards to the game.
+ * (src/authum/gamedll/game_classes.cpp) and each trampoline forwards to the game.
  */
 bool
 open_game(const char *path)

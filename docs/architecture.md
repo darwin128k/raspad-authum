@@ -17,7 +17,7 @@ not ship a process-wide `lh.so` for modules.
 | Layer | Who | Copies |
 |-------|-----|--------|
 | Host facade (`authum_host_t`: log, engfuncs, globals, `env`, `crypto`, `engine`, `sandbox`, `events`, `commands`) | `authum` | **One** per module — passed into `authum_module_api.start` |
-| Client API (`authum_client` static lib: host getters, cfg, path, cstr, logger, sandbox, array, events) | `src/api/*.c` | Linked into `authum` and into every module; headers only declare |
+| Client API (`authum_client` static lib: host getters, cfg, path, cstr, logger, sandbox, array, events) | `src/authum/api/*.c` | Linked into `authum` and into every module; headers only declare |
 | Foundation types (`authum_byte_t`, `authum_usize_t`, `authum_bool_t`, …) | Authum headers | Same idea as lh types; modules never include lh |
 | Sandbox (`authum/sandbox.h`) | ops in `authum` on `lh_memory_tree` | One root per module, freed after `stop` — [sandbox.md](sandbox.md) |
 | Event bus (`authum/events.h`) | ops in `authum` | Forwards + queries between modules; host publishes `authum.client.*` — [events.md](events.md) |

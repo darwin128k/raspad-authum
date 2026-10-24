@@ -9,7 +9,7 @@ be exported by us, each forwarding to the real game.
 The list is the game library's own plain C exports; this script reads them
 off a game library and writes the C file.
 
-    tools/gen-game-classes.py <game.so|game.dll> > src/gamedll/game_classes.cpp
+    tools/gen-game-classes.py <game.so|game.dll> > src/authum/gamedll/game_classes.cpp
 
 Names we implement ourselves are skipped — the engine finds those in
 Authum already.

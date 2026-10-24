@@ -3,7 +3,7 @@
  * @brief Flat `key = value` config — get / apply by key (no lh).
  *
  * Implementation lives in Authum’s `authum_client` static library
- * (`src/api/cfg.c`). Modules `#include <authum/cfg.h>` and link
+ * (`src/authum/api/cfg.c`). Modules `#include <authum/cfg.h>` and link
  * `authum_client` — they do not compile Authum sources themselves.
  *
  * Dialect:

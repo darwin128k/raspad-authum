@@ -1,5 +1,5 @@
 # Authum tests: plain C executables run by CTest. Host pieces (sandbox, events,
-# commands, logs) are compiled from src/host together with lh, exactly as
+# commands, logs) are compiled from src/authum/host together with lh, exactly as
 # authum uses them.
 
 add_library(authum_test_check STATIC check.c)
@@ -10,10 +10,10 @@ target_link_libraries(authum_test_client PRIVATE authum_client authum_test_check
 add_test(NAME authum_client COMMAND authum_test_client)
 
 add_library(authum_test_host STATIC
-        "${CMAKE_SOURCE_DIR}/src/host/sandbox.c"
-        "${CMAKE_SOURCE_DIR}/src/host/events.c"
-        "${CMAKE_SOURCE_DIR}/src/host/commands.c"
-        "${CMAKE_SOURCE_DIR}/src/host/logs.c"
+        "${CMAKE_SOURCE_DIR}/src/authum/host/sandbox.c"
+        "${CMAKE_SOURCE_DIR}/src/authum/host/events.c"
+        "${CMAKE_SOURCE_DIR}/src/authum/host/commands.c"
+        "${CMAKE_SOURCE_DIR}/src/authum/host/logs.c"
 )
 target_include_directories(authum_test_host PUBLIC "${CMAKE_SOURCE_DIR}/include")
 target_link_libraries(authum_test_host PUBLIC lh authum_client)
