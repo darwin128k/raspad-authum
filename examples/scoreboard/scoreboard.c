@@ -9,6 +9,7 @@
  * the command reports instead of failing.
  */
 
+#include <authum/unused.h>
 #include "scores_event.h"
 
 #include <stdio.h>
@@ -32,14 +33,14 @@ scoreboard_on_changed(const authum_char_t *name, authum_ptr payload, authum_ptr 
     authum_char_t player[64];
     authum_char_t text[128];
 
-    (void)name;
-    (void)user;
+    authum_unused(name);
+    authum_unused(user);
     if (authum_null_eq(ev) || ev->size < sizeof *ev)
     {
         return authum_event_result_continue;
     }
     authum_host_client_get_name(&g_scoreboard_host, ev->index, player, sizeof player);
-    snprintf(text, sizeof text, "%s: %+d, now %d points\n", player, (int)ev->delta, (int)ev->score);
+    snprintf(text, sizeof text, "%s: %+d, now %d points\n", player, ev->delta, ev->score);
     authum_host_client_print(&g_scoreboard_host, 0, authum_engine_print_chat, text); /* 0 = all */
     return authum_event_result_continue;
 }
@@ -50,7 +51,7 @@ scoreboard_cmd_show(const authum_command_t *cmd, authum_ptr user)
 {
     scores_query_t q;
 
-    (void)user;
+    authum_unused(user);
     q.size = sizeof q;
     q.found = authum_bool_false;
     q.score = 0;
@@ -66,7 +67,7 @@ scoreboard_cmd_show(const authum_command_t *cmd, authum_ptr user)
         authum_command_print(cmd, "no answer (is the scores module loaded?)");
         return authum_bool_true;
     }
-    authum_command_printf(cmd, "#%d has %d points", (int)q.index, (int)q.score);
+    authum_command_printf(cmd, "#%d has %d points", q.index, q.score);
     return authum_bool_true;
 }
 

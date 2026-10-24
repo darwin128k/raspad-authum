@@ -33,61 +33,57 @@
 
 #include <authum/bool.h>
 #include <authum/byte.h>
+#include <authum/extern.h>
 #include <authum/null.h>
 #include <authum/ptr.h>
 #include <authum/size.h>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+AUTHUM_EXTERN_C_BEGIN
 
 /** Bytes a detour overwrites at the target (`E9` + rel32). */
 #define AUTHUM_DETOUR_SIZE 5
 
-    /**
-     * @struct authum_detour
-     * @brief One patched function. Zero-initialize before the first attach.
-     */
-    typedef struct authum_detour
-    {
-        authum_ptr target;                       /**< patched function */
-        authum_ptr hook;                         /**< where the jump goes */
-        authum_byte_t saved[AUTHUM_DETOUR_SIZE]; /**< original bytes */
-        authum_bool_t attached;                  /**< between attach and detach */
-        authum_bool_t patched;                   /**< jump currently written */
-    } authum_detour_t;
+/**
+ * @struct authum_detour
+ * @brief One patched function. Zero-initialize before the first attach.
+ */
+typedef struct authum_detour
+{
+    authum_ptr target;                       /**< patched function */
+    authum_ptr hook;                         /**< where the jump goes */
+    authum_byte_t saved[AUTHUM_DETOUR_SIZE]; /**< original bytes */
+    authum_bool_t attached;                  /**< between attach and detach */
+    authum_bool_t patched;                   /**< jump currently written */
+} authum_detour_t;
 
-    /**
-     * Save the first ::AUTHUM_DETOUR_SIZE bytes of @p target and write a jump
-     * to @p hook. Fails (returns false, changes nothing) when already attached,
-     * on null pointers, when the page cannot be made writable, or on non-x86.
-     */
-    authum_bool_t
-    authum_detour_attach(authum_detour_t *self, authum_ptr target, authum_ptr hook);
+/**
+ * Save the first ::AUTHUM_DETOUR_SIZE bytes of @p target and write a jump
+ * to @p hook. Fails (returns false, changes nothing) when already attached,
+ * on null pointers, when the page cannot be made writable, or on non-x86.
+ */
+authum_bool_t
+authum_detour_attach(authum_detour_t *self, authum_ptr target, authum_ptr hook);
 
-    /** Restore the original bytes for good. Safe on a detached detour. */
-    void
-    authum_detour_detach(authum_detour_t *self);
+/** Restore the original bytes for good. Safe on a detached detour. */
+void
+authum_detour_detach(authum_detour_t *self);
 
-    /** Put the original bytes back for a call-through; keeps the detour attached. */
-    void
-    authum_detour_suspend(authum_detour_t *self);
+/** Put the original bytes back for a call-through; keeps the detour attached. */
+void
+authum_detour_suspend(authum_detour_t *self);
 
-    /** Write the jump again after ::authum_detour_suspend. */
-    void
-    authum_detour_resume(authum_detour_t *self);
+/** Write the jump again after ::authum_detour_suspend. */
+void
+authum_detour_resume(authum_detour_t *self);
 
-    /** Make @p size bytes at @p address writable + executable (both bricks use it). */
-    authum_bool_t
-    authum_detour_unprotect(authum_ptr address, authum_usize_t size);
+/** Make @p size bytes at @p address writable + executable (both bricks use it). */
+authum_bool_t
+authum_detour_unprotect(authum_ptr address, authum_usize_t size);
 
-    /** Write the `E9 rel32` jump from @p target to @p hook (no save, no checks). */
-    void
-    authum_detour_write_jump(authum_ptr target, authum_ptr hook);
+/** Write the `E9 rel32` jump from @p target to @p hook (no save, no checks). */
+void
+authum_detour_write_jump(authum_ptr target, authum_ptr hook);
 
-#ifdef __cplusplus
-}
-#endif
+AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_DETOUR_H */

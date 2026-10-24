@@ -15,7 +15,7 @@ add_library(authum_test_host STATIC
         "${CMAKE_SOURCE_DIR}/src/authum/host/commands.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/logs.c"
 )
-target_include_directories(authum_test_host PUBLIC "${CMAKE_SOURCE_DIR}/include")
+target_include_directories(authum_test_host PUBLIC "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/src")
 target_link_libraries(authum_test_host PUBLIC lh authum_client)
 
 add_executable(authum_test_sandbox sandbox.c)

@@ -13,26 +13,22 @@
 #include <authum/bool.h>
 #include <authum/char.h>
 #include <authum/command/def.h>
+#include <authum/extern.h>
 #include <authum/ptr.h>
 
-#ifdef __cplusplus
-extern "C"
+AUTHUM_EXTERN_C_BEGIN
+
+struct authum_commands_ops
 {
-#endif
+    /** sizeof this table as built by the host — see <authum/abi.h>. */
+    authum_usize_t size;
+    authum_bool_t (*add)(authum_ptr owner, const authum_char_t *scope,
+                         const authum_command_def_t *def);
+    authum_bool_t (*remove)(authum_ptr owner, const authum_char_t *scope,
+                            const authum_char_t *name);
+};
+typedef struct authum_commands_ops authum_commands_ops_t;
 
-    struct authum_commands_ops
-    {
-        /** sizeof this table as built by the host — see <authum/abi.h>. */
-        authum_usize_t size;
-        authum_bool_t (*add)(authum_ptr owner, const authum_char_t *scope,
-                             const authum_command_def_t *def);
-        authum_bool_t (*remove)(authum_ptr owner, const authum_char_t *scope,
-                                const authum_char_t *name);
-    };
-    typedef struct authum_commands_ops authum_commands_ops_t;
-
-#ifdef __cplusplus
-}
-#endif
+AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_COMMANDS_OPS_H */

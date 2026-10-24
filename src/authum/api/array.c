@@ -74,7 +74,7 @@ authum_array_reserve(authum_array_t *self, authum_usize_t capacity)
 }
 
 authum_ptr
-authum_array_push(authum_array_t *self, const void *item)
+authum_array_push(authum_array_t *self, authum_cptr item)
 {
     authum_byte_t *slot;
     authum_usize_t want;

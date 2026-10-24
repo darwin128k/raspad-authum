@@ -7,9 +7,10 @@
  * outermost publish returns.
  */
 
-#include <authum/events/host.h>
+#include <authum/host/events.h>
 
 #include <authum/null.h>
+#include <authum/unused.h>
 
 #include <lh/runtime/allocator.h>
 
@@ -137,7 +138,7 @@ authum_events_host_publish_as(authum_ptr owner, const authum_char_t *name, authu
     authum_event_result_t best = authum_event_result_continue;
     authum_event_result_t r;
 
-    (void)owner;
+    authum_unused(owner);
     if (authum_null_eq(name))
     {
         return best;

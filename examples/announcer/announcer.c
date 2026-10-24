@@ -37,19 +37,19 @@ announcer_tick(authum_ptr user)
 {
     authum_char_t text[128];
 
-    (void)user;
+    authum_unused(user);
     ++g_announcer_count;
     snprintf(text, sizeof text, "\x04[Info]\x01 This server runs Authum. Message #%d.",
-             (int)g_announcer_count);
+             g_announcer_count);
     authum_host_client_chat(&g_announcer_host, 0, 0, text);
 }
 
 authum_event_result_t
 announcer_on_precache(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 {
-    (void)name;
-    (void)payload;
-    (void)user;
+    authum_unused(name);
+    authum_unused(payload);
+    authum_unused(user);
     if (authum_host_precache_sound(&g_announcer_host, ANNOUNCER_SOUND) == 0)
     {
         authum_logger_warning(&g_announcer_log, "could not precache %s", ANNOUNCER_SOUND);
@@ -64,8 +64,8 @@ announcer_on_log(const authum_char_t *name, authum_ptr payload, authum_ptr user)
     authum_i32_t max = authum_host_max_clients(&g_announcer_host);
     authum_i32_t index;
 
-    (void)name;
-    (void)user;
+    authum_unused(name);
+    authum_unused(user);
     if (authum_null_eq(ev) || ev->size < sizeof *ev ||
         strstr(ev->text, "World triggered \"Round_Start\"") == authum_null)
     {
@@ -93,7 +93,7 @@ announcer_cmd_hp(const authum_command_t *cmd, authum_ptr user)
     authum_float_t armor;
     authum_usize_t alive = 0u;
 
-    (void)user;
+    authum_unused(user);
     for (index = 1; index <= max; ++index)
     {
         if (!authum_host_client_is_alive(&g_announcer_host, index))
@@ -106,7 +106,7 @@ announcer_cmd_hp(const authum_command_t *cmd, authum_ptr user)
         authum_command_printf(cmd, "  %-24s %3d hp %3d armor", player, (int)health, (int)armor);
         ++alive;
     }
-    authum_command_printf(cmd, "%u alive", (unsigned)alive);
+    authum_command_printf(cmd, "%u alive", alive);
     return authum_bool_true;
 }
 

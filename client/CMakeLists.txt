@@ -37,13 +37,8 @@ endif ()
 file(GLOB_RECURSE AUTHUM_CLIENT_SOURCES CONFIGURE_DEPENDS
 	"${CMAKE_CURRENT_SOURCE_DIR}/../src/authum/api/*.c"
 )
-# src/authum/api/os/<platform>/ is the only place that knows the OS: build the
-# target's one and drop the other.
-if (WIN32)
-	list(FILTER AUTHUM_CLIENT_SOURCES EXCLUDE REGEX "/src/authum/api/os/posix/")
-else ()
-	list(FILTER AUTHUM_CLIENT_SOURCES EXCLUDE REGEX "/src/authum/api/os/win/")
-endif ()
+# No platform code here: what needs the OS (directories, page protection,
+# loaded images, interface addresses) comes from lh's os layer.
 
 add_library(authum_client STATIC ${AUTHUM_CLIENT_SOURCES})
 
@@ -52,14 +47,8 @@ target_include_directories(authum_client
 	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>"
 )
 
+# lh brings the system libraries its os layer needs (dl, ws2_32, iphlpapi).
 target_link_libraries(authum_client PUBLIC lh)
-# The MySQL client is loaded with dlopen/LoadLibrary — libdl on Unix.
-# iphlpapi lists the interface addresses for <authum/net.h> on Windows.
-if (WIN32)
-	target_link_libraries(authum_client PUBLIC iphlpapi)
-else ()
-	target_link_libraries(authum_client PUBLIC ${CMAKE_DL_LIBS})
-endif ()
 # lh is linked into every module: keep its symbols local to that module.
 if (NOT MSVC AND NOT APPLE)
 	target_link_options(authum_client INTERFACE "LINKER:--exclude-libs,liblh.a")

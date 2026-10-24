@@ -20,47 +20,43 @@
 #include <authum/command.h>
 #include <authum/command/def.h>
 #include <authum/commands/ops.h>
+#include <authum/extern.h>
 #include <authum/ptr.h>
 #include <authum/size.h>
 
-#ifdef __cplusplus
-extern "C"
+AUTHUM_EXTERN_C_BEGIN
+
+/**
+ * @struct authum_commands
+ * @brief Per-module handle: host ops + who is calling + its module word.
+ */
+struct authum_commands
 {
-#endif
+    const authum_commands_ops_t *ops;
+    authum_ptr owner;
+    const authum_char_t *scope;
+};
+typedef struct authum_commands authum_commands_t;
 
-    /**
-     * @struct authum_commands
-     * @brief Per-module handle: host ops + who is calling + its module word.
-     */
-    struct authum_commands
-    {
-        const authum_commands_ops_t *ops;
-        authum_ptr owner;
-        const authum_char_t *scope;
-    };
-    typedef struct authum_commands authum_commands_t;
+/**
+ * Add `authum <scope> <def->name>`. False on a bad name, a missing handler,
+ * or when the name is already taken in this scope.
+ */
+authum_bool_t
+authum_commands_add(const authum_commands_t *self, const authum_command_def_t *def);
 
-    /**
-     * Add `authum <scope> <def->name>`. False on a bad name, a missing handler,
-     * or when the name is already taken in this scope.
-     */
-    authum_bool_t
-    authum_commands_add(const authum_commands_t *self, const authum_command_def_t *def);
+/** Add @p count defs; stops at (and returns false for) the first failure. */
+authum_bool_t
+authum_commands_add_all(const authum_commands_t *self, const authum_command_def_t *defs,
+                        authum_usize_t count);
 
-    /** Add @p count defs; stops at (and returns false for) the first failure. */
-    authum_bool_t
-    authum_commands_add_all(const authum_commands_t *self, const authum_command_def_t *defs,
-                            authum_usize_t count);
+authum_bool_t
+authum_commands_remove(const authum_commands_t *self, const authum_char_t *name);
 
-    authum_bool_t
-    authum_commands_remove(const authum_commands_t *self, const authum_char_t *name);
+/** The module word commands are added under (`qproto`), or null. */
+const authum_char_t *
+authum_commands_scope(const authum_commands_t *self);
 
-    /** The module word commands are added under (`qproto`), or null. */
-    const authum_char_t *
-    authum_commands_scope(const authum_commands_t *self);
-
-#ifdef __cplusplus
-}
-#endif
+AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_COMMANDS_H */

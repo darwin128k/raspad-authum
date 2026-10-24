@@ -29,16 +29,16 @@ hello_on_connect(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 {
     const authum_event_client_t *ev = (const authum_event_client_t *)payload;
 
-    (void)name;
-    (void)user;
+    authum_unused(name);
+    authum_unused(user);
     /* An older host may send a shorter payload: read only what is there. */
     if (authum_null_eq(ev) || ev->size < sizeof *ev)
     {
         return authum_event_result_continue;
     }
     authum_array_push(&g_hello_seen, ev->name);
-    authum_logger_info(&g_hello_log, "#%d %s connected (%u seen since load)", (int)ev->index,
-                       ev->name, (unsigned)authum_array_size(&g_hello_seen));
+    authum_logger_info(&g_hello_log, "#%d %s connected (%u seen since load)", ev->index,
+                       ev->name, authum_array_size(&g_hello_seen));
     return authum_event_result_continue;
 }
 
@@ -48,9 +48,9 @@ hello_cmd_seen(const authum_command_t *cmd, authum_ptr user)
 {
     authum_usize_t i;
 
-    (void)user;
+    authum_unused(user);
     authum_command_printf(cmd,
-                          "%u connects since load:", (unsigned)authum_array_size(&g_hello_seen));
+                          "%u connects since load:", authum_array_size(&g_hello_seen));
     for (i = 0u; i < authum_array_size(&g_hello_seen); ++i)
     {
         authum_command_printf(cmd, "  %s",

@@ -38,8 +38,8 @@ deathnotice_on_death(const authum_char_t *name, authum_ptr payload, authum_ptr u
     authum_char_t victim_name[64];
     authum_char_t text[192];
 
-    (void)name;
-    (void)user;
+    authum_unused(name);
+    authum_unused(user);
     if (authum_null_eq(ev) || ev->size < sizeof *ev ||
         authum_host_cvar_get_i32(&g_deathnotice_host, "deathnotice_enabled", 1) == 0)
     {
@@ -73,8 +73,8 @@ deathnotice_on_kill(const authum_char_t *name, authum_ptr payload, authum_ptr us
 {
     authum_event_client_t *ev = (authum_event_client_t *)payload;
 
-    (void)name;
-    (void)user;
+    authum_unused(name);
+    authum_unused(user);
     if (authum_null_eq(ev) || ev->size < sizeof *ev ||
         authum_host_cvar_get_i32(&g_deathnotice_host, "deathnotice_allow_kill", 1) != 0)
     {

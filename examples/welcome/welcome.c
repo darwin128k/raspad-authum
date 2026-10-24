@@ -43,8 +43,8 @@ welcome_on_put_in_server(const authum_char_t *name, authum_ptr payload, authum_p
     authum_char_t map[64];
     authum_char_t text[192];
 
-    (void)name;
-    (void)user;
+    authum_unused(name);
+    authum_unused(user);
     if (authum_null_eq(ev) || ev->size < sizeof *ev || ev->index < 1 || ev->index >= welcome_slots)
     {
         return authum_event_result_continue;
@@ -53,7 +53,7 @@ welcome_on_put_in_server(const authum_char_t *name, authum_ptr payload, authum_p
 
     /* The payload has name and auth id; the address comes from the engine facade. */
     authum_host_client_get_address(&g_welcome_host, ev->index, address, sizeof address);
-    authum_logger_info(&g_welcome_log, "#%d %s <%s> from %s", (int)ev->index, ev->name, ev->auth_id,
+    authum_logger_info(&g_welcome_log, "#%d %s <%s> from %s", ev->index, ev->name, ev->auth_id,
                        address);
 
     authum_host_get_map_name(&g_welcome_host, map, sizeof map);
@@ -67,13 +67,13 @@ welcome_on_disconnect(const authum_char_t *name, authum_ptr payload, authum_ptr 
 {
     const authum_event_client_t *ev = (const authum_event_client_t *)payload;
 
-    (void)name;
-    (void)user;
+    authum_unused(name);
+    authum_unused(user);
     if (authum_null_eq(ev) || ev->size < sizeof *ev || ev->index < 1 || ev->index >= welcome_slots)
     {
         return authum_event_result_continue;
     }
-    authum_logger_info(&g_welcome_log, "#%d %s left after %d s", (int)ev->index, ev->name,
+    authum_logger_info(&g_welcome_log, "#%d %s left after %d s", ev->index, ev->name,
                        (int)(ev->game_time - g_welcome_since[ev->index]));
     g_welcome_since[ev->index] = 0.0f;
     return authum_event_result_continue;
@@ -84,13 +84,13 @@ welcome_on_activate(const authum_char_t *name, authum_ptr payload, authum_ptr us
 {
     const authum_event_server_t *ev = (const authum_event_server_t *)payload;
 
-    (void)name;
-    (void)user;
+    authum_unused(name);
+    authum_unused(user);
     if (authum_null_eq(ev) || ev->size < sizeof *ev)
     {
         return authum_event_result_continue;
     }
-    authum_logger_info(&g_welcome_log, "map %s, %d slots", ev->map, (int)ev->max_clients);
+    authum_logger_info(&g_welcome_log, "map %s, %d slots", ev->map, ev->max_clients);
     return authum_event_result_continue;
 }
 
@@ -104,7 +104,7 @@ welcome_cmd_players(const authum_command_t *cmd, authum_ptr user)
     authum_i32_t index;
     authum_usize_t count = 0u;
 
-    (void)user;
+    authum_unused(user);
     for (index = 1; index <= max; ++index)
     {
         if (!authum_host_client_is_connected(&g_welcome_host, index))
@@ -113,12 +113,12 @@ welcome_cmd_players(const authum_command_t *cmd, authum_ptr user)
         }
         authum_host_client_get_name(&g_welcome_host, index, player, sizeof player);
         authum_host_client_get_auth_id(&g_welcome_host, index, auth_id, sizeof auth_id);
-        authum_command_printf(cmd, "  #%-2d userid %-4d %-24s %s", (int)index,
-                              (int)authum_host_client_userid(&g_welcome_host, index), player,
+        authum_command_printf(cmd, "  #%-2d userid %-4d %-24s %s", index,
+                              authum_host_client_userid(&g_welcome_host, index), player,
                               auth_id);
         ++count;
     }
-    authum_command_printf(cmd, "%u of %d slots in use", (unsigned)count, (int)max);
+    authum_command_printf(cmd, "%u of %d slots in use", count, max);
     return authum_bool_true;
 }
 

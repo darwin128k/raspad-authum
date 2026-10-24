@@ -3,7 +3,7 @@
  * @brief Connect-gate lifetime (hook install lands in a later 1.0.0 step).
  */
 
-#include <authum/gate.h>
+#include <authum/host/gate.h>
 
 #include <lh/bool.h>
 

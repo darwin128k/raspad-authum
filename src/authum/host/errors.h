@@ -1,13 +1,13 @@
 /**
- * @file code.h
+ * @file errors.h
  * @brief Authum codes on top of ::lh_error_code_t, stored in the OS last-error slot.
  *
  * Numbers start after ::lh_os_error_code_* so a caller can tell an Authum
  * check from an lh-side OS check.
  */
 
-#ifndef AUTHUM_ERROR_CODE_H
-#define AUTHUM_ERROR_CODE_H
+#ifndef AUTHUM_HOST_ERRORS_H
+#define AUTHUM_HOST_ERRORS_H
 
 #include <lh/error/code.h>
 
@@ -53,4 +53,4 @@
  */
 typedef lh_error_code_t authum_error_code_t;
 
-#endif /* AUTHUM_ERROR_CODE_H */
+#endif /* AUTHUM_HOST_ERRORS_H */

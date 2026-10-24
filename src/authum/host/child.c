@@ -1,10 +1,10 @@
-#include <authum/commands/host.h>
-#include <authum/error/code.h>
-#include <authum/events/host.h>
+#include <authum/host/commands.h>
+#include <authum/host/errors.h>
+#include <authum/host/events.h>
 #include <authum/host.h>
-#include <authum/logger/host.h>
-#include <authum/sandbox/host.h>
-#include <authum/module.h>
+#include <authum/host/logs.h>
+#include <authum/host/sandbox.h>
+#include <authum/host/module.h>
 #include <authum/module/api.h>
 #include <authum/path.h>
 #include <authum/version.h>

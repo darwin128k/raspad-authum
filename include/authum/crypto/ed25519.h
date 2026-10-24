@@ -13,12 +13,11 @@
 
 #include <authum/bool.h>
 #include <authum/byte.h>
+#include <authum/extern.h>
+#include <authum/ptr.h>
 #include <authum/size.h>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+AUTHUM_EXTERN_C_BEGIN
 
 /**
  * @def AUTHUM_CRYPTO_ED25519_SEED_SIZE
@@ -44,33 +43,31 @@ extern "C"
  */
 #define AUTHUM_CRYPTO_ED25519_SIGNATURE_SIZE 64u
 
-    /**
-     * Derive a key pair from @p seed. The seed is wiped afterwards — keep a
-     * copy first if it has to be stored.
-     */
-    void
-    authum_crypto_ed25519_key_pair(authum_byte_t secret_key[AUTHUM_CRYPTO_ED25519_SECRET_KEY_SIZE],
-                                   authum_byte_t public_key[AUTHUM_CRYPTO_ED25519_PUBLIC_KEY_SIZE],
-                                   authum_byte_t seed[AUTHUM_CRYPTO_ED25519_SEED_SIZE]);
+/**
+ * Derive a key pair from @p seed. The seed is wiped afterwards — keep a
+ * copy first if it has to be stored.
+ */
+void
+authum_crypto_ed25519_key_pair(authum_byte_t secret_key[AUTHUM_CRYPTO_ED25519_SECRET_KEY_SIZE],
+                               authum_byte_t public_key[AUTHUM_CRYPTO_ED25519_PUBLIC_KEY_SIZE],
+                               authum_byte_t seed[AUTHUM_CRYPTO_ED25519_SEED_SIZE]);
 
-    /** Sign @p size bytes of @p message (deterministic, RFC 8032). */
-    void
-    authum_crypto_ed25519_sign(authum_byte_t signature[AUTHUM_CRYPTO_ED25519_SIGNATURE_SIZE],
-                               const authum_byte_t secret_key[AUTHUM_CRYPTO_ED25519_SECRET_KEY_SIZE],
-                               const authum_byte_t *message, authum_usize_t size);
+/** Sign @p size bytes of @p message (deterministic, RFC 8032). */
+void
+authum_crypto_ed25519_sign(authum_byte_t signature[AUTHUM_CRYPTO_ED25519_SIGNATURE_SIZE],
+                           const authum_byte_t secret_key[AUTHUM_CRYPTO_ED25519_SECRET_KEY_SIZE],
+                           const authum_byte_t *message, authum_usize_t size);
 
-    /** True when @p signature over @p message verifies against @p public_key. */
-    authum_bool_t
-    authum_crypto_ed25519_check(const authum_byte_t signature[AUTHUM_CRYPTO_ED25519_SIGNATURE_SIZE],
-                                const authum_byte_t public_key[AUTHUM_CRYPTO_ED25519_PUBLIC_KEY_SIZE],
-                                const authum_byte_t *message, authum_usize_t size);
+/** True when @p signature over @p message verifies against @p public_key. */
+authum_bool_t
+authum_crypto_ed25519_check(const authum_byte_t signature[AUTHUM_CRYPTO_ED25519_SIGNATURE_SIZE],
+                            const authum_byte_t public_key[AUTHUM_CRYPTO_ED25519_PUBLIC_KEY_SIZE],
+                            const authum_byte_t *message, authum_usize_t size);
 
-    /** Overwrite @p size bytes at @p secret with zeros (not optimised away). */
-    void
-    authum_crypto_wipe(void *secret, authum_usize_t size);
+/** Overwrite @p size bytes at @p secret with zeros (not optimised away). */
+void
+authum_crypto_wipe(authum_ptr secret, authum_usize_t size);
 
-#ifdef __cplusplus
-}
-#endif
+AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_CRYPTO_ED25519_H */

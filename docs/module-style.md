@@ -78,8 +78,16 @@ Small selectors (like Authum crypto kind/mode) may be `#define` constants +
 - No short invented prefixes (`rl_`, `CA_`, `AK_`).
 - Bitmasks still use the same names (`qproto_log_mode_console \| qproto_log_mode_logfile`).
 
-`SCREAMING` macros are fine for: include guards, `QPROTO_API_VERSION_*`,
-sizes (`AUTHUM_CRYPTO_SHA256_DIGEST_SIZE`), export attributes.
+### Macros: the case says how a macro behaves
+
+| Case | When | Authum examples |
+|------|------|-----------------|
+| `SCREAMING_SNAKE` | Not usable as an expression: an initializer, a declaration or attribute, a constant, an include guard | `AUTHUM_VERSION(1, 0, 0)` (expands to `{…}`), `AUTHUM_MODULE_ABI`, `AUTHUM_MODULE_EXPORT`, `AUTHUM_EXTERN_C_BEGIN`, `AUTHUM_CRYPTO_SHA256_DIGEST_SIZE`, `QPROTO_FOO_H` |
+| `snake_case` | Behaves like a value or a call | `authum_null`, `authum_null_eq(p)`, `authum_bool_true`, `authum_unused(x)` |
+
+Capitals warn the reader that this is not a function: `AUTHUM_VERSION(1, 0, 0)`
+only fits where a `{…}` initializer does. lh follows the same split
+(`lh_null_eq` vs `LH_COMPILER_EXTERN_C_BEGIN`).
 
 ---
 
@@ -102,11 +110,26 @@ On the Authum API surface (and preferably inside the module) use:
 | Byte / binary | `authum_byte_t` / `authum_u8_t` |
 | 32-bit | `authum_u32_t`, `authum_i32_t` |
 | Text element | `authum_char_t` |
-| Untyped pointer | `authum_ptr` |
+| Untyped pointer | `authum_ptr` (`void *`), `authum_cptr` (`const void *` — not `const authum_ptr`, which is `void *const`) |
 | Null | `authum_null`, `authum_null_eq(p)` |
+| Unused parameter | `authum_unused(user);` — not `(void)user;` |
 
 Module structs should use these, not raw `int` / `uint32_t` / `size_t` /
 `uint8_t`, except where an external ABI (libc, peer plugins) forces otherwise.
+
+What each type is, and its `printf` format — no cast needed:
+
+| Type | C type | Format |
+|------|--------|--------|
+| `authum_i32_t` | `int` | `%d` |
+| `authum_u32_t`, `authum_usize_t` | `unsigned int` | `%u` |
+| `authum_i64_t` / `authum_u64_t` | `long long` / `unsigned long long` | `%lld` / `%llu` |
+| `authum_bool_t`, `authum_byte_t`, `authum_u8_t` | `unsigned char` | `%u` (promoted) |
+| `authum_char_t` | `char` | `%c`, `%s` for a string |
+| `authum_float_t` | `float` | `%f` (promoted) |
+
+A cast is for a real conversion only — `(int)health` turns a `float` into an
+integer; `(int)ev->index` on an `authum_i32_t` is noise.
 
 Do not put raw `size_t` / `void *` / `NULL` into Authum-facing signatures.
 Libc types remain OK for FILE*, `snprintf`, private buffers, etc.
@@ -125,6 +148,9 @@ authum_crypto_sha_hash(authum_host_crypto(host), authum_crypto_sha_kind_256,
 ## 7. Headers and layout
 
 - Include guards: `QPROTO_FOO_H` / `AUTHUM_FOO_H` (macros — SCREAMING OK).
+- C linkage for C++ readers of the header: `AUTHUM_EXTERN_C_BEGIN` /
+  `AUTHUM_EXTERN_C_END` (`<authum/extern.h>`), not the
+  `#ifdef __cplusplus` / `extern "C" {` pair.
 - One concept per header when practical (`…/kind.h`, `…/mode.h`), lh-style.
 - **Path is the namespace:** `qproto/api.h`, not `qproto/qproto_api.h`.
   Compound names are directories: `qproto/client/state.h`, not
@@ -142,7 +168,8 @@ authum_crypto_sha_hash(authum_host_crypto(host), authum_crypto_sha_kind_256,
 - [ ] Module prefix on public (and ideally internal) names
 - [ ] Enum/struct tag without `_t`; typedef with `_t`
 - [ ] Constants `{tag}_leaf`, not `MODULE_LEAF` / `rl_leaf`
-- [ ] Authum types on Authum / public module ABI
+- [ ] Authum types on Authum / public module ABI; casts only for real conversions
+- [ ] `authum_unused(x)` for unused parameters; `AUTHUM_EXTERN_C_BEGIN` in headers
 - [ ] Logging via `authum_logger_*` (or explicit bricks), not a bespoke clone
 - [ ] No `<lh/…>` in a pure client
 - [ ] No `static` functions; module-prefixed bricks declared in headers

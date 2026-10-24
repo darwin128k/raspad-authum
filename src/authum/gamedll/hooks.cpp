@@ -7,10 +7,10 @@
 #include "game.h"
 #include "hooks.h"
 
-#include <authum/engine/host.h>
+#include <authum/host/engine.h>
 #include <authum/event/client.h>
 #include <authum/event/server.h>
-#include <authum/events/host.h>
+#include <authum/host/events.h>
 
 #include <extdll.h>
 

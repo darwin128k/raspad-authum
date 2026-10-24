@@ -18,65 +18,61 @@
 #define AUTHUM_ARRAY_H
 
 #include <authum/bool.h>
+#include <authum/extern.h>
 #include <authum/ptr.h>
 #include <authum/sandbox.h>
 #include <authum/size.h>
 
-#ifdef __cplusplus
-extern "C"
+AUTHUM_EXTERN_C_BEGIN
+
+struct authum_array
 {
-#endif
+    authum_sandbox_t sandbox;
+    authum_ptr data;
+    authum_usize_t size;
+    authum_usize_t capacity;
+    authum_usize_t item_size;
+};
+typedef struct authum_array authum_array_t;
 
-    struct authum_array
-    {
-        authum_sandbox_t sandbox;
-        authum_ptr data;
-        authum_usize_t size;
-        authum_usize_t capacity;
-        authum_usize_t item_size;
-    };
-    typedef struct authum_array authum_array_t;
+/** Empty array of @p item_size-byte items; allocates nothing yet. */
+authum_bool_t
+authum_array_init(authum_array_t *self, const authum_sandbox_t *sandbox,
+                  authum_usize_t item_size);
 
-    /** Empty array of @p item_size-byte items; allocates nothing yet. */
-    authum_bool_t
-    authum_array_init(authum_array_t *self, const authum_sandbox_t *sandbox,
-                      authum_usize_t item_size);
+/** Free storage now (optional — the sandbox frees it at unload anyway). */
+void
+authum_array_deinit(authum_array_t *self);
 
-    /** Free storage now (optional — the sandbox frees it at unload anyway). */
-    void
-    authum_array_deinit(authum_array_t *self);
+authum_usize_t
+authum_array_size(const authum_array_t *self);
 
-    authum_usize_t
-    authum_array_size(const authum_array_t *self);
+authum_bool_t
+authum_array_is_empty(const authum_array_t *self);
 
-    authum_bool_t
-    authum_array_is_empty(const authum_array_t *self);
+/** Ensure room for @p capacity items without further allocation. */
+authum_bool_t
+authum_array_reserve(authum_array_t *self, authum_usize_t capacity);
 
-    /** Ensure room for @p capacity items without further allocation. */
-    authum_bool_t
-    authum_array_reserve(authum_array_t *self, authum_usize_t capacity);
+/**
+ * Append a copy of @p item (null @p item → zeroed item).
+ * @return The new item, or null when out of memory.
+ */
+authum_ptr
+authum_array_push(authum_array_t *self, authum_cptr item);
 
-    /**
-     * Append a copy of @p item (null @p item → zeroed item).
-     * @return The new item, or null when out of memory.
-     */
-    authum_ptr
-    authum_array_push(authum_array_t *self, const void *item);
+/** Item @p index, or null when out of range. */
+authum_ptr
+authum_array_at(const authum_array_t *self, authum_usize_t index);
 
-    /** Item @p index, or null when out of range. */
-    authum_ptr
-    authum_array_at(const authum_array_t *self, authum_usize_t index);
+/** Remove item @p index, keeping the order of the rest. */
+authum_bool_t
+authum_array_remove_at(authum_array_t *self, authum_usize_t index);
 
-    /** Remove item @p index, keeping the order of the rest. */
-    authum_bool_t
-    authum_array_remove_at(authum_array_t *self, authum_usize_t index);
+/** Drop all items, keep capacity. */
+void
+authum_array_clear(authum_array_t *self);
 
-    /** Drop all items, keep capacity. */
-    void
-    authum_array_clear(authum_array_t *self);
-
-#ifdef __cplusplus
-}
-#endif
+AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_ARRAY_H */

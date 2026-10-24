@@ -8,13 +8,11 @@
 
 #include <authum/char.h>
 #include <authum/export.h>
+#include <authum/extern.h>
 #include <authum/module/info/fields.h>
 #include <authum/version.h>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+AUTHUM_EXTERN_C_BEGIN
 
 /**
  * @def AUTHUM_MODULE_INFO_SYM
@@ -34,17 +32,15 @@ extern "C"
  */
 #define AUTHUM_MODULE_ABI AUTHUM_VERSION(1, 0, 0)
 
-    struct authum_module_info
-    {
-        authum_module_info_fields(const authum_char_t *, authum_version_t);
-    };
+struct authum_module_info
+{
+    authum_module_info_fields(const authum_char_t *, authum_version_t);
+};
 
-    typedef struct authum_module_info authum_module_info_t;
+typedef struct authum_module_info authum_module_info_t;
 
-    AUTHUM_MODULE_EXPORT extern authum_module_info_t authum_module_info;
+AUTHUM_MODULE_EXPORT extern authum_module_info_t authum_module_info;
 
-#ifdef __cplusplus
-}
-#endif
+AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_MODULE_INFO_H */

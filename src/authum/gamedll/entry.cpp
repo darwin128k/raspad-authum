@@ -13,12 +13,12 @@
 #include "game.h"
 #include "hooks.h"
 
-#include <authum/console.h>
+#include <authum/host/console.h>
 #include <authum/export.h>
-#include <authum/gate.h>
-#include <authum/loader.h>
-#include <authum/log.h>
-#include <authum/module.h>
+#include <authum/host/gate.h>
+#include <authum/host/loader.h>
+#include <authum/host/log.h>
+#include <authum/host/module.h>
 
 #include <extdll.h>
 #include <eiface.h>

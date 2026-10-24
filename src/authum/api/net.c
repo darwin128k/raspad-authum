@@ -2,7 +2,8 @@
 
 #include <authum/null.h>
 
-#include "os/os.h"
+#include <lh/net/ip.h>
+#include <lh/os/net/interface.h>
 
 #include <stdio.h>
 
@@ -69,9 +70,13 @@ typedef struct authum_net_ipv4_list
 } authum_net_ipv4_list_t;
 
 void
-authum_net_ipv4_add(authum_u32_t ip, authum_ptr user)
+authum_net_ipv4_add(lh_ptr user, const lh_net_ip4_t *address)
 {
     authum_net_ipv4_list_t *list = (authum_net_ipv4_list_t *)user;
+    /* Host byte order, the way the rest of <authum/net.h> holds an address. */
+    const authum_u32_t ip = ((authum_u32_t)address->octets[0] << 24) |
+                            ((authum_u32_t)address->octets[1] << 16) |
+                            ((authum_u32_t)address->octets[2] << 8) | (authum_u32_t)address->octets[3];
     authum_usize_t i;
 
     if (authum_net_ipv4_is_loopback(ip) || authum_net_ipv4_is_external(ip) != list->external)
@@ -102,7 +107,7 @@ authum_net_ipv4_collect(authum_bool_t external, authum_u32_t *out, authum_usize_
     list.out = out;
     list.max = authum_null_eq(out) ? 0u : max;
     list.count = 0u;
-    authum_os_ipv4_each(authum_net_ipv4_add, &list);
+    (void)lh_os_net_interface_each_ip4(authum_net_ipv4_add, &list);
     return list.count;
 }
 

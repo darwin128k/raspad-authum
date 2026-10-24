@@ -41,6 +41,15 @@ test_cstr(void)
     CHECK(!authum_cstr_parse_i32("12x", &i));
     CHECK(authum_cstr_parse_u32("4294967295", &u) && u == 4294967295u);
     CHECK(!authum_cstr_parse_u32("4294967296", &u));
+    CHECK(authum_cstr_parse_i32("+5", &i) && i == 5);
+    CHECK(authum_cstr_parse_i32("007", &i) && i == 7); /* zero padding is fine */
+    CHECK(authum_cstr_parse_i32("-0", &i) && i == 0);
+    CHECK(!authum_cstr_parse_i32("-", &i));
+    CHECK(!authum_cstr_parse_i32("", &i));
+    CHECK(!authum_cstr_parse_i32("  ", &i));
+    CHECK(!authum_cstr_parse_i32("- 5", &i));
+    CHECK(authum_cstr_parse_u32("\t+7 ", &u) && u == 7u);
+    CHECK(!authum_cstr_parse_u32("-1", &u));
     CHECK(authum_cstr_parse_bool("Yes", &b) && b);
     CHECK(authum_cstr_parse_bool("off", &b) && !b);
     CHECK(authum_cstr_parse_bool("7", &b) && b);

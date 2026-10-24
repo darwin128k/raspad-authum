@@ -6,7 +6,7 @@
 #include <authum/bool.h>
 #include <authum/char.h>
 #include <authum/engine.h>
-#include <authum/engine/host.h>
+#include <authum/host/engine.h>
 #include <authum/null.h>
 #include <authum/size.h>
 
