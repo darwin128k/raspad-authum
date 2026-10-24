@@ -223,11 +223,12 @@ if (NOT WIN32)
 endif ()
 
 # authum: Authum as the HLDS game library (the image the engine loads).
-add_library(authum MODULE
-        ${AUTHUM_CORE_SOURCES} ${AUTHUM_STANDALONE_SOURCES} ${AUTHUM_HEADERS})
-set_target_properties(authum PROPERTIES OUTPUT_NAME "authum")
-authum_configure_image(authum)
+# Linux (i386) only: the entry layer loads the real game library itself.
 if (NOT WIN32 AND AUTHUM_STANDALONE_SOURCES)
+    add_library(authum MODULE
+            ${AUTHUM_CORE_SOURCES} ${AUTHUM_STANDALONE_SOURCES} ${AUTHUM_HEADERS})
+    set_target_properties(authum PROPERTIES OUTPUT_NAME "authum")
+    authum_configure_image(authum)
     # --no-as-needed keeps the stub as a dependency (it exports nothing),
     # and the run path points at the game directory's dlls/.
     add_dependencies(authum authum_game_stub)
@@ -238,6 +239,10 @@ if (NOT WIN32 AND AUTHUM_STANDALONE_SOURCES)
     set_target_properties(authum PROPERTIES
             BUILD_RPATH "$ORIGIN/../../dlls;$ORIGIN/../.."
             INSTALL_RPATH "$ORIGIN/../../dlls;$ORIGIN/../..")
+else ()
+    message(STATUS
+            "authum (the game library) is Linux-only — this build makes "
+            "authum_client for modules to link against.")
 endif ()
 
 # Authum builds authum.so + authum_client (+ optional examples). Real modules
