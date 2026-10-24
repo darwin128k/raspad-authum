@@ -22,7 +22,13 @@ namespace authum_standalone
 {
 namespace
 {
+/* The game's GiveFnptrsToDll is __stdcall on Windows (HLSDK's DLLEXPORT): it
+ * pops its own arguments, so calling it as cdecl unbalances our stack. */
+#if defined(_WIN32)
+typedef void(__stdcall *give_fn_t)(enginefuncs_t *, globalvars_t *);
+#else
 typedef void (*give_fn_t)(enginefuncs_t *, globalvars_t *);
+#endif
 typedef int (*get_entity_api_t)(DLL_FUNCTIONS *, int);  /* old: version by value */
 typedef int (*get_entity_api2_t)(DLL_FUNCTIONS *, int *);
 typedef int (*get_new_dll_funcs_t)(NEW_DLL_FUNCTIONS *, int *);

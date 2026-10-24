@@ -85,8 +85,22 @@ python3 tools/gen-game-classes.py /path/to/cs.so > src/standalone/game_classes.c
   game's — Authum only overlays the callbacks it publishes events for.
 - `authum` (the console command) is registered by Authum, the rest of the
   console is the engine's.
-- **Windows: not there yet.** The image builds (and the engine loads it, and
-  the game library comes up), but the run ends in an access violation before
-  the map. The same sources work on Linux for both engine builds (8684 and
-  10211), so the difference is in the Windows path — a debugger on the Windows
-  side is the next step.
+
+## Windows
+
+The same sources, plus two things the Windows engine expects of a game DLL:
+
+- **`GiveFnptrsToDll` is `__stdcall`** (HLSDK's `DLLEXPORT`), and it alone:
+  the engine calls it so, and Authum calls the game's the same way. Its export
+  name stays undecorated (`GiveFnptrsToDll`, not `GiveFnptrsToDll@8`): MinGW
+  links with `--kill-at`. The other entry points are cdecl.
+- **The export table sits in `.rdata`.** For save/restore the engine reads the
+  game DLL's export names itself, from the section *named* `.rdata` — where
+  MSVC puts the export table. GNU ld keeps it in `.edata`, and the engine then
+  reads garbage and faults before the map. So the build renames the sections
+  after linking (`.rdata` → `.rodata`, `.edata` → `.rdata`): only the names
+  change, the loader ignores them.
+
+Verified on Windows with engine build 8684: the map loads, the modules run,
+`changelevel` works. Build 10210 behaves as it does without Authum (the engine
+leaves after the map with a Steam client assertion).

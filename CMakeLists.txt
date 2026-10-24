@@ -212,6 +212,21 @@ if (AUTHUM_STANDALONE_SOURCES)
         set_target_properties(authum PROPERTIES
                 BUILD_RPATH "$ORIGIN/../../dlls;$ORIGIN/../.."
                 INSTALL_RPATH "$ORIGIN/../../dlls;$ORIGIN/../..")
+    elseif (MINGW)
+        # GiveFnptrsToDll is __stdcall: export it as the engine asks for it,
+        # without the @8 suffix.
+        target_link_options(authum PRIVATE -Wl,--kill-at)
+        # The Windows engine reads the game DLL's export names itself (for
+        # save/restore) and takes them from the section named ".rdata" — where
+        # MSVC puts the export table. GNU ld keeps it in ".edata", so the engine
+        # reads garbage and faults. Only the names change: the loader ignores
+        # them, the layout and the export directory stay as linked.
+        add_custom_command(TARGET authum POST_BUILD
+                COMMAND ${CMAKE_OBJCOPY}
+                        --rename-section .rdata=.rodata
+                        --rename-section .edata=.rdata
+                        "$<TARGET_FILE:authum>"
+                COMMENT "authum.dll: export table into .rdata (the engine looks there)")
     endif ()
 else ()
     message(STATUS
