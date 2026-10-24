@@ -52,33 +52,35 @@ name. Authum answers them all, forwarding to the real game:
 | `GameDLLInit` | Authum | the game's own start-up (the game exports it as `_Z11GameDLLInitv`) |
 | `DispatchSpawn` | Authum | the game's entity spawner (`_Z13DispatchSpawnP7edict_s`) |
 | `Server_GetBlendingInterface` | Authum | forwards to the game's |
-| entity class names (`info_player_start`, …) | the game | see below |
+| entity class names (`info_player_start`, `func_breakable`, …) | Authum | one trampoline per class, see below |
 
 Metamod-P serves `GameDLLInit` and `DispatchSpawn` itself; standing in for
 Metamod, Authum does the same.
 
-## The game library is a dependency
+## The entity class names
 
-The engine resolves every map entity's spawn function by its **class name**
-(`info_player_start`, `func_door`, …) *in the game module*. Those names live
-in the real game library, so it has to be part of Authum's dependency tree:
-`dlsym` on Authum's handle then finds them, and the entities are spawned.
+For every map entity the engine looks the spawn function up **by its class
+name** in the game module — the library it loaded, which is us. The names
+live in the real game (`cs.so` exports `info_player_start`, `func_breakable`,
+`weapon_ak47`, …), so Authum exports them too: one trampoline per class, each
+forwarding to the game. With a class missing, the engine silently skips that
+entity — and the game then dies on an empty entity hash (this is the same
+failure Metamod-R hit on ReHLDS, see
+[rehlds/Metamod-R#34](https://github.com/rehlds/Metamod-R/issues/34)).
 
-The build records that dependency against a stub carrying the game's file
-name — the real library is found at run time in the game directory's `dlls/`
-(`$ORIGIN/../../dlls`, Authum sits in `<game dir>/addons/authum/`):
+The list is generated from the game library:
 
 ```sh
-cmake -DAUTHUM_GAME_DLL_NAME=cs.so ...      # the default
+python3 tools/gen-game-classes.py /path/to/cs.so > src/standalone/game_classes.cpp
 ```
 
-The name must match the file in `<game dir>/dlls/` (`cs.so` for
-Counter-Strike). `gamedll.txt` names the same library by path; the file name
-is what the loader matches, so keep the two in step.
+`src/standalone/game_classes.cpp` is checked in (the classes of Counter-Strike
+1.6 — 195 of them); regenerate it for another game.
 
 ## Limits
 
-- Linux (i386) only: the image is a game library for the original HLDS.
+- The entity class list is the game's: regenerate it for another game (or
+  another mod) — see above.
 - The engine's map loading, entity spawning and game rules are the real
   game's — Authum only overlays the callbacks it publishes events for.
 - `authum` (the console command) is registered by Authum, the rest of the
