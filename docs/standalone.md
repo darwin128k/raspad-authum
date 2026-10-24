@@ -85,3 +85,8 @@ python3 tools/gen-game-classes.py /path/to/cs.so > src/standalone/game_classes.c
   game's — Authum only overlays the callbacks it publishes events for.
 - `authum` (the console command) is registered by Authum, the rest of the
   console is the engine's.
+- **Windows: not there yet.** The image builds (and the engine loads it, and
+  the game library comes up), but the run ends in an access violation before
+  the map. The same sources work on Linux for both engine builds (8684 and
+  10211), so the difference is in the Windows path — a debugger on the Windows
+  side is the next step.
