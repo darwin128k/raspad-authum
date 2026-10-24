@@ -6,13 +6,10 @@
  * GiveFnptrsToDll. Metamod is not part of the build: there is no plugin_info_t,
  * no meta_globals_t — the host is the game library itself.
  */
+#include <authum/export.h>
 #include <extdll.h>
 
-#if defined(__GNUC__)
-#    define AUTHUM_EXPORT extern "C" __attribute__((visibility("default")))
-#else
-#    define AUTHUM_EXPORT extern "C"
-#endif
+#define AUTHUM_EXPORT extern "C" AUTHUM_IMAGE_EXPORT
 
 enginefuncs_t g_engfuncs;
 globalvars_t *gpGlobals = nullptr;

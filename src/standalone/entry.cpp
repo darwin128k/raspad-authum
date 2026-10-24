@@ -14,6 +14,7 @@
 #include "hooks.h"
 
 #include <authum/console.h>
+#include <authum/export.h>
 #include <authum/gate.h>
 #include <authum/loader.h>
 #include <authum/log.h>
@@ -32,12 +33,16 @@ extern enginefuncs_t g_engfuncs;
 extern globalvars_t *gpGlobals;
 
 /* The engine does not align the stack for a game-DLL entry point; the game's
- * SSE code faults on a misaligned one, so every export realigns it itself. */
-#if defined(__GNUC__) && defined(__i386__)
+ * SSE code faults on a misaligned one, so every export realigns it itself.
+ * The engine resolves these by name, so they must be exported (on Windows
+ * that means dllexport, a visibility attribute is not enough). */
+#if defined(__GNUC__) && defined(__i386__) && !defined(_WIN32)
 #    define AUTHUM_ENTRY \
-        extern "C" __attribute__((visibility("default"), force_align_arg_pointer))
+        extern "C" AUTHUM_IMAGE_EXPORT __attribute__((force_align_arg_pointer))
+#elif defined(_WIN32)
+#    define AUTHUM_ENTRY extern "C" AUTHUM_IMAGE_EXPORT
 #elif defined(__GNUC__)
-#    define AUTHUM_ENTRY extern "C" __attribute__((visibility("default")))
+#    define AUTHUM_ENTRY extern "C" AUTHUM_IMAGE_EXPORT
 #else
 #    define AUTHUM_ENTRY extern "C"
 #endif
