@@ -95,7 +95,9 @@ cstrike/addons/authum/gamedll.txt    ← the real game library: dlls/cs.so
 cstrike/liblist.gam                  ←  gamedll_linux "addons/authum/authum.so"
 ```
 
-Linux (i386) and Windows (i686) — same image, same layout. See
+The image builds for Linux (i386) and Windows (i686) from the same sources.
+Verified on Linux (engine builds 8684 and 10211); the Windows image builds
+and the engine loads it, but the run is not finished yet — see
 [docs/standalone.md](docs/standalone.md) for the engine's contract with the
 game module and the build options.
 
