@@ -1,7 +1,7 @@
 # Module configuration (`authum_cfg`)
 
 Flat `key = value` files for Authum client modules. Implementation lives in the
-**`authum_client`** static library (`src/api/cfg.c`). Modules
+**`authum_client`** static library (`src/authum/api/cfg.c`). Modules
 `#include <authum/cfg.h>` and **link** `authum_client` — they never compile
 Authum `.c` files into themselves.
 
@@ -53,7 +53,7 @@ target_link_libraries(mymod PRIVATE authum_client)
 
 Wrong:
 
-- `"${SOME_PATH}/src/api/cfg.c"` in the module’s `add_library`
+- `"${SOME_PATH}/src/authum/api/cfg.c"` in the module’s `add_library`
 - inventing a parallel ini/cfg parser when this one fits
 
 ---

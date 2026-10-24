@@ -119,10 +119,10 @@ own lh (escape hatch) has its own `lh_runtime_logger()`; it is not Authum's.
 
 ## 4. Host side
 
-`<authum/logger/host.h>` (`src/host/logs.c`): one channel per loaded module,
+`<authum/logger/host.h>` (`src/authum/host/logs.c`): one channel per loaded module,
 opened before `start` and closed after `stop`, plus Authum's own. The module
 reaches its channel through `authum_host_t.logger`. Authum's code and lh log
-through `lh_runtime_logger()`, which `src/host/log.cpp` feeds into the
+through `lh_runtime_logger()`, which `src/authum/host/log.cpp` feeds into the
 `authum` channel.
 
 ---

@@ -71,10 +71,10 @@ failure Metamod-R hit on ReHLDS, see
 The list is generated from the game library:
 
 ```sh
-python3 tools/gen-game-classes.py /path/to/cs.so > src/gamedll/game_classes.cpp
+python3 tools/gen-game-classes.py /path/to/cs.so > src/authum/gamedll/game_classes.cpp
 ```
 
-`src/gamedll/game_classes.cpp` is checked in (the classes of Counter-Strike
+`src/authum/gamedll/game_classes.cpp` is checked in (the classes of Counter-Strike
 1.6 — 195 of them); regenerate it for another game.
 
 ## Limits
