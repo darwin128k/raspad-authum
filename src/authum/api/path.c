@@ -1,6 +1,9 @@
 #include <authum/path.h>
 
-#include "os/os.h"
+#include <lh/fs/path.h>
+#include <lh/os/fs/dir.h>
+#include <lh/os/system/fs/path.h>
+#include <lh/str/view.h>
 
 void
 authum_path_clear(authum_path_t *self)
@@ -223,6 +226,18 @@ authum_path_parent(authum_path_t *self, const authum_path_t *path)
 authum_bool_t
 authum_path_ensure_dir(const authum_path_t *self)
 {
-    return authum_path_is_empty(self) ? authum_bool_false
-                                      : authum_os_dir_ensure(authum_path_as_cstr(self));
+    lh_fs_path_t dir;
+    lh_str_view_t text;
+    lh_bool_t ok;
+
+    if (authum_path_is_empty(self))
+    {
+        return authum_bool_false;
+    }
+    lh_fs_path_init(&dir);
+    lh_str_view_init(&text, authum_path_as_cstr(self));
+    lh_fs_path_set(&dir, text, lh_os_system_fs_path_style_native());
+    ok = lh_os_fs_dir_create(&dir);
+    lh_fs_path_deinit(&dir);
+    return ok ? authum_bool_true : authum_bool_false;
 }

@@ -10,6 +10,7 @@
 #include <authum/array.h>
 #include <authum/event/server.h>
 #include <authum/events.h>
+#include <authum/unused.h>
 
 typedef struct authum_timer
 {
@@ -59,8 +60,8 @@ authum_timer_on_frame(const authum_char_t *name, authum_ptr payload, authum_ptr 
     const authum_event_server_t *ev = (const authum_event_server_t *)payload;
     authum_usize_t i;
 
-    (void)name;
-    (void)user;
+    authum_unused(name);
+    authum_unused(user);
     if (authum_null_eq(ev) || ev->size < sizeof *ev)
     {
         return authum_event_result_continue;

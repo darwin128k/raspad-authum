@@ -10,12 +10,12 @@
  * loaded.
  */
 
-#ifndef AUTHUM_LOADER_H
-#define AUTHUM_LOADER_H
+#ifndef AUTHUM_HOST_LOADER_H
+#define AUTHUM_HOST_LOADER_H
 
-#include <authum/module.h>
+#include <authum/extern.h>
+#include <authum/host/module.h>
 #include <lh/bool.h>
-#include <lh/compiler/extern/c.h>
 #include <lh/fs/path.h>
 #include <lh/index.h>
 #include <lh/size.h>
@@ -36,7 +36,7 @@
  */
 #define AUTHUM_MODULES_LIST "modules.list"
 
-LH_COMPILER_EXTERN_C_BEGIN
+AUTHUM_EXTERN_C_BEGIN
 
 /**
  * @brief Bind this image, hand it ::authum_module_ops, and start it.
@@ -161,6 +161,6 @@ authum_loader_unload_name(authum_module_t *self, const char *name);
 lh_bool_t
 authum_loader_reload_name(authum_module_t *self, const char *name);
 
-LH_COMPILER_EXTERN_C_END
+AUTHUM_EXTERN_C_END
 
-#endif /* AUTHUM_LOADER_H */
+#endif /* AUTHUM_HOST_LOADER_H */

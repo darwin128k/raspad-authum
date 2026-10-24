@@ -7,8 +7,9 @@
 
 #include <authum/event/client.h>
 #include <authum/events.h>
-#include <authum/events/host.h>
+#include <authum/host/events.h>
 #include <authum/null.h>
+#include <authum/unused.h>
 
 #include <string.h>
 
@@ -23,9 +24,9 @@ test_trace(const authum_char_t *tag)
 authum_event_result_t
 test_on_a(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 {
-    (void)name;
-    (void)payload;
-    (void)user;
+    authum_unused(name);
+    authum_unused(payload);
+    authum_unused(user);
     test_trace("a");
     return authum_event_result_continue;
 }
@@ -33,9 +34,9 @@ test_on_a(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 authum_event_result_t
 test_on_b(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 {
-    (void)name;
-    (void)payload;
-    (void)user;
+    authum_unused(name);
+    authum_unused(payload);
+    authum_unused(user);
     test_trace("b");
     return authum_event_result_handled;
 }
@@ -43,9 +44,9 @@ test_on_b(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 authum_event_result_t
 test_on_stop(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 {
-    (void)name;
-    (void)payload;
-    (void)user;
+    authum_unused(name);
+    authum_unused(payload);
+    authum_unused(user);
     test_trace("s");
     return authum_event_result_stop;
 }
@@ -109,8 +110,8 @@ test_on_query(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 {
     struct test_query *q = (struct test_query *)payload;
 
-    (void)name;
-    (void)user;
+    authum_unused(name);
+    authum_unused(user);
     if (q->size < sizeof *q || q->in_index != 3) {
         return authum_event_result_continue;
     }
@@ -155,8 +156,8 @@ authum_events_t g_self_removing;
 authum_event_result_t
 test_on_self_remove(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 {
-    (void)payload;
-    (void)user;
+    authum_unused(payload);
+    authum_unused(user);
     test_trace("r");
     authum_events_unsubscribe(&g_self_removing, name, test_on_self_remove, authum_null);
     authum_events_publish(&g_self_removing, "test.nested", authum_null);
@@ -187,8 +188,8 @@ test_on_connect_refuse(const authum_char_t *name, authum_ptr payload, authum_ptr
 {
     authum_event_client_t *ev = (authum_event_client_t *)payload;
 
-    (void)name;
-    (void)user;
+    authum_unused(name);
+    authum_unused(user);
     if (ev->size < sizeof *ev || strcmp(ev->name, "bad") != 0) {
         return authum_event_result_continue;
     }

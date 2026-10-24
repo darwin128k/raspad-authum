@@ -7,7 +7,7 @@
  * outermost run returns.
  */
 
-#include <authum/commands/host.h>
+#include <authum/host/commands.h>
 
 #include <authum/cstr.h>
 #include <authum/null.h>

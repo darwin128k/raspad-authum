@@ -1,10 +1,10 @@
 /**
  * @file logs.c
  * @brief Log channels: one daily file per module (and per named journal)
- *        under `logs/`, levels from `authum.cfg` — see <authum/logger/host.h>.
+ *        under `logs/`, levels from `authum.cfg` — see <authum/host/logs.h>.
  */
 
-#include <authum/logger/host.h>
+#include <authum/host/logs.h>
 
 #include <authum/cfg.h>
 #include <authum/cstr.h>

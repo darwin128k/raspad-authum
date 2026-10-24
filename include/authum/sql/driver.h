@@ -6,22 +6,19 @@
 #ifndef AUTHUM_SQL_DRIVER_H
 #define AUTHUM_SQL_DRIVER_H
 
-#ifdef __cplusplus
-extern "C"
+#include <authum/extern.h>
+
+AUTHUM_EXTERN_C_BEGIN
+
+enum authum_sql_driver
 {
-#endif
+    /** Local file via vendored SQLite (default). */
+    authum_sql_driver_sqlite = 0,
+    /** MySQL/MariaDB via dlopen of the host’s client library. */
+    authum_sql_driver_mysql = 1
+};
+typedef enum authum_sql_driver authum_sql_driver_t;
 
-    enum authum_sql_driver
-    {
-        /** Local file via vendored SQLite (default). */
-        authum_sql_driver_sqlite = 0,
-        /** MySQL/MariaDB via dlopen of the host’s client library. */
-        authum_sql_driver_mysql = 1
-    };
-    typedef enum authum_sql_driver authum_sql_driver_t;
-
-#ifdef __cplusplus
-}
-#endif
+AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_SQL_DRIVER_H */

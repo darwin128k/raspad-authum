@@ -24,6 +24,7 @@
 #include <authum/event/server.h>
 #include <authum/events.h>
 #include <authum/export.h>
+#include <authum/extern.h>
 #include <authum/float.h>
 #include <authum/host.h>
 #include <authum/json.h>
@@ -38,6 +39,7 @@
 #include <authum/size.h>
 #include <authum/sql.h>
 #include <authum/timer.h>
+#include <authum/unused.h>
 #include <authum/symbol.h>
 #include <authum/version.h>
 

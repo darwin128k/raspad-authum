@@ -1,5 +1,5 @@
-#include <authum/log.h>
-#include <authum/logger/host.h>
+#include <authum/host/log.h>
+#include <authum/host/logs.h>
 
 #include <extdll.h>
 

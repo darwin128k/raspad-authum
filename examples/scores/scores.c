@@ -10,6 +10,7 @@
  * ../scoreboard for the module on the other side.
  */
 
+#include <authum/unused.h>
 #include "scores_event.h"
 
 enum
@@ -50,8 +51,8 @@ scores_on_query(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 {
     scores_query_t *q = (scores_query_t *)payload;
 
-    (void)name;
-    (void)user;
+    authum_unused(name);
+    authum_unused(user);
     if (authum_null_eq(q) || q->size < sizeof *q || q->index < 1 || q->index >= scores_slots)
     {
         return authum_event_result_continue; /* not ours to answer */
@@ -67,8 +68,8 @@ scores_on_disconnect(const authum_char_t *name, authum_ptr payload, authum_ptr u
 {
     const authum_event_client_t *ev = (const authum_event_client_t *)payload;
 
-    (void)name;
-    (void)user;
+    authum_unused(name);
+    authum_unused(user);
     if (!authum_null_eq(ev) && ev->size >= sizeof *ev && ev->index >= 1 && ev->index < scores_slots)
     {
         g_scores[ev->index] = 0;
@@ -83,20 +84,20 @@ scores_cmd_add(const authum_command_t *cmd, authum_ptr user)
     authum_i32_t index;
     authum_i32_t points;
 
-    (void)user;
+    authum_unused(user);
     if (!authum_command_arg_i32(cmd, 0u, &index) || !authum_command_arg_i32(cmd, 1u, &points))
     {
         return authum_bool_false;
     }
     if (!authum_host_client_is_connected(&g_scores_host, index) || index >= scores_slots)
     {
-        authum_command_printf(cmd, "no player in slot %d", (int)index);
+        authum_command_printf(cmd, "no player in slot %d", index);
         return authum_bool_true;
     }
     scores_add(index, points);
-    authum_logger_info(&g_scores_log, "#%d %+d -> %d", (int)index, (int)points,
-                       (int)g_scores[index]);
-    authum_command_printf(cmd, "#%d now has %d", (int)index, (int)g_scores[index]);
+    authum_logger_info(&g_scores_log, "#%d %+d -> %d", index, points,
+                       g_scores[index]);
+    authum_command_printf(cmd, "#%d now has %d", index, g_scores[index]);
     return authum_bool_true;
 }
 

@@ -7,8 +7,8 @@
 #include <check.h>
 
 #include <authum/client.h>
-#include <authum/events/host.h>
-#include <authum/sandbox/host.h>
+#include <authum/host/events.h>
+#include <authum/host/sandbox.h>
 
 #include <string.h>
 
@@ -50,7 +50,7 @@ test_run(authum_float_t seconds)
 void
 test_on_once(authum_ptr user)
 {
-    (void)user;
+    authum_unused(user);
     ++g_once;
 }
 
@@ -63,7 +63,7 @@ test_on_every(authum_ptr user)
 void
 test_on_self_removing(authum_ptr user)
 {
-    (void)user;
+    authum_unused(user);
     ++g_self_removing;
     if (g_self_removing == 2)
     {
@@ -74,7 +74,7 @@ test_on_self_removing(authum_ptr user)
 void
 test_on_spawner(authum_ptr user)
 {
-    (void)user;
+    authum_unused(user);
     /* Adding from inside a callback: the array may move under the loop. */
     CHECK(authum_timer_add(&g_host, 0.5f, 0.0f, test_on_every, &g_spawned) != 0u);
 }

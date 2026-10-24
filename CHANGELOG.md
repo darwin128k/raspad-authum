@@ -27,6 +27,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   behind `include/authum/`; the CMake target is still `authum_client`, and
   `client/CMakeLists.txt` stays where modules include it).
   `docs/standalone.md` → `docs/gamedll.md`.
+- **`include/authum/` is the module API only.** The host's headers moved next
+  to their code as `<authum/host/…>`: `gate.h`, `loader.h`, `log.h`, `module.h`,
+  `console.h`, `error/code.h` → `errors.h`, and the five `*/host.h` →
+  `events.h`, `commands.h`, `logs.h`, `sandbox.h`, `engine.h`. No public header
+  includes lh any more.
+- **`AUTHUM_EXTERN_C_BEGIN` / `AUTHUM_EXTERN_C_END`** (`<authum/extern.h>`)
+  replace the `#ifdef __cplusplus` / `extern "C" {` pair in every header.
+- **`authum_unused(x)`** (`<authum/unused.h>`, in `<authum/client.h>`) replaces
+  `(void)x;` for parameters a handler does not need.
+- **Authum types on the API surface:** `authum_cptr` (`const void *`) for
+  `authum_array_push`, `authum_ptr` for `authum_crypto_wipe` and the SQL
+  handles, `authum_bool_t` for `authum_host_log_line`'s `is_error`. Examples
+  drop casts that converted nothing; `docs/module-style.md` gains the macro
+  case rule and the `printf` format of each Authum type.
+- **No platform code in `authum_client`.** Directories, page protection
+  (detours), symbols of loaded images (exported and ELF-local) and interface
+  addresses now come from lh's os layer (`lh_os_fs_dir_create`,
+  `lh_os_memory_protect`, `lh_os_shared_bind_name` / `_get_local_sym`,
+  `lh_os_net_interface_each_ip4`); `src/authum/api/os/` is gone, and so are
+  the per-platform filters and the `iphlpapi` / `dl` links (lh brings them).
+  Same behaviour — a library loaded by full path is still found by its file
+  name.
+- **`authum_cstr_parse_i32` / `_u32` count digits with lh**
+  (`lh_str_ptr_parse_ullong_digits`), same rules as before: spaces around,
+  a `+` (and `-` for i32), zero padding allowed. `array`, `cfg` and the
+  `authum_path_t` text stay Authum's: the array lives in the module's sandbox,
+  the cfg reader skips bad lines where lh's INI parser stops, and
+  `authum_path_t` is part of the host ABI.
 - **Ed25519 comes from lh.** `<authum/crypto/ed25519.h>` now wraps
   `lh/crypto/ed25519.h` the way Rijndael and SHA wrap theirs; Monocypher moved
   into lh (`lib/lh/lib/monocypher`) and `lib/monocypher` with the

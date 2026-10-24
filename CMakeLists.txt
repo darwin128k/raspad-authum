@@ -173,7 +173,8 @@ add_subdirectory(client)
 # Settings common to every Authum image.
 function (authum_configure_image target)
     set_target_properties(${target} PROPERTIES PREFIX "" CXX_EXTENSIONS ON)
-    target_include_directories(${target} PRIVATE "${CMAKE_SOURCE_DIR}/include")
+    # include/ is the module API; src/ adds the host's own headers (<authum/host/…>).
+    target_include_directories(${target} PRIVATE "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/src")
     target_link_libraries(${target} PRIVATE hlsdk authum_client)
     authum_link_lh(${target})
     if (WIN32)

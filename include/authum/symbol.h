@@ -16,13 +16,11 @@
 
 #include <authum/bool.h>
 #include <authum/char.h>
+#include <authum/extern.h>
 #include <authum/null.h>
 #include <authum/ptr.h>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+AUTHUM_EXTERN_C_BEGIN
 
 /** File name (no directory) of the HLDS engine library. */
 #if defined(_WIN32)
@@ -31,24 +29,22 @@ extern "C"
 #define AUTHUM_SYMBOL_ENGINE_LIBRARY "engine_i486.so"
 #endif
 
-    /**
-     * Address of @p name inside the already-loaded library @p library (file
-     * name, matched against the loaded path's last component). Never loads the
-     * library. Returns ::authum_null when the library or symbol is missing.
-     * When @p out_via_dynsym is non-null it is set to true only for a dynamic
-     * export hit (false for a `.symtab` hit or a miss) — older engine builds
-     * export what 10211 keeps local, so callers can tell builds apart.
-     */
-    authum_ptr
-    authum_symbol_find(const authum_char_t *library, const authum_char_t *name,
-                       authum_bool_t *out_via_dynsym);
+/**
+ * Address of @p name inside the already-loaded library @p library (file
+ * name, matched against the loaded path's last component). Never loads the
+ * library. Returns ::authum_null when the library or symbol is missing.
+ * When @p out_via_dynsym is non-null it is set to true only for a dynamic
+ * export hit (false for a `.symtab` hit or a miss) — older engine builds
+ * export what 10211 keeps local, so callers can tell builds apart.
+ */
+authum_ptr
+authum_symbol_find(const authum_char_t *library, const authum_char_t *name,
+                   authum_bool_t *out_via_dynsym);
 
-    /** ::authum_symbol_find on ::AUTHUM_SYMBOL_ENGINE_LIBRARY. */
-    authum_ptr
-    authum_symbol_find_engine(const authum_char_t *name, authum_bool_t *out_via_dynsym);
+/** ::authum_symbol_find on ::AUTHUM_SYMBOL_ENGINE_LIBRARY. */
+authum_ptr
+authum_symbol_find_engine(const authum_char_t *name, authum_bool_t *out_via_dynsym);
 
-#ifdef __cplusplus
-}
-#endif
+AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_SYMBOL_H */

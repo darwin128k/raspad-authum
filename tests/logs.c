@@ -10,8 +10,9 @@
 #include <authum/cstr.h>
 #include <authum/host.h>
 #include <authum/logger.h>
-#include <authum/logger/host.h>
+#include <authum/host/logs.h>
 #include <authum/path.h>
+#include <authum/unused.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -43,7 +44,7 @@ test_clock(void)
 void
 test_mirror(authum_logger_level_t level, const authum_char_t *name, const authum_char_t *text)
 {
-    (void)level;
+    authum_unused(level);
     ++g_test_mirrored;
     authum_cstr_copy(g_test_mirror_name, sizeof g_test_mirror_name, name);
     authum_cstr_copy(g_test_mirror_text, sizeof g_test_mirror_text, text);
@@ -398,7 +399,7 @@ test_module_logger(void)
     authum_logger_info(&log, "seen %d players", 3);
     CHECK(test_file_contains("hello", TEST_DAY_ONE, "[info] seen 3 players"));
     CHECK(!authum_logger_is_enabled(&log, authum_logger_level_debug));
-    authum_host_log_line(&host, 1, "via host_log_line");
+    authum_host_log_line(&host, authum_bool_true, "via host_log_line");
     CHECK(test_file_contains("hello", TEST_DAY_ONE, "[error] via host_log_line"));
 
     CHECK(authum_logger_open(&audit, &host, "audit"));

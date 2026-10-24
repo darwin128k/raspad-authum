@@ -569,7 +569,7 @@ authum_host_server_command(const authum_host_t *host, const authum_char_t *cmd)
 }
 
 void
-authum_host_log_line(const authum_host_t *host, int is_error, const authum_char_t *line)
+authum_host_log_line(const authum_host_t *host, authum_bool_t is_error, const authum_char_t *line)
 {
     authum_logger_channel_write(authum_host_logger(host),
                                 is_error ? authum_logger_level_error : authum_logger_level_info,

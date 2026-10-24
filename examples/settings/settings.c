@@ -105,9 +105,9 @@ settings_load(void)
 authum_bool_t
 settings_cmd_show(const authum_command_t *cmd, authum_ptr user)
 {
-    (void)user;
+    authum_unused(user);
     authum_command_printf(cmd, "enabled      = %s", g_settings.enabled ? "true" : "false");
-    authum_command_printf(cmd, "max_warnings = %u", (unsigned)g_settings.max_warnings);
+    authum_command_printf(cmd, "max_warnings = %u", g_settings.max_warnings);
     authum_command_printf(cmd, "greeting     = %s", g_settings.greeting);
     authum_command_printf(cmd, "mode         = %s", g_settings.mode);
     return authum_bool_true;
@@ -117,7 +117,7 @@ settings_cmd_show(const authum_command_t *cmd, authum_ptr user)
 authum_bool_t
 settings_cmd_reload(const authum_command_t *cmd, authum_ptr user)
 {
-    (void)user;
+    authum_unused(user);
     authum_command_print(cmd, settings_load() ? "settings.cfg read again"
                                               : "no settings.cfg, defaults in effect");
     return authum_bool_true;

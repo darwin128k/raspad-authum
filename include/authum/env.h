@@ -34,85 +34,81 @@
 
 #include <authum/abi.h>
 #include <authum/bool.h>
+#include <authum/extern.h>
 #include <authum/null.h>
 #include <authum/path.h>
 #include <authum/size.h>
 
-#ifdef __cplusplus
-extern "C"
+AUTHUM_EXTERN_C_BEGIN
+
+/**
+ * @struct authum_env
+ * @brief Well-known directories for one loaded module.
+ *
+ * Each path is null when unknown; otherwise points at a host-owned
+ * ::authum_path_t valid until `stop`. Append only (see <authum/abi.h>).
+ */
+struct authum_env
 {
-#endif
+    /** sizeof this table as built by the host — see <authum/abi.h>. */
+    authum_usize_t size;
+    const authum_path_t *game;          /**< Game dir (`cstrike`, …). */
+    const authum_path_t *models;        /**< `game/models`. */
+    const authum_path_t *sprites;       /**< `game/sprites`. */
+    const authum_path_t *addons;        /**< `game/addons`. */
+    const authum_path_t *authum;        /**< `addons/authum`, where `authum` is. */
+    const authum_path_t *modules;       /**< `authum/modules`. */
+    const authum_path_t *module;        /**< `modules/<module>`: this module's folder. */
+    const authum_path_t *module_config; /**< `modules/<module>/configs`. */
+    const authum_path_t *module_lang;   /**< `modules/<module>/lang`. */
+    const authum_path_t *module_data;   /**< `modules/<module>/data` (created at load). */
+};
+typedef struct authum_env authum_env_t;
 
-    /**
-     * @struct authum_env
-     * @brief Well-known directories for one loaded module.
-     *
-     * Each path is null when unknown; otherwise points at a host-owned
-     * ::authum_path_t valid until `stop`. Append only (see <authum/abi.h>).
-     */
-    struct authum_env
-    {
-        /** sizeof this table as built by the host — see <authum/abi.h>. */
-        authum_usize_t size;
-        const authum_path_t *game;          /**< Game dir (`cstrike`, …). */
-        const authum_path_t *models;        /**< `game/models`. */
-        const authum_path_t *sprites;       /**< `game/sprites`. */
-        const authum_path_t *addons;        /**< `game/addons`. */
-        const authum_path_t *authum;        /**< `addons/authum`, where `authum` is. */
-        const authum_path_t *modules;       /**< `authum/modules`. */
-        const authum_path_t *module;        /**< `modules/<module>`: this module's folder. */
-        const authum_path_t *module_config; /**< `modules/<module>/configs`. */
-        const authum_path_t *module_lang;   /**< `modules/<module>/lang`. */
-        const authum_path_t *module_data;   /**< `modules/<module>/data` (created at load). */
-    };
-    typedef struct authum_env authum_env_t;
+const authum_path_t *
+authum_env_game(const authum_env_t *env);
 
-    const authum_path_t *
-    authum_env_game(const authum_env_t *env);
+const authum_path_t *
+authum_env_models(const authum_env_t *env);
 
-    const authum_path_t *
-    authum_env_models(const authum_env_t *env);
+const authum_path_t *
+authum_env_sprites(const authum_env_t *env);
 
-    const authum_path_t *
-    authum_env_sprites(const authum_env_t *env);
+const authum_path_t *
+authum_env_addons(const authum_env_t *env);
 
-    const authum_path_t *
-    authum_env_addons(const authum_env_t *env);
+const authum_path_t *
+authum_env_authum(const authum_env_t *env);
 
-    const authum_path_t *
-    authum_env_authum(const authum_env_t *env);
+const authum_path_t *
+authum_env_modules(const authum_env_t *env);
 
-    const authum_path_t *
-    authum_env_modules(const authum_env_t *env);
+const authum_path_t *
+authum_env_module(const authum_env_t *env);
 
-    const authum_path_t *
-    authum_env_module(const authum_env_t *env);
+const authum_path_t *
+authum_env_module_config(const authum_env_t *env);
 
-    const authum_path_t *
-    authum_env_module_config(const authum_env_t *env);
+const authum_path_t *
+authum_env_module_lang(const authum_env_t *env);
 
-    const authum_path_t *
-    authum_env_module_lang(const authum_env_t *env);
+const authum_path_t *
+authum_env_module_data(const authum_env_t *env);
 
-    const authum_path_t *
-    authum_env_module_data(const authum_env_t *env);
+/**
+ * `modules/<module>/configs/<leaf>` into @p out — a config file
+ * (`qproto.cfg`, `whitelist.ini`). True when the file exists.
+ */
+authum_bool_t
+authum_env_config_path(const authum_env_t *env, const authum_char_t *leaf, authum_path_t *out);
 
-    /**
-     * `modules/<module>/configs/<leaf>` into @p out — a config file
-     * (`qproto.cfg`, `whitelist.ini`). True when the file exists.
-     */
-    authum_bool_t
-    authum_env_config_path(const authum_env_t *env, const authum_char_t *leaf, authum_path_t *out);
+/**
+ * `modules/<module>/data/<leaf>` into @p out, the folder created. True when
+ * the path could be built (the file itself may not exist yet).
+ */
+authum_bool_t
+authum_env_data_path(const authum_env_t *env, const authum_char_t *leaf, authum_path_t *out);
 
-    /**
-     * `modules/<module>/data/<leaf>` into @p out, the folder created. True when
-     * the path could be built (the file itself may not exist yet).
-     */
-    authum_bool_t
-    authum_env_data_path(const authum_env_t *env, const authum_char_t *leaf, authum_path_t *out);
-
-#ifdef __cplusplus
-}
-#endif
+AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_ENV_H */

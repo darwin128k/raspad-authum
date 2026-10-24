@@ -3,7 +3,8 @@
  * @brief ::authum_sandbox_ops_t on lh's ownership tree (`lh_memory_tree`).
  */
 
-#include <authum/sandbox/host.h>
+#include <authum/host/sandbox.h>
+#include <authum/unused.h>
 
 #include <lh/memory/allocator/initializer.h>
 #include <lh/memory/tree.h>
@@ -21,14 +22,14 @@
 lh_ptr
 authum_sandbox_heap_alloc(lh_self_ptr self, lh_usize_t size)
 {
-    (void)self;
+    authum_unused(self);
     return lh_runtime_allocator_alloc(size);
 }
 
 lh_void
 authum_sandbox_heap_dealloc(lh_self_ptr self, lh_ptr ptr)
 {
-    (void)self;
+    authum_unused(self);
     lh_runtime_allocator_free(ptr);
 }
 

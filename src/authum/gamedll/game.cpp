@@ -1,7 +1,7 @@
 #include "game.h"
 
-#include <authum/log.h>
-#include <authum/module.h>
+#include <authum/host/log.h>
+#include <authum/host/module.h>
 
 #include <lh/fs/path.h>
 #include <lh/fs/path/style.h>

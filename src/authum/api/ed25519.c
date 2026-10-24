@@ -35,7 +35,7 @@ authum_crypto_ed25519_check(const authum_byte_t signature[AUTHUM_CRYPTO_ED25519_
 }
 
 void
-authum_crypto_wipe(void *secret, authum_usize_t size)
+authum_crypto_wipe(authum_ptr secret, authum_usize_t size)
 {
     lh_crypto_wipe(secret, (lh_usize_t)size);
 }

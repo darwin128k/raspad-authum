@@ -8,8 +8,9 @@
 #include <authum/char.h>
 #include <authum/command.h>
 #include <authum/commands.h>
-#include <authum/commands/host.h>
+#include <authum/host/commands.h>
 #include <authum/null.h>
+#include <authum/unused.h>
 
 #include <string.h>
 
@@ -19,7 +20,7 @@ authum_i32_t g_last_number;
 void
 test_print(authum_ptr out, const authum_char_t *text)
 {
-    (void)out;
+    authum_unused(out);
     strncat(g_out, text, sizeof g_out - strlen(g_out) - 1u);
 }
 
@@ -28,7 +29,7 @@ test_cmd_echo(const authum_command_t *cmd, authum_ptr user)
 {
     authum_usize_t i;
 
-    (void)user;
+    authum_unused(user);
     for (i = 0u; i < authum_command_argc(cmd); ++i) {
         authum_command_printf(cmd, "%s/%s:%s", authum_command_scope(cmd), authum_command_name(cmd),
                               authum_command_argv(cmd, i));
@@ -39,7 +40,7 @@ test_cmd_echo(const authum_command_t *cmd, authum_ptr user)
 authum_bool_t
 test_cmd_number(const authum_command_t *cmd, authum_ptr user)
 {
-    (void)user;
+    authum_unused(user);
     if (authum_command_argc(cmd) != 1u || !authum_command_arg_i32(cmd, 0u, &g_last_number)) {
         return authum_bool_false;
     }

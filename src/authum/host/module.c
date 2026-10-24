@@ -1,6 +1,6 @@
-#include <authum/error/code.h>
-#include <authum/loader.h>
-#include <authum/module.h>
+#include <authum/host/errors.h>
+#include <authum/host/loader.h>
+#include <authum/host/module.h>
 #include <authum/module/api.h>
 #include <authum/version.h>
 #include <lh/null.h>

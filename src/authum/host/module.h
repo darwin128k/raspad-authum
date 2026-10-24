@@ -3,13 +3,13 @@
  * @brief Host-side module object (lh-backed). Client modules use ::authum/client.h.
  */
 
-#ifndef AUTHUM_MODULE_H
-#define AUTHUM_MODULE_H
+#ifndef AUTHUM_HOST_MODULE_H
+#define AUTHUM_HOST_MODULE_H
 
 #include <authum/export.h>
+#include <authum/extern.h>
 #include <authum/module/info.h>
 #include <lh/bool.h>
-#include <lh/compiler/extern/c.h>
 #include <lh/os/module.h>
 
 /**
@@ -25,7 +25,7 @@ typedef lh_os_module_t authum_module_t;
  */
 #define AUTHUM_MODULE_OPS_SYM "authum_module_ops"
 
-LH_COMPILER_EXTERN_C_BEGIN
+AUTHUM_EXTERN_C_BEGIN
 
 extern authum_module_t authum;
 
@@ -40,6 +40,6 @@ authum_module_stop(authum_module_t *self);
 const authum_module_info_t *
 authum_module_get_info(const authum_module_t *self);
 
-LH_COMPILER_EXTERN_C_END
+AUTHUM_EXTERN_C_END
 
-#endif /* AUTHUM_MODULE_H */
+#endif /* AUTHUM_HOST_MODULE_H */

@@ -4,7 +4,8 @@ What is implemented today: an Authum module is an `lh_os_module_t`, the
 loader privilege comes from lh, and Authum only decides which files to
 offer it.
 
-Headers: `authum/module.h`, `authum/module/info.h`, `authum/loader.h`.
+Headers: `authum/module/info.h` (the module's side); the host keeps its own in
+`src/authum/host/` (`module.h`, `loader.h`, `errors.h`).
 The mechanism underneath is documented in lh (`docs/module-loader.md`
 there): image, `start` / `stop`, owner, loader, and the child list.
 

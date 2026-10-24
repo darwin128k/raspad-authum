@@ -1,5 +1,10 @@
 #include <authum/cstr.h>
 
+#include <lh/numeric/types.h>
+#include <lh/str/parse/ullong.h>
+
+#include <string.h>
+
 authum_char_t
 authum_char_ascii_lower(authum_char_t c)
 {
@@ -57,118 +62,72 @@ authum_cstr_eq(const authum_char_t *a, const authum_char_t *b, authum_bool_t ign
     }
 }
 
+/*
+ * The digits of a number written as text: spaces and tabs around it dropped,
+ * an optional `+` (or `-` when @p allow_minus) taken off. False when nothing
+ * is left; whether the rest really is digits is the parser's call.
+ */
+authum_bool_t
+authum_cstr_number_digits(const authum_char_t *text, authum_bool_t allow_minus,
+                          authum_bool_t *negative, const authum_char_t **digits,
+                          authum_usize_t *size)
+{
+    const authum_char_t *end;
+
+    while (*text == ' ' || *text == '	')
+    {
+        ++text;
+    }
+    *negative = authum_bool_false;
+    if (*text == '+' || (allow_minus && *text == '-'))
+    {
+        *negative = (*text == '-') ? authum_bool_true : authum_bool_false;
+        ++text;
+    }
+    end = text + strlen(text);
+    while (end > text && (end[-1] == ' ' || end[-1] == '	'))
+    {
+        --end;
+    }
+    *digits = text;
+    *size = (authum_usize_t)(end - text);
+    return *size > 0u ? authum_bool_true : authum_bool_false;
+}
+
 authum_bool_t
 authum_cstr_parse_i32(const authum_char_t *text, authum_i32_t *out)
 {
-    const authum_char_t *p;
-    authum_i32_t sign = 1;
-    authum_u32_t acc = 0u;
-    authum_u32_t limit;
-    authum_bool_t any = authum_bool_false;
+    const authum_char_t *digits;
+    authum_usize_t size;
+    authum_bool_t negative;
+    lh_ullong_t magnitude;
 
-    if (authum_null_eq(text) || authum_null_eq(out))
+    if (authum_null_eq(text) || authum_null_eq(out) ||
+        !authum_cstr_number_digits(text, authum_bool_true, &negative, &digits, &size) ||
+        !lh_str_ptr_parse_ullong_digits(digits, (lh_usize_t)size,
+                                        negative ? 2147483648ULL : 2147483647ULL, &magnitude))
     {
         return authum_bool_false;
     }
-    p = text;
-    while (*p == ' ' || *p == '\t')
-    {
-        ++p;
-    }
-    if (*p == '+' || *p == '-')
-    {
-        if (*p == '-')
-        {
-            sign = -1;
-        }
-        ++p;
-    }
-    limit = (sign < 0) ? 2147483648u : 2147483647u;
-    while (*p >= '0' && *p <= '9')
-    {
-        authum_u32_t digit = (authum_u32_t)(*p - '0');
-        if (acc > (limit - digit) / 10u)
-        {
-            return authum_bool_false;
-        }
-        acc = acc * 10u + digit;
-        any = authum_bool_true;
-        ++p;
-    }
-    while (*p == ' ' || *p == '\t')
-    {
-        ++p;
-    }
-    if (!any || *p != '\0')
-    {
-        return authum_bool_false;
-    }
-    if (sign < 0)
-    {
-        if (acc > 2147483648u)
-        {
-            return authum_bool_false;
-        }
-        if (acc == 2147483648u)
-        {
-            *out = (authum_i32_t)(-2147483647 - 1);
-        }
-        else
-        {
-            *out = -(authum_i32_t)acc;
-        }
-    }
-    else
-    {
-        if (acc > 2147483647u)
-        {
-            return authum_bool_false;
-        }
-        *out = (authum_i32_t)acc;
-    }
+    *out = negative ? (authum_i32_t)(-(lh_sllong_t)magnitude) : (authum_i32_t)magnitude;
     return authum_bool_true;
 }
 
 authum_bool_t
 authum_cstr_parse_u32(const authum_char_t *text, authum_u32_t *out)
 {
-    const authum_char_t *p;
-    authum_u32_t acc = 0u;
-    authum_bool_t any = authum_bool_false;
+    const authum_char_t *digits;
+    authum_usize_t size;
+    authum_bool_t negative;
+    lh_ullong_t value;
 
-    if (authum_null_eq(text) || authum_null_eq(out))
+    if (authum_null_eq(text) || authum_null_eq(out) ||
+        !authum_cstr_number_digits(text, authum_bool_false, &negative, &digits, &size) ||
+        !lh_str_ptr_parse_ullong_digits(digits, (lh_usize_t)size, 0xffffffffULL, &value))
     {
         return authum_bool_false;
     }
-    p = text;
-    while (*p == ' ' || *p == '\t')
-    {
-        ++p;
-    }
-    if (*p == '+')
-    {
-        ++p;
-    }
-    while (*p >= '0' && *p <= '9')
-    {
-        authum_u32_t digit = (authum_u32_t)(*p - '0');
-        if (acc > (0xffffffffu - digit) / 10u)
-        {
-            return authum_bool_false;
-        }
-        acc = acc * 10u + digit;
-        any = authum_bool_true;
-        ++p;
-    }
-    while (*p == ' ' || *p == '\t')
-    {
-        ++p;
-    }
-    if (!any || *p != '\0')
-    {
-        return authum_bool_false;
-    }
-    *out = acc;
+    *out = (authum_u32_t)value;
     return authum_bool_true;
 }
 

@@ -27,6 +27,15 @@ not ship a process-wide `lh.so` for modules.
 | lh + HLSDK inside Authum | linked / includes in `authum` | Implementation detail of the host |
 | Full lh / HLSDK / other libs in a module | that module’s `.so` | Optional, **private** escape hatch |
 
+### Headers: public and private
+
+`include/authum/` is the module API and nothing else: it never includes lh,
+and `src/authum/` mirrors it (`src/authum/api/` implements what
+`include/authum/` declares). The host's own headers — loader, gate, log,
+event bus, command registry, error codes — live beside their code in
+`src/authum/host/` and are included as `<authum/host/…>`; only `authum` and
+its tests see them.
+
 ## Client module contract (ABI 1.0)
 
 Include **`authum/client.h`**, link **`authum_client`** — no `<lh/…>`, no link

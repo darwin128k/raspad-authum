@@ -1,6 +1,6 @@
 #include <authum/detour.h>
 
-#include "os/os.h"
+#include <lh/os/memory.h>
 
 #include <stdint.h>
 #include <string.h>
@@ -15,7 +15,11 @@
 authum_bool_t
 authum_detour_unprotect(authum_ptr address, authum_usize_t size)
 {
-    return authum_os_memory_unprotect(address, size);
+    return lh_os_memory_protect(address, (lh_usize_t)size,
+                                lh_os_memory_access_read | lh_os_memory_access_write |
+                                    lh_os_memory_access_execute)
+               ? authum_bool_true
+               : authum_bool_false;
 }
 
 void

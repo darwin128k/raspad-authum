@@ -37,6 +37,7 @@
 #include <authum/cfg/item.h>
 #include <authum/cfg/kind.h>
 #include <authum/char.h>
+#include <authum/extern.h>
 #include <authum/null.h>
 #include <authum/path.h>
 #include <authum/ptr.h>
@@ -44,75 +45,70 @@
 
 #include <stdio.h>
 
-#ifdef __cplusplus
-extern "C"
+AUTHUM_EXTERN_C_BEGIN
+
+enum
 {
-#endif
+    authum_cfg_line_max = 512
+};
 
-    enum
-    {
-        authum_cfg_line_max = 512
-    };
+/**
+ * @struct authum_cfg
+ * @brief Open flat-cfg file; getters rewind and scan for each key.
+ */
+struct authum_cfg
+{
+    FILE *file;
+    authum_char_t line[authum_cfg_line_max];
+};
+typedef struct authum_cfg authum_cfg_t;
 
-    /**
-     * @struct authum_cfg
-     * @brief Open flat-cfg file; getters rewind and scan for each key.
-     */
-    struct authum_cfg
-    {
-        FILE *file;
-        authum_char_t line[authum_cfg_line_max];
-    };
-    typedef struct authum_cfg authum_cfg_t;
+void
+authum_cfg_close(authum_cfg_t *self);
+authum_bool_t
+authum_cfg_open_cstr(authum_cfg_t *self, const authum_char_t *path);
+authum_bool_t
+authum_cfg_open(authum_cfg_t *self, const authum_path_t *path);
+authum_bool_t
+authum_cfg_adopt(authum_cfg_t *self, FILE *file);
 
-    void
-    authum_cfg_close(authum_cfg_t *self);
-    authum_bool_t
-    authum_cfg_open_cstr(authum_cfg_t *self, const authum_char_t *path);
-    authum_bool_t
-    authum_cfg_open(authum_cfg_t *self, const authum_path_t *path);
-    authum_bool_t
-    authum_cfg_adopt(authum_cfg_t *self, FILE *file);
+/**
+ * @brief Look up @p key (case-insensitive). Value lives in @p self->line
+ *        until the next getter / apply call.
+ */
+const authum_char_t *
+authum_cfg_get_value(authum_cfg_t *self, const authum_char_t *key);
 
-    /**
-     * @brief Look up @p key (case-insensitive). Value lives in @p self->line
-     *        until the next getter / apply call.
-     */
-    const authum_char_t *
-    authum_cfg_get_value(authum_cfg_t *self, const authum_char_t *key);
+authum_bool_t
+authum_cfg_get_bool(authum_cfg_t *self, const authum_char_t *key, authum_bool_t default_value);
+authum_i32_t
+authum_cfg_get_i32(authum_cfg_t *self, const authum_char_t *key, authum_i32_t default_value);
+authum_u32_t
+authum_cfg_get_u32(authum_cfg_t *self, const authum_char_t *key, authum_u32_t default_value);
+/**
+ * @brief Copy the value of @p key into @p buf, or @p default_value when absent.
+ * @return ::authum_bool_true when the key was present (false → default copied).
+ */
+authum_bool_t
+authum_cfg_get_cstr(authum_cfg_t *self, const authum_char_t *key, authum_char_t *buf,
+                    authum_usize_t buf_size, const authum_char_t *default_value);
 
-    authum_bool_t
-    authum_cfg_get_bool(authum_cfg_t *self, const authum_char_t *key, authum_bool_t default_value);
-    authum_i32_t
-    authum_cfg_get_i32(authum_cfg_t *self, const authum_char_t *key, authum_i32_t default_value);
-    authum_u32_t
-    authum_cfg_get_u32(authum_cfg_t *self, const authum_char_t *key, authum_u32_t default_value);
-    /**
-     * @brief Copy the value of @p key into @p buf, or @p default_value when absent.
-     * @return ::authum_bool_true when the key was present (false → default copied).
-     */
-    authum_bool_t
-    authum_cfg_get_cstr(authum_cfg_t *self, const authum_char_t *key, authum_char_t *buf,
-                        authum_usize_t buf_size, const authum_char_t *default_value);
+authum_bool_t
+authum_cfg_apply_bool(authum_cfg_t *self, const authum_char_t *key, authum_bool_t *out);
+authum_bool_t
+authum_cfg_apply_i32(authum_cfg_t *self, const authum_char_t *key, authum_i32_t *out);
+authum_bool_t
+authum_cfg_apply_u32(authum_cfg_t *self, const authum_char_t *key, authum_u32_t *out);
+authum_bool_t
+authum_cfg_apply_cstr(authum_cfg_t *self, const authum_char_t *key, authum_char_t *buf,
+                      authum_usize_t buf_size);
 
-    authum_bool_t
-    authum_cfg_apply_bool(authum_cfg_t *self, const authum_char_t *key, authum_bool_t *out);
-    authum_bool_t
-    authum_cfg_apply_i32(authum_cfg_t *self, const authum_char_t *key, authum_i32_t *out);
-    authum_bool_t
-    authum_cfg_apply_u32(authum_cfg_t *self, const authum_char_t *key, authum_u32_t *out);
-    authum_bool_t
-    authum_cfg_apply_cstr(authum_cfg_t *self, const authum_char_t *key, authum_char_t *buf,
-                          authum_usize_t buf_size);
+authum_bool_t
+authum_cfg_apply_item(authum_cfg_t *self, const authum_cfg_item_t *item);
+void
+authum_cfg_apply_items(authum_cfg_t *self, const authum_cfg_item_t *items,
+                       authum_usize_t count);
 
-    authum_bool_t
-    authum_cfg_apply_item(authum_cfg_t *self, const authum_cfg_item_t *item);
-    void
-    authum_cfg_apply_items(authum_cfg_t *self, const authum_cfg_item_t *items,
-                           authum_usize_t count);
-
-#ifdef __cplusplus
-}
-#endif
+AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_CFG_H */

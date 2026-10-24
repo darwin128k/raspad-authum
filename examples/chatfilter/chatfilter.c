@@ -9,7 +9,6 @@
 
 #include <authum/client.h>
 
-#include <ctype.h>
 #include <string.h>
 
 authum_host_t g_chatfilter_host;
@@ -37,7 +36,7 @@ chatfilter_find_word(const authum_char_t *text)
 
     for (i = 0u; text[i] != '\0' && i < sizeof lower - 1u; ++i)
     {
-        lower[i] = (authum_char_t)tolower((unsigned char)text[i]);
+        lower[i] = authum_char_ascii_lower(text[i]);
     }
     lower[i] = '\0';
     for (i = 0u; i < sizeof g_chatfilter_words / sizeof g_chatfilter_words[0]; ++i)
@@ -56,8 +55,8 @@ chatfilter_on_command(const authum_char_t *name, authum_ptr payload, authum_ptr 
     authum_event_client_command_t *ev = (authum_event_client_command_t *)payload;
     const authum_char_t *word;
 
-    (void)name;
-    (void)user;
+    authum_unused(name);
+    authum_unused(user);
     if (authum_null_eq(ev) || ev->size < sizeof *ev || ev->argc < 1)
     {
         return authum_event_result_continue;

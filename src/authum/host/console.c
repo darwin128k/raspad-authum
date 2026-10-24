@@ -1,11 +1,12 @@
-#include <authum/console.h>
+#include <authum/host/console.h>
 
-#include <authum/commands/host.h>
+#include <authum/host/commands.h>
 #include <authum/cstr.h>
-#include <authum/loader.h>
-#include <authum/module.h>
+#include <authum/host/loader.h>
+#include <authum/host/module.h>
 #include <authum/module/info.h>
 #include <authum/null.h>
+#include <authum/unused.h>
 
 #include <lh/fs/path.h>
 #include <lh/fs/path/style.h>
@@ -294,7 +295,7 @@ authum_console_run(authum_usize_t argc, const authum_char_t *const *argv,
     scope = argv[0];
     name = (argc > 1u) ? argv[1] : "help";
     arg = (argc > 2u) ? argv[2] : authum_null;
-    (void)arg;
+    authum_unused(arg);
     if (authum_commands_host_run(scope, name, (argc > 2u) ? argc - 2u : 0u,
                                  (argc > 2u) ? argv + 2 : authum_null, print, out))
     {

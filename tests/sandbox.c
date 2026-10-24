@@ -9,7 +9,8 @@
 #include <authum/char.h>
 #include <authum/null.h>
 #include <authum/sandbox.h>
-#include <authum/sandbox/host.h>
+#include <authum/host/sandbox.h>
+#include <authum/unused.h>
 
 #include <string.h>
 
@@ -18,7 +19,7 @@ int g_destroyed;
 void
 test_sandbox_count_destroy(authum_ptr ptr)
 {
-    (void)ptr;
+    authum_unused(ptr);
     ++g_destroyed;
 }
 

@@ -8,10 +8,10 @@
 #include <check.h>
 
 #include <authum/client.h>
-#include <authum/commands/host.h>
-#include <authum/events/host.h>
-#include <authum/logger/host.h>
-#include <authum/sandbox/host.h>
+#include <authum/host/commands.h>
+#include <authum/host/events.h>
+#include <authum/host/logs.h>
+#include <authum/host/sandbox.h>
 
 #include <stddef.h>
 #include <stdio.h>
@@ -82,7 +82,7 @@ test_get_game_dir(authum_char_t *buf, authum_usize_t size)
 void
 test_server_print(const authum_char_t *text)
 {
-    (void)text;
+    authum_unused(text);
 }
 
 void
@@ -157,7 +157,7 @@ test_client_print(authum_i32_t index, authum_i32_t kind, const authum_char_t *te
 {
     authum_char_t line[256];
 
-    (void)kind;
+    authum_unused(kind);
     snprintf(line, sizeof line, "%d|%s", (int)index, text);
     test_append(g_prints, line);
     return authum_bool_true;
@@ -190,7 +190,7 @@ test_message_id(const authum_char_t *name)
 authum_bool_t
 test_message_begin(authum_i32_t dest, authum_i32_t msg_id, authum_i32_t index)
 {
-    (void)dest;
+    authum_unused(dest);
     g_msg_id = msg_id;
     g_msg_index = index;
     g_msg_text[0] = '\0';
@@ -201,8 +201,8 @@ void
 test_message_write(authum_i32_t kind, authum_i32_t value, authum_float_t real,
                    const authum_char_t *text)
 {
-    (void)value;
-    (void)real;
+    authum_unused(value);
+    authum_unused(real);
     if (kind == authum_message_arg_string)
     {
         authum_cstr_copy(g_msg_text, sizeof g_msg_text, text);
@@ -249,7 +249,7 @@ test_cvar_find(const authum_char_t *name)
 authum_bool_t
 test_cvar_register(const authum_char_t *name, const authum_char_t *value, authum_i32_t flags)
 {
-    (void)flags;
+    authum_unused(flags);
     if (test_cvar_find(name) >= 0)
     {
         return authum_bool_true;
@@ -526,7 +526,7 @@ test_unload(test_module_t *m)
 void
 test_print_out(authum_ptr out, const authum_char_t *text)
 {
-    (void)out;
+    authum_unused(out);
     test_append(g_out, text);
     test_append(g_out, "\n");
 }

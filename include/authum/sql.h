@@ -14,14 +14,13 @@
 #include <authum/bool.h>
 #include <authum/byte.h>
 #include <authum/char.h>
+#include <authum/extern.h>
 #include <authum/null.h>
+#include <authum/ptr.h>
 #include <authum/sql/driver.h>
 #include <authum/size.h>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+AUTHUM_EXTERN_C_BEGIN
 
 enum
 {
@@ -32,7 +31,7 @@ struct authum_sql
 {
 	authum_sql_driver_t driver;
 	/** The connection (opaque; owned by Authum while open). */
-	void *db;
+	authum_ptr db;
 	authum_char_t errmsg[authum_sql_errmsg_max];
 };
 typedef struct authum_sql authum_sql_t;
@@ -41,7 +40,7 @@ struct authum_sql_stmt
 {
 	authum_sql_t *sql;
 	/** The prepared statement (opaque; owned by Authum until finalize). */
-	void *stmt;
+	authum_ptr stmt;
 };
 typedef struct authum_sql_stmt authum_sql_stmt_t;
 
@@ -96,8 +95,6 @@ authum_i64_t authum_sql_stmt_column_i64(authum_sql_stmt_t *stmt, authum_i32_t in
 
 const authum_char_t *authum_sql_stmt_column_cstr(authum_sql_stmt_t *stmt, authum_i32_t index);
 
-#ifdef __cplusplus
-}
-#endif
+AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_SQL_H */

@@ -14,33 +14,29 @@
 #include <authum/cfg/kind.h>
 #include <authum/char.h>
 #include <authum/cstr.h>
+#include <authum/extern.h>
 #include <authum/null.h>
 #include <authum/ptr.h>
 #include <authum/size.h>
 
-#ifdef __cplusplus
-extern "C"
+AUTHUM_EXTERN_C_BEGIN
+
+/**
+ * @struct authum_cfg_item
+ * @brief One `key` mapped to a field at @p ptr.
+ *
+ * For ::authum_cfg_kind_cstr, @p size is the destination buffer capacity.
+ * For scalar kinds, @p size is ignored.
+ */
+struct authum_cfg_item
 {
-#endif
+    const authum_char_t *key;
+    authum_cfg_kind_t kind;
+    authum_ptr ptr;
+    authum_usize_t size;
+};
+typedef struct authum_cfg_item authum_cfg_item_t;
 
-    /**
-     * @struct authum_cfg_item
-     * @brief One `key` mapped to a field at @p ptr.
-     *
-     * For ::authum_cfg_kind_cstr, @p size is the destination buffer capacity.
-     * For scalar kinds, @p size is ignored.
-     */
-    struct authum_cfg_item
-    {
-        const authum_char_t *key;
-        authum_cfg_kind_t kind;
-        authum_ptr ptr;
-        authum_usize_t size;
-    };
-    typedef struct authum_cfg_item authum_cfg_item_t;
-
-#ifdef __cplusplus
-}
-#endif
+AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_CFG_ITEM_H */

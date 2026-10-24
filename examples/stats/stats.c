@@ -75,8 +75,8 @@ stats_on_put_in_server(const authum_char_t *name, authum_ptr payload, authum_ptr
     authum_char_t text[96];
     authum_i32_t visits;
 
-    (void)name;
-    (void)user;
+    authum_unused(name);
+    authum_unused(user);
     if (authum_null_eq(ev) || ev->size < sizeof *ev)
     {
         return authum_event_result_continue;
@@ -91,8 +91,8 @@ stats_on_put_in_server(const authum_char_t *name, authum_ptr payload, authum_ptr
     {
         return authum_event_result_continue;
     }
-    authum_logger_info(&g_stats_visits, "%s <%s> visit #%d", ev->name, ev->auth_id, (int)visits);
-    snprintf(text, sizeof text, "Visit #%d. Welcome back!\n", (int)visits);
+    authum_logger_info(&g_stats_visits, "%s <%s> visit #%d", ev->name, ev->auth_id, visits);
+    snprintf(text, sizeof text, "Visit #%d. Welcome back!\n", visits);
     authum_host_client_print(&g_stats_host, ev->index, authum_engine_print_chat, text);
     return authum_event_result_continue;
 }
@@ -105,7 +105,7 @@ stats_cmd_top(const authum_command_t *cmd, authum_ptr user)
     authum_i32_t count = 5;
     authum_i32_t place = 0;
 
-    (void)user;
+    authum_unused(user);
     if (authum_command_argc(cmd) > 0u && (!authum_command_arg_i32(cmd, 0u, &count) || count < 1))
     {
         return authum_bool_false; /* the host prints the usage line */
@@ -121,8 +121,8 @@ stats_cmd_top(const authum_command_t *cmd, authum_ptr user)
     while (authum_sql_stmt_step_row(&stmt))
     {
         authum_command_printf(
-            cmd, "%2d. %-24s %-22s %d", (int)++place, authum_sql_stmt_column_cstr(&stmt, 0),
-            authum_sql_stmt_column_cstr(&stmt, 1), (int)authum_sql_stmt_column_i32(&stmt, 2));
+            cmd, "%2d. %-24s %-22s %d", ++place, authum_sql_stmt_column_cstr(&stmt, 0),
+            authum_sql_stmt_column_cstr(&stmt, 1), authum_sql_stmt_column_i32(&stmt, 2));
     }
     authum_sql_stmt_finalize(&stmt);
     if (place == 0)

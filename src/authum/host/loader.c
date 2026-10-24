@@ -1,6 +1,6 @@
-#include <authum/error/code.h>
-#include <authum/loader.h>
-#include <authum/log.h>
+#include <authum/host/errors.h>
+#include <authum/host/loader.h>
+#include <authum/host/log.h>
 #include <lh/cast/static.h>
 #include <lh/compiler/os.h>
 #include <lh/fs/file/mode.h>
