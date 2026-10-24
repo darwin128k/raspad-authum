@@ -47,6 +47,19 @@ extern globalvars_t *gpGlobals;
 #    define AUTHUM_ENTRY extern "C"
 #endif
 
+/* GiveFnptrsToDll alone is __stdcall on Windows (HLSDK's DLLEXPORT): the
+ * engine calls it so and expects it to pop its own arguments — a cdecl one
+ * leaves the engine's stack 8 bytes off. Its export name stays undecorated
+ * (no @8): MinGW links with --kill-at, MSVC gets the alias below. */
+#if defined(_WIN32)
+#    define AUTHUM_GIVE_CALL __stdcall
+#    if defined(_MSC_VER)
+#        pragma comment(linker, "/EXPORT:GiveFnptrsToDll=_GiveFnptrsToDll@8")
+#    endif
+#else
+#    define AUTHUM_GIVE_CALL
+#endif
+
 namespace
 {
 bool g_loader_up = false; /* the loader bound Authum's own image */
@@ -150,7 +163,7 @@ shutdown(void)
 }
 } // namespace authum_standalone
 
-AUTHUM_ENTRY void
+AUTHUM_ENTRY void AUTHUM_GIVE_CALL
 GiveFnptrsToDll(enginefuncs_t *engine_funcs, globalvars_t *globals)
 {
     g_engfuncs = *engine_funcs;
