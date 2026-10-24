@@ -45,35 +45,14 @@ else ()
 	list(FILTER AUTHUM_CLIENT_SOURCES EXCLUDE REGEX "/src/api/os/win/")
 endif ()
 
-set(AUTHUM_MONOCYPHER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../lib/monocypher")
-if (NOT EXISTS "${AUTHUM_MONOCYPHER_DIR}/monocypher.c")
-	message(FATAL_ERROR "Authum Monocypher missing at ${AUTHUM_MONOCYPHER_DIR}")
-endif ()
-
-# Monocypher 4.0.2 core + optional Ed25519 (RFC 8032) behind <authum/crypto/ed25519.h>.
-add_library(authum_monocypher STATIC
-	"${AUTHUM_MONOCYPHER_DIR}/monocypher.c"
-	"${AUTHUM_MONOCYPHER_DIR}/monocypher-ed25519.c"
-)
-target_include_directories(authum_monocypher PUBLIC
-	"$<BUILD_INTERFACE:${AUTHUM_MONOCYPHER_DIR}>"
-)
-set_target_properties(authum_monocypher PROPERTIES
-	POSITION_INDEPENDENT_CODE ON
-	C_STANDARD 11
-	C_STANDARD_REQUIRED ON
-)
-
 add_library(authum_client STATIC ${AUTHUM_CLIENT_SOURCES})
 
 target_include_directories(authum_client
 	PUBLIC
 	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>"
-	PRIVATE
-	"${AUTHUM_MONOCYPHER_DIR}"
 )
 
-target_link_libraries(authum_client PUBLIC authum_monocypher lh)
+target_link_libraries(authum_client PUBLIC lh)
 # The MySQL client is loaded with dlopen/LoadLibrary — libdl on Unix.
 # iphlpapi lists the interface addresses for <authum/net.h> on Windows.
 if (WIN32)
@@ -95,13 +74,9 @@ set_target_properties(authum_client PROPERTIES
 if (NOT MSVC)
 	target_compile_options(authum_client PRIVATE -fvisibility=hidden -ffunction-sections
 		-fdata-sections)
-	target_compile_options(authum_monocypher PRIVATE -fvisibility=hidden -ffunction-sections
-		-fdata-sections)
 	if (AUTHUM_CLIENT_FORCE_32BIT)
 		target_compile_options(authum_client PRIVATE -m32 -march=i686 -msse2)
 		target_link_options(authum_client PRIVATE -m32)
-		target_compile_options(authum_monocypher PRIVATE -m32 -march=i686 -msse2)
-		target_link_options(authum_monocypher PRIVATE -m32)
 		if (NOT WIN32)
 			# stat() / lseek() in a 32-bit build; lh sets the same for itself.
 			target_compile_definitions(authum_client PRIVATE _FILE_OFFSET_BITS=64)

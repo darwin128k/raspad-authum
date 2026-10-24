@@ -178,7 +178,7 @@ Authum builds on (and vendors where noted) the following:
 | **HLSDK** | Engine / game headers (`lib/hlsdk`, vendored) | Valve HLSDK |
 | **lh** | Host internals; JSON and SQL behind `<authum/json.h>` / `<authum/sql.h>` (`lib/lh` submodule, branch `0.4.0`) | [darwin128K/lh](https://github.com/darwin128K/lh) |
 | **SQLite** | 3.46.1 amalgamation for `<authum/sql.h>`, vendored in lh (`lib/lh/lib/sqlite`) | [sqlite.org](https://www.sqlite.org/) ([copyright](https://www.sqlite.org/copyright.html)) |
-| **Monocypher** | Ed25519 signatures behind `<authum/crypto/ed25519.h>` (`lib/monocypher`, 4.0.2) | BSD-2-Clause / CC0 — [monocypher.org](https://monocypher.org/) |
+| **Monocypher** | 4.0.2, Ed25519 signatures behind `<authum/crypto/ed25519.h>`, vendored in lh (`lib/lh/lib/monocypher`) | BSD-2-Clause / CC0 — [monocypher.org](https://monocypher.org/) |
 
 
 

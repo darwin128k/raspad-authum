@@ -26,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `src/api/` (the module API behind `include/authum/`; the CMake target is still
   `authum_client`, `client/CMakeLists.txt` stays where modules include it).
   `docs/standalone.md` → `docs/gamedll.md`.
+- **Ed25519 comes from lh.** `<authum/crypto/ed25519.h>` now wraps
+  `lh/crypto/ed25519.h` the way Rijndael and SHA wrap theirs; Monocypher moved
+  into lh (`lib/lh/lib/monocypher`) and `lib/monocypher` with the
+  `authum_monocypher` target is gone. Same API, same bytes; lh's symbols —
+  Monocypher's now among them — stay local to each module (`--exclude-libs`).
 
 ### Added
 
