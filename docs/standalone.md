@@ -101,6 +101,5 @@ The same sources, plus two things the Windows engine expects of a game DLL:
   after linking (`.rdata` → `.rodata`, `.edata` → `.rdata`): only the names
   change, the loader ignores them.
 
-Verified on Windows with engine build 8684: the map loads, the modules run,
-`changelevel` works. Build 10210 behaves as it does without Authum (the engine
-leaves after the map with a Steam client assertion).
+Verified on Windows with engine builds 8684 and 10210: the map loads, the
+modules run, `changelevel` works, `quit` exits cleanly.
