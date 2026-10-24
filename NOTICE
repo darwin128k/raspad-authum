@@ -14,14 +14,15 @@ This product includes HLSDK headers (lib/hlsdk), Valve's Half-Life SDK:
 the engine and game types Authum compiles against.
 
 This product includes lh (https://github.com/darwin128K/lh), linked into
-the host and into authum_client (JSON and SQL); no lh type reaches the module
+the host and into authum_client (JSON, SQL, crypto); no lh type reaches the module
 API.
 
 This product includes SQLite 3.46.1 (https://www.sqlite.org/), public domain
 amalgamation, vendored in lh — see lib/lh/lib/sqlite and
-lib/lh/LICENSES/blessing.txt.
+lib/lh/licenses/blessing.txt.
 
 This product includes Monocypher 4.0.2 (https://monocypher.org/),
 Copyright (c) 2017-2023 Loup Vaillant, Michael Savage, Fabio Scotoni,
-dual-licensed BSD-2-Clause / CC0-1.0 — see lib/monocypher/LICENCE.md.
+dual-licensed BSD-2-Clause / CC0-1.0, vendored in lh — see lib/lh/lib/monocypher
+and lib/lh/licenses/Monocypher.txt.
 
