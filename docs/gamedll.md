@@ -57,6 +57,22 @@ name. Authum answers them all, forwarding to the real game:
 Metamod-P serves `GameDLLInit` and `DispatchSpawn` itself; standing in for
 Metamod, Authum does the same.
 
+## The engine as the game sees it
+
+The real game gets the engine's functions from Authum, not from the engine:
+the same table, with Authum's hooks over a few of them
+(`src/authum/gamedll/engine.cpp`):
+
+- `RegUserMsg` — remembers the name of each message number the game registers;
+- `MessageBegin` … `MessageEnd` — a game message somebody subscribed to
+  (`authum.message.<Name>`) is held, published, and then sent to the engine
+  once, changed or not, unless a handler blocked it;
+- `AlertMessage` — every `at_logged` line becomes `authum.server.log`; the line
+  always reaches the engine.
+
+Authum and its modules call the engine directly, so what they send is never
+caught (no loops, nothing reported twice).
+
 ## The entity class names
 
 For every map entity the engine looks the spawn function up **by its class

@@ -84,6 +84,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`authum.message.*` and `authum.server.log` work again.** Without Metamod
+  nothing hooked the game's engine calls, so these events never fired (a
+  `DeathMsg` handler stayed silent). The game now gets the engine with
+  Authum's hooks over `RegUserMsg` (message names), `MessageBegin` …
+  `MessageEnd` and `AlertMessage` (`src/authum/gamedll/engine.cpp`). A held
+  message reaches the engine once — the 3.0.0 Metamod plugin re-sent it
+  through Metamod, so other plugins saw it twice.
+- Lines Authum mirrors to the server console end with a newline (they ran
+  into the next output).
 - The host image's `authum_module_info` lives in the core now: the standalone
   build did not define it, and an undefined symbol keeps the image from
   loading at all.
