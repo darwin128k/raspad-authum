@@ -8,10 +8,10 @@
  * ::authum_event_message_t: read its arguments, change them with
  * `authum_event_message_set_*`, or set `block` and nobody receives it.
  *
- * Only messages someone subscribed to are held back, so the others cost
- * nothing. A held message is sent again after the handlers ran: other
- * Metamod plugins that hook messages see it on both passes. Messages a module
- * sends from inside a handler are not reported again (no loops).
+ * These are the real game's messages. Only messages someone subscribed to
+ * are held back, so the others cost nothing; a held message reaches the
+ * engine once, after the handlers ran. Messages Authum and its modules send
+ * are not reported (no loops).
  *
  * Argument indices count from 0, as the game writes them; kinds are the
  * `authum_message_arg_*` values of <authum/engine/message.h>.

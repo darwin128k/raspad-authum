@@ -148,10 +148,12 @@ mymod_on_death(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 authum_host_subscribe(host, AUTHUM_EVENT_MESSAGE_PREFIX "DeathMsg", mymod_on_death, authum_null);
 ```
 
-Only messages someone subscribed to are held back, so the rest cost nothing.
-A held message is sent again after the handlers ran: other Metamod plugins
-that hook messages see it on both passes. Messages a handler sends itself are
-not reported again, so a `SayText` handler can send `SayText`.
+These are the real game's messages: Authum hands the game the engine with its
+own hooks over them (`src/authum/gamedll/engine.cpp`). Only messages someone
+subscribed to are held back, so the rest cost nothing; a held message goes to
+the engine once, after the handlers ran. Messages Authum and its modules send
+go straight to the engine and are not reported, so a `SayText` handler can
+send `SayText`.
 
 A ban module, for example:
 

@@ -10,6 +10,7 @@
  * path is what says where gamedll.txt and the logs live), then the log opens,
  * then the real game DLL is loaded and handed the engine's functions.
  */
+#include "engine.h"
 #include "game.h"
 #include "hooks.h"
 
@@ -63,6 +64,8 @@ extern globalvars_t *gpGlobals;
 namespace
 {
 bool g_loader_up = false; /* the loader bound Authum's own image */
+/* The engine as the game sees it: Authum's message and log hooks over it. */
+enginefuncs_t g_game_engfuncs;
 bool g_started = false;   /* modules are up */
 
 void
@@ -94,18 +97,21 @@ log_mirror(authum_logger_level_t /* level */, const authum_char_t *name,
                       const authum_char_t *text)
 {
     char line[1024];
+    const char *end;
 
     if (text == nullptr || g_engfuncs.pfnServerPrint == nullptr)
     {
         return;
     }
+    /* ServerPrint prints as it is: a line needs its own newline. */
+    end = (text[0] != '\0' && text[std::strlen(text) - 1u] == '\n') ? "" : "\n";
     if (name != nullptr && std::strcmp(name, "authum") != 0)
     {
-        std::snprintf(line, sizeof line, "[%s] %s", name, text);
+        std::snprintf(line, sizeof line, "[%s] %s%s", name, text, end);
     }
     else
     {
-        std::snprintf(line, sizeof line, "%s", text);
+        std::snprintf(line, sizeof line, "%s%s", text, end);
     }
     g_engfuncs.pfnServerPrint(line);
 }
@@ -181,8 +187,10 @@ GiveFnptrsToDll(enginefuncs_t *engine_funcs, globalvars_t *globals)
     log_init();
 
     /* The real game DLL sits behind us: its path is in gamedll.txt, beside
-     * authum.so, because liblist.gam now names Authum instead. */
-    if (!authum_gamedll::gamedll_load(engine_funcs, globals))
+     * authum.so, because liblist.gam now names Authum instead. It gets the
+     * engine with Authum's hooks over user messages and the log. */
+    authum_gamedll::engine_hook_table(&g_game_engfuncs, engine_funcs);
+    if (!authum_gamedll::gamedll_load(&g_game_engfuncs, globals))
     {
         return;
     }
