@@ -8,14 +8,12 @@
 
 #include "gamedll.h"
 
+#include <authum/export.h>
+
 #include <extdll.h>
 
-/* The engine looks these up by name: they must be visible. */
-#if defined(__GNUC__)
-#    define AUTHUM_CLASS extern "C" __attribute__((visibility("default")))
-#else
-#    define AUTHUM_CLASS extern "C"
-#endif
+/* The engine looks these up by name: they must be exported. */
+#define AUTHUM_CLASS extern "C" AUTHUM_IMAGE_EXPORT
 
 namespace
 {

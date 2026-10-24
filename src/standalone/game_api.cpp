@@ -15,15 +15,13 @@
  */
 #include "gamedll.h"
 
+#include <authum/export.h>
+
 #include <extdll.h>
 
 /* The engine looks these up by name in the game module: they must be
  * exported (the build hides everything else). */
-#if defined(__GNUC__)
-#    define AUTHUM_GAME_API extern "C" __attribute__((visibility("default")))
-#else
-#    define AUTHUM_GAME_API extern "C"
-#endif
+#define AUTHUM_GAME_API extern "C" AUTHUM_IMAGE_EXPORT
 
 namespace
 {
