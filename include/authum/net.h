@@ -58,6 +58,12 @@ authum_net_ipv4_format(authum_u32_t ip, authum_char_t *buf, authum_usize_t buf_s
 authum_usize_t
 authum_net_ipv4_collect(authum_bool_t external, authum_u32_t *out, authum_usize_t max);
 
+/** Extract host from IPv4:port, hostname:port, [IPv6]:port or a bare host/IPv6.
+ * No DNS lookup. False (and empty output) for malformed/truncated input.
+ */
+authum_bool_t authum_net_address_host(const authum_char_t *address,
+                                     authum_char_t *out, authum_usize_t capacity);
+
 AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_NET_H */

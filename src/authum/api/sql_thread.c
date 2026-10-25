@@ -58,11 +58,12 @@ authum_sql_thread_run(authum_ptr arg)
     if (job->result.connected)
     {
         job->result.success = job->work(&db, job->user);
+        if (authum_sql_first_error(&db)[0]) job->result.success = authum_bool_false;
     }
     if (!job->result.connected || !job->result.success)
     {
         snprintf(job->result.error, sizeof job->result.error, "%s",
-                 authum_sql_errmsg(&db)[0] ? authum_sql_errmsg(&db) : "SQL task failed");
+                 authum_sql_first_error(&db)[0] ? authum_sql_first_error(&db) : "SQL task failed");
     }
     authum_sql_close(&db);
     if (thread_end)

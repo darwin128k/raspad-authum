@@ -106,6 +106,19 @@ sql_bad(authum_sql_t *db, void *user)
     (void)user;
     return authum_sql_exec(db, "SELECT * FROM missing_table");
 }
+authum_bool_t sql_swallowed(authum_sql_t *db, void *user)
+{
+    (void)user;
+    (void)authum_sql_exec(db, "SELECT * FROM missing_table");
+    return authum_sql_exec(db, "SELECT 1");
+}
+authum_bool_t sql_handled(authum_sql_t *db, void *user)
+{
+    (void)user;
+    (void)authum_sql_exec(db, "SELECT * FROM missing_table");
+    authum_sql_clear_errors(db);
+    return authum_sql_exec(db, "SELECT 1");
+}
 void
 sql_complete(const authum_sql_thread_result_t *result, void *user)
 {
@@ -177,6 +190,12 @@ main(void)
     pump_until(66);
     CHECK(!sql.success);
     CHECK(sql.connected);
+    CHECK(authum_sql_thread_query(&host, &connection, sql_swallowed, sql_complete, NULL, &sql));
+    pump_until(67);
+    CHECK(!sql.success); /* success of a later query must not erase the failure */
+    CHECK(authum_sql_thread_query(&host, &connection, sql_handled, sql_complete, NULL, &sql));
+    pump_until(68);
+    CHECK(sql.success); /* explicit acknowledgement permits an intentional fallback */
     authum_tasks_host_drop_owner(&owner);
     return authum_check_report("tasks + threaded SQL");
 }

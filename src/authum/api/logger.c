@@ -1,4 +1,5 @@
 #include <authum/logger.h>
+#include <authum/logger/buffer.h>
 
 #include <authum/abi.h>
 #include <authum/cstr.h>
@@ -140,6 +141,7 @@ authum_logger_close(authum_logger_t *self)
 authum_bool_t
 authum_logger_is_enabled(const authum_logger_t *self, authum_logger_level_t level)
 {
+    if (authum_logger_buffer_active()) return self && level <= authum_logger_level_debug;
     return authum_logger_channel_is_enabled(authum_logger_get_channel(self), level);
 }
 
@@ -148,6 +150,8 @@ authum_logger_log_v(authum_logger_t *self, authum_logger_level_t level, const au
                     va_list ap)
 {
     authum_char_t buf[authum_logger_line_max];
+
+    if (authum_logger_buffer_log_v(self, level, fmt, ap)) return;
 
     if (authum_null_eq(fmt) || !authum_logger_is_enabled(self, level))
     {
