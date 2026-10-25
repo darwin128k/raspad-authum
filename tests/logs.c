@@ -9,6 +9,7 @@
 
 #include <authum/cstr.h>
 #include <authum/host.h>
+#include <authum/host/clock.h>
 #include <authum/logger.h>
 #include <authum/host/logs.h>
 #include <authum/path.h>
@@ -17,6 +18,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#if defined(_WIN32)
+#    include <windows.h>
+#endif
 
 #define TEST_ROOT "authum_logs_test_root"
 
@@ -112,7 +116,7 @@ test_on_disk(const char *dir, time_t when, const char *needle)
 authum_bool_t
 test_file_contains(const char *dir, time_t when, const char *needle)
 {
-    authum_logs_flush();
+    CHECK(authum_logs_sync(5000));
     return test_on_disk(dir, when, needle);
 }
 
@@ -134,7 +138,7 @@ test_file_exists(const char *dir, time_t when)
 {
     authum_char_t path[256];
 
-    authum_logs_flush();
+    CHECK(authum_logs_sync(5000));
     test_log_path(path, sizeof path, dir, when);
     return test_exists(path);
 }
@@ -257,7 +261,7 @@ test_routing(void)
     authum_logs_deinit();
 }
 
-/* Lines wait in the buffer until a flush; an error goes out at once. */
+/* Barriers publish accepted records; shutdown drains pending records. */
 void
 test_buffering(void)
 {
@@ -266,19 +270,80 @@ test_buffering(void)
     CHECK(authum_logs_open(&g_test_qproto, "qproto", authum_null));
 
     authum_logs_write(&g_test_qproto, authum_logger_level_info, "buffered line");
-    CHECK(!test_on_disk("qproto", TEST_DAY_ONE, "buffered line"));
+
     authum_logs_write(&g_test_qproto, authum_logger_level_error, "urgent line");
+    CHECK(authum_logs_sync(5000));
     CHECK(test_on_disk("qproto", TEST_DAY_ONE, "urgent line"));
     CHECK(test_on_disk("qproto", TEST_DAY_ONE, "buffered line")); /* went out with it */
 
     authum_logs_write(&g_test_qproto, authum_logger_level_info, "flushed line");
-    CHECK(!test_on_disk("qproto", TEST_DAY_ONE, "flushed line"));
-    authum_logs_flush();
+
+    CHECK(authum_logs_sync(5000));
     CHECK(test_on_disk("qproto", TEST_DAY_ONE, "flushed line"));
 
     authum_logs_write(&g_test_qproto, authum_logger_level_info, "closed line");
     authum_logs_deinit(); /* closing writes what is left */
     CHECK(test_on_disk("qproto", TEST_DAY_ONE, "closed line"));
+}
+
+/* Flush must progress without game frames, barriers, channel close or shutdown. */
+void
+test_periodic_flush(void)
+{
+    CHECK(authum_logs_init(TEST_ROOT, authum_null));
+    authum_logs_set_clock(test_clock);
+    CHECK(authum_logs_open(&g_test_qproto, "qproto", authum_null));
+    authum_char_t previous[256];
+    test_log_path(previous, sizeof previous, "qproto", TEST_DAY_ONE);
+    remove(previous);
+    authum_logs_write(&g_test_qproto, authum_logger_level_info, "automatic flush line");
+    authum_i64_t start = authum_clock_monotonic_ms(authum_clock_host());
+    while (!test_on_disk("qproto", TEST_DAY_ONE, "automatic flush line") &&
+           authum_clock_monotonic_ms(authum_clock_host()) - start < 5000)
+    {
+#if defined(_WIN32)
+        Sleep(10);
+#else
+        struct timespec delay = {0, 10000000};
+        nanosleep(&delay, NULL);
+#endif
+    }
+    CHECK(test_on_disk("qproto", TEST_DAY_ONE, "automatic flush line"));
+    authum_logs_deinit();
+}
+
+/* More journals than open file slots: eviction must flush and reopening appends. */
+void
+test_file_cache(void)
+{
+    CHECK(authum_logs_init(TEST_ROOT, authum_null));
+    authum_logs_set_clock(test_clock);
+    CHECK(authum_logs_open(&g_test_qproto, "qproto", authum_null));
+    for (authum_u32_t round = 0; round < 2; ++round)
+    {
+        for (authum_u32_t index = 0; index < 40; ++index)
+        {
+            authum_char_t name[32];
+            snprintf(name, sizeof name, "async_cache_%u", (unsigned)index);
+            authum_ptr journal = authum_logs_open_journal(&g_test_qproto, name);
+            CHECK(journal != authum_null);
+            authum_logs_write(journal, authum_logger_level_info,
+                              round == 0 ? "before eviction" : "after reopening");
+            authum_logs_close_journal(journal);
+        }
+    }
+    authum_logs_close(&g_test_qproto);
+    authum_logs_deinit();
+    for (authum_u32_t index = 0; index < 40; ++index)
+    {
+        authum_char_t name[64];
+        snprintf(name, sizeof name, "qproto/async_cache_%u", (unsigned)index);
+        CHECK(test_on_disk(name, TEST_DAY_ONE, "before eviction"));
+        CHECK(test_on_disk(name, TEST_DAY_ONE, "after reopening"));
+        authum_char_t path[256];
+        test_log_path(path, sizeof path, name, TEST_DAY_ONE);
+        remove(path);
+    }
 }
 
 /* Journals: a module's own extra files, with their own level. */
@@ -322,6 +387,7 @@ test_journals(void)
     authum_logs_write(bans, authum_logger_level_info, "ban line");
     test_log_path(path, sizeof path, "qproto/bans", TEST_DAY_ONE);
     authum_logs_close(&g_test_qproto);
+    CHECK(authum_logs_sync(5000));
     CHECK(test_path_contains(path, "ban line"));
     CHECK(!authum_logs_is_enabled(bans, authum_logger_level_error));
 
@@ -438,6 +504,8 @@ main(void)
     test_level_names();
     test_routing();
     test_buffering();
+    test_periodic_flush();
+    test_file_cache();
     test_journals();
     test_reload();
     test_prune();

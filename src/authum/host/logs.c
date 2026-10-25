@@ -5,6 +5,8 @@
  */
 
 #include <authum/host/logs.h>
+#include "logs/writer.h"
+#include "logs/files.h"
 
 #include <authum/cfg.h>
 #include <authum/cstr.h>
@@ -12,13 +14,7 @@
 #include <authum/null.h>
 #include <authum/path.h>
 
-#include <lh/fs/kind.h>
-#include <lh/fs/path.h>
-#include <lh/fs/path/style.h>
-#include <lh/os/fs/dir.h>
 #include <lh/runtime/allocator.h>
-#include <lh/str/view.h>
-#include <lh/util/addr.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,9 +24,7 @@ enum
 {
     authum_logs_name_max = 64,
     /** Channel level that lets nothing through. */
-    authum_logs_level_off = -1,
-    /** Bytes buffered per file before stdio writes them on its own. */
-    authum_logs_buffer_size = 8192
+    authum_logs_level_off = -1
 };
 
 typedef struct authum_logs_channel authum_logs_channel_t;
@@ -49,11 +43,6 @@ struct authum_logs_channel
     authum_char_t tag[authum_logs_name_max * 2];
     /** Most verbose level written to the file, or ::authum_logs_level_off. */
     int level;
-    FILE *file;
-    /** YYYYMMDD of @c file; a different day opens a new one. */
-    long day;
-    /** Written since the last flush. */
-    authum_bool_t dirty;
     /** Where the daily files go: logs/, modules/<module>/logs/, or a journal's folder in it. */
     authum_path_t dir;
 };
@@ -181,199 +170,22 @@ authum_logs_set_name(authum_char_t *out, authum_usize_t out_size, const authum_c
     }
 }
 
-/** Create @p dir and up to @p depth missing parents above it. */
-authum_bool_t
-authum_logs_ensure_tree(const authum_path_t *dir, int depth)
-{
-    authum_path_t parent;
-
-    if (authum_path_ensure_dir(dir))
-    {
-        return authum_bool_true;
-    }
-    return (depth > 0 && authum_path_parent(&parent, dir) &&
-            authum_logs_ensure_tree(&parent, depth - 1) && authum_path_ensure_dir(dir))
-               ? authum_bool_true
-               : authum_bool_false;
-}
-
-authum_bool_t
-authum_logs_channel_dir(const authum_logs_channel_t *channel, authum_path_t *out)
-{
-    /* logs/, modules/<module>/logs/ or a journal's folder in it: create what is missing. */
-    return (authum_path_assign(out, &channel->dir) && authum_logs_ensure_tree(out, 3))
-               ? authum_bool_true
-               : authum_bool_false;
-}
-
-/** YYYYMMDD from a `YYYY-MM-DD.log` file name, or 0. */
-long
-authum_logs_file_day(const authum_char_t *name, authum_usize_t size)
-{
-    authum_usize_t i;
-
-    if (size != 14u || name[4] != '-' || name[7] != '-' || strncmp(name + 10, ".log", 4) != 0)
-    {
-        return 0;
-    }
-    for (i = 0u; i < 10u; ++i)
-    {
-        if (i != 4u && i != 7u && (name[i] < '0' || name[i] > '9'))
-        {
-            return 0;
-        }
-    }
-    return atol(name) * 10000L + atol(name + 5) * 100L + atol(name + 8);
-}
-
-/** Delete this folder's daily files older than ::authum_logs_keep_days. */
-void
-authum_logs_prune(const authum_path_t *dir, const struct tm *today)
-{
-    struct tm cutoff_tm = *today;
-    long cutoff;
-    lh_fs_path_t lh_dir;
-    lh_str_view_t text;
-    lh_os_fs_dir_t listing;
-    lh_os_fs_dir_entry_kind_t kind;
-    lh_str_view_t entry;
-    authum_char_t leaf[32];
-    authum_path_t path;
-    lh_ssize_t n;
-
-    if (authum_logs_keep_days <= 0)
-    {
-        return;
-    }
-    cutoff_tm.tm_mday -= (int)authum_logs_keep_days;
-    cutoff_tm.tm_isdst = -1;
-    if (mktime(&cutoff_tm) == (time_t)-1)
-    {
-        return;
-    }
-    cutoff = (long)(cutoff_tm.tm_year + 1900) * 10000L + (long)(cutoff_tm.tm_mon + 1) * 100L +
-             cutoff_tm.tm_mday;
-
-    lh_fs_path_init(lh_addr_of(lh_dir));
-    lh_str_view_init(lh_addr_of(text), authum_path_as_cstr(dir));
-    lh_fs_path_set(lh_addr_of(lh_dir), text, lh_fs_path_style_posix);
-    lh_os_fs_dir_init(lh_addr_of(listing));
-    if (lh_os_fs_dir_open(lh_addr_of(listing), lh_addr_of(lh_dir)))
-    {
-        while ((n = lh_os_fs_dir_read(lh_addr_of(listing), lh_addr_of(entry), lh_addr_of(kind))) >
-               0)
-        {
-            long day;
-
-            if (kind == lh_fs_kind_dir || (authum_usize_t)n >= sizeof leaf)
-            {
-                continue;
-            }
-            memcpy(leaf, lh_str_view_get_data(lh_addr_of(entry)), (size_t)n);
-            leaf[n] = '\0';
-            day = authum_logs_file_day(leaf, (authum_usize_t)n);
-            if (day != 0 && day < cutoff && authum_path_join(&path, dir, leaf))
-            {
-                remove(authum_path_as_cstr(&path));
-            }
-        }
-        lh_os_fs_dir_close(lh_addr_of(listing));
-    }
-    lh_fs_path_deinit(lh_addr_of(lh_dir));
-}
-
-/** The channel's file for @p tm's day, opening (and pruning) on a new day. */
-FILE *
-authum_logs_file(authum_logs_channel_t *channel, const struct tm *tm)
-{
-    authum_path_t dir;
-    authum_path_t path;
-    authum_char_t leaf[16];
-    long day = (long)(tm->tm_year + 1900) * 10000L + (long)(tm->tm_mon + 1) * 100L + tm->tm_mday;
-
-    if (!authum_null_eq(channel->file) && channel->day == day)
-    {
-        return channel->file;
-    }
-    if (!authum_null_eq(channel->file))
-    {
-        fclose(channel->file);
-        channel->file = authum_null;
-    }
-    snprintf(leaf, sizeof leaf, "%04d-%02d-%02d.log", tm->tm_year + 1900, tm->tm_mon + 1,
-             tm->tm_mday);
-    if (!authum_logs_channel_dir(channel, &dir) || !authum_path_join(&path, &dir, leaf))
-    {
-        return authum_null;
-    }
-    authum_logs_prune(&dir, tm);
-    channel->file = fopen(authum_path_as_cstr(&path), "a");
-    if (authum_null_eq(channel->file))
-    {
-        return authum_null;
-    }
-    setvbuf(channel->file, authum_null, _IOFBF, authum_logs_buffer_size);
-    channel->day = day;
-    channel->dirty = authum_bool_false;
-    return channel->file;
-}
-
-/** One line into @p channel's file; @p from tags a line copied from a module. */
-void
+/** Copy caller-owned data before returning to the game thread. */
+static void
 authum_logs_emit(authum_logs_channel_t *channel, authum_logger_level_t level,
                  const authum_char_t *text, const authum_char_t *from)
 {
-    time_t now = authum_logs_clock != 0 ? authum_logs_clock() : time(authum_null);
-    struct tm *tm = localtime(&now);
-    FILE *file;
-
-    if (authum_null_eq(tm))
+    authum_logs_record_t record = {0};
+    record.dir = channel->dir;
+    record.level = level;
+    record.time = authum_logs_clock ? authum_logs_clock() : time(authum_null);
+    record.keep_days = authum_logs_keep_days;
+    authum_cstr_copy(record.text, sizeof record.text, text);
+    if (from)
     {
-        return;
+        authum_cstr_copy(record.tag, sizeof record.tag, from);
     }
-    file = authum_logs_file(channel, tm);
-    if (authum_null_eq(file))
-    {
-        return;
-    }
-    fprintf(file, "[%02d:%02d:%02d] [%s] ", tm->tm_hour, tm->tm_min, tm->tm_sec,
-            authum_logger_level_name(level));
-    if (!authum_null_eq(from))
-    {
-        fprintf(file, "[%s] ", from);
-    }
-    fprintf(file, "%s\n", text);
-    /* An error may come right before a crash: put it on disk now. */
-    if (level <= authum_logger_level_error)
-    {
-        fflush(file);
-        channel->dirty = authum_bool_false;
-    }
-    else
-    {
-        channel->dirty = authum_bool_true;
-    }
-}
-
-void
-authum_logs_flush_channel(authum_logs_channel_t *channel)
-{
-    if (channel->dirty && !authum_null_eq(channel->file))
-    {
-        fflush(channel->file);
-    }
-    channel->dirty = authum_bool_false;
-}
-
-void
-authum_logs_close_file(authum_logs_channel_t *channel)
-{
-    if (!authum_null_eq(channel->file))
-    {
-        fclose(channel->file);
-        channel->file = authum_null;
-    }
-    channel->dirty = authum_bool_false;
+    (void)authum_logs_writer_submit(&record);
 }
 
 /* --- channels ------------------------------------------------------------- */
@@ -535,7 +347,6 @@ authum_logs_free(authum_logs_channel_t *channel)
         if (*link == channel)
         {
             *link = channel->next;
-            authum_logs_close_file(channel);
             lh_runtime_allocator_free(channel);
             return;
         }
@@ -636,8 +447,18 @@ authum_logs_init(const authum_char_t *root, authum_logs_mirror_fn mirror)
     memset(&authum_logs_host, 0, sizeof authum_logs_host);
     authum_logs_set_name(authum_logs_host.name, sizeof authum_logs_host.name, "authum");
     authum_cstr_copy(authum_logs_host.tag, sizeof authum_logs_host.tag, "authum");
-    (void)authum_path_join(&authum_logs_host.dir, &authum_logs_root, "logs");
+    if (!authum_path_join(&authum_logs_host.dir, &authum_logs_root, "logs"))
+    {
+        return authum_bool_false;
+    }
     authum_logs_read_cfg();
+    const authum_logs_sink_t sink = {authum_logs_files_emit, authum_logs_files_flush,
+                                     authum_logs_files_close, authum_logs_files_dropped};
+    authum_logs_files_set_root(&authum_logs_host.dir);
+    if (!authum_logs_writer_start(&sink))
+    {
+        return authum_bool_false;
+    }
     authum_logs_ready = authum_bool_true;
     return authum_bool_true;
 }
@@ -651,16 +472,10 @@ authum_logs_reload(void)
     }
 }
 
-void
-authum_logs_flush(void)
+authum_bool_t
+authum_logs_sync(authum_u32_t timeout_ms)
 {
-    authum_logs_channel_t *channel;
-
-    authum_logs_flush_channel(&authum_logs_host);
-    for (channel = authum_logs_head; !authum_null_eq(channel); channel = channel->next)
-    {
-        authum_logs_flush_channel(channel);
-    }
+    return authum_logs_writer_sync(timeout_ms);
 }
 
 void
@@ -670,7 +485,7 @@ authum_logs_deinit(void)
     {
         authum_logs_free(authum_logs_head);
     }
-    authum_logs_close_file(&authum_logs_host);
+    authum_logs_writer_stop();
     authum_logs_mirror = 0;
     authum_logs_ready = authum_bool_false;
 }
