@@ -4,6 +4,12 @@
 #include <stdio.h>
 #include <string.h>
 
+const authum_tasks_t *
+authum_host_tasks(const authum_host_t *host)
+{
+    return host && AUTHUM_ABI_HAS(host, tasks) ? host->tasks : authum_null;
+}
+
 const authum_logger_channel_t *
 authum_host_logger(const authum_host_t *host)
 {

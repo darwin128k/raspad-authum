@@ -27,6 +27,7 @@
 #include <authum/ptr.h>
 #include <authum/sandbox.h>
 #include <authum/size.h>
+#include <authum/task.h>
 
 AUTHUM_EXTERN_C_BEGIN
 
@@ -68,6 +69,8 @@ typedef struct authum_host
     const authum_events_t *events;
     /** `authum <module> <name>` console / RCON commands (dropped after `stop`). */
     const authum_commands_t *commands;
+    /** Owner-bound background jobs, completed on server frames. */
+    const authum_tasks_t *tasks;
 } authum_host_t;
 
 /* --- getters (modules: only these) --------------------------------------- */
@@ -98,6 +101,9 @@ authum_host_events(const authum_host_t *host);
 
 const authum_commands_t *
 authum_host_commands(const authum_host_t *host);
+
+const authum_tasks_t *
+authum_host_tasks(const authum_host_t *host);
 
 const authum_path_t *
 authum_host_env_game(const authum_host_t *host);

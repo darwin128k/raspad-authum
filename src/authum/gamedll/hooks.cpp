@@ -11,6 +11,7 @@
 #include <authum/event/client.h>
 #include <authum/event/server.h>
 #include <authum/host/events.h>
+#include <authum/host/tasks.h>
 
 #include <extdll.h>
 
@@ -248,6 +249,7 @@ h_server_deactivate(void)
 void
 h_start_frame(void)
 {
+    authum_tasks_host_pump();
     authum_event_server_t ev;
     server_fill(&ev);
     (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_FRAME, &ev);

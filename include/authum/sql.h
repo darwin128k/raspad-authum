@@ -62,6 +62,10 @@ authum_bool_t authum_sql_mysql_available(void);
 void authum_sql_close(authum_sql_t *self);
 
 authum_bool_t authum_sql_is_open(const authum_sql_t *self);
+/** Active round-trip (SELECT 1), unlike is_open which only checks the handle.
+ * May block on synchronous connections; not a guarantee about future queries.
+ */
+authum_bool_t authum_sql_ping(authum_sql_t *self);
 
 const authum_char_t *authum_sql_errmsg(const authum_sql_t *self);
 

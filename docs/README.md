@@ -17,3 +17,5 @@
 | [gate.md](gate.md) | Connect gate / external auth modules |
 
 Build and drop-in layout: see the repo [README](../README.md).
+
+SQL handles, worker queries, callbacks and connection recovery: [sql.md](sql.md).

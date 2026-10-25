@@ -1,5 +1,6 @@
 #include <authum/host/errors.h>
 #include <authum/host/loader.h>
+#include <authum/host/tasks.h>
 #include <authum/host/log.h>
 #include <lh/cast/static.h>
 #include <lh/compiler/os.h>
@@ -684,6 +685,8 @@ authum_loader_unload_all(authum_module_t *self)
 {
     lh_os_loader_t *loader;
 
+    if (authum_tasks_host_dispatching()) return;
+
     loader = lh_os_module_get_loader(self);
     if (lh_null_ne(loader))
     {
@@ -836,6 +839,12 @@ authum_loader_unload_name(authum_module_t *self, const char *name)
 {
     lh_os_loader_t *loader;
     authum_module_t *child;
+
+    if (authum_tasks_host_dispatching())
+    {
+        lh_os_set_last_error_lit(lh_os_error_code_not_open, "cannot unload modules inside a task callback");
+        return lh_bool_false;
+    }
 
     loader = lh_os_module_get_loader(self);
     child = authum_loader_find(self, name);
