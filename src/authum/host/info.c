@@ -10,7 +10,7 @@
 AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
     .abi = AUTHUM_MODULE_ABI,
     .name = "Authum",
-    .version = AUTHUM_VERSION(4, 0, 0),
+    .version = AUTHUM_VERSION(4, 1, 0),
     .date = "2026-10-24",
     .author = "Authum",
     .url = "",
