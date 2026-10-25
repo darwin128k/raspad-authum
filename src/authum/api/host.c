@@ -4,6 +4,15 @@
 #include <stdio.h>
 #include <string.h>
 
+const authum_http_service_t *authum_host_http(const authum_host_t *host)
+{
+    return host && AUTHUM_ABI_HAS(host, http) ? host->http : authum_null;
+}
+const authum_clock_t *authum_host_clock(const authum_host_t *host)
+{
+    return host && AUTHUM_ABI_HAS(host, clock) ? host->clock : authum_null;
+}
+
 const authum_threads_t *
 authum_host_threads(const authum_host_t *host)
 {

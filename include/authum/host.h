@@ -29,6 +29,8 @@
 #include <authum/size.h>
 #include <authum/task.h>
 #include <authum/thread.h>
+#include <authum/http.h>
+#include <authum/clock.h>
 
 AUTHUM_EXTERN_C_BEGIN
 
@@ -74,9 +76,14 @@ typedef struct authum_host
     const authum_tasks_t *tasks;
     /** Managed long-lived workers, stopped and joined before module stop. */
     const authum_threads_t *threads;
+    const authum_http_service_t *http;
+    const authum_clock_t *clock;
 } authum_host_t;
 
 /* --- getters (modules: only these) --------------------------------------- */
+const authum_http_service_t *authum_host_http(const authum_host_t *host);
+const authum_clock_t *authum_host_clock(const authum_host_t *host);
+
 
 const authum_threads_t *
 authum_host_threads(const authum_host_t *host);

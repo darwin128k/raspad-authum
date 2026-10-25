@@ -1,0 +1,153 @@
+#ifndef AUTHUM_HOST_HTTP_INTERNAL_H
+#define AUTHUM_HOST_HTTP_INTERNAL_H
+#include <authum/host/http.h>
+#include <authum/net.h>
+#include <authum/host/clock.h>
+#include <stdatomic.h>
+#include <sys/types.h>
+#include <poll.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <errno.h>
+
+enum
+{
+    AUTHUM_HTTP_IO_ERROR = -1,
+    AUTHUM_HTTP_IO_PENDING = -2,
+    AUTHUM_HTTP_MAX_CLIENTS = 256,
+    AUTHUM_HTTP_MAX_PEERS = 1024,
+    AUTHUM_HTTP_LOG_CAPACITY = 256,
+    AUTHUM_HTTP_LOG_LINE_CAPACITY = 768,
+    AUTHUM_HTTP_REQUEST_CAPACITY = 8192,
+    AUTHUM_HTTP_RESPONSE_CAPACITY = 512
+};
+
+typedef enum authum_http_client_state
+{
+    authum_http_client_reading,
+    authum_http_client_writing
+} authum_http_client_state_t;
+
+typedef struct authum_http_client
+{
+    int fd;
+    int file;
+    authum_i32_t ip_slot;
+    authum_http_client_state_t state;
+    authum_char_t input[AUTHUM_HTTP_REQUEST_CAPACITY];
+    authum_char_t output[AUTHUM_HTTP_RESPONSE_CAPACITY];
+    authum_usize_t used;
+    authum_usize_t sent;
+    authum_usize_t output_size;
+    off_t offset;
+    off_t remaining;
+    authum_i64_t born;
+    authum_i64_t progress;
+    authum_u32_t id;
+    authum_u32_t source;
+    authum_i32_t status;
+    authum_u64_t body_bytes;
+    authum_char_t ip[AUTHUM_NET_IPV4_TEXT_SIZE];
+    authum_char_t method[16];
+    authum_char_t path[320];
+    authum_u32_t port;
+    const authum_char_t *close_reason;
+} authum_http_client_t;
+
+typedef struct authum_http_peer
+{
+    authum_u32_t ip;
+    authum_bool_t used;
+    authum_u32_t active;
+    authum_u32_t count;
+    authum_i64_t window;
+} authum_http_peer_t;
+
+struct authum_http_server
+{
+    authum_http_server_t *next;
+    authum_http_options_t options;
+    int roots[AUTHUM_HTTP_MAX_SOURCES];
+    int listener;
+    int wake[2];
+    authum_threads_t threads;
+    authum_thread_t *thread;
+    authum_http_client_t *clients;
+    authum_http_peer_t peers[AUTHUM_HTTP_MAX_PEERS];
+    authum_u32_t next_id;
+    authum_bool_t joined;
+    authum_usize_t drain_depth;
+    authum_bool_t close_pending;
+    atomic_uint log_read;
+    atomic_uint log_write;
+    atomic_uint log_dropped;
+    authum_char_t logs[AUTHUM_HTTP_LOG_CAPACITY][AUTHUM_HTTP_LOG_LINE_CAPACITY];
+};
+
+authum_i64_t
+authum_http_now_ms(void);
+void
+authum_http_access_record(authum_http_server_t *s, const authum_http_client_t *c,
+                          const char *event);
+void
+authum_http_access_token(char *dst, size_t capacity, const char *src, size_t length);
+void
+authum_http_client_close(authum_http_server_t *s, authum_http_client_t *c);
+int
+authum_http_resource_open(int root, const authum_http_options_t *options, const char *url,
+                          size_t length, off_t *size);
+void
+authum_http_response_set(authum_http_client_t *c, int code, const char *reason, off_t size,
+                         int head);
+void
+authum_http_request_read(authum_http_client_t *c, const int *roots,
+                         const authum_http_options_t *options);
+int
+authum_http_peer_acquire(authum_http_server_t *s, authum_u32_t ip, authum_i64_t now,
+                         const authum_http_options_t *options);
+authum_bool_t
+authum_http_client_expired(const authum_http_client_t *c, const authum_http_options_t *options,
+                           authum_i64_t now);
+void
+authum_http_budget_refill(double *tokens, authum_i64_t *last, authum_i64_t now,
+                          const authum_http_options_t *options);
+void
+authum_http_run(void *arg);
+void
+authum_http_wake(void *arg);
+void
+authum_http_server_release(authum_http_server_t *server);
+authum_http_server_t *
+authum_http_server_create(const authum_http_options_t *options, const authum_threads_t *threads,
+                          char *error, unsigned error_size);
+void
+authum_http_server_shutdown(authum_http_server_t *server);
+void
+authum_http_server_destroy(authum_http_server_t *server);
+authum_usize_t
+authum_http_server_memory(const authum_http_server_t *server);
+unsigned
+authum_http_server_drain(authum_http_server_t *server, authum_http_log_fn sink, void *user,
+                         unsigned limit);
+int
+authum_http_listener_open(const authum_http_options_t *options, char *error, unsigned error_size);
+int
+authum_http_socket_accept(int listener, authum_http_client_t *peer, authum_u32_t *address);
+authum_i64_t
+authum_http_socket_receive(int fd, char *buffer, authum_usize_t size);
+authum_i64_t
+authum_http_socket_send(int fd, const char *buffer, authum_usize_t size);
+authum_i64_t
+authum_http_socket_send_file(int socket, int file, off_t *offset, authum_usize_t size);
+void
+authum_http_clients_accept(authum_http_server_t *server, authum_i64_t now);
+void
+authum_http_client_read(authum_http_server_t *server, authum_http_client_t *client,
+                        authum_i64_t now);
+void
+authum_http_client_write(authum_http_server_t *server, authum_http_client_t *client,
+                         authum_i64_t now, double *tokens);
+
+#endif

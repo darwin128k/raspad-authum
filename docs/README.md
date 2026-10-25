@@ -24,3 +24,5 @@ Build and drop-in layout: see the repo [README](../README.md).
 SQL handles, worker queries, callbacks and connection recovery: [sql.md](sql.md).
 
 Managed long-lived workers: [threads.md](threads.md) (module ABI 1.1).
+
+Shared HTTP service and monotonic clocks: [http.md](http.md) (module ABI 1.2).
