@@ -4,6 +4,12 @@
 #include <stdio.h>
 #include <string.h>
 
+const authum_threads_t *
+authum_host_threads(const authum_host_t *host)
+{
+    return host && AUTHUM_ABI_HAS(host, threads) ? host->threads : authum_null;
+}
+
 const authum_tasks_t *
 authum_host_tasks(const authum_host_t *host)
 {

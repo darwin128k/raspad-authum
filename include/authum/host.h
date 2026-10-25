@@ -28,6 +28,7 @@
 #include <authum/sandbox.h>
 #include <authum/size.h>
 #include <authum/task.h>
+#include <authum/thread.h>
 
 AUTHUM_EXTERN_C_BEGIN
 
@@ -71,9 +72,14 @@ typedef struct authum_host
     const authum_commands_t *commands;
     /** Owner-bound background jobs, completed on server frames. */
     const authum_tasks_t *tasks;
+    /** Managed long-lived workers, stopped and joined before module stop. */
+    const authum_threads_t *threads;
 } authum_host_t;
 
 /* --- getters (modules: only these) --------------------------------------- */
+
+const authum_threads_t *
+authum_host_threads(const authum_host_t *host);
 
 const authum_logger_channel_t *
 authum_host_logger(const authum_host_t *host);

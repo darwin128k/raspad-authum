@@ -42,6 +42,7 @@
 #include <authum/sql.h>
 #include <authum/sql/thread.h>
 #include <authum/timer.h>
+#include <authum/thread.h>
 #include <authum/unused.h>
 #include <authum/symbol.h>
 #include <authum/version.h>

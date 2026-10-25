@@ -22,3 +22,5 @@ Reusable worker logs, client references, SQL error history and address parsing:
 Build and drop-in layout: see the repo [README](../README.md).
 
 SQL handles, worker queries, callbacks and connection recovery: [sql.md](sql.md).
+
+Managed long-lived workers: [threads.md](threads.md) (module ABI 1.1).
