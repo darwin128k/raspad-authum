@@ -22,15 +22,17 @@ AUTHUM_EXTERN_C_BEGIN
 
 /**
  * @def AUTHUM_MODULE_ABI
- * @brief Loader ABI (`1.2.0`) — lh-free module API (`authum_module_api`).
+ * @brief Loader ABI (`1.3.0`) — lh-free module API (`authum_module_api`).
  *
  * 1.0: every host table starts with `size` and only grows at the end
  * (<authum/abi.h>), so a module loads on any 1.x host; the engine facade
- * covers players, cvars and client queries. A minor bump adds functions, a
- * major bump removes or changes one. Checked with
+ * covers players, cvars and client queries. 1.2 added the shared HTTP
+ * service and the monotonic clock. 1.3 added the placeholder service
+ * (standard names plus per-module registrations). A minor bump adds
+ * functions, a major bump removes or changes one. Checked with
  * ::authum_version_is_abi_compatible.
  */
-#define AUTHUM_MODULE_ABI AUTHUM_VERSION(1, 2, 0)
+#define AUTHUM_MODULE_ABI AUTHUM_VERSION(1, 3, 0)
 
 struct authum_module_info
 {

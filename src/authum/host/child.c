@@ -9,6 +9,7 @@
 #include <authum/host/threads.h>
 #include <authum/host/http.h>
 #include <authum/host/clock.h>
+#include <authum/host/placeholders.h>
 #include <authum/module/api.h>
 #include <authum/path.h>
 #include <authum/version.h>
@@ -56,6 +57,8 @@ typedef struct authum_child_data
     authum_thread_owner_t thread_owner;
     authum_http_owner_t http_owner;
     authum_http_service_t http;
+    authum_placeholder_owner_t placeholders;
+    authum_placeholder_service_t placeholder_service;
     authum_logger_channel_t logger;
 } authum_child_data_t;
 
@@ -156,8 +159,7 @@ authum_child_fill_under_game(authum_child_data_t *data)
 /** Bind @p field to the directory holding @p image (an lh path), or leave it null. */
 void
 authum_child_bind_parent(authum_path_t *slot, const authum_path_t **field,
-                         const lh_fs_path_t *image)
-{
+                         const lh_fs_path_t *image){
     lh_fs_path_t parent;
 
     lh_fs_path_init(lh_addr_of(parent));
@@ -261,9 +263,7 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     authum_http_host_init(&data->http_owner, &data->threads, &data->http);
     out->http = &data->http;
     out->clock = authum_clock_host();
-
-    parent = lh_os_module_get_parent(child);
-    if (!lh_null_eq(parent))
+    parent = lh_os_module_get_parent(child);    if (!lh_null_eq(parent))
     {
         out->engine_funcs =
             (authum_host_get_ptr_fn)lh_os_module_get_sym(parent, "authum_engine_funcs");
@@ -271,6 +271,9 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     }
 
     authum_child_fill_env(child, data);
+    /* Standard placeholder names come from the module's own environment. */
+    authum_placeholder_host_init_env(&data->placeholders, &data->env, &data->placeholder_service);
+    out->placeholders = &data->placeholder_service;
     (void)authum_logs_open(data, data->info->name, authum_path_as_cstr_or_null(data->env.module));
 }
 
@@ -282,6 +285,7 @@ authum_child_release(authum_child_data_t *data)
     authum_threads_host_stop_owner(&data->thread_owner);
     authum_http_host_drop_owner(&data->http_owner);
     authum_threads_host_drop_owner(&data->thread_owner);
+    authum_placeholder_host_drop_owner(&data->placeholders);
     authum_tasks_host_drop_owner(data);
     authum_commands_host_drop_owner(data);
     authum_events_host_drop_owner(data);

@@ -12,6 +12,10 @@ const authum_clock_t *authum_host_clock(const authum_host_t *host)
 {
     return host && AUTHUM_ABI_HAS(host, clock) ? host->clock : authum_null;
 }
+const authum_placeholder_service_t *authum_host_placeholders(const authum_host_t *host)
+{
+    return host && AUTHUM_ABI_HAS(host, placeholders) ? host->placeholders : authum_null;
+}
 
 const authum_threads_t *
 authum_host_threads(const authum_host_t *host)
