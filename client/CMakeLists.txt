@@ -49,6 +49,8 @@ target_include_directories(authum_client
 
 # lh brings the system libraries its os layer needs (dl, ws2_32, iphlpapi).
 target_link_libraries(authum_client PUBLIC lh)
+find_package(Threads REQUIRED)
+target_link_libraries(authum_client PUBLIC Threads::Threads)
 # lh is linked into every module: keep its symbols local to that module.
 if (NOT MSVC AND NOT APPLE)
 	target_link_options(authum_client INTERFACE "LINKER:--exclude-libs,liblh.a")

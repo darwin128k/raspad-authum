@@ -14,6 +14,7 @@ add_library(authum_test_host STATIC
         "${CMAKE_SOURCE_DIR}/src/authum/host/events.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/commands.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/logs.c"
+        "${CMAKE_SOURCE_DIR}/src/authum/host/tasks.c"
 )
 target_include_directories(authum_test_host PUBLIC "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/src")
 target_link_libraries(authum_test_host PUBLIC lh authum_client)
@@ -37,6 +38,11 @@ add_test(NAME authum_timers COMMAND authum_test_timers)
 add_executable(authum_test_logs logs.c)
 target_link_libraries(authum_test_logs PRIVATE authum_test_host authum_test_check)
 add_test(NAME authum_logs COMMAND authum_test_logs)
+
+add_executable(authum_test_tasks tasks.c)
+target_link_libraries(authum_test_tasks PRIVATE authum_test_host authum_test_check)
+add_test(NAME authum_tasks COMMAND authum_test_tasks)
+set_tests_properties(authum_tasks PROPERTIES TIMEOUT 20)
 
 # Smoke test of examples/: loads every built example module.
 if (AUTHUM_BUILD_EXAMPLES)
