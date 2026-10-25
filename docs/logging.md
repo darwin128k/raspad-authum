@@ -1,134 +1,55 @@
-# Logging
+# Host disk logger
 
-A module says **what happened and how bad it is**. Authum decides **where it
-goes**, from one file, `addons/authum/configs/authum.cfg`. No module has its own
-logging keys, file paths or console switches.
+The public logger ABI, channel filtering, daily filenames, line format,
+module journals and console routing are unchanged. Since Authum 4.2.1, file
+operations execute on a dedicated Authum-managed thread.
 
----
+## Components
 
-## 1. Where lines end up
+- host/logs.c: owner-thread registry, configuration, filtering, console callbacks,
+  timestamp capture and owned record submission.
+- host/logs/writer.c: bounded SPSC queue and worker lifecycle through Authum threads.
+- host/logs/files.c: worker-only LRU cache, directories, daily rotation, retention,
+  stdio buffering, flushing and file close.
 
-```text
-addons/authum/
-  configs/authum.cfg
-  logs/2026-10-22.log               ← Authum itself + every module's warnings and errors
-  modules/qproto/logs/2026-10-22.log       ← each module in its own folder, a file per day
-  modules/qproto/logs/bans/2026-10-22.log  ← a journal the module opened
-  modules/hello/logs/2026-10-22.log
-```
+The 1024-slot queue owns each record (path, tag, text, event time, level and
+retention setting). It never retains plugin pointers. Closing a journal or
+unloading a module cannot invalidate pending records. Calendar filenames and
+line timestamps derive from event time, even if the writer crosses midnight.
+Text capacity is 1023 bytes, matching the SDK's 1024-byte formatting buffer.
 
-| Line | Goes to |
-|------|---------|
-| Module line at or above the module's `log_level` | `modules/<module>/logs/YYYY-MM-DD.log` |
-| Module **warning or worse** | also Authum's `logs/YYYY-MM-DD.log`, tagged `[module]` |
-| Authum's own line (loader, gate, commands) | `logs/YYYY-MM-DD.log` |
-| Any line at or above `log_console` | also the server console, tagged `[AUTHUM]` |
+Submit allocates nothing, takes no locks and does no I/O. Full queues drop
+newest; the worker reports loss in the host log without recursively queueing
+that report. The fixed file cache holds at most 32 streams and evicts the least
+recently used stream with fclose. Reopening appends. Buffers flush every 100ms
+while storage responds, independently of server frames. Idle queue checks sleep
+10ms, so producers need no wake syscall. Error records flush on the worker.
+An unavailable directory or failed file operation produces a first-error stderr
+diagnostic including the path; recovery after startup is best effort.
 
-A new file starts when the date changes; files older than `log_keep_days` are
-deleted then. Lines are buffered and reach the disk every server frame;
-errors and worse are written at once, so a crash does not lose them. A line
-looks like:
+Shutdown is owner-thread only: stop accepting records, request stop, drain,
+flush/close files, then join. It can wait for storage. A hard crash or forced
+termination can lose records. fflush provides visibility to readers, not fsync
+power-loss durability. No synchronous fallback writes exist for a full queue.
 
-```text
-[15:30:02] [warning] [qproto] ban list not found, starting empty
-```
+## Thread ownership
 
-(the `[qproto]` tag only appears in Authum's own `logs/`).
+Registry lifecycle, writes, configuration and console callbacks remain on the
+host/game thread. Use existing logger buffers for worker capture and deliver
+on task completion. This change does not make direct worker access to host
+logger ops safe. Formatting and engine console callbacks are synchronous;
+configuration reads still occur at startup, channel registration and map reload.
 
----
+host/logs.h exposes a private authum_logs_sync(timeout_ms) barrier for tests or
+explicit administrative operations. Never use it in a frame callback. A barrier
+waits for earlier accepted records and flush completion, not fsync or proof of
+successful disk writes. Production frame hooks do not wait for logging.
 
-## 2. Configuration (`authum.cfg`)
+## Checks
 
-```ini
-log_level = info          # what reaches the files
-log_console = warning     # what also reaches the console / HLDS log
-log_keep_days = 30        # delete daily files older than this (0 = keep all)
-qproto.log_level = debug  # one module louder (or `off`), by its `authum status` name
-qproto.bans.log_level = info  # one journal of a module (default: the module's)
-authum.log_level = info   # Authum's own channel
-```
-
-Levels, quietest to loudest (PSR-3, like lh): `emergency`, `alert`,
-`critical`, `error`, `warning`, `notice`, `info`, `debug`; `off` turns a
-channel off. Without `authum.cfg`: `log_level = info`, `log_console = warning`.
-
-The file is read when the server starts and again on **every map change**, so
-an edit applies from the next map without a restart.
-
----
-
-## 3. In a module
-
-```c
-#include <authum/client.h>
-
-authum_host_t g_host;
-authum_logger_t g_log;
-
-authum_bool_t
-mod_start(authum_host_t *host)
-{
-    authum_host_copy(&g_host, host);
-    authum_logger_init(&g_log, &g_host);
-    authum_logger_info(&g_log, "start");
-    return authum_bool_true;
-}
-
-void
-mod_stop(void)
-{
-    authum_logger_info(&g_log, "stop");
-    authum_logger_close(&g_log);
-}
-```
-
-| Call | |
-|------|--|
-| `authum_logger_emergency` … `authum_logger_debug` | printf-style line at that level |
-| `authum_logger_is_enabled(&log, level)` | skip expensive work for a level nobody records |
-| `authum_logger_hex_dump(&log, label, data, len)` | debug-level hex dump |
-| `authum_host_log_line(host, is_error, text)` | one preformatted line (error or info) |
-| `authum_logger_open(&log, host, "bans")` | a journal: own folder and level, same calls |
-
-### Journals
-
-A task that wants its own file — bans, payments, an admin audit trail — opens
-a journal. Same logger, two lines:
-
-```c
-authum_logger_t g_bans;
-
-authum_logger_open(&g_bans, &g_host, "bans");          /* start */
-authum_logger_info(&g_bans, "%s banned %s", admin, target);
-authum_logger_close(&g_bans);                          /* stop */
-```
-
-It writes `modules/<module>/logs/bans/YYYY-MM-DD.log` at `<module>.bans.log_level`
-(default: the module's level); its warnings and errors reach Authum's `logs/`
-tagged `[module/bans]`. Opening the same name twice shares the journal. A
-journal the module forgets to close is closed after `stop`.
-
-Lines below the configured level are dropped **before formatting**, so
-`authum_logger_debug` in a hot path costs one call when debug is off.
-
-Do **not** open files under `logs/` yourself, and do not print to the console
-for diagnostics — that is what `log_console` is for. A module that links its
-own lh (escape hatch) has its own `lh_runtime_logger()`; it is not Authum's.
-
----
-
-## 4. Host side
-
-`<authum/host/logs.h>` (`src/authum/host/logs.c`): one channel per loaded module,
-opened before `start` and closed after `stop`, plus Authum's own. The module
-reaches its channel through `authum_host_t.logger`. Authum's code and lh log
-through `lh_runtime_logger()`, which `src/authum/host/log.cpp` feeds into the
-`authum` channel.
-
----
-
-## Related
-
-- [writing-a-module.md](writing-a-module.md)
-- [cfg.md](cfg.md)
-- [architecture.md](architecture.md)
+CTest authum_logs verifies routing, filters, journals, date rollover, retention,
+independent periodic flushing, 40-journal cache eviction/reopen and shutdown
+persistence. authum_log_writer deliberately blocks the sink, fills the queue,
+checks nonblocking overflow and its report, owned copies, FIFO, barrier timeout,
+ring reuse, shutdown drain and restart. The same queue test runs under ASan/UBSan
+in FastDL's native sanitizer build.
