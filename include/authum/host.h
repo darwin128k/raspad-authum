@@ -31,6 +31,7 @@
 #include <authum/thread.h>
 #include <authum/http.h>
 #include <authum/clock.h>
+#include <authum/placeholders.h>
 
 AUTHUM_EXTERN_C_BEGIN
 
@@ -78,11 +79,15 @@ typedef struct authum_host
     const authum_threads_t *threads;
     const authum_http_service_t *http;
     const authum_clock_t *clock;
+    /** Path placeholders: standard names and those modules registered. */
+    const authum_placeholder_service_t *placeholders;
 } authum_host_t;
 
 /* --- getters (modules: only these) --------------------------------------- */
 const authum_http_service_t *authum_host_http(const authum_host_t *host);
 const authum_clock_t *authum_host_clock(const authum_host_t *host);
+/** The placeholder service; null on hosts older than ABI 1.3. */
+const authum_placeholder_service_t *authum_host_placeholders(const authum_host_t *host);
 
 
 const authum_threads_t *
