@@ -26,7 +26,8 @@ authum_placeholder_register(const authum_placeholder_service_t *service, const a
 }
 
 authum_bool_t
-authum_placeholder_unregister(const authum_placeholder_service_t *service, const authum_char_t *name)
+authum_placeholder_unregister(const authum_placeholder_service_t *service,
+                              const authum_char_t *name)
 {
     if (!service || !service->ops || !AUTHUM_ABI_HAS(service->ops, unregister_placeholder) || !name)
     {
