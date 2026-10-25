@@ -40,7 +40,7 @@ static const authum_tasks_t *closing_tasks;
 void
 work(void *user)
 {
-    (void)user;
+    authum_unused(user);
     worker_is_main = thread_id() == main_thread;
     while (!atomic_load(&release_work))
     {
@@ -51,14 +51,14 @@ work(void *user)
 void
 complete(void *user)
 {
-    (void)user;
+    authum_unused(user);
     CHECK(thread_id() == main_thread);
     ++completed;
 }
 void
 destroy(void *user)
 {
-    (void)user;
+    authum_unused(user);
     CHECK(thread_id() == main_thread);
     ++destroyed;
     if (closing_tasks)
@@ -103,18 +103,18 @@ sql_work(authum_sql_t *db, void *user)
 authum_bool_t
 sql_bad(authum_sql_t *db, void *user)
 {
-    (void)user;
+    authum_unused(user);
     return authum_sql_exec(db, "SELECT * FROM missing_table");
 }
 authum_bool_t sql_swallowed(authum_sql_t *db, void *user)
 {
-    (void)user;
+    authum_unused(user);
     (void)authum_sql_exec(db, "SELECT * FROM missing_table");
     return authum_sql_exec(db, "SELECT 1");
 }
 authum_bool_t sql_handled(authum_sql_t *db, void *user)
 {
-    (void)user;
+    authum_unused(user);
     (void)authum_sql_exec(db, "SELECT * FROM missing_table");
     authum_sql_clear_errors(db);
     return authum_sql_exec(db, "SELECT 1");

@@ -42,8 +42,8 @@ static authum_i32_t current_user = 100;
 void
 write_log(authum_ptr owner, authum_logger_level_t level, const char *text)
 {
-    (void)owner;
-    (void)level;
+    authum_unused(owner);
+    authum_unused(level);
     if (thread_id() != main_thread)
     {
         atomic_store(&wrong_thread, 1);
@@ -54,8 +54,8 @@ write_log(authum_ptr owner, authum_logger_level_t level, const char *text)
 authum_bool_t
 log_enabled(authum_ptr owner, authum_logger_level_t level)
 {
-    (void)owner;
-    (void)level;
+    authum_unused(owner);
+    authum_unused(level);
     if (thread_id() != main_thread)
     {
         atomic_store(&wrong_thread, 1);
