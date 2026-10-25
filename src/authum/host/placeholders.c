@@ -7,17 +7,17 @@
 #include <string.h>
 
 #if defined(_WIN32)
-#include <direct.h>
+#    include <direct.h>
 #else
-#include <limits.h>
+#    include <limits.h>
 #endif
 
 #ifndef AUTHUM_PLACEHOLDER_PATH_MAX
-#if defined(_WIN32)
-#define AUTHUM_PLACEHOLDER_PATH_MAX 4096
-#else
-#define AUTHUM_PLACEHOLDER_PATH_MAX PATH_MAX
-#endif
+#    if defined(_WIN32)
+#        define AUTHUM_PLACEHOLDER_PATH_MAX 4096
+#    else
+#        define AUTHUM_PLACEHOLDER_PATH_MAX PATH_MAX
+#    endif
 #endif
 
 /** The standard names, indexed by ::authum_placeholder_standard_t. */
@@ -245,7 +245,7 @@ authum_placeholder_expand_impl(authum_ptr owner_ptr, const authum_char_t *templa
 
 static authum_bool_t
 authum_placeholder_register_impl(authum_ptr owner, const authum_char_t *name,
-                                  const authum_char_t *value)
+                                 const authum_char_t *value)
 {
     authum_placeholder_entry_t *entry;
 
@@ -309,10 +309,9 @@ authum_placeholder_unregister_impl(authum_ptr owner, const authum_char_t *name)
     return authum_bool_false;
 }
 
-static const authum_placeholder_ops_t authum_placeholder_ops = {sizeof authum_placeholder_ops,
-                                                                authum_placeholder_expand_impl,
-                                                                authum_placeholder_register_impl,
-                                                                authum_placeholder_unregister_impl};
+static const authum_placeholder_ops_t authum_placeholder_ops = {
+    sizeof authum_placeholder_ops, authum_placeholder_expand_impl, authum_placeholder_register_impl,
+    authum_placeholder_unregister_impl};
 
 void
 authum_placeholder_host_init(authum_placeholder_owner_t *owner,
@@ -359,9 +358,8 @@ authum_placeholder_host_init_env(authum_placeholder_owner_t *owner, const authum
     if (env)
     {
         const authum_path_t *paths[authum_placeholder_standard_count] = {
-            env->game,        env->module,       env->module_data, env->module_config,
-            env->module_lang, env->addons,       env->authum,       env->modules,
-            env->models,      env->sprites};
+            env->game,   env->module, env->module_data, env->module_config, env->module_lang,
+            env->addons, env->authum, env->modules,     env->models,        env->sprites};
         for (authum_usize_t index = 0; index < authum_placeholder_standard_count; ++index)
         {
             standard[index] = authum_placeholder_path_text(paths[index]);

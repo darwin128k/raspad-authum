@@ -44,8 +44,8 @@ typedef struct authum_placeholder_ops
 {
     authum_usize_t size;
     /** Expand @p template into @p out (absolute path). */
-    authum_bool_t (*expand)(authum_ptr owner, const authum_char_t *template,
-                            authum_char_t *out, authum_usize_t out_size);
+    authum_bool_t (*expand)(authum_ptr owner, const authum_char_t *template, authum_char_t *out,
+                            authum_usize_t out_size);
     /** Register @p name for @p owner. Names are unique host-wide. */
     authum_bool_t (*register_placeholder)(authum_ptr owner, const authum_char_t *name,
                                           const authum_char_t *value);
@@ -81,8 +81,8 @@ authum_placeholder_expand(const authum_placeholder_service_t *service,
  * lives until the registering module is unloaded.
  */
 authum_bool_t
-authum_placeholder_register(const authum_placeholder_service_t *service,
-                            const authum_char_t *name, const authum_char_t *value);
+authum_placeholder_register(const authum_placeholder_service_t *service, const authum_char_t *name,
+                            const authum_char_t *value);
 
 /**
  * Remove the name @p owner registered. False when @p owner never registered

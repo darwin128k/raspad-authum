@@ -159,7 +159,8 @@ authum_child_fill_under_game(authum_child_data_t *data)
 /** Bind @p field to the directory holding @p image (an lh path), or leave it null. */
 void
 authum_child_bind_parent(authum_path_t *slot, const authum_path_t **field,
-                         const lh_fs_path_t *image){
+                         const lh_fs_path_t *image)
+{
     lh_fs_path_t parent;
 
     lh_fs_path_init(lh_addr_of(parent));
@@ -263,7 +264,8 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     authum_http_host_init(&data->http_owner, &data->threads, &data->http);
     out->http = &data->http;
     out->clock = authum_clock_host();
-    parent = lh_os_module_get_parent(child);    if (!lh_null_eq(parent))
+    parent = lh_os_module_get_parent(child);
+    if (!lh_null_eq(parent))
     {
         out->engine_funcs =
             (authum_host_get_ptr_fn)lh_os_module_get_sym(parent, "authum_engine_funcs");
