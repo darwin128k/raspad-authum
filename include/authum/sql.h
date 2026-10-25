@@ -68,6 +68,10 @@ authum_bool_t authum_sql_is_open(const authum_sql_t *self);
 authum_bool_t authum_sql_ping(authum_sql_t *self);
 
 const authum_char_t *authum_sql_errmsg(const authum_sql_t *self);
+/** First failure on this open connection since connect/clear, retained across success. */
+const authum_char_t *authum_sql_first_error(const authum_sql_t *self);
+/** Explicitly acknowledge handled failures before continuing a SQL batch. */
+void authum_sql_clear_errors(authum_sql_t *self);
 
 authum_bool_t authum_sql_exec(authum_sql_t *self, const authum_char_t *sql);
 

@@ -24,8 +24,10 @@ struct authum_tasks
 typedef struct authum_tasks authum_tasks_t;
 
 /** Main-thread submission; FIFO worker per module, at most 64 outstanding jobs.
- * work must not call engine, events, logger, commands or sandbox APIs, or share
- * mutable state with the game thread. complete and destroy run on the game
+ * work must not call engine, events, commands or sandbox APIs, or share
+ * mutable state with the game thread. Logger calls require an initialized
+ * authum_logger_buffer capture scope; direct host logging is not thread-safe.
+ * complete and destroy run on the game
  * thread. destroy runs exactly once after completion or cancellation. On false,
  * ownership stays with the caller (destroy is not called).
  * Unload cancels queued callbacks and joins active work BEFORE module stop.

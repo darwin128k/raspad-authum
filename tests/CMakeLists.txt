@@ -44,6 +44,11 @@ target_link_libraries(authum_test_tasks PRIVATE authum_test_host authum_test_che
 add_test(NAME authum_tasks COMMAND authum_test_tasks)
 set_tests_properties(authum_tasks PROPERTIES TIMEOUT 20)
 
+add_executable(authum_test_common common.c)
+target_link_libraries(authum_test_common PRIVATE authum_test_host authum_test_check)
+add_test(NAME authum_common COMMAND authum_test_common)
+set_tests_properties(authum_common PROPERTIES TIMEOUT 20)
+
 # Smoke test of examples/: loads every built example module.
 if (AUTHUM_BUILD_EXAMPLES)
     add_executable(authum_test_examples examples.c)

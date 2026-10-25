@@ -21,6 +21,7 @@
  *
  * Lines below the configured level are dropped before formatting, so
  * ::authum_logger_debug in a hot path costs one call when debug is off.
+ * During a logger-buffer capture scope, filtering is deferred to the game-thread flush.
  *
  * A task that wants its own file (bans, payments, an audit trail) opens a
  * journal with ::authum_logger_open — same calls, its own folder and level.

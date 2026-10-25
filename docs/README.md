@@ -1,5 +1,8 @@
 # Authum docs
 
+Reusable worker logs, client references, SQL error history and address parsing:
+[shared-services.md](shared-services.md).
+
 | Doc | What it covers |
 |-----|----------------|
 | [api/](api/) (generated) | Module ABI reference from `include/authum` ? `cmake --build ? --target authum_api_docs` ? `api/html/index.html` (AMXX `/api` analogue) |
