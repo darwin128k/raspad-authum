@@ -1,26 +1,30 @@
 #include "internal.h"
-#include "picohttpparser.h"
+#include <lh/http/parser.h>
 #include <strings.h>
 
 void
 authum_http_request_read(authum_http_client_t *client, const int *roots,
                          const authum_http_options_t *options)
 {
-    const char *method, *path;
-    size_t method_length, path_length, header_count = 64;
-    int minor_version;
-    struct phr_header headers[64];
-    int parsed = phr_parse_request(client->input, client->used, &method, &method_length, &path,
-                                   &path_length, &minor_version, headers, &header_count, 0);
-    if (parsed == -2 && client->used < sizeof client->input)
+    lh_http_parser_t parser;
+    lh_http_request_t request;
+    lh_http_header_t headers[64];
+    lh_str_view_t input = lh_str_view_initializer(client->input, client->used);
+    lh_http_parser_init(&parser);
+    lh_http_parser_set_limits(&parser, sizeof client->input, sizeof client->input);
+    lh_http_parse_status_t parsed = lh_http_parser_request(&parser, input, &request, headers, 64);
+    if (parsed == lh_http_parse_incomplete && client->used < sizeof client->input)
     {
         return;
     }
-    if (parsed < 0 || (size_t)parsed != client->used || minor_version > 1)
+    if (parsed != lh_http_parse_complete || lh_http_parser_get_consumed(&parser) != client->used ||
+        request.version_minor > 1)
     {
         authum_http_response_set(client, 400, "Bad Request", 0, 1);
         return;
     }
+    const char *method = request.method.begin, *path = request.target.begin;
+    size_t method_length = request.method.size, path_length = request.target.size;
     authum_http_access_token(client->method, sizeof client->method, method, method_length);
     authum_http_access_token(client->path, sizeof client->path, path, path_length);
     int head = method_length == 4 && !memcmp(method, "HEAD", 4);
@@ -29,11 +33,12 @@ authum_http_request_read(authum_http_client_t *client, const int *roots,
         authum_http_response_set(client, 405, "Method Not Allowed", 0, 1);
         return;
     }
-    for (size_t i = 0; i < header_count; i++)
+    for (size_t i = 0; i < request.header_count; i++)
     {
-        if (!headers[i].name ||
-            (headers[i].name_len == 17 && !strncasecmp(headers[i].name, "Transfer-Encoding", 17)) ||
-            (headers[i].name_len == 14 && !strncasecmp(headers[i].name, "Content-Length", 14)))
+        if ((headers[i].name.size == 17 &&
+             !strncasecmp(headers[i].name.begin, "Transfer-Encoding", 17)) ||
+            (headers[i].name.size == 14 &&
+             !strncasecmp(headers[i].name.begin, "Content-Length", 14)))
         {
             authum_http_response_set(client, 400, "Bad Request", 0, 1);
             return;
