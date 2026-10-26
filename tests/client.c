@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 
 void
 test_cstr(void)
@@ -451,6 +452,7 @@ test_env_paths(void)
 {
     authum_path_t root, module, module_config, module_data, out;
     authum_env_t env;
+    struct stat info;
 
     authum_path_set_cstr(&root, TEST_ENV_ROOT);
     authum_path_join(&module, &root, "foo");
@@ -472,9 +474,14 @@ test_env_paths(void)
     test_env_touch(TEST_ENV_ROOT "/foo/configs/foo.cfg", "x\n");
     CHECK(authum_env_config_path(&env, "foo.cfg", &out));
 
-    /* data/<leaf>: the folder is made, the file is the module's business. */
+    remove(TEST_ENV_ROOT "/foo/data/foo.db");
+    remove(TEST_ENV_ROOT "/foo/data");
+    CHECK(stat(TEST_ENV_ROOT "/foo/data", &info) != 0);
+    /* Constructing a path for a read must not create the directory. */
     CHECK(authum_env_data_path(&env, "foo.db", &out));
     CHECK_STR(authum_path_as_cstr(&out), TEST_ENV_ROOT "/foo/data/foo.db");
+    CHECK(stat(TEST_ENV_ROOT "/foo/data", &info) != 0);
+    CHECK(authum_path_ensure_dir(&module_data));
     test_env_touch(TEST_ENV_ROOT "/foo/data/foo.db", "db\n");
     CHECK(test_env_exists(TEST_ENV_ROOT "/foo/data/foo.db"));
 

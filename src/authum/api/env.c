@@ -104,6 +104,5 @@ authum_env_data_path(const authum_env_t *env, const authum_char_t *leaf, authum_
     {
         return authum_bool_false;
     }
-    (void)authum_path_ensure_dir(data);
     return authum_path_join(out, data, leaf);
 }

@@ -214,11 +214,7 @@ authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
     authum_child_bind_join(&paths->module_config, &env->module_config, env->module, "configs");
     authum_child_bind_join(&paths->module_lang, &env->module_lang, env->module, "lang");
     authum_child_bind_join(&paths->module_data, &env->module_data, env->module, "data");
-    /* What the module writes always has a place; configs are the admin's. */
-    if (!lh_null_eq(env->module_data))
-    {
-        (void)authum_path_ensure_dir(env->module_data);
-    }
+    /* Roots describe locations; writers create directories when needed. */
 }
 
 /* Implemented in crypto.c / engine_server.cpp (linked into authum). */

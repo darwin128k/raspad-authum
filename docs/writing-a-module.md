@@ -90,7 +90,7 @@ cstrike/addons/authum/
     example.so
     configs/example.cfg        # optional, the admin's
     lang/                      # translations
-    data/                      # what the module writes (created at load)
+    data/                      # created by the module when writing data
     logs/                      # the module's log
 ```
 
@@ -100,7 +100,7 @@ cstrike/addons/authum/
 
 Paths: `authum_host_config_path(host, "example.cfg", &path)` →
 `modules/example/configs/example.cfg`; `authum_host_data_path(host,
-"example.db", &path)` → `modules/example/data/example.db` (folder created);
+"example.db", &path)` → `modules/example/data/example.db` (path only);
 translations in `authum_host_env_module_lang(host)`.
 
 ---

@@ -24,6 +24,12 @@ Headers: `<authum/path.h>`, `<authum/env.h>`, `<authum/host.h>`.
 
 Always via `authum_host_*` — never `host->env->…`.
 
+Environment paths describe locations; filling the environment does not create
+`data`. Reading an optional file must not create its directory. Before writing,
+the module calls `authum_path_ensure_dir` for the required parent. This delegates
+to LH's filesystem API. Existing data is preserved; unused directories are not
+removed automatically. Parent directories above the requested directory must exist.
+
 Paths are absolute when the host can walk from the module image (native
 separators). If that fails, engine game-dir fallback may still fill `game`.
 
