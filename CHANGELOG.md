@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- HTTP request parsing now uses LH's portable parser; removed PicoHTTPParser.
+  The public module API remains unchanged.
+
 - `log_level=off` now disables every destination and the module's journals;
   use `log_file=off` to disable only the private file. The default retention
   and shipped configuration are 10 days; explicitly configured values are preserved.

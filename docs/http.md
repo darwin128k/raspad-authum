@@ -90,7 +90,7 @@ The host/http directory contains:
 
 Application state and public boundaries use Authum types. Native types remain
 at real OS/libc/parser boundaries (descriptors, off_t, poll and size_t). The SDK
-only dispatches host tables; HTTP implementation and picohttpparser are linked
+only dispatches host tables; HTTP implementation uses LH's own message-head parser, linked
 once into authum.so.
 
 Tests cover constructors, invalid options, owner isolation, clock behavior,
@@ -98,3 +98,7 @@ real responses, fragmented requests, 100 invalid-path cases, limits, partial
 transfers, resets/SIGPIPE, access-log overflow and shutdown with active clients.
 ASan/UBSan and formatting checks are available. These are not a production
 security audit or provider-level DDoS filtering; memory/network remain shared.
+
+The LH head parser requires CRLF line endings and rejects folded headers.
+Parsing itself performs no I/O or allocation; the host worker retains socket and
+file ownership. The public Authum HTTP ABI is unchanged.
