@@ -23,6 +23,7 @@
  *
  * Lines below the configured level are dropped before formatting, so
  * ::authum_logger_debug in a hot path costs one call when debug is off.
+ * During a logger-buffer capture scope, filtering is deferred to the game-thread flush.
  *
  * A task that wants its own file (bans, payments, an audit trail) opens a
  * journal with ::authum_logger_open — same calls, its own folder and level.
@@ -85,7 +86,7 @@ authum_bool_t
 authum_logger_open(authum_logger_t *self, const authum_host_t *host, const authum_char_t *name);
 
 /** Construct a special logger; defaults stay overridable by configuration.
- * False on hosts predating ABI 1.3; no silent format fallback. */
+ * False when the host lacks the ABI 1.4 constructor; no silent format fallback. */
 authum_bool_t
 authum_logger_create(authum_logger_t *self, const authum_host_t *host,
                      const authum_logger_options_t *options);

@@ -1,5 +1,8 @@
 # Authum docs
 
+Reusable worker logs, client references, SQL error history and address parsing:
+[shared-services.md](shared-services.md).
+
 | Doc | What it covers |
 |-----|----------------|
 | [api/](api/) (generated) | Module ABI reference from `include/authum` ? `cmake --build ? --target authum_api_docs` ? `api/html/index.html` (AMXX `/api` analogue) |
@@ -23,3 +26,5 @@ SQL handles, worker queries, callbacks and connection recovery: [sql.md](sql.md)
 Managed long-lived workers: [threads.md](threads.md) (module ABI 1.1).
 
 Shared HTTP service and monotonic clocks: [http.md](http.md) (module ABI 1.2).
+
+Path placeholders: standard names and per-module registrations: [placeholders.md](placeholders.md) (module ABI 1.3).

@@ -27,8 +27,10 @@
 #include <authum/extern.h>
 #include <authum/float.h>
 #include <authum/host.h>
+#include <authum/client/ref.h>
 #include <authum/json.h>
 #include <authum/logger.h>
+#include <authum/logger/buffer.h>
 #include <authum/module/api.h>
 #include <authum/module/info.h>
 #include <authum/net.h>
