@@ -148,7 +148,7 @@ authum_host_env_module_data(const authum_host_t *host);
 authum_bool_t
 authum_host_config_path(const authum_host_t *host, const authum_char_t *leaf, authum_path_t *out);
 
-/** `modules/<module>/data/<leaf>`, folder created — see ::authum_env_data_path. */
+/** `modules/<module>/data/<leaf>`, path only — see ::authum_env_data_path. */
 authum_bool_t
 authum_host_data_path(const authum_host_t *host, const authum_char_t *leaf, authum_path_t *out);
 

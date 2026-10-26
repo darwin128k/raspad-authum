@@ -61,7 +61,7 @@ struct authum_env
     const authum_path_t *module;        /**< `modules/<module>`: this module's folder. */
     const authum_path_t *module_config; /**< `modules/<module>/configs`. */
     const authum_path_t *module_lang;   /**< `modules/<module>/lang`. */
-    const authum_path_t *module_data;   /**< `modules/<module>/data` (created at load). */
+    const authum_path_t *module_data;   /**< `modules/<module>/data` (location only). */
 };
 typedef struct authum_env authum_env_t;
 
@@ -103,8 +103,8 @@ authum_bool_t
 authum_env_config_path(const authum_env_t *env, const authum_char_t *leaf, authum_path_t *out);
 
 /**
- * `modules/<module>/data/<leaf>` into @p out, the folder created. True when
- * the path could be built (the file itself may not exist yet).
+ * `modules/<module>/data/<leaf>` into @p out without filesystem changes.
+ * True when the path could be built; directories and files may not exist.
  */
 authum_bool_t
 authum_env_data_path(const authum_env_t *env, const authum_char_t *leaf, authum_path_t *out);
