@@ -640,6 +640,7 @@ main(void)
     authum_path_set_cstr(&root, TEST_ROOT);
     authum_path_ensure_dir(&root);
     remove(TEST_ROOT "/modules/stats/data/stats.db");
+    remove(TEST_ROOT "/modules/stats/data");
     remove(TEST_ROOT "/modules/settings/configs/settings.cfg");
     CHECK(authum_logs_init(TEST_ROOT, authum_null));
 
