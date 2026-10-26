@@ -6,6 +6,32 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Private storage: keep the public SQL handle layout unchanged. */
+struct authum_sql_db_impl
+{
+    lh_sql_db_t db;
+    authum_char_t first_error[authum_sql_errmsg_max];
+};
+
+const authum_char_t *
+authum_sql_first_error(const authum_sql_t *self)
+{
+    if (!self) return "";
+    return self->db ? ((const struct authum_sql_db_impl *)self->db)->first_error : self->errmsg;
+}
+
+void authum_sql_clear_errors(authum_sql_t *self)
+{
+    if (!self) return;
+    self->errmsg[0] = '\0';
+    if (self->db)
+    {
+        struct authum_sql_db_impl *impl = self->db;
+        impl->first_error[0] = '\0';
+        lh_sql_db_clear_error(&impl->db);
+    }
+}
+
 /* What authum_sql_stmt_t::stmt points at: the lh statement, and a NUL-terminated
    copy of each text column read from the current row (lh hands out views). */
 struct authum_sql_stmt_impl
@@ -41,6 +67,11 @@ authum_sql_set_errmsg(authum_sql_t *self, lh_str_view_t text)
 		memcpy(self->errmsg, lh_str_view_get_data(&text), n);
 	}
 	self->errmsg[n] = '\0';
+    if (n && self->db)
+    {
+        struct authum_sql_db_impl *impl = self->db;
+        if (!impl->first_error[0]) memcpy(impl->first_error, self->errmsg, n + 1);
+    }
 }
 
 /* The connection's last message (empty after a success) into errmsg. */
@@ -57,6 +88,12 @@ authum_sql_view(const authum_char_t *text)
 
 	lh_str_view_init(&view, authum_null_eq(text) ? "" : text);
 	return view;
+}
+
+static authum_bool_t authum_sql_fail(authum_sql_t *self, const authum_char_t *message)
+{
+    if (self) authum_sql_set_errmsg(self, authum_sql_view(message));
+    return authum_bool_false;
 }
 
 /* Forget the column copies of the row a step is about to leave. */
@@ -95,7 +132,7 @@ authum_sql_begin_open(authum_sql_t *self, authum_sql_driver_t driver)
 	authum_sql_close(self);
 	authum_sql_init(self);
 	self->driver = driver;
-	db = (lh_sql_db_t *)calloc(1u, sizeof *db);
+	db = (lh_sql_db_t *)calloc(1u, sizeof(struct authum_sql_db_impl));
 	if (authum_null_eq(db))
 	{
 		authum_sql_set_errmsg(self, lh_str_view_lit("out of memory"));
@@ -211,7 +248,7 @@ authum_sql_exec(authum_sql_t *self, const authum_char_t *sql)
 
 	if (!authum_sql_is_open(self) || authum_null_eq(sql))
 	{
-		return authum_bool_false;
+		return authum_sql_fail(self, "database is not open or SQL text is missing");
 	}
 	ok = lh_sql_db_exec(authum_sql_get_db(self), authum_sql_view(sql));
 	authum_sql_sync_errmsg(self);
@@ -299,23 +336,27 @@ authum_sql_stmt_bind_i32(authum_sql_stmt_t *stmt, authum_i32_t index, authum_i32
 authum_bool_t
 authum_sql_stmt_bind_i64(authum_sql_stmt_t *stmt, authum_i32_t index, authum_i64_t value)
 {
-	lh_sql_stmt_t *native = authum_sql_stmt_for_bind(stmt, index);
-
-	return (!authum_null_eq(native) &&
-		lh_sql_stmt_bind_sint(native, (lh_usize_t)index, (lh_sllong_t)value))
-		       ? authum_bool_true
-		       : authum_bool_false;
+    lh_sql_stmt_t *native = authum_sql_stmt_for_bind(stmt, index);
+    authum_bool_t ok = native && lh_sql_stmt_bind_sint(native, (lh_usize_t)index, (lh_sllong_t)value);
+    if (!ok && stmt && stmt->sql)
+    {
+        if (stmt->sql->db) authum_sql_sync_errmsg(stmt->sql);
+        if (!authum_sql_errmsg(stmt->sql)[0]) authum_sql_fail(stmt->sql, "SQL parameter bind failed");
+    }
+    return ok;
 }
 
 authum_bool_t
 authum_sql_stmt_bind_cstr(authum_sql_stmt_t *stmt, authum_i32_t index, const authum_char_t *text)
 {
-	lh_sql_stmt_t *native = authum_sql_stmt_for_bind(stmt, index);
-
-	return (!authum_null_eq(native) &&
-		lh_sql_stmt_bind_str(native, (lh_usize_t)index, authum_sql_view(text)))
-		       ? authum_bool_true
-		       : authum_bool_false;
+    lh_sql_stmt_t *native = authum_sql_stmt_for_bind(stmt, index);
+    authum_bool_t ok = native && lh_sql_stmt_bind_str(native, (lh_usize_t)index, authum_sql_view(text));
+    if (!ok && stmt && stmt->sql)
+    {
+        if (stmt->sql->db) authum_sql_sync_errmsg(stmt->sql);
+        if (!authum_sql_errmsg(stmt->sql)[0]) authum_sql_fail(stmt->sql, "SQL parameter bind failed");
+    }
+    return ok;
 }
 
 /* One step, column copies of the old row dropped, errmsg kept current. */

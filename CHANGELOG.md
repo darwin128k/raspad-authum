@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Automatic-channel `authum_host_log_*` conveniences and ABI 1.3
+- Automatic-channel `authum_host_log_*` conveniences and ABI 1.4
   `authum_logger_create` for named sandbox journals with host-owned standard
   or raw formatting. Existing logger handles and older host tables remain supported.
 - Module-local logging preferences from `configs/<module>.cfg`, inherited

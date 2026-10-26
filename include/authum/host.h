@@ -31,6 +31,7 @@
 #include <authum/thread.h>
 #include <authum/http.h>
 #include <authum/clock.h>
+#include <authum/placeholders.h>
 
 AUTHUM_EXTERN_C_BEGIN
 
@@ -78,12 +79,18 @@ typedef struct authum_host
     const authum_threads_t *threads;
     const authum_http_service_t *http;
     const authum_clock_t *clock;
+    /** Path placeholders: standard names and those modules registered. */
+    const authum_placeholder_service_t *placeholders;
 } authum_host_t;
 
 /* --- getters (modules: only these) --------------------------------------- */
-const authum_http_service_t *authum_host_http(const authum_host_t *host);
-const authum_clock_t *authum_host_clock(const authum_host_t *host);
-
+const authum_http_service_t *
+authum_host_http(const authum_host_t *host);
+const authum_clock_t *
+authum_host_clock(const authum_host_t *host);
+/** The placeholder service; null on hosts older than ABI 1.3. */
+const authum_placeholder_service_t *
+authum_host_placeholders(const authum_host_t *host);
 
 const authum_threads_t *
 authum_host_threads(const authum_host_t *host);
@@ -139,8 +146,7 @@ authum_host_env_module_data(const authum_host_t *host);
 
 /** `modules/<module>/configs/<leaf>` — see ::authum_env_config_path. True when it exists. */
 authum_bool_t
-authum_host_config_path(const authum_host_t *host, const authum_char_t *leaf,
-                        authum_path_t *out);
+authum_host_config_path(const authum_host_t *host, const authum_char_t *leaf, authum_path_t *out);
 
 /** `modules/<module>/data/<leaf>`, folder created — see ::authum_env_data_path. */
 authum_bool_t
@@ -190,8 +196,7 @@ authum_host_copy(authum_host_t *dst, const authum_host_t *src);
 /* --- engine ops via host (no `host->engine` at call sites) ---------------- */
 
 void
-authum_host_get_game_dir(const authum_host_t *host, authum_char_t *buf,
-                         authum_usize_t buf_size);
+authum_host_get_game_dir(const authum_host_t *host, authum_char_t *buf, authum_usize_t buf_size);
 
 void
 authum_host_server_print(const authum_host_t *host, const authum_char_t *text);
@@ -212,8 +217,7 @@ authum_float_t
 authum_host_game_time(const authum_host_t *host);
 
 void
-authum_host_get_map_name(const authum_host_t *host, authum_char_t *buf,
-                         authum_usize_t buf_size);
+authum_host_get_map_name(const authum_host_t *host, authum_char_t *buf, authum_usize_t buf_size);
 
 authum_bool_t
 authum_host_cvar_get(const authum_host_t *host, const authum_char_t *name, authum_char_t *buf,
@@ -237,33 +241,31 @@ authum_host_client_get_name(const authum_host_t *host, authum_i32_t index, authu
                             authum_usize_t buf_size);
 
 authum_bool_t
-authum_host_client_get_auth_id(const authum_host_t *host, authum_i32_t index,
-                               authum_char_t *buf, authum_usize_t buf_size);
+authum_host_client_get_auth_id(const authum_host_t *host, authum_i32_t index, authum_char_t *buf,
+                               authum_usize_t buf_size);
 
 authum_bool_t
-authum_host_client_get_address(const authum_host_t *host, authum_i32_t index,
-                               authum_char_t *buf, authum_usize_t buf_size);
+authum_host_client_get_address(const authum_host_t *host, authum_i32_t index, authum_char_t *buf,
+                               authum_usize_t buf_size);
 
 authum_bool_t
-authum_host_client_get_info(const authum_host_t *host, authum_i32_t index,
-                            const authum_char_t *key, authum_char_t *buf,
-                            authum_usize_t buf_size);
+authum_host_client_get_info(const authum_host_t *host, authum_i32_t index, const authum_char_t *key,
+                            authum_char_t *buf, authum_usize_t buf_size);
 
 authum_bool_t
 authum_host_client_print(const authum_host_t *host, authum_i32_t index, authum_i32_t kind,
                          const authum_char_t *text);
 
 authum_bool_t
-authum_host_client_command(const authum_host_t *host, authum_i32_t index,
-                           const authum_char_t *cmd);
+authum_host_client_command(const authum_host_t *host, authum_i32_t index, const authum_char_t *cmd);
 
 authum_bool_t
 authum_host_client_get_stats(const authum_host_t *host, authum_i32_t index, authum_i32_t *ping,
                              authum_i32_t *loss);
 
 authum_bool_t
-authum_host_client_set_info(const authum_host_t *host, authum_i32_t index,
-                            const authum_char_t *key, const authum_char_t *value);
+authum_host_client_set_info(const authum_host_t *host, authum_i32_t index, const authum_char_t *key,
+                            const authum_char_t *value);
 
 authum_bool_t
 authum_host_client_chat(const authum_host_t *host, authum_i32_t index, authum_i32_t sender,
@@ -331,8 +333,8 @@ authum_bool_t
 authum_host_entity_is_valid(const authum_host_t *host, authum_i32_t index);
 
 authum_bool_t
-authum_host_entity_get_classname(const authum_host_t *host, authum_i32_t index,
-                                 authum_char_t *buf, authum_usize_t buf_size);
+authum_host_entity_get_classname(const authum_host_t *host, authum_i32_t index, authum_char_t *buf,
+                                 authum_usize_t buf_size);
 
 authum_i32_t
 authum_host_entity_find_by_classname(const authum_host_t *host, authum_i32_t start,
