@@ -14,6 +14,8 @@ add_library(authum_test_host STATIC
         "${CMAKE_SOURCE_DIR}/src/authum/host/events.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/commands.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/logs.c"
+        "${CMAKE_SOURCE_DIR}/src/authum/host/tasks.c"
+        "${CMAKE_SOURCE_DIR}/src/authum/host/threads.c"
 )
 target_include_directories(authum_test_host PUBLIC "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/src")
 target_link_libraries(authum_test_host PUBLIC lh authum_client)
@@ -37,6 +39,16 @@ add_test(NAME authum_timers COMMAND authum_test_timers)
 add_executable(authum_test_logs logs.c)
 target_link_libraries(authum_test_logs PRIVATE authum_test_host authum_test_check)
 add_test(NAME authum_logs COMMAND authum_test_logs)
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/logs_environment")
+add_test(NAME authum_logs_environment COMMAND authum_test_logs --environment-off)
+set_tests_properties(authum_logs_environment PROPERTIES
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/logs_environment"
+        ENVIRONMENT "AUTHUM_LOG_LEVEL=off")
+
+add_executable(authum_test_tasks tasks.c)
+target_link_libraries(authum_test_tasks PRIVATE authum_test_host authum_test_check)
+add_test(NAME authum_tasks COMMAND authum_test_tasks)
+set_tests_properties(authum_tasks PROPERTIES TIMEOUT 20)
 
 # Smoke test of examples/: loads every built example module.
 if (AUTHUM_BUILD_EXAMPLES)
@@ -50,3 +62,33 @@ if (AUTHUM_BUILD_EXAMPLES)
             stats scores scoreboard deathnotice announcer)
     add_test(NAME authum_examples COMMAND authum_test_examples)
 endif ()
+
+if(NOT WIN32)
+    add_executable(authum_test_threads threads.c)
+    target_link_libraries(authum_test_threads PRIVATE authum_test_host authum_test_check)
+    add_test(NAME authum_threads COMMAND authum_test_threads)
+    set_tests_properties(authum_threads PROPERTIES TIMEOUT 10)
+endif()
+
+# Exercise the same HTTP implementation linked into the host image.
+target_sources(authum_test_host PRIVATE "${CMAKE_SOURCE_DIR}/src/authum/host/clock.c")
+if(NOT WIN32)
+    file(GLOB AUTHUM_HTTP_TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/authum/host/http/*.c")
+    target_sources(authum_test_host PRIVATE ${AUTHUM_HTTP_TEST_SOURCES} "${CMAKE_SOURCE_DIR}/lib/picohttpparser/picohttpparser.c")
+    target_include_directories(authum_test_host PRIVATE "${CMAKE_SOURCE_DIR}/lib/picohttpparser")
+    add_executable(authum_test_http http.c)
+    target_link_libraries(authum_test_http PRIVATE authum_test_host authum_test_check)
+    add_test(NAME authum_http COMMAND authum_test_http)
+    set_tests_properties(authum_http PROPERTIES TIMEOUT 10)
+endif()
+
+file(GLOB AUTHUM_LOG_WRITER_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/authum/host/logs/*.c")
+target_sources(authum_test_host PRIVATE ${AUTHUM_LOG_WRITER_SOURCES})
+
+if(NOT WIN32)
+    add_executable(authum_test_log_writer log_writer.c)
+    target_compile_options(authum_test_log_writer PRIVATE -UNDEBUG)
+    target_link_libraries(authum_test_log_writer PRIVATE authum_test_host)
+    add_test(NAME authum_log_writer COMMAND authum_test_log_writer)
+    set_tests_properties(authum_log_writer PROPERTIES TIMEOUT 15)
+endif()

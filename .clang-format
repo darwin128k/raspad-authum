@@ -2,7 +2,7 @@
 AllowShortEnumsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: None
 BreakBeforeBraces: Allman
-BreakAfterReturnType: All
+AlwaysBreakAfterReturnType: All
 ColumnLimit: 100
 InsertBraces: true
 IndentPPDirectives: AfterHash
@@ -11,3 +11,8 @@ IndentWidth: 4
 TabWidth: 4
 UseTab: Never
 SortIncludes: false
+
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+SeparateDefinitionBlocks: Always

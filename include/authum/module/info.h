@@ -22,7 +22,7 @@ AUTHUM_EXTERN_C_BEGIN
 
 /**
  * @def AUTHUM_MODULE_ABI
- * @brief Loader ABI (`1.0.0`) — lh-free module API (`authum_module_api`).
+ * @brief Loader ABI (`1.3.0`) — lh-free module API (`authum_module_api`).
  *
  * 1.0: every host table starts with `size` and only grows at the end
  * (<authum/abi.h>), so a module loads on any 1.x host; the engine facade
@@ -30,7 +30,7 @@ AUTHUM_EXTERN_C_BEGIN
  * major bump removes or changes one. Checked with
  * ::authum_version_is_abi_compatible.
  */
-#define AUTHUM_MODULE_ABI AUTHUM_VERSION(1, 0, 0)
+#define AUTHUM_MODULE_ABI AUTHUM_VERSION(1, 3, 0)
 
 struct authum_module_info
 {
