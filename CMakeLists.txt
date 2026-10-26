@@ -153,6 +153,13 @@ file(GLOB_RECURSE AUTHUM_HOST_SOURCES CONFIGURE_DEPENDS
         "${CMAKE_SOURCE_DIR}/src/authum/host/*.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/*.cpp"
 )
+# HTTP is host-owned. SDK clients contain only table dispatchers.
+if(WIN32)
+    list(FILTER AUTHUM_HOST_SOURCES EXCLUDE REGEX "/host/http/")
+else()
+    list(FILTER AUTHUM_HOST_SOURCES EXCLUDE REGEX "/host/http_windows.c$")
+    list(APPEND AUTHUM_HOST_SOURCES "${CMAKE_SOURCE_DIR}/lib/picohttpparser/picohttpparser.c")
+endif()
 # The entry layer: Authum as the HLDS game library (src/authum/gamedll/).
 file(GLOB AUTHUM_GAMEDLL_SOURCES CONFIGURE_DEPENDS
         "${CMAKE_SOURCE_DIR}/src/authum/gamedll/*.cpp"
@@ -174,7 +181,7 @@ add_subdirectory(client)
 function (authum_configure_image target)
     set_target_properties(${target} PROPERTIES PREFIX "" CXX_EXTENSIONS ON)
     # include/ is the module API; src/ adds the host's own headers (<authum/host/…>).
-    target_include_directories(${target} PRIVATE "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/src")
+    target_include_directories(${target} PRIVATE "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/src" "${CMAKE_SOURCE_DIR}/lib/picohttpparser")
     target_link_libraries(${target} PRIVATE hlsdk authum_client)
     authum_link_lh(${target})
     if (WIN32)

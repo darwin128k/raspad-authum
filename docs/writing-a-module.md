@@ -187,12 +187,18 @@ private utilities. Not the host runtime.
 
 ## 4. Logging
 
-Use **`authum_logger_t`** (`<authum/logger.h>`): `authum_logger_init(&log,
-&g_host)` in `start`, then `authum_logger_info` / `_warning` / `_debug` / ….
-The module only picks the level; Authum writes `modules/<module>/logs/YYYY-MM-DD.log`
-and copies warnings and errors to its own log, as `authum.cfg` says. No
-logging keys in the module's cfg, no files of its own, no console prints for
-diagnostics. Details: [logging.md](logging.md).
+Include `<authum/logger.h>` and call `authum_host_log_info(&g_host, "loaded %u bans",
+count)` (or `_warning`, `_error`, `_debug`). The host supplies a module channel
+automatically. Existing `authum_logger_init` / `authum_logger_info` handles work too.
+Files stay in the module's sandbox, `logs/YYYY-MM-DD.log`; modules never open
+diagnostic files or create logging threads themselves.
+
+The module's `configs/<module>.cfg` can set `log_level`, `log_keep_days`,
+`log_console`, `log_host`, `log_file` and `log_format`. Global defaults are
+inherited; explicit `<module>.log_*` entries in `configs/authum.cfg` override
+the module's preferences. Named journals use `<journal>.log_*` locally and
+`<module>.<journal>.log_*` in the host config. `log_level=off` disables all
+destinations, including journals. Details and construction: [logging.md](logging.md).
 
 ---
 

@@ -2,6 +2,14 @@
  * @file logs.h
  * @brief Host side of the log channels — implemented in `authum` only.
  *
+ * Channel registry and console callbacks belong to the host/game thread.
+ * File writes, rotation, flushing and retention run on one managed worker.
+ * File queue: 1024 owned records, at most 1023 text bytes per record. On full,
+ * drop newest and report loss from the worker. Disk stalls never block submit.
+ * Formatting and console mirroring remain on the caller thread. Workers use
+ * logger buffers and deliver them through the task completion as before.
+ * Errors flush when the worker handles them; process crashes can lose queued lines.
+ *
  * One registry of channels: the host's own (`authum`, owner null), writing
  * `<root>/logs/YYYY-MM-DD.log`, and one per loaded module, writing
  * `modules/<module>/logs/YYYY-MM-DD.log` (a new file when the date changes). Levels come from
@@ -18,8 +26,10 @@
  * A module may also open named journals: `modules/<module>/logs/<name>/YYYY-MM-DD.log`.
  * The file is re-read on every map change (::authum_logs_reload).
  *
- * A module's warnings and worse are copied into the `authum` channel, tagged
- * `[module]`, so one file shows every problem on the server.
+ * Module configs/<module>.cfg inherits those defaults. Explicit prefixed keys
+ * in authum.cfg override local settings. All log_* keys can be set per module
+ * and per journal; see docs/logging.md. log_level=off disables every destination.
+ * Warnings and worse copy to the host by default; log_host changes that threshold.
  */
 
 #ifndef AUTHUM_HOST_LOGS_H
@@ -80,12 +90,9 @@ authum_logs_is_enabled(authum_ptr owner, authum_logger_level_t level);
 void
 authum_logs_reload(void);
 
-/**
- * Put buffered lines on disk. Lines are buffered (errors and worse are
- * flushed at once); the host calls this every server frame.
- */
-void
-authum_logs_flush(void);
+/** Blocking file visibility barrier for tests/admin, never a game frame. */
+authum_bool_t
+authum_logs_sync(authum_u32_t timeout_ms);
 
 /** Journal @p name of module @p owner; see ::authum_logger_ops_t.open. */
 authum_ptr

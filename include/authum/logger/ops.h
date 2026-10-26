@@ -14,6 +14,7 @@
 #include <authum/char.h>
 #include <authum/extern.h>
 #include <authum/logger/level.h>
+#include <authum/logger/options.h>
 #include <authum/ptr.h>
 #include <authum/size.h>
 
@@ -34,6 +35,8 @@ struct authum_logger_ops
     authum_ptr (*open)(authum_ptr owner, const authum_char_t *name);
     /** Close a journal from `open` (each open needs one close). */
     void (*close)(authum_ptr journal);
+    /** ABI 1.3: construct a named logger with host-owned formatting defaults. */
+    authum_ptr (*construct)(authum_ptr owner, const authum_logger_options_t *options);
 };
 typedef struct authum_logger_ops authum_logger_ops_t;
 

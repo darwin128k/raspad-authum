@@ -9,14 +9,19 @@
 
 #include <authum/cstr.h>
 #include <authum/host.h>
+#include <authum/host/clock.h>
 #include <authum/logger.h>
 #include <authum/host/logs.h>
 #include <authum/path.h>
 #include <authum/unused.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#if defined(_WIN32)
+#    include <windows.h>
+#endif
 
 #define TEST_ROOT "authum_logs_test_root"
 
@@ -112,7 +117,7 @@ test_on_disk(const char *dir, time_t when, const char *needle)
 authum_bool_t
 test_file_contains(const char *dir, time_t when, const char *needle)
 {
-    authum_logs_flush();
+    CHECK(authum_logs_sync(5000));
     return test_on_disk(dir, when, needle);
 }
 
@@ -134,7 +139,7 @@ test_file_exists(const char *dir, time_t when)
 {
     authum_char_t path[256];
 
-    authum_logs_flush();
+    CHECK(authum_logs_sync(5000));
     test_log_path(path, sizeof path, dir, when);
     return test_exists(path);
 }
@@ -227,14 +232,12 @@ test_routing(void)
     CHECK(test_file_contains("authum", TEST_DAY_ONE, "[warning] [hello] hello warning line"));
     CHECK(g_test_mirrored == 0);
 
-    /* `off` keeps the module's own file away, but its errors still reach
-     * authum.log and the console. */
+    /* `off` disables the source in every destination, including errors. */
     authum_logs_write(&g_test_quiet, authum_logger_level_error, "quiet error line");
     CHECK(!test_file_exists("quiet", TEST_DAY_ONE));
-    CHECK(test_file_contains("authum", TEST_DAY_ONE, "[error] [quiet] quiet error line"));
-    CHECK(g_test_mirrored == 1);
-    CHECK_STR(g_test_mirror_name, "quiet");
-    CHECK_STR(g_test_mirror_text, "quiet error line");
+    CHECK(!test_file_contains("authum", TEST_DAY_ONE, "quiet error line"));
+    CHECK(g_test_mirrored == 0);
+    CHECK(!authum_logs_is_enabled(&g_test_quiet, authum_logger_level_error));
 
     /* The host's own lines (owner null). */
     authum_logs_write(authum_null, authum_logger_level_info, "host info line");
@@ -257,7 +260,7 @@ test_routing(void)
     authum_logs_deinit();
 }
 
-/* Lines wait in the buffer until a flush; an error goes out at once. */
+/* Barriers publish accepted records; shutdown drains pending records. */
 void
 test_buffering(void)
 {
@@ -266,19 +269,80 @@ test_buffering(void)
     CHECK(authum_logs_open(&g_test_qproto, "qproto", authum_null));
 
     authum_logs_write(&g_test_qproto, authum_logger_level_info, "buffered line");
-    CHECK(!test_on_disk("qproto", TEST_DAY_ONE, "buffered line"));
+
     authum_logs_write(&g_test_qproto, authum_logger_level_error, "urgent line");
+    CHECK(authum_logs_sync(5000));
     CHECK(test_on_disk("qproto", TEST_DAY_ONE, "urgent line"));
     CHECK(test_on_disk("qproto", TEST_DAY_ONE, "buffered line")); /* went out with it */
 
     authum_logs_write(&g_test_qproto, authum_logger_level_info, "flushed line");
-    CHECK(!test_on_disk("qproto", TEST_DAY_ONE, "flushed line"));
-    authum_logs_flush();
+
+    CHECK(authum_logs_sync(5000));
     CHECK(test_on_disk("qproto", TEST_DAY_ONE, "flushed line"));
 
     authum_logs_write(&g_test_qproto, authum_logger_level_info, "closed line");
     authum_logs_deinit(); /* closing writes what is left */
     CHECK(test_on_disk("qproto", TEST_DAY_ONE, "closed line"));
+}
+
+/* Flush must progress without game frames, barriers, channel close or shutdown. */
+void
+test_periodic_flush(void)
+{
+    CHECK(authum_logs_init(TEST_ROOT, authum_null));
+    authum_logs_set_clock(test_clock);
+    CHECK(authum_logs_open(&g_test_qproto, "qproto", authum_null));
+    authum_char_t previous[256];
+    test_log_path(previous, sizeof previous, "qproto", TEST_DAY_ONE);
+    remove(previous);
+    authum_logs_write(&g_test_qproto, authum_logger_level_info, "automatic flush line");
+    authum_i64_t start = authum_clock_monotonic_ms(authum_clock_host());
+    while (!test_on_disk("qproto", TEST_DAY_ONE, "automatic flush line") &&
+           authum_clock_monotonic_ms(authum_clock_host()) - start < 5000)
+    {
+#if defined(_WIN32)
+        Sleep(10);
+#else
+        struct timespec delay = {0, 10000000};
+        nanosleep(&delay, NULL);
+#endif
+    }
+    CHECK(test_on_disk("qproto", TEST_DAY_ONE, "automatic flush line"));
+    authum_logs_deinit();
+}
+
+/* More journals than open file slots: eviction must flush and reopening appends. */
+void
+test_file_cache(void)
+{
+    CHECK(authum_logs_init(TEST_ROOT, authum_null));
+    authum_logs_set_clock(test_clock);
+    CHECK(authum_logs_open(&g_test_qproto, "qproto", authum_null));
+    for (authum_u32_t round = 0; round < 2; ++round)
+    {
+        for (authum_u32_t index = 0; index < 40; ++index)
+        {
+            authum_char_t name[32];
+            snprintf(name, sizeof name, "async_cache_%u", (unsigned)index);
+            authum_ptr journal = authum_logs_open_journal(&g_test_qproto, name);
+            CHECK(journal != authum_null);
+            authum_logs_write(journal, authum_logger_level_info,
+                              round == 0 ? "before eviction" : "after reopening");
+            authum_logs_close_journal(journal);
+        }
+    }
+    authum_logs_close(&g_test_qproto);
+    authum_logs_deinit();
+    for (authum_u32_t index = 0; index < 40; ++index)
+    {
+        authum_char_t name[64];
+        snprintf(name, sizeof name, "qproto/async_cache_%u", (unsigned)index);
+        CHECK(test_on_disk(name, TEST_DAY_ONE, "before eviction"));
+        CHECK(test_on_disk(name, TEST_DAY_ONE, "after reopening"));
+        authum_char_t path[256];
+        test_log_path(path, sizeof path, name, TEST_DAY_ONE);
+        remove(path);
+    }
 }
 
 /* Journals: a module's own extra files, with their own level. */
@@ -322,6 +386,7 @@ test_journals(void)
     authum_logs_write(bans, authum_logger_level_info, "ban line");
     test_log_path(path, sizeof path, "qproto/bans", TEST_DAY_ONE);
     authum_logs_close(&g_test_qproto);
+    CHECK(authum_logs_sync(5000));
     CHECK(test_path_contains(path, "ban line"));
     CHECK(!authum_logs_is_enabled(bans, authum_logger_level_error));
 
@@ -431,16 +496,169 @@ test_level_names(void)
     CHECK_STR(authum_logger_level_name(42), "?");
 }
 
+static void
+test_local_config(void)
+{
+    test_mkdir(TEST_ROOT "/modules");
+    test_mkdir(TEST_ROOT "/modules/hello");
+    test_mkdir(TEST_ROOT "/modules/hello/configs");
+    const char *local_path = TEST_ROOT "/modules/hello/configs/hello.cfg";
+    FILE *cfg = fopen(local_path, "w");
+    CHECK(cfg != NULL);
+    fputs("log_level = debug\nlog_keep_days = 3\nlog_host = off\nlog_console = off\n"
+          "audit.log_level = debug\n",
+          cfg);
+    fclose(cfg);
+    char old[256], recent[256];
+    test_log_path(old, sizeof old, "hello", TEST_DAY_ONE - 5 * TEST_DAY);
+    test_log_path(recent, sizeof recent, "hello", TEST_DAY_ONE - 2 * TEST_DAY);
+    test_mkdir(TEST_ROOT "/modules/hello/logs");
+    test_touch(old);
+    test_touch(recent);
+    test_touch(TEST_ROOT "/modules/hello/logs/2020-99-99.log");
+    test_write_cfg("log_level = warning\nlog_keep_days = 30\n");
+    CHECK(authum_logs_init(TEST_ROOT, test_mirror));
+    authum_logs_set_clock(test_clock);
+    CHECK(authum_logs_open(&g_test_hello, "hello", authum_null));
+    CHECK(authum_logs_is_enabled(&g_test_hello, authum_logger_level_debug));
+    CHECK(authum_logs_sync(5000));
+    /* Registration cleans an idle module; no write was required. */
+    CHECK(!test_exists(old));
+    CHECK(test_exists(recent));
+    CHECK(test_exists(TEST_ROOT "/modules/hello/logs/2020-99-99.log"));
+
+    authum_ptr audit = authum_logs_open_journal(&g_test_hello, "audit");
+    CHECK(audit != authum_null);
+    CHECK(authum_logs_is_enabled(audit, authum_logger_level_debug));
+    test_write_cfg("log_level = warning\nhello.log_level = error\n");
+    authum_logs_reload();
+    CHECK(!authum_logs_is_enabled(&g_test_hello, authum_logger_level_debug));
+    CHECK(!authum_logs_is_enabled(audit, authum_logger_level_debug));
+    test_write_cfg("hello.log_level = off\nhello.audit.log_level = debug\n");
+    authum_logs_reload();
+    CHECK(!authum_logs_is_enabled(audit, authum_logger_level_error));
+    /* File destination off is independent of console and shared-host routing. */
+    test_write_cfg("hello.log_level = info\nhello.log_file = off\nhello.log_host = warning\n"
+                   "hello.log_console = error\n");
+    authum_logs_reload();
+    CHECK(!authum_logs_is_enabled(&g_test_hello, authum_logger_level_info));
+    int mirrored = g_test_mirrored;
+    authum_logs_write(&g_test_hello, authum_logger_level_error, "destination independence");
+    CHECK(g_test_mirrored == mirrored + 1);
+    CHECK(test_file_contains("authum", TEST_DAY_ONE, "destination independence"));
+    CHECK(!test_file_contains("hello", TEST_DAY_ONE, "destination independence"));
+    authum_logs_deinit();
+    remove(local_path);
+    remove(recent);
+    remove(TEST_ROOT "/modules/hello/logs/2020-99-99.log");
+    test_write_cfg(g_test_cfg);
+}
+
+static void
+test_constructor(void)
+{
+    CHECK(authum_logs_init(TEST_ROOT, authum_null));
+    authum_logs_set_clock(test_clock);
+    CHECK(authum_logs_open(&g_test_hello, "hello", authum_null));
+    authum_logger_channel_t channel = {authum_logs_ops(), &g_test_hello};
+    authum_host_t host = {0};
+    host.size = sizeof host;
+    host.logger = &channel;
+    authum_host_log_info(&host, "automatic channel %d", 42);
+    CHECK(test_file_contains("hello", TEST_DAY_ONE, "automatic channel 42"));
+    authum_logger_t raw, conflict;
+    authum_logger_options_t options = {sizeof options, "custom", authum_logger_format_raw};
+    CHECK(authum_logger_create(&raw, &host, &options));
+    authum_logger_info(&raw, "original message");
+    char path[256];
+    test_log_path(path, sizeof path, "hello/custom", TEST_DAY_ONE);
+    CHECK(authum_logs_sync(5000));
+    FILE *file = fopen(path, "r");
+    CHECK(file != NULL);
+    char text[256] = {0};
+    CHECK(fgets(text, sizeof text, file) != NULL);
+    CHECK_STR(text, "original message\n");
+    fclose(file);
+    options.format = authum_logger_format_standard;
+    CHECK(!authum_logger_create(&conflict, &host, &options));
+    /* Admin format overrides the constructor and survives reload. */
+    test_write_cfg("hello.custom.log_format = standard\n");
+    authum_logs_reload();
+    authum_logger_info(&raw, "admin format");
+    CHECK(test_file_contains("hello/custom", TEST_DAY_ONE, "[info] admin format"));
+    authum_logger_close(&raw);
+    authum_logger_ops_t legacy = *authum_logs_ops();
+    legacy.size = (authum_usize_t)((char *)&legacy.construct - (char *)&legacy);
+    channel.ops = &legacy;
+    CHECK(!authum_logger_create(&raw, &host, &options));
+    CHECK(!authum_logger_is_enabled(&raw, authum_logger_level_error));
+    authum_logs_deinit();
+    remove(path);
+    test_write_cfg(g_test_cfg);
+}
+
+static void
+test_custom_sandbox(void)
+{
+    const char *base = TEST_ROOT "/custom_sandbox";
+    test_mkdir(base);
+    test_mkdir(TEST_ROOT "/custom_sandbox/configs");
+    FILE *cfg = fopen(TEST_ROOT "/custom_sandbox/configs/private.cfg", "w");
+    CHECK(cfg != NULL);
+    fputs("log_level = debug\n", cfg);
+    fclose(cfg);
+    test_write_cfg("log_level = off\n");
+    CHECK(authum_logs_init(TEST_ROOT, authum_null));
+    authum_logs_set_clock(test_clock);
+    int owner;
+    CHECK(authum_logs_open(&owner, "private", base));
+    CHECK(authum_logs_is_enabled(&owner, authum_logger_level_debug));
+    authum_logs_write(&owner, authum_logger_level_debug, "custom sandbox");
+    CHECK(authum_logs_sync(5000));
+    char day[32], path[256];
+    struct tm *tm = localtime(&g_test_now);
+    strftime(day, sizeof day, "%Y-%m-%d.log", tm);
+    snprintf(path, sizeof path, "%s/logs/%s", base, day);
+    CHECK(test_path_contains(path, "custom sandbox"));
+    authum_logs_deinit();
+    remove(path);
+    remove(TEST_ROOT "/custom_sandbox/configs/private.cfg");
+    test_write_cfg(g_test_cfg);
+}
+
 int
-main(void)
+main(int argc, char **argv)
 {
     test_reset();
+    if (argc == 2 && strcmp(argv[1], "--environment-off") == 0)
+    {
+        CHECK(authum_logs_init(TEST_ROOT, test_mirror));
+        CHECK(authum_logs_open(&g_test_qproto, "qproto", authum_null));
+        CHECK(!authum_logs_is_enabled(&g_test_qproto, authum_logger_level_error));
+        CHECK(!authum_logs_is_enabled(authum_null, authum_logger_level_error));
+        authum_logs_write(&g_test_qproto, authum_logger_level_error, "environment disabled");
+        CHECK(g_test_mirrored == 0);
+#if defined(_WIN32)
+        _putenv_s("AUTHUM_LOG_LEVEL", "debug");
+#else
+        setenv("AUTHUM_LOG_LEVEL", "debug", 1);
+#endif
+        authum_logs_reload();
+        CHECK(!authum_logs_is_enabled(&g_test_qproto, authum_logger_level_debug));
+        authum_logs_deinit();
+        return authum_check_report("logs_environment");
+    }
     test_level_names();
     test_routing();
     test_buffering();
+    test_periodic_flush();
+    test_file_cache();
     test_journals();
     test_reload();
     test_prune();
     test_module_logger();
+    test_local_config();
+    test_constructor();
+    test_custom_sandbox();
     return authum_check_report("logs");
 }

@@ -5,6 +5,10 @@
 #include <authum/host/logs.h>
 #include <authum/host/sandbox.h>
 #include <authum/host/module.h>
+#include <authum/host/tasks.h>
+#include <authum/host/threads.h>
+#include <authum/host/http.h>
+#include <authum/host/clock.h>
 #include <authum/module/api.h>
 #include <authum/path.h>
 #include <authum/version.h>
@@ -47,6 +51,11 @@ typedef struct authum_child_data
     authum_sandbox_t sandbox;
     authum_events_t events;
     authum_commands_t commands;
+    authum_tasks_t tasks;
+    authum_threads_t threads;
+    authum_thread_owner_t thread_owner;
+    authum_http_owner_t http_owner;
+    authum_http_service_t http;
     authum_logger_channel_t logger;
 } authum_child_data_t;
 
@@ -244,6 +253,14 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     data->commands.owner = data;
     data->commands.scope = data->info->name;
     out->commands = &data->commands;
+    data->tasks.ops = authum_tasks_host_ops();
+    data->tasks.owner = data;
+    out->tasks = &data->tasks;
+    authum_threads_host_init(&data->thread_owner, &data->threads);
+    out->threads = &data->threads;
+    authum_http_host_init(&data->http_owner, &data->threads, &data->http);
+    out->http = &data->http;
+    out->clock = authum_clock_host();
 
     parent = lh_os_module_get_parent(child);
     if (!lh_null_eq(parent))
@@ -262,6 +279,10 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
 void
 authum_child_release(authum_child_data_t *data)
 {
+    authum_threads_host_stop_owner(&data->thread_owner);
+    authum_http_host_drop_owner(&data->http_owner);
+    authum_threads_host_drop_owner(&data->thread_owner);
+    authum_tasks_host_drop_owner(data);
     authum_commands_host_drop_owner(data);
     authum_events_host_drop_owner(data);
     authum_logs_close(data);
@@ -332,6 +353,8 @@ authum_child_stop(authum_module_t *self)
     }
     if (!lh_null_eq(data->api) && !lh_null_eq(data->api->stop))
     {
+        authum_threads_host_stop_owner(&data->thread_owner);
+        authum_tasks_host_drop_owner(data);
         data->api->stop();
     }
     lh_os_module_set_data(self, lh_null);

@@ -138,6 +138,45 @@ authum_logger_close(authum_logger_t *self)
 }
 
 authum_bool_t
+authum_logger_create(authum_logger_t *self, const authum_host_t *host,
+                     const authum_logger_options_t *options)
+{
+    if (!self)
+    {
+        return authum_bool_false;
+    }
+    authum_logger_init(self, host);
+    const authum_logger_channel_t *module = self->channel;
+    self->channel = authum_null;
+    if (!module || !module->ops || !AUTHUM_ABI_HAS(module->ops, construct) ||
+        !AUTHUM_ABI_HAS(module->ops, close) || !options || options->size < sizeof *options)
+    {
+        return authum_bool_false;
+    }
+    authum_ptr journal = module->ops->construct(module->owner, options);
+    if (!journal)
+    {
+        return authum_bool_false;
+    }
+    self->journal.ops = module->ops;
+    self->journal.owner = journal;
+    self->owns_journal = authum_bool_true;
+    return authum_bool_true;
+}
+
+void
+authum_host_log(const authum_host_t *host, authum_logger_level_t level, const authum_char_t *fmt,
+                ...)
+{
+    authum_logger_t log;
+    authum_logger_init(&log, host);
+    va_list args;
+    va_start(args, fmt);
+    authum_logger_log_v(&log, level, fmt, args);
+    va_end(args);
+}
+
+authum_bool_t
 authum_logger_is_enabled(const authum_logger_t *self, authum_logger_level_t level)
 {
     return authum_logger_channel_is_enabled(authum_logger_get_channel(self), level);

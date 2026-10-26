@@ -180,6 +180,12 @@ authum_sql_close(authum_sql_t *self)
 }
 
 authum_bool_t
+authum_sql_ping(authum_sql_t *self)
+{
+    return authum_sql_exec(self, "SELECT 1");
+}
+
+authum_bool_t
 authum_sql_is_open(const authum_sql_t *self)
 {
 	return (!authum_null_eq(self) && !authum_null_eq(self->db) &&

@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Automatic-channel `authum_host_log_*` conveniences and ABI 1.3
+  `authum_logger_create` for named sandbox journals with host-owned standard
+  or raw formatting. Existing logger handles and older host tables remain supported.
+- Module-local logging preferences from `configs/<module>.cfg`, inherited
+  global defaults, explicit administrator overrides and startup-only
+  `AUTHUM_LOG_LEVEL` source filtering.
+- Independent private-file, host-copy and console settings, and per-channel
+  retention. Worker-side cleanup runs at registration/reload and every 24
+  hours, including idle channels, without deleting open files or invalid dates.
+
+### Changed
+
+- `log_level=off` now disables every destination and the module's journals;
+  use `log_file=off` to disable only the private file. The default retention
+  and shipped configuration are 10 days; explicitly configured values are preserved.
+- This changes module logging only. The native HLDS asynchronous file writer
+  remains an isolated Linux experiment and is not enabled by this release.
+
 ## [4.0.0] - 2026-10-24
 
 ### Changed

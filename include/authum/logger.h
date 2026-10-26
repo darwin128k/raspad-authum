@@ -11,13 +11,15 @@
  * ```
  *
  * The module never picks a file or a console: every line goes to the host
- * channel (::authum_host_t.logger), and `authum.cfg` routes it:
+ * channel (::authum_host_t.logger). Module cfg preferences inherit global
+ * defaults; explicit per-module entries in `authum.cfg` override them:
  *
  * - `addons/authum/modules/<module>/logs/YYYY-MM-DD.log` — everything at or above the
- *   module's `log_level`;
+ *   module's `log_level` when `log_file=on`;
  * - `addons/authum/logs/YYYY-MM-DD.log` (Authum's) — the module's warnings and
  *   errors too, tagged `[module]`;
  * - server console — lines at or above `log_console`.
+ * `log_level=off` disables all destinations, including the module's journals.
  *
  * Lines below the configured level are dropped before formatting, so
  * ::authum_logger_debug in a hot path costs one call when debug is off.
@@ -82,6 +84,26 @@ authum_logger_init(authum_logger_t *self, const authum_host_t *host);
 authum_bool_t
 authum_logger_open(authum_logger_t *self, const authum_host_t *host, const authum_char_t *name);
 
+/** Construct a special logger; defaults stay overridable by configuration.
+ * False on hosts predating ABI 1.3; no silent format fallback. */
+authum_bool_t
+authum_logger_create(authum_logger_t *self, const authum_host_t *host,
+                     const authum_logger_options_t *options);
+
+/** Use the module's automatically supplied channel, without a logger handle. */
+void
+authum_host_log(const authum_host_t *host, authum_logger_level_t level, const authum_char_t *fmt,
+                ...);
+
+#define authum_host_log_info(host, ...)                                                            \
+    authum_host_log((host), authum_logger_level_info, __VA_ARGS__)
+#define authum_host_log_warning(host, ...)                                                         \
+    authum_host_log((host), authum_logger_level_warning, __VA_ARGS__)
+#define authum_host_log_error(host, ...)                                                           \
+    authum_host_log((host), authum_logger_level_error, __VA_ARGS__)
+#define authum_host_log_debug(host, ...)                                                           \
+    authum_host_log((host), authum_logger_level_debug, __VA_ARGS__)
+
 /** Drop the binding (and close a journal); later calls do nothing. */
 void
 authum_logger_close(authum_logger_t *self);
@@ -91,29 +113,29 @@ authum_bool_t
 authum_logger_is_enabled(const authum_logger_t *self, authum_logger_level_t level);
 
 void
-authum_logger_log_v(authum_logger_t *self, authum_logger_level_t level,
-                    const authum_char_t *fmt, va_list ap);
+authum_logger_log_v(authum_logger_t *self, authum_logger_level_t level, const authum_char_t *fmt,
+                    va_list ap);
 
 void
 authum_logger_log(authum_logger_t *self, authum_logger_level_t level, const authum_char_t *fmt,
                   ...);
 
 #define authum_logger_emergency(self, ...)                                                         \
-authum_logger_log((self), authum_logger_level_emergency, __VA_ARGS__)
+    authum_logger_log((self), authum_logger_level_emergency, __VA_ARGS__)
 #define authum_logger_alert(self, ...)                                                             \
-authum_logger_log((self), authum_logger_level_alert, __VA_ARGS__)
+    authum_logger_log((self), authum_logger_level_alert, __VA_ARGS__)
 #define authum_logger_critical(self, ...)                                                          \
-authum_logger_log((self), authum_logger_level_critical, __VA_ARGS__)
+    authum_logger_log((self), authum_logger_level_critical, __VA_ARGS__)
 #define authum_logger_error(self, ...)                                                             \
-authum_logger_log((self), authum_logger_level_error, __VA_ARGS__)
+    authum_logger_log((self), authum_logger_level_error, __VA_ARGS__)
 #define authum_logger_warning(self, ...)                                                           \
-authum_logger_log((self), authum_logger_level_warning, __VA_ARGS__)
+    authum_logger_log((self), authum_logger_level_warning, __VA_ARGS__)
 #define authum_logger_notice(self, ...)                                                            \
-authum_logger_log((self), authum_logger_level_notice, __VA_ARGS__)
+    authum_logger_log((self), authum_logger_level_notice, __VA_ARGS__)
 #define authum_logger_info(self, ...)                                                              \
-authum_logger_log((self), authum_logger_level_info, __VA_ARGS__)
+    authum_logger_log((self), authum_logger_level_info, __VA_ARGS__)
 #define authum_logger_debug(self, ...)                                                             \
-authum_logger_log((self), authum_logger_level_debug, __VA_ARGS__)
+    authum_logger_log((self), authum_logger_level_debug, __VA_ARGS__)
 
 /** Log @p len bytes of @p data as hex at debug level, 16 per line. */
 void
