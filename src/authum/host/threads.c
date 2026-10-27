@@ -14,6 +14,9 @@ struct authum_thread
     lh_os_thread_t native;
 };
 
+/**
+ * @brief Request cooperative stop at most once, on the owner thread.
+ */
 static void
 request_stop(authum_thread_t *t)
 {
@@ -24,12 +27,18 @@ request_stop(authum_thread_t *t)
     }
 }
 
+/**
+ * @brief Wait for an owned worker while retaining its handle if the join fails.
+ */
 static authum_bool_t
 join_thread(authum_thread_t *t)
 {
     return lh_os_thread_join(&t->native) ? authum_bool_true : authum_bool_false;
 }
 
+/**
+ * @brief Validate owner limits and register a worker only after LH startup succeeds.
+ */
 static authum_thread_t *
 start_thread(authum_ptr context, authum_thread_fn run, authum_thread_fn wake, authum_ptr user,
              int cpu, unsigned flags, authum_char_t *error, authum_usize_t error_size)
@@ -73,6 +82,9 @@ start_thread(authum_ptr context, authum_thread_fn run, authum_thread_fn wake, au
     return t;
 }
 
+/**
+ * @brief Stop, join and release a handle belonging to the requesting owner.
+ */
 static authum_bool_t
 stop_thread(authum_ptr context, authum_thread_t *thread)
 {
@@ -104,6 +116,9 @@ stop_thread(authum_ptr context, authum_thread_t *thread)
 static const authum_thread_ops_t ops = {
     .size = sizeof ops, .start = start_thread, .stop = stop_thread};
 
+/**
+ * @brief Initialize an owner and bind its public thread facade.
+ */
 void
 authum_threads_host_init(authum_thread_owner_t *owner, authum_threads_t *facade)
 {
@@ -112,6 +127,9 @@ authum_threads_host_init(authum_thread_owner_t *owner, authum_threads_t *facade)
     facade->ops = &ops;
 }
 
+/**
+ * @brief Wake every owned worker before joining any, preventing unsafe module unload.
+ */
 void
 authum_threads_host_stop_owner(authum_thread_owner_t *owner)
 {
@@ -136,6 +154,9 @@ authum_threads_host_stop_owner(authum_thread_owner_t *owner)
     }
 }
 
+/**
+ * @brief Join all owned workers and reclaim their remaining host handles.
+ */
 void
 authum_threads_host_drop_owner(authum_thread_owner_t *owner)
 {

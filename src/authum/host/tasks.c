@@ -4,6 +4,9 @@
 #include <lh/os/mutex.h>
 #include <lh/os/condition.h>
 
+/**
+ * @brief Stop on a broken synchronization invariant rather than release live module state.
+ */
 static void
 authum_tasks_require(lh_bool_t ok)
 {
@@ -36,24 +39,36 @@ typedef struct authum_task_worker
 static authum_task_worker_t *m_workers;
 static unsigned m_dispatching;
 
+/**
+ * @brief Acquire the worker queue mutex through the LH OS layer.
+ */
 void
 authum_tasks_lock(authum_task_worker_t *w)
 {
     authum_tasks_require(lh_os_mutex_lock(&w->mutex));
 }
 
+/**
+ * @brief Release the worker queue mutex through the LH OS layer.
+ */
 void
 authum_tasks_unlock(authum_task_worker_t *w)
 {
     authum_tasks_require(lh_os_mutex_unlock(&w->mutex));
 }
 
+/**
+ * @brief Notify the worker after its queue or shutdown predicate changes.
+ */
 void
 authum_tasks_wake(authum_task_worker_t *w)
 {
     authum_tasks_require(lh_os_condition_signal(&w->wake));
 }
 
+/**
+ * @brief Execute pending work and queue completions without invoking game-thread callbacks.
+ */
 void
 authum_tasks_run(void *arg)
 {
@@ -87,6 +102,9 @@ authum_tasks_run(void *arg)
     }
 }
 
+/**
+ * @brief Create an owner worker with initialized queues and LH synchronization objects.
+ */
 authum_task_worker_t *
 authum_tasks_create(authum_ptr owner)
 {
@@ -114,6 +132,9 @@ authum_tasks_create(authum_ptr owner)
     return w;
 }
 
+/**
+ * @brief Enqueue one owner-bound job within the per-owner queue limit.
+ */
 authum_bool_t
 authum_tasks_host_submit(authum_ptr owner, authum_task_fn work, authum_task_fn complete,
                          authum_task_fn destroy, authum_ptr user)
@@ -155,6 +176,9 @@ authum_tasks_host_submit(authum_ptr owner, authum_task_fn work, authum_task_fn c
     return authum_bool_true;
 }
 
+/**
+ * @brief Run the payload destructor once and release its job record.
+ */
 void
 authum_tasks_dispose(authum_task_job_t *job)
 {
@@ -165,6 +189,9 @@ authum_tasks_dispose(authum_task_job_t *job)
     free(job);
 }
 
+/**
+ * @brief Deliver a bounded batch of completed jobs on the game thread with owner fairness.
+ */
 void
 authum_tasks_host_pump(void)
 {
@@ -225,12 +252,18 @@ authum_tasks_host_pump(void)
     }
 }
 
+/**
+ * @brief Report whether a completion or payload destructor is being dispatched.
+ */
 authum_bool_t
 authum_tasks_host_dispatching(void)
 {
     return m_dispatching ? authum_bool_true : authum_bool_false;
 }
 
+/**
+ * @brief Stop an owner worker and dispose queued payloads before releasing its state.
+ */
 void
 authum_tasks_host_drop_owner(authum_ptr owner)
 {
@@ -274,6 +307,9 @@ authum_tasks_host_drop_owner(authum_ptr owner)
     free(w);
 }
 
+/**
+ * @brief Return the immutable background-task dispatch table.
+ */
 const authum_task_ops_t *
 authum_tasks_host_ops(void)
 {
