@@ -64,3 +64,18 @@ re-entrancy, owner cleanup).
 
 [`examples/hello`](../examples/hello/) — pure client module (no lh): host
 facade, an `authum.client.connect` subscription, a sandbox array.
+
+## Background execution and log buffering
+
+LH supplies a bounded serial worker (`lh/os/worker.h`) and a fixed-record
+single-producer/single-consumer queue (`lh/spsc.h`). Neither knows module identities
+or server frames. Worker completions are explicitly taken by its caller.
+
+Authum owns the per-module worker registry, the limit of 64 outstanding jobs,
+round-robin completion dispatch (16 per frame), and unload guards. On unload it
+stops and joins the worker before disposing payloads; the stopped owner remains
+registered until destructors return, preventing resubmission during teardown.
+
+The log writer uses LH's queue with Authum-owned record storage. Record format,
+routing, overflow reporting, periodic flushing and shutdown policy remain in
+Authum. Queue submission performs no allocation, waiting or file I/O.
