@@ -15,12 +15,18 @@ static authum_threads_t threads;
 static authum_thread_t *worker;
 static authum_logs_sink_t sink;
 
+/**
+ * @brief Yield the disk worker between empty-queue checks using LH sleep.
+ */
 static void
 pause_writer(void)
 {
     (void)lh_os_thread_sleep(10);
 }
 
+/**
+ * @brief Publish the cooperative stop request to the disk worker.
+ */
 static void
 stop_writer(authum_ptr user)
 {
@@ -28,6 +34,9 @@ stop_writer(authum_ptr user)
     atomic_store_explicit(&stopping, 1, memory_order_release);
 }
 
+/**
+ * @brief Drain accepted records and maintain flush barriers until shutdown completes.
+ */
 static void
 run_writer(authum_ptr user)
 {
@@ -77,6 +86,9 @@ run_writer(authum_ptr user)
     sink.close();
 }
 
+/**
+ * @brief Initialize the bounded log queue and start its owned disk worker.
+ */
 authum_bool_t
 authum_logs_writer_start(const authum_logs_sink_t *custom)
 {
@@ -101,6 +113,9 @@ authum_logs_writer_start(const authum_logs_sink_t *custom)
     return worker ? authum_bool_true : authum_bool_false;
 }
 
+/**
+ * @brief Copy one record into the bounded queue without allocating or waiting.
+ */
 authum_bool_t
 authum_logs_writer_submit(const authum_logs_record_t *record)
 {
@@ -120,6 +135,9 @@ authum_logs_writer_submit(const authum_logs_record_t *record)
     return authum_bool_true;
 }
 
+/**
+ * @brief Wait for a flush barrier for tests or administration, outside game-frame hooks.
+ */
 authum_bool_t
 authum_logs_writer_sync(authum_u32_t timeout_ms)
 {
@@ -140,6 +158,9 @@ authum_logs_writer_sync(authum_u32_t timeout_ms)
     return authum_bool_true;
 }
 
+/**
+ * @brief Drain queued records, join the writer and release its owner state.
+ */
 void
 authum_logs_writer_stop(void)
 {
@@ -151,6 +172,9 @@ authum_logs_writer_stop(void)
     }
 }
 
+/**
+ * @brief Read the cumulative count of records rejected by queue overflow.
+ */
 authum_u32_t
 authum_logs_writer_dropped(void)
 {
