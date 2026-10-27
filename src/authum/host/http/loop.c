@@ -1,11 +1,14 @@
 #include "internal.h"
+#include <lh/os/net/socket.h>
 
 static void
-prepare_connections(authum_http_server_t *server, struct pollfd *events, authum_i64_t now,
+prepare_connections(authum_http_server_t *server, lh_os_net_socket_poll_t *events, authum_i64_t now,
                     double tokens)
 {
-    events[0] = (struct pollfd){.fd = server->listener, .events = POLLIN};
-    events[1] = (struct pollfd){.fd = server->wake[0], .events = POLLIN};
+    events[0] =
+        (lh_os_net_socket_poll_t){.handle = server->listener, .events = lh_os_net_socket_poll_read};
+    events[1] = (lh_os_net_socket_poll_t){.handle = lh_os_wake_get_handle(&server->wake),
+                                          .events = lh_os_net_socket_poll_read};
     for (authum_i32_t index = 0; index < server->options.max_clients; ++index)
     {
         authum_http_client_t *client = &server->clients[index];
@@ -14,33 +17,34 @@ prepare_connections(authum_http_server_t *server, struct pollfd *events, authum_
             client->close_reason = "timeout";
             authum_http_client_close(server, client);
         }
-        short interest = client->state ? (tokens >= 1 ? POLLOUT : 0) : POLLIN;
-        events[index + 2] = (struct pollfd){.fd = client->fd, .events = interest};
+        lh_uint_t interest = client->state ? (tokens >= 1 ? lh_os_net_socket_poll_write : 0)
+                                           : lh_os_net_socket_poll_read;
+        events[index + 2] = (lh_os_net_socket_poll_t){.handle = client->fd, .events = interest};
     }
 }
 
 static void
-dispatch_connection(authum_http_server_t *server, authum_http_client_t *client, short events,
+dispatch_connection(authum_http_server_t *server, authum_http_client_t *client, lh_uint_t events,
                     authum_i64_t now, double *tokens)
 {
     if (client->fd < 0)
     {
         return;
     }
-    if (events & (POLLERR | POLLNVAL))
+    if (events & lh_os_net_socket_poll_error)
     {
         authum_http_client_close(server, client);
         return;
     }
-    if (!client->state && (events & POLLIN))
+    if (!client->state && (events & lh_os_net_socket_poll_read))
     {
         authum_http_client_read(server, client, now);
     }
-    else if (client->state && (events & POLLOUT) && *tokens >= 1)
+    else if (client->state && (events & lh_os_net_socket_poll_write) && *tokens >= 1)
     {
         authum_http_client_write(server, client, now, tokens);
     }
-    if (client->fd >= 0 && (events & POLLHUP))
+    if (client->fd >= 0 && (events & lh_os_net_socket_poll_hangup))
     {
         authum_http_client_close(server, client);
     }
@@ -56,20 +60,17 @@ authum_http_run(void *arg)
 
     for (;;)
     {
-        struct pollfd events[258];
+        lh_os_net_socket_poll_t events[AUTHUM_HTTP_MAX_CLIENTS + 2];
         authum_i64_t now = authum_http_now_ms();
         authum_http_budget_refill(&tokens, &last, now, &server->options);
         prepare_connections(server, events, now, tokens);
-        int ready = poll(events, (nfds_t)server->options.max_clients + 2, 20);
-        if (ready < 0)
+        lh_ssize_t ready =
+            lh_os_net_socket_poll(events, (lh_usize_t)server->options.max_clients + 2, 20);
+        if (ready == LH_OS_RESULT_INVALID)
         {
-            if (errno == EINTR)
-            {
-                continue;
-            }
             break;
         }
-        if (events[1].revents)
+        if (events[1].ready)
         {
             break;
         }
@@ -78,11 +79,11 @@ authum_http_run(void *arg)
         for (authum_usize_t count = 0; count < (authum_usize_t)server->options.max_clients; ++count)
         {
             authum_usize_t index = (cursor + count) % server->options.max_clients;
-            dispatch_connection(server, &server->clients[index], events[index + 2].revents, now,
+            dispatch_connection(server, &server->clients[index], events[index + 2].ready, now,
                                 &tokens);
         }
         cursor = (cursor + 1) % server->options.max_clients;
-        if (events[0].revents & POLLIN)
+        if (events[0].ready & lh_os_net_socket_poll_read)
         {
             authum_http_clients_accept(server, now);
         }

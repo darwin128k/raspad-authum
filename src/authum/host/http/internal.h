@@ -1,11 +1,12 @@
 #ifndef AUTHUM_HOST_HTTP_INTERNAL_H
 #define AUTHUM_HOST_HTTP_INTERNAL_H
 #include <authum/host/http.h>
+#include <lh/os/system/net/socket.h>
 #include <authum/net.h>
 #include <authum/host/clock.h>
 #include <stdatomic.h>
 #include <sys/types.h>
-#include <poll.h>
+#include <lh/os/wake.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -71,7 +72,7 @@ struct authum_http_server
     authum_http_options_t options;
     int roots[AUTHUM_HTTP_MAX_SOURCES];
     int listener;
-    int wake[2];
+    lh_os_wake_t wake;
     authum_threads_t threads;
     authum_thread_t *thread;
     authum_http_client_t *clients;

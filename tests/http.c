@@ -132,8 +132,20 @@ main(void)
     const char *request = "GET /shared.bsp HTTP/1.1\r\nHost: localhost\r\n\r\n";
     REQUIRE(send(client, request, strlen(request), MSG_NOSIGNAL) > 0);
     char response[512] = {0};
-    REQUIRE(recv(client, response, sizeof response - 1, 0) > 0);
+    size_t received = 0;
+    for (;;)
+    {
+        REQUIRE(received < sizeof response - 1);
+        ssize_t size = recv(client, response + received, sizeof response - 1 - received, 0);
+        REQUIRE(size >= 0);
+        if (!size)
+        {
+            break;
+        }
+        received += (size_t)size;
+    }
     REQUIRE(strstr(response, "200 OK"));
+    REQUIRE(strstr(response, "\r\n\r\nshared-http"));
     close(client);
 
     /* A log callback may close its server: defer destruction until drain

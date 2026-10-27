@@ -79,3 +79,20 @@ registered until destructors return, preventing resubmission during teardown.
 The log writer uses LH's queue with Authum-owned record storage. Record format,
 routing, overflow reporting, periodic flushing and shutdown policy remain in
 Authum. Queue submission performs no allocation, waiting or file I/O.
+
+## HTTP socket transport
+
+The HTTP adapter uses LH's socket backend for open, bind/listen, accept, send,
+receive and socket close, and LH's IPv4 values for address conversion. The
+non-blocking open/accept primitives also prevent handle inheritance; Linux sets
+both properties atomically. Listener and per-client native descriptors stay
+private to the POSIX HTTP implementation.
+
+The loop waits through LH's per-socket poll API and owns an `lh_os_wake_t` for
+shutdown notifications. File payloads use LH's explicit-offset send-file primitive;
+Linux keeps native sendfile, including partial-send and pending-offset semantics.
+
+Authum retains HTTP scheduling, file access policy, access control, limits,
+resource ownership and module lifecycle. Moving socket transport does
+not make the HTTP service available on Windows; the LH primitives themselves
+have Windows and POSIX backends.
