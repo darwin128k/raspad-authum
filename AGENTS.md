@@ -12,3 +12,8 @@ for that subsystem, together with `lib/lh/.clang-format`.
 - Run the formatter using LH's own configuration, inspect the diff manually,
   and test the affected primitives and their Authum integration.
   Formatting alone does not establish conformity with LH conventions.
+
+- LH C/C++ unit tests use GoogleTest in `test/src/lh/` and the common runner. Initialize the
+  pinned GoogleTest submodule when needed; do not add standalone test runners,
+  manual `CHECK` macros, abort-based assertions or parallel assertion frameworks.
+  C-only compile fixtures may remain when exercised by the GoogleTest targets.
