@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include "internal.h"
 #include <fcntl.h>
+#include <lh/os/system.h>
 
 void
 authum_http_server_release(authum_http_server_t *server)
@@ -14,15 +15,9 @@ authum_http_server_release(authum_http_server_t *server)
     }
     if (server->listener >= 0)
     {
-        close(server->listener);
+        lh_os_system_net_socket_close(server->listener);
     }
-    for (unsigned i = 0; i < 2; i++)
-    {
-        if (server->wake[i] >= 0)
-        {
-            close(server->wake[i]);
-        }
-    }
+    lh_os_wake_close(&server->wake);
     free(server->clients);
     free(server);
 }
@@ -39,7 +34,8 @@ authum_http_server_create(const authum_http_options_t *options, const authum_thr
         return NULL;
     }
     server->options = *options;
-    server->listener = server->wake[0] = server->wake[1] = -1;
+    server->listener = -1;
+    lh_os_wake_init(&server->wake);
     atomic_init(&server->log_read, 0);
     atomic_init(&server->log_write, 0);
     atomic_init(&server->log_dropped, 0);
@@ -81,9 +77,10 @@ authum_http_server_create(const authum_http_options_t *options, const authum_thr
             goto failed;
         }
     }
-    if (pipe2(server->wake, O_NONBLOCK | O_CLOEXEC))
+    if (!lh_os_wake_open(&server->wake, 1000))
     {
-        snprintf(error, error_size, "HTTP wake pipe: %s", strerror(errno));
+        snprintf(error, error_size, "HTTP wake signal: %s",
+                 strerror((int)lh_os_system_get_last_error_code()));
         goto failed;
     }
     server->listener = authum_http_listener_open(options, error, error_size);
@@ -108,12 +105,8 @@ void
 authum_http_wake(void *arg)
 {
     authum_http_server_t *server = arg;
-    /* Read end stays open until after join, even if the worker exited early. */
-    ssize_t n;
-    do
-    {
-        n = write(server->wake[1], "x", 1);
-    } while (n < 0 && errno == EINTR);
+    /* Both endpoints stay live until the worker has joined. */
+    (void)lh_os_wake_signal(&server->wake);
 }
 
 void

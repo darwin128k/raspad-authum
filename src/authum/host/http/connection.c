@@ -12,7 +12,7 @@ authum_http_client_close(authum_http_server_t *server, authum_http_client_t *cli
                        ? "complete"
                        : "disconnect");
         authum_http_access_record(server, client, event);
-        close(client->fd);
+        lh_os_system_net_socket_close(client->fd);
         --server->peers[client->ip_slot].active;
     }
     if (client->file >= 0)
@@ -50,7 +50,7 @@ authum_http_clients_accept(authum_http_server_t *server, authum_i64_t now)
         if (ip < 0)
         {
             authum_http_access_record(server, &peer, "reject_limit");
-            close(socket);
+            lh_os_system_net_socket_close(socket);
             continue;
         }
 
