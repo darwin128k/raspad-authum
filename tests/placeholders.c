@@ -4,18 +4,26 @@
 #include "check.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-static char game_dir[] = "/tmp/authum-placeholders-game";
-static char module_dir[] = "/tmp/authum-placeholders-module";
+static char game_dir[512] = "/tmp/authum-placeholders-game";
+static char module_dir[512] = "/tmp/authum-placeholders-module";
 
 static void
 setup(void)
 {
+#if defined(_WIN32)
+    CHECK(_fullpath(game_dir, "/tmp/authum-placeholders-game", sizeof game_dir) != NULL);
+    CHECK(_fullpath(module_dir, "/tmp/authum-placeholders-module", sizeof module_dir) != NULL);
+    mkdir(game_dir);
+    mkdir(module_dir);
+#else
     mkdir(game_dir, 0755);
     mkdir(module_dir, 0755);
+#endif
 }
 
 static void

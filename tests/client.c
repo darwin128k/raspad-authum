@@ -23,6 +23,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#if defined(_WIN32)
+#    include <direct.h>
+#endif
 
 void
 test_cstr(void)
@@ -475,7 +478,11 @@ test_env_paths(void)
     CHECK(authum_env_config_path(&env, "foo.cfg", &out));
 
     remove(TEST_ENV_ROOT "/foo/data/foo.db");
+#if defined(_WIN32)
+    _rmdir(TEST_ENV_ROOT "/foo/data");
+#else
     remove(TEST_ENV_ROOT "/foo/data");
+#endif
     CHECK(stat(TEST_ENV_ROOT "/foo/data", &info) != 0);
     /* Constructing a path for a read must not create the directory. */
     CHECK(authum_env_data_path(&env, "foo.db", &out));
