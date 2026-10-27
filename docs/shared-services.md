@@ -1,7 +1,12 @@
-# Shared services extracted from gatekeeper
+# Shared services
 
 Modules keep their rules and schema; Authum supplies the reusable mechanics.
 These APIs are in `authum_client`, with no lh/HLSDK types or new runtime libraries.
+
+Native thread creation, affinity, mutexes, condition variables, sleep and monotonic
+time are provided by LH's OS layer. Authum retains module ownership, queue limits,
+main-frame completion delivery and cooperative shutdown before unloading code.
+The public Authum thread/task/clock API and module ABI are unchanged.
 
 ## Worker logging
 

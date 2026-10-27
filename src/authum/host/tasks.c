@@ -1,10 +1,18 @@
 #include <authum/host/tasks.h>
 #include <stdlib.h>
-#if defined(_WIN32)
-#    include <windows.h>
-#else
-#    include <pthread.h>
-#endif
+#include <lh/os/thread.h>
+#include <lh/os/mutex.h>
+#include <lh/os/condition.h>
+
+static void
+authum_tasks_require(lh_bool_t ok)
+{
+    /* Continuing with an invalid lock/join would unload live module code. */
+    if (!ok)
+    {
+        abort();
+    }
+}
 
 typedef struct authum_task_job
 {
@@ -12,6 +20,7 @@ typedef struct authum_task_job
     authum_task_fn work, complete, destroy;
     authum_ptr user;
 } authum_task_job_t;
+
 typedef struct authum_task_worker
 {
     struct authum_task_worker *next;
@@ -19,53 +28,34 @@ typedef struct authum_task_worker
     authum_task_job_t *pending, **pending_tail, *done, **done_tail;
     unsigned count;
     int stop;
-#if defined(_WIN32)
-    HANDLE thread;
-    CRITICAL_SECTION mutex;
-    CONDITION_VARIABLE wake;
-#else
-    pthread_t thread;
-    pthread_mutex_t mutex;
-    pthread_cond_t wake;
-#endif
+    lh_os_thread_t thread;
+    lh_os_mutex_t mutex;
+    lh_os_condition_t wake;
 } authum_task_worker_t;
+
 static authum_task_worker_t *m_workers;
 static unsigned m_dispatching;
 
 void
 authum_tasks_lock(authum_task_worker_t *w)
 {
-#if defined(_WIN32)
-    EnterCriticalSection(&w->mutex);
-#else
-    pthread_mutex_lock(&w->mutex);
-#endif
+    authum_tasks_require(lh_os_mutex_lock(&w->mutex));
 }
+
 void
 authum_tasks_unlock(authum_task_worker_t *w)
 {
-#if defined(_WIN32)
-    LeaveCriticalSection(&w->mutex);
-#else
-    pthread_mutex_unlock(&w->mutex);
-#endif
+    authum_tasks_require(lh_os_mutex_unlock(&w->mutex));
 }
+
 void
 authum_tasks_wake(authum_task_worker_t *w)
 {
-#if defined(_WIN32)
-    WakeConditionVariable(&w->wake);
-#else
-    pthread_cond_signal(&w->wake);
-#endif
+    authum_tasks_require(lh_os_condition_signal(&w->wake));
 }
-#if defined(_WIN32)
-DWORD WINAPI
-authum_tasks_run(LPVOID arg)
-#else
-void *
+
+void
 authum_tasks_run(void *arg)
-#endif
 {
     authum_task_worker_t *w = arg;
     for (;;)
@@ -74,11 +64,7 @@ authum_tasks_run(void *arg)
         authum_tasks_lock(w);
         while (!w->stop && !w->pending)
         {
-#if defined(_WIN32)
-            SleepConditionVariableCS(&w->wake, &w->mutex, INFINITE);
-#else
-            pthread_cond_wait(&w->wake, &w->mutex);
-#endif
+            authum_tasks_require(lh_os_condition_wait(&w->wake, &w->mutex));
         }
         if (w->stop)
         {
@@ -99,7 +85,6 @@ authum_tasks_run(void *arg)
         w->done_tail = &job->next;
         authum_tasks_unlock(w);
     }
-    return 0;
 }
 
 authum_task_worker_t *
@@ -113,36 +98,17 @@ authum_tasks_create(authum_ptr owner)
     w->owner = owner;
     w->pending_tail = &w->pending;
     w->done_tail = &w->done;
-#if defined(_WIN32)
-    InitializeCriticalSection(&w->mutex);
-    InitializeConditionVariable(&w->wake);
-    w->thread = CreateThread(NULL, 0, authum_tasks_run, w, 0, NULL);
-    if (!w->thread)
+    lh_os_thread_init(&w->thread);
+    lh_os_mutex_init(&w->mutex);
+    lh_os_condition_init(&w->wake);
+    if (!lh_os_mutex_open(&w->mutex) || !lh_os_condition_open(&w->wake) ||
+        !lh_os_thread_start(&w->thread, authum_tasks_run, w, -1, 0))
     {
-        DeleteCriticalSection(&w->mutex);
+        authum_tasks_require(lh_os_condition_close(&w->wake));
+        authum_tasks_require(lh_os_mutex_close(&w->mutex));
         free(w);
         return NULL;
     }
-#else
-    if (pthread_mutex_init(&w->mutex, NULL))
-    {
-        free(w);
-        return NULL;
-    }
-    if (pthread_cond_init(&w->wake, NULL))
-    {
-        pthread_mutex_destroy(&w->mutex);
-        free(w);
-        return NULL;
-    }
-    if (pthread_create(&w->thread, NULL, authum_tasks_run, w))
-    {
-        pthread_cond_destroy(&w->wake);
-        pthread_mutex_destroy(&w->mutex);
-        free(w);
-        return NULL;
-    }
-#endif
     w->next = m_workers;
     m_workers = w;
     return w;
@@ -258,6 +224,7 @@ authum_tasks_host_pump(void)
         --m_dispatching;
     }
 }
+
 authum_bool_t
 authum_tasks_host_dispatching(void)
 {
@@ -281,12 +248,7 @@ authum_tasks_host_drop_owner(authum_ptr owner)
     w->stop = 1;
     authum_tasks_wake(w);
     authum_tasks_unlock(w);
-#if defined(_WIN32)
-    WaitForSingleObject(w->thread, INFINITE);
-    CloseHandle(w->thread);
-#else
-    pthread_join(w->thread, NULL);
-#endif
+    authum_tasks_require(lh_os_thread_join(&w->thread));
     ++m_dispatching; /* destructors may only release their payload, not unload modules */
     while ((job = w->pending))
     {
@@ -302,16 +264,16 @@ authum_tasks_host_drop_owner(authum_ptr owner)
     /* Keep the stopped owner registered, with a live lock, until all payload
      * destructors return. They must not resurrect a worker during unload. */
     link = &m_workers;
-    while (*link != w) link = &(*link)->next;
+    while (*link != w)
+    {
+        link = &(*link)->next;
+    }
     *link = w->next;
-#if defined(_WIN32)
-    DeleteCriticalSection(&w->mutex);
-#else
-    pthread_cond_destroy(&w->wake);
-    pthread_mutex_destroy(&w->mutex);
-#endif
+    authum_tasks_require(lh_os_condition_close(&w->wake));
+    authum_tasks_require(lh_os_mutex_close(&w->mutex));
     free(w);
 }
+
 const authum_task_ops_t *
 authum_tasks_host_ops(void)
 {

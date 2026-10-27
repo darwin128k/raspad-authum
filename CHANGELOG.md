@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Thread, task and logging workers use LH OS primitives behind the existing module API.
+
 - HTTP request parsing now uses LH's portable parser; removed PicoHTTPParser.
   The public module API remains unchanged.
 

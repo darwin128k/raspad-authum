@@ -3,11 +3,7 @@
 #include <authum/host/clock.h>
 #include <stdatomic.h>
 #include <string.h>
-#if defined(_WIN32)
-#    include <windows.h>
-#else
-#    include <time.h>
-#endif
+#include <lh/os/thread.h>
 
 /* Single producer (the host thread), single consumer (the disk writer).
  * Separate published indices keep partially copied records invisible. */
@@ -22,12 +18,7 @@ static authum_logs_sink_t sink;
 static void
 pause_writer(void)
 {
-#if defined(_WIN32)
-    Sleep(10);
-#else
-    struct timespec delay = {0, 10000000};
-    nanosleep(&delay, NULL);
-#endif
+    (void)lh_os_thread_sleep(10);
 }
 
 static void
