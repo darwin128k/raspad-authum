@@ -10,12 +10,15 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 - [ ] **Order every module by level** (AGENTS.md 0.0, `tools/order-levels.py`).
   Done: `memory/view` (10 levels), `memory/bounds`, `memory/typed` (9 levels),
   `str/view` (4), `wstr/view` (2).
-- [ ] **Raw fields outside accessors** (AGENTS.md 0.0): 1856 uses in 97 LH
-  files (`crypto/sha.c` 128, `os/window.c` 118, `os/system/posix/window.c` 116,
-  `net/modbus/link.c` 91, `ui/canvas.c` 89, `ui/view.c` 85, ...) and 199 in 16
-  Authum files (`api/array.c` 31, `api/path.c` 21, `api/sql.c` 18,
-  `host/child.c` 17, ...). Each struct gets level-1 accessors; everything else
-  goes through them.
+- [ ] **Raw fields outside accessors** (AGENTS.md 0.0). `python tools/check-fields.py --own
+  <files>` counts accesses to our own struct fields (native OS and HLSDK structs
+  are not counted); `tools/gen-accessors.py` generates level-1 accessors.
+  Done: `memory/*`, `str/*`, `array`, `str/list`, `wstr/list`, `http/*`
+  (and Authum `host/http/request.c` reads requests through them). Left: about
+  3400 in LH — `ui` ~1950, `os` ~860, `crypto` 185, `net` 132, `sql` 65,
+  `real` 48, root files (`spsc`, `logger`) 75, `math` 23, `numeric` 19,
+  `fs/stat` 14 — and about 1400 in Authum (`host` ~770, `api` ~550,
+  `gamedll` ~100 of our own structs).
 - [ ] **The OS is the whole, the parts sit under it today** (AGENTS.md 0.1.1).
   The portable filesystem, network, threads, windows live under `lh/os/*`
   (`lh/os/fs/file.h`, `lh/os/net/...`); by the owner's concept they are parts
