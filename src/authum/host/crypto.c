@@ -20,10 +20,13 @@ authum_crypto_rijndael_decrypt_block_impl(authum_crypto_rijndael_t *self, authum
 
 void
 authum_crypto_sha_init_impl(authum_crypto_sha_t *self, authum_crypto_sha_kind_t kind);
+
 void
 authum_crypto_sha_update_impl(authum_crypto_sha_t *self, authum_ptr data, authum_usize_t size);
+
 authum_usize_t
 authum_crypto_sha_finish_impl(authum_crypto_sha_t *self, authum_ptr out, authum_usize_t out_size);
+
 authum_usize_t
 authum_crypto_sha_hash_impl(authum_crypto_sha_kind_t kind, authum_ptr data, authum_usize_t size,
                             authum_ptr out, authum_usize_t out_size);

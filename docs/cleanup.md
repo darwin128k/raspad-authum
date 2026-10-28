@@ -7,11 +7,25 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 
 ## LH (first)
 
-- [ ] **Audit for monoliths.** Find heavy functions and split them into
-  public bricks (decompose, delegate). Started with `lh/memory/allocator`.
-- [ ] **One file — one entity.** Find headers that bundle several typedefs,
-  structs or enums and split them per the `fields.h` / `fn.h` / `cb.h` /
-  `kind.h` layout.
+- [ ] **Audit for monoliths.** Split heavy functions into public bricks
+  (decompose, delegate). Done: `lh/memory/allocator`. 64 functions exceed 60
+  lines, 13 exceed 100. Worst: `lh_ui_web_page_build` (774, `ui/web/page.c`),
+  `lh_os_system_window_open` (211, posix), `lh_os_system_win_window_proc` (207),
+  `lh_ui_canvas_web_put_head` (156), `lh_memory_find_step` (156),
+  `lh_mb_link_poll` (155), `lh_memory_std_copy` (127), `lh_ui_decl_build` (114),
+  `lh_str_ptr_format_float` (112), `lh_ui_web_host_ws_ingest` (105).
+- [ ] **One file — one entity.** Done: 16 enums and 17 helper structs moved to
+  their own headers (with their functions and sources where they had any).
+  Left:
+  - `os/system/concurrency.h` (three handles + thread fn), `os/str.h`
+    (char / str / view), `ui/frame/stats.h` (callback typedef → `stats/cb.h`).
+  - The split headers copy every include of their parent; trim to what each
+    one needs.
+- [ ] **`static` functions: 69 in 12 files** (`ui/renderer3d.c` done).
+  `memory/std/x86/sse2.c` 12, `memory/std/words.c` 10, `memory/std/x86/avx2.c` 9,
+  `crypto/rijndael.c` 8, `http/parser.c` 8, `memory/std.c` 7, `os/worker.c` 5,
+  posix/win concurrency, x11, cpuid. SIMD tiers may need target attributes —
+  check before making them public bricks.
 - [ ] **Naming pass.** Functions whose name does not say what they return
   (`get_` / `set_` / `is_` / `has_`) — in LH and in Authum.
 - [ ] **Documentation briefs.** Replace one-line function comments with full

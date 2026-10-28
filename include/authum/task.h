@@ -9,6 +9,7 @@
 
 AUTHUM_EXTERN_C_BEGIN
 typedef void (*authum_task_fn)(authum_ptr user);
+
 struct authum_task_ops
 {
     authum_usize_t size;

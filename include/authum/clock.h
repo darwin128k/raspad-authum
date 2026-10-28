@@ -1,8 +1,10 @@
 #ifndef AUTHUM_CLOCK_H
 #define AUTHUM_CLOCK_H
+
 #include <authum/abi.h>
 #include <authum/char.h>
 #include <authum/extern.h>
+
 AUTHUM_EXTERN_C_BEGIN
 
 typedef struct authum_clock
@@ -15,5 +17,6 @@ typedef struct authum_clock
  * Zero means unavailable. Never use game/map time for network deadlines. */
 authum_i64_t
 authum_clock_monotonic_ms(const authum_clock_t *clock);
+
 AUTHUM_EXTERN_C_END
 #endif

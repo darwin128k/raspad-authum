@@ -240,6 +240,7 @@ authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
 /* Implemented in crypto.c / engine_server.cpp (linked into authum). */
 const authum_crypto_t *
 authum_crypto(void);
+
 const authum_engine_t *
 authum_engine(void);
 
