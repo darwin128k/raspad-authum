@@ -13,8 +13,6 @@
 #include <authum/extern.h>
 #include <authum/size.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 /**
  * @def AUTHUM_CRYPTO_SHA1_DIGEST_SIZE
  * @brief SHA-1 digest length in bytes (20).
@@ -68,7 +66,5 @@ struct authum_crypto_sha
 };
 /** @copybrief authum_crypto_sha */
 typedef struct authum_crypto_sha authum_crypto_sha_t;
-
-AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_CRYPTO_SHA_H */

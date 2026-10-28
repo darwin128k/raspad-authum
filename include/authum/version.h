@@ -10,8 +10,6 @@
 #include <authum/extern.h>
 #include <authum/null.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 typedef struct authum_version
 {
     authum_u32_t major;
@@ -21,6 +19,8 @@ typedef struct authum_version
 
 /** Brace-init helper: `authum_version_t v = AUTHUM_VERSION(1, 2, 3);` */
 #define AUTHUM_VERSION(ma, mi, pa) {(authum_u32_t)(ma), (authum_u32_t)(mi), (authum_u32_t)(pa)}
+
+AUTHUM_EXTERN_C_BEGIN
 
 /**
  * @brief Loader ABI gate: same major; for 0.y.z also same minor and patch >= need.

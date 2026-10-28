@@ -15,8 +15,6 @@
 #include <authum/extern.h>
 #include <authum/size.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 /**
  * @def AUTHUM_CRYPTO_RIJNDAEL_BLOCK_SIZE_MIN
  * @brief Smallest supported block length in bytes (16 — AES).
@@ -59,7 +57,5 @@ struct authum_crypto_rijndael
 };
 /** @copybrief authum_crypto_rijndael */
 typedef struct authum_crypto_rijndael authum_crypto_rijndael_t;
-
-AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_CRYPTO_RIJNDAEL_H */

@@ -37,8 +37,6 @@
 
 #include <stdio.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 enum
 {
     authum_cfg_line_max = 512
@@ -54,6 +52,8 @@ struct authum_cfg
     authum_char_t line[authum_cfg_line_max];
 };
 typedef struct authum_cfg authum_cfg_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 void
 authum_cfg_close(authum_cfg_t *self);

@@ -20,8 +20,6 @@
 
 #include <string.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 /**
  * @struct authum_path
  * @brief Absolute or relative path text of at most ::authum_path_capacity - 1.
@@ -33,6 +31,8 @@ struct authum_path
     authum_usize_t size;
 };
 typedef struct authum_path authum_path_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 void
 authum_path_clear(authum_path_t *self);

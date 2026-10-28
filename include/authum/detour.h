@@ -36,8 +36,6 @@
 #include <authum/null.h>
 #include <authum/size.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 /** Bytes a detour overwrites at the target (`E9` + rel32). */
 #define AUTHUM_DETOUR_SIZE 5
 
@@ -53,6 +51,8 @@ typedef struct authum_detour
     authum_bool_t attached;                  /**< between attach and detach */
     authum_bool_t patched;                   /**< jump currently written */
 } authum_detour_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /**
  * Save the first ::AUTHUM_DETOUR_SIZE bytes of @p target and write a jump

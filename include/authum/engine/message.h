@@ -14,8 +14,6 @@
 
 #include <authum/extern.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 /** Destination (the engine's MSG_* values). */
 enum
 {
@@ -43,7 +41,5 @@ enum
     authum_message_arg_string = 6,
     authum_message_arg_entity = 7
 };
-
-AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_ENGINE_MESSAGE_H */

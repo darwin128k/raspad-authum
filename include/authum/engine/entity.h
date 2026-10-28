@@ -17,8 +17,6 @@
 
 #include <authum/extern.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 /** Number fields (`authum_engine_entity_get_float` / `_set_float`). */
 enum
 {
@@ -111,7 +109,5 @@ enum
     authum_entity_dead_respawnable = 3,
     authum_entity_dead_discard_body = 4
 };
-
-AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_ENGINE_ENTITY_H */

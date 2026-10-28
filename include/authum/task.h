@@ -7,7 +7,10 @@
 #include <authum/ptr.h>
 
 AUTHUM_EXTERN_C_BEGIN
+
 typedef void (*authum_task_fn)(authum_ptr user);
+
+AUTHUM_EXTERN_C_END
 
 struct authum_task_ops
 {
@@ -23,6 +26,8 @@ struct authum_tasks
 };
 typedef struct authum_tasks authum_tasks_t;
 
+AUTHUM_EXTERN_C_BEGIN
+
 /** Main-thread submission; FIFO worker per module, at most 64 outstanding jobs.
  * work must not call engine, events, commands or sandbox APIs, or share
  * mutable state with the game thread. Logger calls require an initialized
@@ -36,5 +41,6 @@ typedef struct authum_tasks authum_tasks_t;
 authum_bool_t
 authum_tasks_submit(const authum_tasks_t *tasks, authum_task_fn work, authum_task_fn complete,
                     authum_task_fn destroy, authum_ptr user);
+
 AUTHUM_EXTERN_C_END
 #endif

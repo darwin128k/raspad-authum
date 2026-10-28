@@ -36,8 +36,6 @@
 
 #include <stdarg.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 enum
 {
     /** Longest line after formatting; the rest is cut. */
@@ -57,6 +55,8 @@ struct authum_logger
     authum_bool_t owns_journal;
 };
 typedef struct authum_logger authum_logger_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /** Bind @p self to @p host's log channel (keep @p host alive until close). */
 void
@@ -88,6 +88,8 @@ void
 authum_host_log(const authum_host_t *host, authum_logger_level_t level, const authum_char_t *fmt,
                 ...);
 
+AUTHUM_EXTERN_C_END
+
 #define authum_host_log_info(host, ...)                                                            \
     authum_host_log((host), authum_logger_level_info, __VA_ARGS__)
 #define authum_host_log_warning(host, ...)                                                         \
@@ -96,6 +98,8 @@ authum_host_log(const authum_host_t *host, authum_logger_level_t level, const au
     authum_host_log((host), authum_logger_level_error, __VA_ARGS__)
 #define authum_host_log_debug(host, ...)                                                           \
     authum_host_log((host), authum_logger_level_debug, __VA_ARGS__)
+
+AUTHUM_EXTERN_C_BEGIN
 
 /** Drop the binding (and close a journal); later calls do nothing. */
 void
@@ -113,6 +117,8 @@ void
 authum_logger_log(authum_logger_t *self, authum_logger_level_t level, const authum_char_t *fmt,
                   ...);
 
+AUTHUM_EXTERN_C_END
+
 #define authum_logger_emergency(self, ...)                                                         \
     authum_logger_log((self), authum_logger_level_emergency, __VA_ARGS__)
 #define authum_logger_alert(self, ...)                                                             \
@@ -129,6 +135,8 @@ authum_logger_log(authum_logger_t *self, authum_logger_level_t level, const auth
     authum_logger_log((self), authum_logger_level_info, __VA_ARGS__)
 #define authum_logger_debug(self, ...)                                                             \
     authum_logger_log((self), authum_logger_level_debug, __VA_ARGS__)
+
+AUTHUM_EXTERN_C_BEGIN
 
 /** Log @p len bytes of @p data as hex at debug level, 16 per line. */
 void

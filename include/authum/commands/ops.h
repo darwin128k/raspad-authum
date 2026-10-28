@@ -12,8 +12,6 @@
 #include <authum/abi.h>
 #include <authum/command/def.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 struct authum_commands_ops
 {
     /** sizeof this table as built by the host — see <authum/abi.h>. */
@@ -24,7 +22,5 @@ struct authum_commands_ops
                             const authum_char_t *name);
 };
 typedef struct authum_commands_ops authum_commands_ops_t;
-
-AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_COMMANDS_OPS_H */

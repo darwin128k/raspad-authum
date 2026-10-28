@@ -3,11 +3,12 @@
 
 #include <authum/logger.h>
 
-AUTHUM_EXTERN_C_BEGIN
 typedef struct authum_logger_buffer
 {
     authum_ptr impl;
 } authum_logger_buffer_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /** Initialize a zeroed buffer (1..256 lines). Owns its storage; no host calls.
  * Capture on one worker, then flush on the game thread after work completes.
@@ -41,5 +42,6 @@ authum_logger_buffer_active(void);
 authum_bool_t
 authum_logger_buffer_log_v(authum_logger_t *logger, authum_logger_level_t level,
                            const authum_char_t *fmt, va_list ap);
+
 AUTHUM_EXTERN_C_END
 #endif

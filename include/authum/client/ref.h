@@ -3,7 +3,6 @@
 
 #include <authum/host.h>
 
-AUTHUM_EXTERN_C_BEGIN
 typedef struct authum_clients
 {
     authum_ptr impl;
@@ -14,6 +13,8 @@ typedef struct authum_client_ref
     authum_u64_t generation, lifetime;
     authum_ptr tracker;
 } authum_client_ref_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /** Main-thread tracker; initialize before subscribing your own player handlers.
  * Lifecycle events update generations automatically, including map boundaries.

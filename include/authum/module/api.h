@@ -12,8 +12,6 @@
 #include <authum/export.h>
 #include <authum/host.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 #define AUTHUM_MODULE_API_SYM "authum_module_api"
 
 /**
@@ -26,6 +24,8 @@ typedef struct authum_module_api
     authum_bool_t (*start)(authum_host_t *host);
     void (*stop)(void);
 } authum_module_api_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 AUTHUM_MODULE_EXPORT extern const authum_module_api_t authum_module_api;
 

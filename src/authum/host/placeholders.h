@@ -28,8 +28,6 @@
 #include <authum/env.h>
 #include <authum/placeholders.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 enum
 {
     authum_placeholder_name_max = 64,
@@ -70,6 +68,8 @@ typedef struct authum_placeholder_owner
     const authum_char_t *standard[authum_placeholder_standard_count];
     authum_char_t storage[authum_placeholder_standard_count][authum_placeholder_standard_max];
 } authum_placeholder_owner_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /**
  * @brief Bind @p service to @p owner.

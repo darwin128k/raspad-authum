@@ -4,7 +4,6 @@
 #include <authum/host.h>
 #include <authum/sql.h>
 
-AUTHUM_EXTERN_C_BEGIN
 /** A connection description, not a live handle. Strings are copied on submit.
  * Use either the SQLite path or the MySQL fields, according to driver.
  */
@@ -19,6 +18,8 @@ typedef struct authum_sql_thread_result
     authum_bool_t connected, success;
     authum_char_t error[authum_sql_errmsg_max];
 } authum_sql_thread_result_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /** Worker-only SQL batch. Copy wanted rows into user-owned storage before
  * returning. No engine/host-log/event APIs here. Immutable environment/path
@@ -41,5 +42,6 @@ authum_bool_t
 authum_sql_thread_query(const authum_host_t *host, const authum_sql_connection_t *connection,
                         authum_sql_thread_work_fn work, authum_sql_thread_complete_fn complete,
                         authum_task_fn destroy, authum_ptr user);
+
 AUTHUM_EXTERN_C_END
 #endif

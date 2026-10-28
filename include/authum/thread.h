@@ -7,9 +7,13 @@
 #include <authum/extern.h>
 #include <authum/ptr.h>
 
-AUTHUM_EXTERN_C_BEGIN
 typedef struct authum_thread authum_thread_t;
+
+AUTHUM_EXTERN_C_BEGIN
+
 typedef void (*authum_thread_fn)(authum_ptr user);
+
+AUTHUM_EXTERN_C_END
 
 enum
 {
@@ -30,6 +34,8 @@ typedef struct authum_threads
     const authum_thread_ops_t *ops;
     authum_ptr owner;
 } authum_threads_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /** Owner/game thread only. run executes on a private OS thread and must not
  * call game-thread-only APIs. wake executes ON THE OWNER THREAD, must be

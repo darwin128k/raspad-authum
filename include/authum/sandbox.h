@@ -25,8 +25,6 @@
 #include <authum/bool.h>
 #include <authum/sandbox/ops.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 /**
  * @struct authum_sandbox
  * @brief Handle: host ops + the root block allocations go under.
@@ -39,6 +37,8 @@ struct authum_sandbox
     authum_ptr root;
 };
 typedef struct authum_sandbox authum_sandbox_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /** @return ::authum_bool_true when @p self has ops and a root. */
 authum_bool_t

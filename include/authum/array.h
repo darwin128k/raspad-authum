@@ -19,8 +19,6 @@
 
 #include <authum/sandbox.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 struct authum_array
 {
     authum_sandbox_t sandbox;
@@ -30,6 +28,8 @@ struct authum_array
     authum_usize_t item_size;
 };
 typedef struct authum_array authum_array_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /** Empty array of @p item_size-byte items; allocates nothing yet. */
 authum_bool_t

@@ -23,8 +23,6 @@
 #include <authum/float.h>
 #include <authum/size.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 #define AUTHUM_EVENT_SERVER_ACTIVATE "authum.server.activate"
 #define AUTHUM_EVENT_SERVER_DEACTIVATE "authum.server.deactivate"
 #define AUTHUM_EVENT_SERVER_FRAME "authum.server.frame"
@@ -74,7 +72,5 @@ struct authum_event_server_log
     authum_i64_t unix_time;
 };
 typedef struct authum_event_server_log authum_event_server_log_t;
-
-AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_EVENT_SERVER_H */
