@@ -1,10 +1,8 @@
 #include <authum/memory.h>
 #include <authum/null.h>
-#include <lh/math/ops.h>
 #include <lh/config.h>
 #include <lh/memory/std.h>
 #include <lh/runtime/allocator.h>
-#include <lh/numeric/fixed/limits.h>
 
 authum_ptr
 authum_memory_alloc(authum_usize_t size)

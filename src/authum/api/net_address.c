@@ -1,13 +1,5 @@
 #include <authum/net.h>
 #include <authum/null.h>
-#include <authum/bool.h>
-#include <authum/byte.h>
-#include <authum/char.h>
-#include <authum/size.h>
-#include <lh/cast/static.h>
-#include <lh/char/map.h>
-#include <lh/math/ops.h>
-#include <lh/util/ptr.h>
 #include <lh/net/port.h>
 #include <lh/char/digit.h>
 #include <lh/memory/std.h>

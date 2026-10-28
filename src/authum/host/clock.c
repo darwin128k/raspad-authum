@@ -1,6 +1,4 @@
 #include <authum/host/clock.h>
-#include <lh/cast/static.h>
-#include <lh/util/ptr.h>
 #include <lh/os/tick.h>
 
 /**

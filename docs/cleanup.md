@@ -7,6 +7,30 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 
 ## LH (first)
 
+- [ ] **BUG, found by AddressSanitizer (Linux build `build-lh-concurrency`):**
+  word-at-a-time reads past the end of the buffer.
+  - `lh_memory_find_step` (`src/lh/memory.c:368`) through
+    `lh_memory_bytes_find` (`include/lh/util/memory.h:235`):
+    stack-buffer-overflow, test `memory_scan.finds_first_byte`;
+  - `lh_str_ptr_equals` (`src/lh/util/str/ptr.c:1151`) through
+    `lh_memory_bytes_eq_cstr` (`include/lh/util/memory.h:160`):
+    global-buffer-overflow, test `str_raw_equals.returns_true_only_if_strings_are_identical`.
+  Owner: fix it. `lh_memory_find_step` is also a 156-line monolith.
+- [ ] **`lh/sql/mysql/api.h`:** 17 function-type typedefs, the table struct and
+  its loader in one header (one file — one entity); `options` and
+  `thread_end` declared by hand beside `lh_sql_mysql_api_fields`. The name
+  `api` is to be discussed with the owner.
+- [ ] **Types inside `extern "C"`:** 133 data types (struct / enum / plain
+  typedef) in 59 headers sit inside `LH_COMPILER_EXTERN_C_BEGIN` /
+  `AUTHUM_EXTERN_C_BEGIN`, mostly Authum's public API. Data types go before the
+  block; function declarations and function-type typedefs stay inside.
+- [ ] **LH does not use its own bricks** (AGENTS.md section 0). Done: 131
+  character literals → `lh/char/map.h` names (tests keep literals as data);
+  `lh_ui_web_js_put_s64` → `lh_str_ptr_format_sllong`; the HTTP parser →
+  `lh/char`, `lh_str_view_from_offset`, `lh_str_view_trim`,
+  `lh_str_ptr_contains_char`. Left: sweep for hand-written digit loops,
+  `switch` sets, min/max ternaries, open-coded trims and parses that have a
+  brick; libc `str*` / `mem*` calls in portable code.
 - [ ] **Audit for monoliths.** Split heavy functions into public bricks
   (decompose, delegate). Done: `lh/memory/allocator`. 64 functions exceed 60
   lines, 13 exceed 100. Worst: `lh_ui_web_page_build` (774, `ui/web/page.c`),
@@ -21,9 +45,9 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
     (char / str / view), `ui/frame/stats.h` (callback typedef → `stats/cb.h`).
   - The split headers copy every include of their parent; trim to what each
     one needs.
-- [ ] **`static` functions: 69 in 12 files** (`ui/renderer3d.c` done).
+- [ ] **`static` functions: 61 in 11 files** (`ui/renderer3d.c`, `http/parser.c` done).
   `memory/std/x86/sse2.c` 12, `memory/std/words.c` 10, `memory/std/x86/avx2.c` 9,
-  `crypto/rijndael.c` 8, `http/parser.c` 8, `memory/std.c` 7, `os/worker.c` 5,
+  `crypto/rijndael.c` 8, `memory/std.c` 7, `os/worker.c` 5,
   posix/win concurrency, x11, cpuid. SIMD tiers may need target attributes —
   check before making them public bricks.
 - [ ] **Naming pass.** Functions whose name does not say what they return
@@ -33,12 +57,13 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 - [ ] **`lh_fs_path_t`.** It is awkward to use. Decide: simplify it, or split
   into two entities — a dynamic (owning) path and a static/fixed one usable
   directly with `lh_str_ptr`. Owner: "later", after the general cleanup.
-- [ ] **HTTP parser (`lh/http.h`).** Owner does not see why it is shaped this
-  way; consider a separate module. Needs review and a decision.
 - [ ] Pre-existing test failures: `lh_test_math` (`math/view.cpp` 149–153),
   `lh_test_ui` (`web_ws.length_127_roundtrip_over_64k`).
 
 ## Authum (after LH)
+
+- [ ] Authum has no named-character facade like `lh/char/map.h`; module code
+  (`examples/chatfilter/chatfilter.c`) still compares bare literals.
 
 - [ ] **Authum is a transparent facade over LH.** Inventory `include/authum/`:
   keep host-owned ABI (module/abi, host, events, commands, sandbox, engine,

@@ -12,7 +12,6 @@
 #define AUTHUM_CRYPTO_ED25519_H
 
 #include <authum/bool.h>
-#include <authum/byte.h>
 #include <authum/extern.h>
 #include <authum/ptr.h>
 #include <authum/size.h>

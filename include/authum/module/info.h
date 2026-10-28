@@ -8,7 +8,6 @@
 
 #include <authum/char.h>
 #include <authum/export.h>
-#include <authum/extern.h>
 #include <authum/module/info/fields.h>
 #include <authum/version.h>
 

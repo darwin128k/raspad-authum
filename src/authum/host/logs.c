@@ -6,27 +6,14 @@
 
 #include <authum/host/logs.h>
 #include <authum/memory.h>
-#include <authum/bool.h>
-#include <authum/byte.h>
-#include <authum/char.h>
-#include <authum/size.h>
 #include <authum/unused.h>
-#include <lh/cast/reinterpret.h>
-#include <lh/cast/static.h>
-#include <lh/char/map.h>
-#include <lh/math/ops.h>
-#include <lh/util/ptr.h>
 #include <lh/char/letter.h>
 #include <lh/char/digit.h>
 #include <lh/memory/std.h>
-#include <authum/host/logs/writer.h>
 #include <authum/host/logs/files.h>
 
 #include <authum/cfg.h>
-#include <authum/cstr.h>
 #include <authum/logger.h>
-#include <authum/null.h>
-#include <authum/path.h>
 
 #include <lh/runtime/allocator.h>
 

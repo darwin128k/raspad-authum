@@ -33,11 +33,7 @@
 #define AUTHUM_ENV_H
 
 #include <authum/abi.h>
-#include <authum/bool.h>
-#include <authum/extern.h>
-#include <authum/null.h>
 #include <authum/path.h>
-#include <authum/size.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

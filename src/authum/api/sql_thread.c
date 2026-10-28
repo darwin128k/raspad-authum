@@ -1,12 +1,8 @@
 #include <authum/sql/thread.h>
-#include <lh/cast/static.h>
-#include <lh/math/ops.h>
-#include <lh/util/ptr.h>
 #include <authum/memory.h>
 #include <lh/memory/std.h>
 #include <lh/sql/mysql/api.h>
 #include <authum/crypto/ed25519.h>
-#include <lh/numeric/fixed/limits.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

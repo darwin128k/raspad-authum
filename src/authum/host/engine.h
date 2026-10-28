@@ -10,11 +10,8 @@
 #ifndef AUTHUM_HOST_ENGINE_H
 #define AUTHUM_HOST_ENGINE_H
 
-#include <authum/byte.h>
 #include <lh/util/ptr.h>
-#include <authum/char.h>
 #include <authum/engine.h>
-#include <authum/extern.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

@@ -14,7 +14,6 @@
 #include <authum/abi.h>
 #include <authum/extern.h>
 #include <authum/ptr.h>
-#include <authum/size.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

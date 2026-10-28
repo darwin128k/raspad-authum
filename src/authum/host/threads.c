@@ -1,11 +1,5 @@
 #include <authum/host/threads.h>
 #include <authum/null.h>
-#include <authum/bool.h>
-#include <authum/byte.h>
-#include <authum/char.h>
-#include <authum/size.h>
-#include <lh/cast/static.h>
-#include <lh/math/ops.h>
 #include <lh/util/ptr.h>
 #include <authum/memory.h>
 #include <lh/memory/std.h>

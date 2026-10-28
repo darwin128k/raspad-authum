@@ -9,6 +9,15 @@ session; do not make the owner repeat them again.
   shared HTTP service, log channels, placeholders). Nothing generic is
   implemented in Authum. If a brick is missing, add it to LH first, then
   wrap it as a thin `authum_*` facade with no logic of its own.
+- **First rule: use the bricks that exist.** The owner: "Why did we create all
+  these wrappers at all, if nobody uses them — not even LH itself?" Code that
+  re-implements an existing LH brick (a character literal instead of
+  `lh/char/map.h`, a `switch` instead of `lh_str_ptr_contains_char`, a digit
+  loop instead of `lh/str/format`) is a defect. Search first; fix the brick if
+  it does not fit; never write a local copy.
+- **From smaller to larger, no extra includes.** Each brick builds only on
+  smaller ones; a file never includes a header that one of its includes
+  already brings in. Check with `python tools/check-includes.py` (0 required).
 - **The LH rules apply to Authum code too:** one file — one entity, decompose
   and delegate, no parallel implementations or detours, `try_` + checked
   pairs, names that say what they return, a test per brick, full briefs.

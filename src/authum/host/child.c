@@ -1,14 +1,9 @@
 #include <authum/host/commands.h>
-#include <authum/ptr.h>
 #include <authum/memory.h>
-#include <authum/char.h>
-#include <authum/size.h>
 #include <authum/unused.h>
-#include <lh/cast/static.h>
 #include <lh/memory/std.h>
 #include <authum/host/errors.h>
 #include <authum/host/events.h>
-#include <authum/host.h>
 #include <authum/host/logs.h>
 #include <authum/host/sandbox.h>
 #include <authum/host/module.h>
@@ -18,20 +13,10 @@
 #include <authum/host/clock.h>
 #include <authum/host/placeholders.h>
 #include <authum/module/api.h>
-#include <authum/path.h>
-#include <authum/version.h>
-#include <lh/fs/path.h>
-#include <lh/fs/path/style.h>
-#include <lh/list.h>
-#include <lh/null.h>
 #include <lh/os.h>
 #include <lh/os/error/code.h>
-#include <lh/os/loader.h>
 #include <lh/os/system/fs/path.h>
 #include <lh/runtime/allocator.h>
-#include <lh/str.h>
-#include <lh/util/addr.h>
-#include <lh/util/ptr.h>
 
 #include <string.h>
 

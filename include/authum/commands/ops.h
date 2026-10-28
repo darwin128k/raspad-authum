@@ -10,11 +10,7 @@
 #define AUTHUM_COMMANDS_OPS_H
 
 #include <authum/abi.h>
-#include <authum/bool.h>
-#include <authum/char.h>
 #include <authum/command/def.h>
-#include <authum/extern.h>
-#include <authum/ptr.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

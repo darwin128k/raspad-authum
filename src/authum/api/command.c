@@ -1,16 +1,9 @@
 #include <authum/command.h>
-#include <authum/bool.h>
-#include <authum/byte.h>
-#include <authum/char.h>
-#include <authum/size.h>
 #include <authum/unused.h>
-#include <lh/cast/static.h>
 #include <lh/char/map.h>
-#include <lh/math/ops.h>
 #include <lh/memory/std.h>
 
 #include <authum/cstr.h>
-#include <authum/null.h>
 
 #include <stdarg.h>
 #include <stdio.h>

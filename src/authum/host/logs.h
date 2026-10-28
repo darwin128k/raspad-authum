@@ -35,12 +35,7 @@
 #ifndef AUTHUM_HOST_LOGS_H
 #define AUTHUM_HOST_LOGS_H
 
-#include <authum/bool.h>
-#include <authum/char.h>
-#include <authum/extern.h>
-#include <authum/logger/level.h>
 #include <authum/logger/ops.h>
-#include <authum/ptr.h>
 
 #include <time.h>
 

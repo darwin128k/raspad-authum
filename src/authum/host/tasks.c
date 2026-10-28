@@ -1,6 +1,4 @@
 #include <authum/host/tasks.h>
-#include <lh/math/ops.h>
-#include <lh/util/ptr.h>
 #include <authum/memory.h>
 #include <authum/null.h>
 #include <lh/os/worker.h>

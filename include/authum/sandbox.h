@@ -23,10 +23,7 @@
 #define AUTHUM_SANDBOX_H
 
 #include <authum/bool.h>
-#include <authum/extern.h>
-#include <authum/ptr.h>
 #include <authum/sandbox/ops.h>
-#include <authum/size.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

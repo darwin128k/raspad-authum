@@ -1,11 +1,3 @@
-#include <authum/host.h>
-#include <authum/bool.h>
-#include <authum/byte.h>
-#include <authum/char.h>
-#include <authum/float.h>
-#include <authum/size.h>
-#include <lh/cast/reinterpret.h>
-#include <lh/math/ops.h>
 #include <lh/util/ptr.h>
 #include <lh/memory/std.h>
 #include <authum/logger.h>

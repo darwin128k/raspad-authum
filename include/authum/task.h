@@ -5,7 +5,6 @@
 #include <authum/bool.h>
 #include <authum/extern.h>
 #include <authum/ptr.h>
-#include <authum/size.h>
 
 AUTHUM_EXTERN_C_BEGIN
 typedef void (*authum_task_fn)(authum_ptr user);

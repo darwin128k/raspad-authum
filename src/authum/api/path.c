@@ -1,14 +1,9 @@
 #include <authum/path.h>
-#include <lh/cast/static.h>
 #include <lh/char/map.h>
-#include <lh/math/ops.h>
-#include <lh/util/ptr.h>
 #include <lh/memory/std.h>
 
-#include <lh/fs/path.h>
 #include <lh/os/fs/dir.h>
 #include <lh/os/system/fs/path.h>
-#include <lh/str/view.h>
 
 void
 authum_path_clear(authum_path_t *self)

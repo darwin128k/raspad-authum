@@ -1,8 +1,4 @@
 #include <authum/host/http/internal.h>
-#include <authum/ptr.h>
-#include <lh/cast/static.h>
-#include <lh/math/ops.h>
-#include <lh/util/ptr.h>
 #include <lh/os/net/socket.h>
 
 static void

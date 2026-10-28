@@ -1,13 +1,9 @@
 #include <authum/host/errors.h>
-#include <authum/ptr.h>
 #include <authum/unused.h>
 #include <authum/host/loader.h>
 #include <authum/host/module.h>
 #include <authum/module/api.h>
-#include <authum/version.h>
-#include <lh/null.h>
 #include <lh/os.h>
-#include <lh/util/ptr.h>
 
 authum_module_t authum;
 

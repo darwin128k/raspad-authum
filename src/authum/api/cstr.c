@@ -1,13 +1,8 @@
 #include <authum/cstr.h>
 #include <lh/char/letter.h>
 #include <lh/util/char.h>
-#include <lh/cast/static.h>
-#include <lh/char/map.h>
-#include <lh/math/ops.h>
-#include <lh/util/ptr.h>
 #include <lh/memory/std.h>
 
-#include <lh/numeric/types.h>
 #include <lh/str/parse/ullong.h>
 
 #include <string.h>

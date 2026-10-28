@@ -10,7 +10,6 @@
 #define AUTHUM_CSTR_H
 
 #include <authum/bool.h>
-#include <authum/byte.h>
 #include <authum/char.h>
 #include <authum/extern.h>
 #include <authum/null.h>

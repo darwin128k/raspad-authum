@@ -1,37 +1,14 @@
 #include <authum/host/errors.h>
-#include <authum/byte.h>
-#include <authum/char.h>
 #include <authum/unused.h>
-#include <lh/cast/reinterpret.h>
 #include <authum/host/loader.h>
 #include <authum/host/tasks.h>
 #include <authum/host/log.h>
-#include <lh/cast/static.h>
-#include <lh/compiler/os.h>
-#include <lh/fs/file/mode.h>
-#include <lh/fs/kind.h>
-#include <lh/fs/path/style.h>
-#include <lh/fs/stat.h>
 #include <lh/char/map.h>
-#include <lh/math/ops.h>
-#include <lh/null.h>
 #include <lh/os.h>
 #include <lh/os/error/code.h>
-#include <lh/os/fs/dir.h>
-#include <lh/os/fs/file.h>
-#include <lh/os/fs/stat.h>
-#include <lh/os/loader.h>
-#include <lh/os/result.h>
 #include <lh/os/system/fs/path.h>
 #include <lh/os/system/shared.h>
-#include <lh/str.h>
 #include <lh/str/line/reader.h>
-#include <lh/str/view.h>
-#include <lh/str/view/initializer.h>
-#include <lh/util/addr.h>
-#include <lh/util/array/ptr.h>
-#include <lh/util/ptr.h>
-#include <lh/util/str/ptr.h>
 
 enum
 {

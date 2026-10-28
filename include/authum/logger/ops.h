@@ -11,12 +11,10 @@
 #define AUTHUM_LOGGER_OPS_H
 
 #include <authum/bool.h>
-#include <authum/char.h>
 #include <authum/extern.h>
 #include <authum/logger/level.h>
 #include <authum/logger/options.h>
 #include <authum/ptr.h>
-#include <authum/size.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

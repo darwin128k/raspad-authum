@@ -17,11 +17,7 @@
 #ifndef AUTHUM_ARRAY_H
 #define AUTHUM_ARRAY_H
 
-#include <authum/bool.h>
-#include <authum/extern.h>
-#include <authum/ptr.h>
 #include <authum/sandbox.h>
-#include <authum/size.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

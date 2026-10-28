@@ -9,9 +9,7 @@
 #ifndef AUTHUM_MODULE_API_H
 #define AUTHUM_MODULE_API_H
 
-#include <authum/bool.h>
 #include <authum/export.h>
-#include <authum/extern.h>
 #include <authum/host.h>
 
 AUTHUM_EXTERN_C_BEGIN

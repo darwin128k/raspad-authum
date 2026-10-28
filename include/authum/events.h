@@ -26,13 +26,7 @@
 #ifndef AUTHUM_EVENTS_H
 #define AUTHUM_EVENTS_H
 
-#include <authum/bool.h>
-#include <authum/char.h>
-#include <authum/event/handler.h>
-#include <authum/event/result.h>
 #include <authum/events/ops.h>
-#include <authum/extern.h>
-#include <authum/ptr.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

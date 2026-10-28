@@ -1,8 +1,4 @@
 #include <authum/host/http/internal.h>
-#include <authum/byte.h>
-#include <authum/char.h>
-#include <authum/size.h>
-#include <lh/cast/static.h>
 
 void
 authum_http_response_set(authum_http_client_t *client, authum_i32_t code,

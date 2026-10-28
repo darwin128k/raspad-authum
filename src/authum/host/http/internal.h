@@ -2,11 +2,6 @@
 #define AUTHUM_HOST_HTTP_INTERNAL_H
 
 #include <authum/host/http.h>
-#include <authum/ptr.h>
-#include <authum/bool.h>
-#include <authum/byte.h>
-#include <authum/char.h>
-#include <authum/size.h>
 #include <lh/os/system/net/socket.h>
 #include <authum/net.h>
 #include <authum/host/clock.h>

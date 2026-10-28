@@ -18,7 +18,6 @@
 #include <authum/char.h>
 #include <authum/extern.h>
 #include <authum/null.h>
-#include <authum/ptr.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

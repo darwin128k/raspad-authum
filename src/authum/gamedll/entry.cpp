@@ -11,28 +11,17 @@
  * then the real game DLL is loaded and handed the engine's functions.
  */
 #include <authum/gamedll/engine.h>
-#include <authum/ptr.h>
-#include <authum/bool.h>
-#include <authum/byte.h>
-#include <authum/char.h>
 #include <authum/float.h>
-#include <authum/null.h>
-#include <authum/size.h>
 #include <authum/unused.h>
 #include <lh/cast/const.h>
-#include <lh/cast/reinterpret.h>
 #include <lh/char/map.h>
-#include <lh/math/ops.h>
-#include <lh/util/ptr.h>
 #include <authum/gamedll/game.h>
 #include <authum/gamedll/hooks.h>
 
 #include <authum/host/console.h>
-#include <authum/export.h>
 #include <authum/host/gate.h>
 #include <authum/host/loader.h>
 #include <authum/host/log.h>
-#include <authum/host/module.h>
 
 #include <extdll.h>
 #include <eiface.h>
@@ -40,8 +29,6 @@
 #include <cstdio>
 #include <cstring>
 
-#include <lh/fs/path.h>
-#include <lh/os/module.h>
 
 extern enginefuncs_t g_engfuncs;
 extern globalvars_t *gpGlobals;

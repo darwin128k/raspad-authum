@@ -24,11 +24,7 @@
 #ifndef AUTHUM_HOST_CONSOLE_H
 #define AUTHUM_HOST_CONSOLE_H
 
-#include <authum/char.h>
 #include <authum/command.h>
-#include <authum/extern.h>
-#include <authum/ptr.h>
-#include <authum/size.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

@@ -11,10 +11,7 @@
 #ifndef AUTHUM_HOST_LOG_H
 #define AUTHUM_HOST_LOG_H
 
-#include <authum/char.h>
-#include <authum/extern.h>
 #include <authum/host/logs.h>
-#include <lh/bool.h>
 #include <lh/fs/path.h>
 
 AUTHUM_EXTERN_C_BEGIN

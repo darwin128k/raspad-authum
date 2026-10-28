@@ -15,14 +15,7 @@
 #ifndef AUTHUM_COMMANDS_H
 #define AUTHUM_COMMANDS_H
 
-#include <authum/bool.h>
-#include <authum/char.h>
-#include <authum/command.h>
-#include <authum/command/def.h>
 #include <authum/commands/ops.h>
-#include <authum/extern.h>
-#include <authum/ptr.h>
-#include <authum/size.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

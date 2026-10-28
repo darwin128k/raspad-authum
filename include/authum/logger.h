@@ -32,15 +32,7 @@
 #ifndef AUTHUM_LOGGER_H
 #define AUTHUM_LOGGER_H
 
-#include <authum/bool.h>
-#include <authum/char.h>
-#include <authum/extern.h>
 #include <authum/host.h>
-#include <authum/logger/level.h>
-#include <authum/logger/ops.h>
-#include <authum/null.h>
-#include <authum/ptr.h>
-#include <authum/size.h>
 
 #include <stdarg.h>
 

@@ -1,11 +1,5 @@
 #include <authum/host/logs/writer.h>
-#include <authum/null.h>
-#include <authum/bool.h>
-#include <authum/byte.h>
-#include <authum/size.h>
 #include <authum/unused.h>
-#include <lh/math/ops.h>
-#include <lh/util/ptr.h>
 #include <authum/host/threads.h>
 #include <authum/host/clock.h>
 #include <stdatomic.h>

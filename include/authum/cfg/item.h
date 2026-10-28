@@ -9,15 +9,8 @@
 #ifndef AUTHUM_CFG_ITEM_H
 #define AUTHUM_CFG_ITEM_H
 
-#include <authum/bool.h>
-#include <authum/byte.h>
 #include <authum/cfg/kind.h>
-#include <authum/char.h>
 #include <authum/cstr.h>
-#include <authum/extern.h>
-#include <authum/null.h>
-#include <authum/ptr.h>
-#include <authum/size.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

@@ -32,16 +32,8 @@
 #ifndef AUTHUM_CFG_H
 #define AUTHUM_CFG_H
 
-#include <authum/bool.h>
-#include <authum/byte.h>
 #include <authum/cfg/item.h>
-#include <authum/cfg/kind.h>
-#include <authum/char.h>
-#include <authum/extern.h>
-#include <authum/null.h>
 #include <authum/path.h>
-#include <authum/ptr.h>
-#include <authum/size.h>
 
 #include <stdio.h>
 

@@ -21,14 +21,11 @@
 
 #include <authum/abi.h>
 #include <authum/bool.h>
-#include <authum/byte.h>
 #include <authum/char.h>
 #include <authum/engine/entity.h>
 #include <authum/engine/message.h>
-#include <authum/extern.h>
 #include <authum/float.h>
 #include <authum/null.h>
-#include <authum/size.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

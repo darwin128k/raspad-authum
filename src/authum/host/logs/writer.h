@@ -14,7 +14,6 @@
 #include <authum/path.h>
 #include <authum/logger/level.h>
 #include <authum/logger/options.h>
-#include <authum/byte.h>
 #include <time.h>
 
 enum
