@@ -96,9 +96,9 @@ void
 authum_http_access_token(char *dst, size_t capacity, const char *src, size_t length);
 void
 authum_http_client_close(authum_http_server_t *s, authum_http_client_t *c);
-int
-authum_http_resource_open(int root, const authum_http_options_t *options, const char *url,
-                          size_t length, off_t *size);
+authum_i32_t
+authum_http_resource_open(authum_i32_t root, const authum_http_options_t *options,
+                          const authum_char_t *url, authum_usize_t length, off_t *size);
 void
 authum_http_response_set(authum_http_client_t *c, int code, const char *reason, off_t size,
                          int head);
