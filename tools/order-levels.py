@@ -45,6 +45,14 @@ def split_items(text, pattern):
     return text[:head_end], items, text[pos:]
 
 
+CONDITIONAL = re.compile(r'^\s*#\s*(?:if|ifdef|ifndef|elif|else|endif)\b', re.M)
+
+
+def conditional(text):
+    """True when @p text holds a preprocessor conditional: sorting across one moves code in or out of it."""
+    return CONDITIONAL.search(text) is not None
+
+
 def sort_items(items, level):
     keyed = [(level.get(name, 10 ** 6), i, name, chunk) for i, (name, chunk) in enumerate(items)]
     return [(name, chunk) for _, _, name, chunk in sorted(keyed)]
@@ -65,23 +73,40 @@ def main():
         r'[A-Za-z_][^\n;{}()]*\n(?P<name>' + re.escape(prefix) + r'\w+)\((?:[^;{]|\n)*?\)\n\{\n.*?\n\}\n',
         re.S)
     head, items, tail = split_items(text, definition)
+    if items and conditional(''.join(chunk for _, chunk in items)):
+        print(f'{c_path}: definitions sit inside #if blocks, not sorting (moving them would cross the blocks)')
+        return 1
+    if not items:
+        print(f'{c_path}: no definition starts with {prefix}, not sorting')
+        return 1
     items = sort_items(items, level)
     write(c_path, head + ''.join('\n' + chunk.strip('\n') + '\n' for _, chunk in items) + tail, nl)
 
     # .h: the declarations inside the extern "C" block, each with its doc comment.
     text, nl = read(h_path)
-    begin = text.index('LH_COMPILER_EXTERN_C_BEGIN\n') + len('LH_COMPILER_EXTERN_C_BEGIN\n')
-    end = text.index('LH_COMPILER_EXTERN_C_END', begin)
-    block = text[begin:end]
     declaration = re.compile(
         r'\s*(?:/\*\*(?:(?!\*/).)*?\*/\n)?[A-Za-z_][^\n;{}()]*\n(?P<name>' + re.escape(prefix) +
         r'\w+)\((?:[^;])*?\);\n', re.S)
-    head, decls, tail = split_items(block, declaration)
-    if tail.strip() or head.strip():
-        print(f'{h_path}: something other than declarations in the block, not sorting it')
+    # The block that holds the module's declarations (others may hold only typedefs).
+    blocks = [(m.end(), text.index('LH_COMPILER_EXTERN_C_END', m.end()))
+              for m in re.finditer(r'LH_COMPILER_EXTERN_C_BEGIN\n', text)]
+    with_decls = [(b, e) for b, e in blocks if declaration.search(text[b:e])]
+    if len(with_decls) != 1:
+        print(f'{h_path}: {len(with_decls)} blocks hold declarations, not sorting the header')
         return 1
+    begin, end = with_decls[0]
+    block = text[begin:end]
+    head, decls, tail = split_items(block, declaration)
+    if conditional(''.join(chunk for _, chunk in decls)):
+        print(f'{h_path}: declarations sit inside #if blocks, not sorting the header')
+        return 1
+    if tail.strip():
+        print(f'{h_path}: something other than declarations after them in the block, not sorting it')
+        return 1
+    # Function-type typedefs may open the block; they stay where they are.
     decls = sort_items(decls, level)
-    block = '\n' + ''.join('\n' + chunk.strip('\n') + '\n' for _, chunk in decls) + '\n'
+    block = ('\n' + head.strip('\n') + '\n' if head.strip() else '\n') + \
+        ''.join('\n' + chunk.strip('\n') + '\n' for _, chunk in decls) + '\n'
     write(h_path, text[:begin] + block + text[end:], nl)
     print(f'sorted {len(items)} definitions and {len(decls)} declarations of {prefix}')
     return 0

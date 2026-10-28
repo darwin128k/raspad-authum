@@ -8,6 +8,9 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 ## LH (first)
 
 - [ ] **Order every module by level** (AGENTS.md 0.0, `tools/order-levels.py`).
+  The tool refuses a file whose definitions sit between `#if` blocks (it would
+  move code in or out of them): `crypto/rijndael.c` (AES-NI) is ordered by hand or
+  after its AES-NI part moves to a file of its own.
   Done: `memory/view` (10 levels), `memory/bounds`, `memory/typed` (9 levels),
   `str/view` (4), `wstr/view` (2).
 - [ ] **Raw fields outside accessors** (AGENTS.md 0.0). `python tools/check-fields.py --own
@@ -15,8 +18,8 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   are not counted); `tools/gen-accessors.py` generates level-1 accessors.
   Done: the whole lower layer — `memory/*`, `str/*`, `array`, `str/list`,
   `wstr/list`, `http/*`, `spsc`, `logger`, `timer`, `math/*`, `numeric/big`,
-  `fs/stat`, `real/*` (Authum `host/http/request.c` reads requests through them). Left: about
-  3400 in LH — `ui` ~1950, `os` ~860, `crypto` 185, `net` 132, `sql` 65,
+  `fs/stat`, `real/*`, `sql/*`, `net/*`, `crypto/*` (Authum `host/http/request.c` reads requests
+  through them). Left: about 2800 in LH — `ui` ~1950, `os` ~860
   — and about 1400 in Authum (`host` ~770, `api` ~550,
   `gamedll` ~100 of our own structs).
 - [ ] **The OS is the whole, the parts sit under it today** (AGENTS.md 0.1.1).
@@ -45,6 +48,9 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 - [ ] **One file — one entity.** Done: 16 enums and 17 helper structs moved to
   their own headers (with their functions and sources where they had any).
   Left:
+  - `net/modbus/link.h`: Modbus framing (`lh_mb_encode`, `lh_mb_decode`,
+    `lh_mb_frame_length`, `lh_mb_rtu_frame_length`) and the link in one header
+    and one source, in two extern "C" blocks.
   - `os/system/concurrency.h` (three handles + thread fn), `os/str.h`
     (char / str / view), `ui/frame/stats.h` (callback typedef → `stats/cb.h`).
   - The split headers copy every include of their parent; trim to what each
@@ -61,6 +67,8 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 - [ ] **`lh_fs_path_t`.** It is awkward to use. Decide: simplify it, or split
   into two entities — a dynamic (owning) path and a static/fixed one usable
   directly with `lh_str_ptr`. Owner: "later", after the general cleanup.
+- [ ] **Lines past 100 columns** (`.clang-format` ColumnLimit) in tests, among them
+  `test/src/lh/net/modbus_link.cpp` after the accessors; clang-format is not installed here.
 - [ ] Pre-existing test failures: `lh_test_math` (`math/view.cpp` 149–153),
   `lh_test_ui` (`web_ws.length_127_roundtrip_over_64k`).
 
