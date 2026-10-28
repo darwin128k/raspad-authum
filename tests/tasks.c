@@ -197,7 +197,7 @@ main(void)
     memset(&connection, 0, sizeof connection);
     connection.driver = authum_sql_driver_sqlite;
     connection.path = path;
-    char optional[] = "copied option";
+    authum_char_t optional[] = "copied option";
     connection.host = optional;
     connection.user = "";
     connection.database = optional;
