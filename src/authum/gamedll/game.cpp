@@ -1,28 +1,11 @@
 #include <authum/gamedll/game.h>
-#include <authum/ptr.h>
-#include <authum/bool.h>
-#include <authum/byte.h>
-#include <authum/char.h>
-#include <authum/null.h>
-#include <authum/size.h>
 #include <authum/unused.h>
-#include <lh/cast/reinterpret.h>
 #include <lh/char/map.h>
-#include <lh/math/ops.h>
-#include <lh/util/ptr.h>
 #include <lh/memory/std.h>
 
 #include <authum/host/log.h>
 #include <authum/host/module.h>
 
-#include <lh/fs/path.h>
-#include <lh/fs/path/style.h>
-#include <lh/null.h>
-#include <lh/os/module.h>
-#include <lh/os/shared.h>
-#include <lh/str.h>
-#include <lh/util/addr.h>
-#include <lh/util/str/ptr.h>
 
 #include <cstdio>
 #include <cstdlib>

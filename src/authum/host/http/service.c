@@ -1,9 +1,6 @@
 #include <authum/host/http/internal.h>
 #include <authum/null.h>
 #include <lh/char/map.h>
-#include <lh/math/ops.h>
-#include <lh/util/ptr.h>
-#include <lh/net/port.h>
 
 static authum_bool_t
 owns_server(const authum_http_owner_t *owner, const authum_http_server_t *server)

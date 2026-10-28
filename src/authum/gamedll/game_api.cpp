@@ -14,8 +14,6 @@
  * in for Metamod, Authum exports the plain names and forwards them.
  */
 #include <authum/gamedll/game.h>
-#include <authum/ptr.h>
-#include <authum/char.h>
 #include <authum/null.h>
 #include <lh/cast/reinterpret.h>
 #include <lh/math/ops.h>

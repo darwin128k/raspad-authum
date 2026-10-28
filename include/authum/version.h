@@ -7,7 +7,6 @@
 #define AUTHUM_VERSION_H
 
 #include <authum/bool.h>
-#include <authum/byte.h>
 #include <authum/extern.h>
 #include <authum/null.h>
 

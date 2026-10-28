@@ -6,14 +6,8 @@
 #ifndef AUTHUM_HOST_COMMANDS_H
 #define AUTHUM_HOST_COMMANDS_H
 
-#include <authum/bool.h>
 #include <lh/util/ptr.h>
-#include <authum/char.h>
-#include <authum/command.h>
 #include <authum/commands.h>
-#include <authum/extern.h>
-#include <authum/ptr.h>
-#include <authum/size.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

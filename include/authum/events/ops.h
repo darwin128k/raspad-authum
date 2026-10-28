@@ -11,12 +11,8 @@
 #define AUTHUM_EVENTS_OPS_H
 
 #include <authum/bool.h>
-#include <authum/char.h>
 #include <authum/abi.h>
 #include <authum/event/handler.h>
-#include <authum/event/result.h>
-#include <authum/extern.h>
-#include <authum/ptr.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

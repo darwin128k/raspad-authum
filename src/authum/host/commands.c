@@ -9,17 +9,11 @@
 
 #include <authum/host/commands.h>
 #include <authum/memory.h>
-#include <lh/cast/reinterpret.h>
-#include <lh/cast/static.h>
-#include <lh/char/map.h>
-#include <lh/math/ops.h>
-#include <lh/util/ptr.h>
 #include <lh/char/letter.h>
 #include <lh/char/digit.h>
 #include <lh/memory/std.h>
 
 #include <authum/cstr.h>
-#include <authum/null.h>
 
 #include <lh/runtime/allocator.h>
 

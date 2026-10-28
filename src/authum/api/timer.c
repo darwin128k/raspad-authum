@@ -6,13 +6,10 @@
  */
 
 #include <authum/timer.h>
-#include <lh/cast/reinterpret.h>
-#include <lh/math/ops.h>
 #include <lh/util/ptr.h>
 
 #include <authum/array.h>
 #include <authum/event/server.h>
-#include <authum/events.h>
 #include <authum/unused.h>
 
 typedef struct authum_timer

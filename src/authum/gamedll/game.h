@@ -9,7 +9,6 @@
 #include <extdll.h>
 #include <authum/ptr.h>
 #include <authum/bool.h>
-#include <authum/byte.h>
 #include <authum/char.h>
 
 namespace authum_gamedll

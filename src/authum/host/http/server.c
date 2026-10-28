@@ -1,17 +1,10 @@
 #define _GNU_SOURCE
 #include <authum/host/http/internal.h>
-#include <authum/ptr.h>
 #include <authum/null.h>
-#include <authum/byte.h>
-#include <authum/char.h>
-#include <authum/size.h>
 #include <authum/unused.h>
-#include <lh/cast/static.h>
-#include <lh/util/ptr.h>
 #include <authum/memory.h>
 #include <fcntl.h>
 #include <lh/os/system.h>
-#include <lh/math/ops.h>
 
 void
 authum_http_server_release(authum_http_server_t *server)

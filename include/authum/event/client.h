@@ -25,7 +25,6 @@
 #define AUTHUM_EVENT_CLIENT_H
 
 #include <authum/bool.h>
-#include <authum/byte.h>
 #include <authum/char.h>
 #include <authum/extern.h>
 #include <authum/float.h>

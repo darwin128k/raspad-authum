@@ -6,10 +6,7 @@
 #ifndef AUTHUM_COMMAND_DEF_H
 #define AUTHUM_COMMAND_DEF_H
 
-#include <authum/char.h>
 #include <authum/command.h>
-#include <authum/extern.h>
-#include <authum/ptr.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

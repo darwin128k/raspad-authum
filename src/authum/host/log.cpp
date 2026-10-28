@@ -1,27 +1,12 @@
 #include <authum/host/log.h>
-#include <authum/char.h>
 #include <authum/null.h>
 #include <authum/unused.h>
 #include <lh/char/map.h>
-#include <lh/math/ops.h>
-#include <authum/host/logs.h>
 
 #include <extdll.h>
 
-#include <lh/cast/static.h>
 #include <lh/config.h>
-#include <lh/fs/path.h>
-#include <lh/fs/path/style.h>
-#include <lh/logger.h>
-#include <lh/logger/level.h>
-#include <lh/logger/level/flags.h>
-#include <lh/null.h>
 #include <lh/runtime/logger.h>
-#include <lh/self.h>
-#include <lh/str.h>
-#include <lh/str/format/text.h>
-#include <lh/util/addr.h>
-#include <lh/util/str/ptr.h>
 
 #include <cstdarg>
 #include <cstring>

@@ -4,14 +4,8 @@
  */
 
 #include <authum/crypto/sha.h>
-#include <lh/cast/reinterpret.h>
-#include <lh/cast/static.h>
-#include <lh/math/ops.h>
 #include <authum/null.h>
-#include <authum/ptr.h>
-#include <authum/size.h>
 #include <lh/crypto/sha.h>
-#include <lh/ptr.h>
 
 #if defined(__STDC_VERSION__) && lh_math_ge(__STDC_VERSION__, 201112L)
 _Static_assert(lh_math_le(sizeof(lh_crypto_sha_t), AUTHUM_CRYPTO_SHA_STORAGE),

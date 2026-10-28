@@ -1,17 +1,8 @@
 #include <authum/net.h>
-#include <authum/bool.h>
-#include <authum/byte.h>
-#include <authum/char.h>
-#include <authum/size.h>
 #include <authum/unused.h>
-#include <lh/cast/reinterpret.h>
-#include <lh/cast/static.h>
-#include <lh/math/ops.h>
-#include <lh/util/ptr.h>
 
 #include <authum/null.h>
 
-#include <lh/net/ip.h>
 #include <lh/os/net/interface.h>
 
 #include <stdio.h>

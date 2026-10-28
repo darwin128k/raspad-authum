@@ -26,7 +26,6 @@
 #define AUTHUM_HOST_PLACEHOLDERS_H
 
 #include <authum/env.h>
-#include <authum/path.h>
 #include <authum/placeholders.h>
 
 AUTHUM_EXTERN_C_BEGIN

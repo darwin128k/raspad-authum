@@ -8,7 +8,6 @@
 
 #include <extdll.h>
 #include <authum/bool.h>
-#include <authum/byte.h>
 
 /* logs helpers used by the frame / activate hooks (C linkage from logs.c). */
 extern "C" void

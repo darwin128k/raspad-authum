@@ -21,10 +21,8 @@
 #define AUTHUM_EVENT_MESSAGE_H
 
 #include <authum/bool.h>
-#include <authum/byte.h>
 #include <authum/char.h>
 #include <authum/engine/message.h>
-#include <authum/extern.h>
 #include <authum/float.h>
 #include <authum/size.h>
 

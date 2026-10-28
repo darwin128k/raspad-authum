@@ -7,7 +7,6 @@
  * no meta_globals_t — the host is the game library itself.
  */
 #include <authum/export.h>
-#include <authum/ptr.h>
 #include <authum/null.h>
 #include <lh/util/ptr.h>
 #include <extdll.h>

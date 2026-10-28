@@ -13,13 +13,7 @@
 #ifndef AUTHUM_HOST_LOADER_H
 #define AUTHUM_HOST_LOADER_H
 
-#include <authum/extern.h>
-#include <authum/char.h>
 #include <authum/host/module.h>
-#include <lh/bool.h>
-#include <lh/fs/path.h>
-#include <lh/index.h>
-#include <lh/size.h>
 
 /**
  * @def AUTHUM_MODULES_DIR

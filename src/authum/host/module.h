@@ -6,10 +6,7 @@
 #ifndef AUTHUM_HOST_MODULE_H
 #define AUTHUM_HOST_MODULE_H
 
-#include <authum/export.h>
-#include <authum/extern.h>
 #include <authum/module/info.h>
-#include <lh/bool.h>
 #include <lh/os/module.h>
 
 /**

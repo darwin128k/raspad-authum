@@ -1,9 +1,4 @@
 #include <authum/host/http/internal.h>
-#include <authum/byte.h>
-#include <authum/char.h>
-#include <authum/size.h>
-#include <lh/math/ops.h>
-#include <lh/util/ptr.h>
 #include <lh/memory/std.h>
 #include <lh/http/parser.h>
 #include <strings.h>

@@ -10,13 +10,8 @@
 #ifndef AUTHUM_HOST_EVENTS_H
 #define AUTHUM_HOST_EVENTS_H
 
-#include <authum/char.h>
 #include <lh/util/ptr.h>
-#include <authum/event/result.h>
 #include <authum/events/ops.h>
-#include <authum/extern.h>
-#include <authum/ptr.h>
-#include <authum/size.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

@@ -5,7 +5,6 @@
 
 #include <authum/host/gate.h>
 
-#include <lh/bool.h>
 
 lh_bool_t
 authum_gate_init(void)

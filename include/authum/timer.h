@@ -18,12 +18,7 @@
 #ifndef AUTHUM_TIMER_H
 #define AUTHUM_TIMER_H
 
-#include <authum/bool.h>
-#include <authum/byte.h>
-#include <authum/extern.h>
-#include <authum/float.h>
 #include <authum/host.h>
-#include <authum/ptr.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

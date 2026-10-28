@@ -13,20 +13,13 @@
 #ifndef AUTHUM_HOST_H
 #define AUTHUM_HOST_H
 
-#include <authum/abi.h>
-#include <authum/bool.h>
-#include <authum/char.h>
 #include <authum/commands.h>
 #include <authum/crypto.h>
 #include <authum/engine.h>
 #include <authum/env.h>
 #include <authum/events.h>
-#include <authum/extern.h>
 #include <authum/logger/ops.h>
-#include <authum/null.h>
-#include <authum/ptr.h>
 #include <authum/sandbox.h>
-#include <authum/size.h>
 #include <authum/task.h>
 #include <authum/thread.h>
 #include <authum/http.h>

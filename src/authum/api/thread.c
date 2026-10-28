@@ -1,8 +1,4 @@
 #include <authum/thread.h>
-#include <authum/bool.h>
-#include <authum/byte.h>
-#include <authum/char.h>
-#include <authum/size.h>
 #include <stdio.h>
 
 authum_thread_t *

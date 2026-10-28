@@ -18,7 +18,6 @@
 #ifndef AUTHUM_EVENT_SERVER_H
 #define AUTHUM_EVENT_SERVER_H
 
-#include <authum/byte.h>
 #include <authum/char.h>
 #include <authum/extern.h>
 #include <authum/float.h>

@@ -2,7 +2,6 @@
 #define AUTHUM_HOST_THREADS_H
 
 #include <authum/thread.h>
-#include <authum/byte.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

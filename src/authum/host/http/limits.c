@@ -1,9 +1,4 @@
 #include <authum/host/http/internal.h>
-#include <authum/bool.h>
-#include <authum/byte.h>
-#include <lh/cast/static.h>
-#include <lh/math/ops.h>
-#include <lh/util/ptr.h>
 
 authum_i32_t
 authum_http_peer_acquire(authum_http_server_t *server, authum_u32_t ip, authum_i64_t now,

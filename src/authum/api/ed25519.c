@@ -4,7 +4,6 @@
  */
 
 #include <authum/crypto/ed25519.h>
-#include <lh/cast/static.h>
 
 #include <lh/crypto/ed25519.h>
 #include <lh/crypto/wipe.h>

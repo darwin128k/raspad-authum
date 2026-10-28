@@ -6,7 +6,6 @@
 #include <authum/char.h>
 #include <authum/extern.h>
 #include <authum/ptr.h>
-#include <authum/size.h>
 
 AUTHUM_EXTERN_C_BEGIN
 typedef struct authum_thread authum_thread_t;

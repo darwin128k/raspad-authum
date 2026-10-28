@@ -5,18 +5,9 @@
  * game's own pointer, copied in hooks_fill_entity_table.
  */
 #include <authum/gamedll/game.h>
-#include <authum/bool.h>
-#include <authum/byte.h>
-#include <authum/char.h>
-#include <authum/null.h>
-#include <authum/size.h>
 #include <authum/unused.h>
 #include <lh/cast/const.h>
-#include <lh/cast/reinterpret.h>
-#include <lh/cast/static.h>
 #include <lh/char/map.h>
-#include <lh/math/ops.h>
-#include <lh/util/ptr.h>
 #include <lh/memory/std.h>
 #include <authum/gamedll/hooks.h>
 

@@ -1,8 +1,4 @@
 #include <authum/host/http/internal.h>
-#include <lh/cast/static.h>
-#include <lh/char/map.h>
-#include <lh/math/ops.h>
-#include <lh/util/ptr.h>
 #include <lh/char/letter.h>
 #include <lh/char/digit.h>
 #include <lh/memory/std.h>

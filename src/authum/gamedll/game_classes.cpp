@@ -9,8 +9,6 @@
 #include <authum/gamedll/game.h>
 
 #include <authum/export.h>
-#include <authum/ptr.h>
-#include <authum/char.h>
 #include <authum/null.h>
 #include <lh/cast/reinterpret.h>
 

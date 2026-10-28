@@ -17,10 +17,7 @@
 #include <authum/bool.h>
 #include <authum/crypto/rijndael.h>
 #include <authum/crypto/sha.h>
-#include <authum/extern.h>
 #include <authum/null.h>
-#include <authum/ptr.h>
-#include <authum/size.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

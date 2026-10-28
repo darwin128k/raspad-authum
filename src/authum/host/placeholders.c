@@ -1,20 +1,15 @@
 #include <authum/host/placeholders.h>
-#include <lh/cast/static.h>
-#include <lh/char/map.h>
-#include <lh/util/ptr.h>
 #include <authum/memory.h>
 #include <lh/char/letter.h>
 #include <lh/char/digit.h>
 #include <lh/memory/std.h>
 
-#include <authum/null.h>
 
 #include <stdlib.h>
 #include <string.h>
 
 #include <lh/os/system/fs/path.h>
 #include <lh/os/fs/path.h>
-#include <lh/math/ops.h>
 
 /** The standard names, indexed by ::authum_placeholder_standard_t. */
 static const authum_char_t *const

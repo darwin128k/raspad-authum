@@ -1,7 +1,6 @@
 #include <authum/http.h>
 #include <authum/null.h>
 #include <lh/char/map.h>
-#include <lh/math/ops.h>
 #include <lh/util/ptr.h>
 #include <lh/memory/std.h>
 #include <stdio.h>

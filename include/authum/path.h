@@ -14,14 +14,9 @@
 #ifndef AUTHUM_PATH_H
 #define AUTHUM_PATH_H
 
-#include <authum/bool.h>
-#include <authum/char.h>
 #include <authum/cstr.h>
-#include <authum/extern.h>
-#include <authum/null.h>
 #include <authum/path/capacity.h>
 #include <authum/path/sep.h>
-#include <authum/size.h>
 
 #include <string.h>
 
