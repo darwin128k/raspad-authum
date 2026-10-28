@@ -55,4 +55,5 @@ authum_bool_t
 authum_thread_stop(const authum_threads_t *threads, authum_thread_t *thread);
 
 AUTHUM_EXTERN_C_END
+
 #endif

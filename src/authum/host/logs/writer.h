@@ -43,6 +43,8 @@ typedef struct authum_logs_sink
     void (*dropped)(authum_u32_t count);
 } authum_logs_sink_t;
 
+AUTHUM_EXTERN_C_BEGIN
+
 /**
  * @brief Reset the queue and start its owned disk worker with the supplied sink.
  */
@@ -72,5 +74,7 @@ authum_logs_writer_sync(authum_u32_t timeout_ms);
  */
 authum_u32_t
 authum_logs_writer_dropped(void);
+
+AUTHUM_EXTERN_C_END
 
 #endif

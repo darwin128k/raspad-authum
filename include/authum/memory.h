@@ -39,4 +39,5 @@ void
 authum_memory_free(authum_ptr block);
 
 AUTHUM_EXTERN_C_END
+
 #endif

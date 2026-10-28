@@ -20,10 +20,6 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   its loader in one header (one file — one entity); `options` and
   `thread_end` declared by hand beside `lh_sql_mysql_api_fields`. The name
   `api` is to be discussed with the owner.
-- [ ] **Types inside `extern "C"`:** 133 data types (struct / enum / plain
-  typedef) in 59 headers sit inside `LH_COMPILER_EXTERN_C_BEGIN` /
-  `AUTHUM_EXTERN_C_BEGIN`, mostly Authum's public API. Data types go before the
-  block; function declarations and function-type typedefs stay inside.
 - [ ] **LH does not use its own bricks** (AGENTS.md section 0). Done: 131
   character literals → `lh/char/map.h` names (tests keep literals as data);
   `lh_ui_web_js_put_s64` → `lh_str_ptr_format_sllong`; the HTTP parser →

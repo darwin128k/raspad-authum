@@ -43,4 +43,5 @@ authum_tasks_submit(const authum_tasks_t *tasks, authum_task_fn work, authum_tas
                     authum_task_fn destroy, authum_ptr user);
 
 AUTHUM_EXTERN_C_END
+
 #endif

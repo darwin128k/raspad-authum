@@ -3,6 +3,8 @@
 
 #include <authum/host/logs/writer.h>
 
+AUTHUM_EXTERN_C_BEGIN
+
 void
 authum_logs_files_set_root(const authum_path_t *dir);
 
@@ -17,4 +19,7 @@ authum_logs_files_flush(void);
 
 void
 authum_logs_files_close(void);
+
+AUTHUM_EXTERN_C_END
+
 #endif
