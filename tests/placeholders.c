@@ -9,21 +9,25 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-static char game_dir[512] = "/tmp/authum-placeholders-game";
-static char module_dir[512] = "/tmp/authum-placeholders-module";
+static authum_char_t game_dir[512];
+static authum_char_t module_dir[512];
 
 static void
 setup(void)
 {
+    authum_char_t base[384];
+    CHECK(getcwd(base, sizeof base) != NULL);
+    snprintf(game_dir, sizeof game_dir, "%s/authum-placeholders-game", base);
+    snprintf(module_dir, sizeof module_dir, "%s/authum-placeholders-module", base);
 #if defined(_WIN32)
-    CHECK(_fullpath(game_dir, "/tmp/authum-placeholders-game", sizeof game_dir) != NULL);
-    CHECK(_fullpath(module_dir, "/tmp/authum-placeholders-module", sizeof module_dir) != NULL);
     mkdir(game_dir);
     mkdir(module_dir);
 #else
     mkdir(game_dir, 0755);
     mkdir(module_dir, 0755);
 #endif
+    CHECK(authum_placeholder_canonical(game_dir, game_dir, sizeof game_dir));
+    CHECK(authum_placeholder_canonical(module_dir, module_dir, sizeof module_dir));
 }
 
 static void
@@ -44,6 +48,25 @@ main(void)
     authum_char_t out[512];
 
     setup();
+    /* Canonical paths are strict in LH; Authum retains unresolved names. */
+    authum_char_t dotted[640];
+    snprintf(dotted, sizeof dotted, "%s/.", game_dir);
+    CHECK(authum_placeholder_canonical(dotted, out, sizeof out));
+    CHECK_STR(out, game_dir);
+    const authum_char_t *missing = "authum-placeholders-missing/../future";
+    CHECK(authum_placeholder_canonical(missing, out, sizeof out));
+    CHECK_STR(out, missing);
+    CHECK(authum_placeholder_canonical(out, out, sizeof out));
+    CHECK_STR(out, missing);
+    strcpy(out, "sentinel");
+    CHECK(!authum_placeholder_canonical(game_dir, out, 2));
+    CHECK_STR(out, "sentinel");
+    CHECK(!authum_placeholder_canonical(missing, out, 2));
+    CHECK_STR(out, "sentinel");
+    CHECK(!authum_placeholder_canonical(NULL, out, sizeof out));
+    CHECK(!authum_placeholder_canonical(game_dir, NULL, sizeof out));
+    CHECK(!authum_placeholder_canonical(game_dir, out, 0));
+
     standard[authum_placeholder_game] = game_dir;
     standard[authum_placeholder_module] = module_dir;
     authum_placeholder_host_init(&owner, standard, &service);

@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include <authum/host/placeholders.h>
 
 #include <authum/null.h>
@@ -6,23 +5,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(_WIN32)
-#    include <direct.h>
-#else
-#    include <limits.h>
-#endif
-
-#ifndef AUTHUM_PLACEHOLDER_PATH_MAX
-#    if defined(_WIN32)
-#        define AUTHUM_PLACEHOLDER_PATH_MAX 4096
-#    else
-#        define AUTHUM_PLACEHOLDER_PATH_MAX PATH_MAX
-#    endif
-#endif
+#include <lh/os/system/fs/path.h>
+#include <lh/fs/path.h>
 
 /** The standard names, indexed by ::authum_placeholder_standard_t. */
-static const char *const authum_placeholder_standard_names[authum_placeholder_standard_count] = {
-    "game", "module", "data", "config", "lang", "addons", "authum", "modules", "models", "sprites"};
+static const authum_char_t *const
+    authum_placeholder_standard_names[authum_placeholder_standard_count] = {
+        "game",   "module", "data",    "config", "lang",
+        "addons", "authum", "modules", "models", "sprites"};
 
 typedef struct authum_placeholder_entry
 {
@@ -35,10 +25,10 @@ typedef struct authum_placeholder_entry
 /** Registered names are host-wide: a module publishes, the others may use. */
 static authum_placeholder_entry_t *authum_placeholder_entries;
 
-const char *
+const authum_char_t *
 authum_placeholder_standard_name(authum_placeholder_standard_t standard)
 {
-    if ((unsigned)standard >= (unsigned)authum_placeholder_standard_count)
+    if ((authum_u32_t)standard >= (authum_u32_t)authum_placeholder_standard_count)
     {
         return authum_null;
     }
@@ -48,47 +38,39 @@ authum_placeholder_standard_name(authum_placeholder_standard_t standard)
 authum_bool_t
 authum_placeholder_canonical(const authum_char_t *input, authum_char_t *out, authum_usize_t size)
 {
-    authum_char_t resolved[AUTHUM_PLACEHOLDER_PATH_MAX];
-
-    if (!input || !out || !size)
+    if (authum_null_eq(input) || authum_null_eq(out) || !size)
     {
         return authum_bool_false;
     }
-#if defined(_WIN32)
-    if (!_fullpath(resolved, input, (int)sizeof resolved))
-#else
-    if (!realpath(input, resolved))
-#endif
+    lh_str_t resolved;
+    lh_str_init(&resolved);
+    const authum_char_t *text =
+        lh_os_system_fs_path_canonical(input, &resolved) ? lh_str_get_data(&resolved) : input;
+    const authum_u64_t length = strlen(text);
+    if (length >= size)
     {
-        /* Keep the path as written: the caller decides whether it may exist. */
-        if (strlen(input) + 1 > sizeof resolved)
-        {
-            return authum_bool_false;
-        }
-        strcpy(resolved, input);
-    }
-    if (strlen(resolved) + 1 > size)
-    {
+        lh_str_deinit(&resolved);
         return authum_bool_false;
     }
-    strcpy(out, resolved);
+    /* Authum permits paths that cannot yet be resolved (for example, new data
+     * directories). Keep that policy outside LH's strict filesystem operation. */
+    memmove(out, text, (authum_usize_t)length + 1u);
+    lh_str_deinit(&resolved);
     return authum_bool_true;
 }
 
 static authum_bool_t
 authum_placeholder_absolute(const authum_char_t *path)
 {
-    if (path[0] == '/')
-    {
-        return authum_bool_true;
-    }
-#if defined(_WIN32)
-    if (path[0] && path[1] == ':')
-    {
-        return authum_bool_true;
-    }
-#endif
-    return authum_bool_false;
+    lh_fs_path_t parsed;
+    lh_str_view_t text;
+    lh_fs_path_init(&parsed);
+    lh_str_view_init(&text, path);
+    lh_fs_path_set(&parsed, text, lh_os_system_fs_path_style_native());
+    const authum_bool_t absolute =
+        lh_fs_path_is_absolute(&parsed) ? authum_bool_true : authum_bool_false;
+    lh_fs_path_deinit(&parsed);
+    return absolute;
 }
 
 authum_bool_t
@@ -131,7 +113,7 @@ authum_placeholder_name_valid(const authum_char_t *name)
  * Reads ::authum_path_t directly: this file is also compiled into hosts that
  * do not link the whole SDK (the FastDL test host).
  */
-static const char *
+static const authum_char_t *
 authum_placeholder_path_text(const authum_path_t *path)
 {
     return (path && path->size) ? path->data : authum_null;
