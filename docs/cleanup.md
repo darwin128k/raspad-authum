@@ -13,11 +13,11 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 - [ ] **Raw fields outside accessors** (AGENTS.md 0.0). `python tools/check-fields.py --own
   <files>` counts accesses to our own struct fields (native OS and HLSDK structs
   are not counted); `tools/gen-accessors.py` generates level-1 accessors.
-  Done: `memory/*`, `str/*`, `array`, `str/list`, `wstr/list`, `http/*`
-  (and Authum `host/http/request.c` reads requests through them). Left: about
+  Done: the whole lower layer — `memory/*`, `str/*`, `array`, `str/list`,
+  `wstr/list`, `http/*`, `spsc`, `logger`, `timer`, `math/*`, `numeric/big`,
+  `fs/stat`, `real/*` (Authum `host/http/request.c` reads requests through them). Left: about
   3400 in LH — `ui` ~1950, `os` ~860, `crypto` 185, `net` 132, `sql` 65,
-  `real` 48, root files (`spsc`, `logger`) 75, `math` 23, `numeric` 19,
-  `fs/stat` 14 — and about 1400 in Authum (`host` ~770, `api` ~550,
+  — and about 1400 in Authum (`host` ~770, `api` ~550,
   `gamedll` ~100 of our own structs).
 - [ ] **The OS is the whole, the parts sit under it today** (AGENTS.md 0.1.1).
   The portable filesystem, network, threads, windows live under `lh/os/*`
