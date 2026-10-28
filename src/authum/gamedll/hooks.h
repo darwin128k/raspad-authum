@@ -2,6 +2,7 @@
  * Authum's event-publishing overlay over the game's DLL_FUNCTIONS /
  * NEW_DLL_FUNCTIONS tables.
  */
+
 #ifndef AUTHUM_GAMEDLL_HOOKS_H
 #define AUTHUM_GAMEDLL_HOOKS_H
 

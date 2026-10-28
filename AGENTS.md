@@ -30,6 +30,9 @@ session; do not make the owner repeat them again.
   contracts in that module's include namespace, not in the Authum host API.
 - Preserve line endings when scripting edits; inspect the diff for accidental blank lines.
 - Run `python tools/check-conventions.py` after foundation or include changes.
+- Run `python tools/check-layout.py` after any code change: it must report 0
+  places (top-level blocks separated by blank lines; `--fix` inserts them).
+- A problem pointed out in one file is checked across both projects, not only there.
 
 # Contributions to LH
 

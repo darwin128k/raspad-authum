@@ -2,6 +2,7 @@
  * The real game library behind Authum: the DLL Authum loads and
  * forwards to, the way the engine would have loaded it directly.
  */
+
 #ifndef AUTHUM_GAMEDLL_GAME_H
 #define AUTHUM_GAMEDLL_GAME_H
 
