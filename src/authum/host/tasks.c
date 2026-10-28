@@ -1,4 +1,5 @@
 #include <authum/host/tasks.h>
+#include <authum/null.h>
 #include <lh/os/worker.h>
 #include <stdlib.h>
 typedef lh_os_worker_job_t authum_task_job_t;
@@ -10,8 +11,10 @@ typedef struct authum_task_worker
     lh_os_worker_t *worker;
 } authum_task_worker_t;
 
+/* Both pointers are null when empty; a nonempty tail always has next == null. */
 static authum_task_worker_t *m_workers;
-static unsigned m_dispatching;
+static authum_task_worker_t *m_workers_tail;
+static authum_usize_t m_dispatching;
 
 authum_bool_t
 authum_tasks_host_submit(authum_ptr owner, authum_task_fn work, authum_task_fn complete,
@@ -41,6 +44,10 @@ authum_tasks_host_submit(authum_ptr owner, authum_task_fn work, authum_task_fn c
         w->owner = owner;
         w->next = m_workers;
         m_workers = w;
+        if (authum_null_eq(m_workers_tail))
+        {
+            m_workers_tail = w;
+        }
     }
     return lh_os_worker_submit(w->worker, work, complete, destroy, user);
 }
@@ -51,15 +58,15 @@ authum_tasks_host_submit(authum_ptr owner, authum_task_fn work, authum_task_fn c
 void
 authum_tasks_host_pump(void)
 {
-    unsigned budget = 16;
-    authum_task_worker_t *w;
+    authum_usize_t budget = 16;
     /* Rescan after each callback; it can enqueue work for another owner. */
     while (budget--)
     {
-        authum_task_job_t *job = NULL;
-        for (w = m_workers; w; w = w->next)
+        authum_task_job_t *job = authum_null;
+        authum_task_worker_t **link = &m_workers;
+        for (; *link; link = &(*link)->next)
         {
-            job = lh_os_worker_take(w->worker);
+            job = lh_os_worker_take((*link)->worker);
             if (job)
             {
                 break;
@@ -71,21 +78,13 @@ authum_tasks_host_pump(void)
         }
         /* Round robin across modules, including when a completion immediately
          * submits its next task. A busy owner must not starve other modules. */
-        if (w->next)
+        authum_task_worker_t *w = *link;
+        if (w != m_workers_tail)
         {
-            authum_task_worker_t **link = &m_workers, **tail;
-            while (*link != w)
-            {
-                link = &(*link)->next;
-            }
             *link = w->next;
-            w->next = NULL;
-            tail = &m_workers;
-            while (*tail)
-            {
-                tail = &(*tail)->next;
-            }
-            *tail = w;
+            w->next = authum_null;
+            m_workers_tail->next = w;
+            m_workers_tail = w;
         }
         ++m_dispatching;
         if (job->complete)
@@ -127,12 +126,18 @@ authum_tasks_host_drop_owner(authum_ptr owner)
     --m_dispatching;
     /* Keep the stopped owner registered, with its worker, until all payload
      * destructors return. They must not resurrect a worker during unload. */
+    authum_task_worker_t *previous = authum_null;
     link = &m_workers;
     while (*link != w)
     {
+        previous = *link;
         link = &(*link)->next;
     }
     *link = w->next;
+    if (m_workers_tail == w)
+    {
+        m_workers_tail = previous;
+    }
     free(w);
 }
 

@@ -151,6 +151,172 @@ sql_complete(const authum_sql_thread_result_t *result, void *user)
     ++completed;
 }
 
+typedef struct scheduler_case scheduler_case_t;
+
+typedef struct scheduler_owner
+{
+    authum_tasks_t tasks;
+    scheduler_case_t *test;
+    authum_usize_t id;
+    authum_usize_t destroyed;
+    atomic_int ready;
+    authum_bool_t closing;
+} scheduler_owner_t;
+
+struct scheduler_case
+{
+    scheduler_owner_t owners[4];
+    authum_usize_t order[32];
+    authum_usize_t count;
+    authum_bool_t reentrant;
+    authum_bool_t mutated;
+    authum_bool_t added;
+    authum_bool_t resubmitted;
+};
+
+static void
+scheduler_enqueue(scheduler_owner_t *owner);
+
+static void
+scheduler_work(authum_ptr user)
+{
+    authum_unused(user);
+}
+
+static void
+scheduler_ready(authum_ptr user)
+{
+    scheduler_owner_t *owner = user;
+    /* FIFO execution means the three earlier completions are now queued. */
+    atomic_store(&owner->ready, 1);
+}
+
+static void
+scheduler_destroy(authum_ptr user)
+{
+    scheduler_owner_t *owner = user;
+    CHECK(thread_id() == main_thread);
+    CHECK(authum_tasks_host_dispatching());
+    ++owner->destroyed;
+    if (owner->closing)
+    {
+        CHECK(!authum_tasks_submit(&owner->tasks, scheduler_work, authum_null, authum_null,
+                                   authum_null));
+        if (!owner->test->added)
+        {
+            owner->test->added = authum_bool_true;
+            scheduler_enqueue(&owner->test->owners[3]);
+        }
+    }
+}
+
+static void
+scheduler_complete(authum_ptr user)
+{
+    scheduler_owner_t *owner = user;
+    scheduler_case_t *test = owner->test;
+    CHECK(thread_id() == main_thread);
+    CHECK(authum_tasks_host_dispatching());
+    CHECK(test->count < sizeof test->order / sizeof test->order[0]);
+    if (test->count < sizeof test->order / sizeof test->order[0])
+    {
+        test->order[test->count++] = owner->id;
+    }
+    if (test->reentrant && owner->id == 2 && !test->mutated)
+    {
+        test->mutated = authum_bool_true;
+        /* Pump has just moved this owner to the tail. A destructor prepends
+         * another owner while the stopped tail is still registered. */
+        owner->closing = authum_bool_true;
+        authum_tasks_host_drop_owner(owner);
+        owner->closing = authum_bool_false;
+    }
+    if (test->reentrant && owner->id == 1 && !test->resubmitted)
+    {
+        test->resubmitted = authum_bool_true;
+        CHECK(authum_tasks_submit(&owner->tasks, scheduler_work, scheduler_complete,
+                                  scheduler_destroy, owner));
+    }
+}
+
+static void
+scheduler_enqueue(scheduler_owner_t *owner)
+{
+    for (authum_usize_t index = 0; index < 3; ++index)
+    {
+        CHECK(authum_tasks_submit(&owner->tasks, scheduler_work, scheduler_complete,
+                                  scheduler_destroy, owner));
+    }
+    CHECK(
+        authum_tasks_submit(&owner->tasks, scheduler_ready, authum_null, scheduler_destroy, owner));
+}
+
+static void
+scheduler_check(authum_bool_t reentrant, const authum_usize_t drop_order[3])
+{
+    scheduler_case_t test = {0};
+    test.reentrant = reentrant;
+    for (authum_usize_t index = 0; index < 4; ++index)
+    {
+        scheduler_owner_t *owner = &test.owners[index];
+        owner->test = &test;
+        owner->id = index;
+        owner->tasks.ops = authum_tasks_host_ops();
+        owner->tasks.owner = owner;
+        atomic_init(&owner->ready, 0);
+    }
+    for (authum_usize_t index = 0; index < 3; ++index)
+    {
+        scheduler_enqueue(&test.owners[index]);
+    }
+    for (authum_usize_t index = 0; index < 3; ++index)
+    {
+        for (authum_usize_t attempt = 0; attempt < 5000 && !atomic_load(&test.owners[index].ready);
+             ++attempt)
+        {
+            pause_ms();
+        }
+        CHECK(atomic_load(&test.owners[index].ready));
+    }
+    const authum_usize_t expected = reentrant ? 11u : 9u;
+    for (authum_usize_t attempt = 0; attempt < 5000 && test.count < expected; ++attempt)
+    {
+        authum_tasks_host_pump();
+        pause_ms();
+    }
+    CHECK(test.count == expected);
+    if (!reentrant)
+    {
+        for (authum_usize_t index = 0; index < expected; ++index)
+        {
+            CHECK(test.order[index] == 2u - index % 3u);
+        }
+    }
+    else
+    {
+        CHECK(test.mutated && test.added && test.resubmitted);
+        authum_usize_t counts[4] = {0};
+        for (authum_usize_t index = 0; index < test.count; ++index)
+        {
+            ++counts[test.order[index]];
+        }
+        CHECK(counts[0] == 3 && counts[1] == 4 && counts[2] == 1 && counts[3] == 3);
+    }
+    for (authum_usize_t index = 0; index < 3; ++index)
+    {
+        authum_tasks_host_drop_owner(&test.owners[drop_order[index]]);
+    }
+    authum_tasks_host_drop_owner(&test.owners[3]);
+    for (authum_usize_t index = 0; index < 4; ++index)
+    {
+        CHECK(test.owners[index].destroyed ==
+              (index == 3 ? (reentrant ? 4u : 0u) : (reentrant && index == 1 ? 5u : 4u)));
+    }
+    CHECK(!authum_tasks_host_dispatching());
+    authum_tasks_host_pump();
+    CHECK(test.count == expected);
+}
+
 int
 main(void)
 {
@@ -230,5 +396,14 @@ main(void)
     CHECK(!sql.success);
     CHECK(destroyed == 75);
     authum_tasks_host_drop_owner(&owner);
+    /* Exercise head, middle, tail and final removal, then reuse an empty list. */
+    const authum_usize_t drop_orders[][3] = {{0, 1, 2}, {0, 2, 1}, {1, 0, 2},
+                                             {1, 2, 0}, {2, 0, 1}, {2, 1, 0}};
+    for (authum_usize_t index = 0; index < sizeof drop_orders / sizeof drop_orders[0]; ++index)
+    {
+        scheduler_check(authum_bool_false, drop_orders[index]);
+    }
+    scheduler_check(authum_bool_true, drop_orders[0]);
+    scheduler_check(authum_bool_false, drop_orders[0]);
     return authum_check_report("tasks + threaded SQL");
 }
