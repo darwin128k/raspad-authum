@@ -1,4 +1,7 @@
 #include <authum/host/tasks.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
+#include <authum/memory.h>
 #include <authum/null.h>
 #include <lh/os/worker.h>
 #include <stdlib.h>
@@ -12,6 +15,12 @@ typedef struct authum_task_worker
 } authum_task_worker_t;
 
 /* Both pointers are null when empty; a nonempty tail always has next == null. */
+enum
+{
+    authum_task_worker_capacity = 64,
+    authum_task_completion_budget = 16
+};
+
 static authum_task_worker_t *m_workers;
 static authum_task_worker_t *m_workers_tail;
 static authum_usize_t m_dispatching;
@@ -25,20 +34,20 @@ authum_tasks_host_submit(authum_ptr owner, authum_task_fn work, authum_task_fn c
     {
         return authum_bool_false;
     }
-    for (w = m_workers; w && w->owner != owner; w = w->next)
+    for (w = m_workers; w && lh_math_ne(w->owner, owner); w = w->next)
     {
     }
     if (!w)
     {
-        w = calloc(1, sizeof *w);
+        w = authum_memory_alloc_zero(1, sizeof lh_ptr_deref(w));
         if (!w)
         {
             return authum_bool_false;
         }
-        w->worker = lh_os_worker_create(64);
+        w->worker = lh_os_worker_create(authum_task_worker_capacity);
         if (!w->worker)
         {
-            free(w);
+            authum_memory_free(w);
             return authum_bool_false;
         }
         w->owner = owner;
@@ -58,15 +67,16 @@ authum_tasks_host_submit(authum_ptr owner, authum_task_fn work, authum_task_fn c
 void
 authum_tasks_host_pump(void)
 {
-    authum_usize_t budget = 16;
+    authum_usize_t budget = authum_task_completion_budget;
     /* Rescan after each callback; it can enqueue work for another owner. */
-    while (budget--)
+    while (lh_math_is_positive(budget))
     {
+        budget = lh_math_sub_one(budget);
         authum_task_job_t *job = authum_null;
-        authum_task_worker_t **link = &m_workers;
-        for (; *link; link = &(*link)->next)
+        authum_task_worker_t **link = lh_addr_of(m_workers);
+        for (; lh_ptr_deref(link); link = lh_addr_of((lh_ptr_deref(link))->next))
         {
-            job = lh_os_worker_take((*link)->worker);
+            job = lh_os_worker_take((lh_ptr_deref(link))->worker);
             if (job)
             {
                 break;
@@ -78,21 +88,21 @@ authum_tasks_host_pump(void)
         }
         /* Round robin across modules, including when a completion immediately
          * submits its next task. A busy owner must not starve other modules. */
-        authum_task_worker_t *w = *link;
-        if (w != m_workers_tail)
+        authum_task_worker_t *w = lh_ptr_deref(link);
+        if (lh_math_ne(w, m_workers_tail))
         {
-            *link = w->next;
+            lh_ptr_deref(link) = w->next;
             w->next = authum_null;
             m_workers_tail->next = w;
             m_workers_tail = w;
         }
-        ++m_dispatching;
+        m_dispatching = lh_math_add_one(m_dispatching);
         if (job->complete)
         {
             job->complete(job->user);
         }
         lh_os_worker_dispose(job);
-        --m_dispatching;
+        m_dispatching = lh_math_sub_one(m_dispatching);
     }
 }
 
@@ -111,34 +121,34 @@ authum_tasks_host_dispatching(void)
 void
 authum_tasks_host_drop_owner(authum_ptr owner)
 {
-    authum_task_worker_t **link = &m_workers, *w;
-    while (*link && (*link)->owner != owner)
+    authum_task_worker_t **link = lh_addr_of(m_workers), *w;
+    while (lh_ptr_deref(link) && lh_math_ne((lh_ptr_deref(link))->owner, owner))
     {
-        link = &(*link)->next;
+        link = lh_addr_of((lh_ptr_deref(link))->next);
     }
-    if (!(w = *link))
+    if (!(w = lh_ptr_deref(link)))
     {
         return;
     }
     lh_os_worker_stop(w->worker);
-    ++m_dispatching;
+    m_dispatching = lh_math_add_one(m_dispatching);
     lh_os_worker_destroy(w->worker);
-    --m_dispatching;
+    m_dispatching = lh_math_sub_one(m_dispatching);
     /* Keep the stopped owner registered, with its worker, until all payload
      * destructors return. They must not resurrect a worker during unload. */
     authum_task_worker_t *previous = authum_null;
-    link = &m_workers;
-    while (*link != w)
+    link = lh_addr_of(m_workers);
+    while (lh_math_ne(lh_ptr_deref(link), w))
     {
-        previous = *link;
-        link = &(*link)->next;
+        previous = lh_ptr_deref(link);
+        link = lh_addr_of((lh_ptr_deref(link))->next);
     }
-    *link = w->next;
-    if (m_workers_tail == w)
+    lh_ptr_deref(link) = w->next;
+    if (lh_math_eq(m_workers_tail, w))
     {
         m_workers_tail = previous;
     }
-    free(w);
+    authum_memory_free(w);
 }
 
 /**
@@ -148,5 +158,5 @@ const authum_task_ops_t *
 authum_tasks_host_ops(void)
 {
     static const authum_task_ops_t ops = {sizeof ops, authum_tasks_host_submit};
-    return &ops;
+    return lh_addr_of(ops);
 }

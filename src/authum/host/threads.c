@@ -1,4 +1,14 @@
 #include <authum/host/threads.h>
+#include <authum/null.h>
+#include <authum/bool.h>
+#include <authum/byte.h>
+#include <authum/char.h>
+#include <authum/size.h>
+#include <lh/cast/static.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
+#include <authum/memory.h>
+#include <lh/memory/std.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,7 +20,7 @@ struct authum_thread
     struct authum_thread *next;
     authum_thread_fn wake;
     authum_ptr user;
-    int requested;
+    authum_i32_t requested;
     lh_os_thread_t native;
 };
 
@@ -33,7 +43,7 @@ request_stop(authum_thread_t *t)
 static authum_bool_t
 join_thread(authum_thread_t *t)
 {
-    return lh_os_thread_join(&t->native) ? authum_bool_true : authum_bool_false;
+    return lh_os_thread_join(lh_addr_of(t->native)) ? authum_bool_true : authum_bool_false;
 }
 
 /**
@@ -41,44 +51,45 @@ join_thread(authum_thread_t *t)
  */
 static authum_thread_t *
 start_thread(authum_ptr context, authum_thread_fn run, authum_thread_fn wake, authum_ptr user,
-             int cpu, unsigned flags, authum_char_t *error, authum_usize_t error_size)
+             authum_i32_t cpu, authum_u32_t flags, authum_char_t *error, authum_usize_t error_size)
 {
     authum_thread_owner_t *owner = context;
-    if (!owner || owner->closing || owner->count >= 64 || !run || !wake || cpu < -1 ||
-        (flags & ~AUTHUM_THREAD_BLOCK_SIGPIPE))
+    if (!owner || owner->closing || lh_math_ge(owner->count, 64) || !run || !wake ||
+        lh_math_lt(cpu, -1) || (lh_math_bit_and(flags, ~AUTHUM_THREAD_BLOCK_SIGPIPE)))
     {
         if (error && error_size)
         {
             snprintf(error, error_size, "invalid thread options or owner stopping/limit reached");
         }
-        return NULL;
+        return authum_null;
     }
-    authum_thread_t *t = calloc(1, sizeof *t);
+    authum_thread_t *t = authum_memory_alloc_zero(1, sizeof lh_ptr_deref(t));
     if (!t)
     {
         if (error && error_size)
         {
             snprintf(error, error_size, "thread allocation failed");
         }
-        return NULL;
+        return authum_null;
     }
     t->wake = wake;
     t->user = user;
-    lh_os_thread_init(&t->native);
-    if (!lh_os_thread_start(&t->native, run, user, cpu,
-                            flags & AUTHUM_THREAD_BLOCK_SIGPIPE ? lh_os_thread_block_sigpipe : 0))
+    lh_os_thread_init(lh_addr_of(t->native));
+    if (!lh_os_thread_start(
+            lh_addr_of(t->native), run, user, cpu,
+            lh_math_bit_and(flags, AUTHUM_THREAD_BLOCK_SIGPIPE) ? lh_os_thread_block_sigpipe : 0))
     {
         if (error && error_size)
         {
             snprintf(error, error_size, "cannot create thread (cpu=%d): OS error %lu", cpu,
-                     (unsigned long)lh_os_system_get_last_error_code());
+                     lh_cast_static(lh_ulong_t, lh_os_system_get_last_error_code()));
         }
-        free(t);
-        return NULL;
+        authum_memory_free(t);
+        return authum_null;
     }
     t->next = owner->head;
     owner->head = t;
-    ++owner->count;
+    owner->count = lh_math_add_one(owner->count);
     return t;
 }
 
@@ -93,12 +104,12 @@ stop_thread(authum_ptr context, authum_thread_t *thread)
     {
         return authum_bool_false;
     }
-    authum_thread_t **link = &owner->head;
-    while (*link && *link != thread)
+    authum_thread_t **link = lh_addr_of(owner->head);
+    while (lh_ptr_deref(link) && lh_math_ne(lh_ptr_deref(link), thread))
     {
-        link = &(*link)->next;
+        link = lh_addr_of((lh_ptr_deref(link))->next);
     }
-    if (!*link)
+    if (!lh_ptr_deref(link))
     {
         return authum_bool_false;
     }
@@ -107,9 +118,9 @@ stop_thread(authum_ptr context, authum_thread_t *thread)
     {
         return authum_bool_false;
     }
-    *link = thread->next;
-    --owner->count;
-    free(thread);
+    lh_ptr_deref(link) = thread->next;
+    owner->count = lh_math_sub_one(owner->count);
+    authum_memory_free(thread);
     return authum_bool_true;
 }
 
@@ -122,9 +133,9 @@ static const authum_thread_ops_t ops = {
 void
 authum_threads_host_init(authum_thread_owner_t *owner, authum_threads_t *facade)
 {
-    memset(owner, 0, sizeof *owner);
+    lh_memory_std_set(owner, 0, sizeof lh_ptr_deref(owner));
     facade->owner = owner;
-    facade->ops = &ops;
+    facade->ops = lh_addr_of(ops);
 }
 
 /**
@@ -169,7 +180,7 @@ authum_threads_host_drop_owner(authum_thread_owner_t *owner)
     {
         authum_thread_t *t = owner->head;
         owner->head = t->next;
-        free(t);
+        authum_memory_free(t);
     }
     owner->count = 0;
 }

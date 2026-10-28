@@ -2,7 +2,7 @@
  * scores — the owner side of a module-to-module conversation.
  *
  * Keeps a score per player and offers it to other modules through the event
- * bus, as declared in scores_event.h:
+ * bus, as declared in scores/event.h:
  *   - publishes `scores.changed` (a forward) when a score changes;
  *   - answers `scores.query` (fills the payload, returns handled).
  *
@@ -10,8 +10,9 @@
  * ../scoreboard for the module on the other side.
  */
 
+#include <authum/client.h>
 #include <authum/unused.h>
-#include "scores_event.h"
+#include <scores/event.h>
 
 enum
 {
@@ -95,8 +96,7 @@ scores_cmd_add(const authum_command_t *cmd, authum_ptr user)
         return authum_bool_true;
     }
     scores_add(index, points);
-    authum_logger_info(&g_scores_log, "#%d %+d -> %d", index, points,
-                       g_scores[index]);
+    authum_logger_info(&g_scores_log, "#%d %+d -> %d", index, points, g_scores[index]);
     authum_command_printf(cmd, "#%d now has %d", index, g_scores[index]);
     return authum_bool_true;
 }

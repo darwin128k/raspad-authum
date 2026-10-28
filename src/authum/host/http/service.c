@@ -1,4 +1,9 @@
-#include "internal.h"
+#include <authum/host/http/internal.h>
+#include <authum/null.h>
+#include <lh/char/map.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
+#include <lh/net/port.h>
 
 static authum_bool_t
 owns_server(const authum_http_owner_t *owner, const authum_http_server_t *server)
@@ -9,7 +14,7 @@ owns_server(const authum_http_owner_t *owner, const authum_http_server_t *server
     }
     for (const authum_http_server_t *entry = owner->head; entry; entry = entry->next)
     {
-        if (entry == server)
+        if (lh_math_eq(entry, server))
         {
             return authum_bool_true;
         }
@@ -20,32 +25,37 @@ owns_server(const authum_http_owner_t *owner, const authum_http_server_t *server
 static authum_bool_t
 terminated(const authum_char_t *string, authum_usize_t capacity)
 {
-    return memchr(string, 0, capacity) != NULL;
+    return lh_math_ne(memchr(string, 0, capacity), authum_null);
 }
 
 static authum_bool_t
 valid_options(const authum_http_options_t *options)
 {
-    if (!options || options->size < sizeof *options || !options->source_count ||
-        options->source_count > AUTHUM_HTTP_MAX_SOURCES || options->port < 1 ||
-        options->port > 65535 || options->max_clients < 1 || options->max_clients > 256 ||
-        options->per_ip < 1 || options->per_ip > 64 || options->requests_per_second < 1 ||
-        options->requests_per_second > 1000 || options->timeout_seconds < 1 ||
-        options->timeout_seconds > 120 || options->cpu < -1 || options->cpu > 1023 ||
-        options->bytes_per_second < 1024 || options->bytes_per_second > 1073741824 ||
-        options->max_file_bytes < 1 || options->max_file_bytes > 1073741824 ||
+    if (!options || lh_math_lt(options->size, sizeof lh_ptr_deref(options)) ||
+        !options->source_count || lh_math_gt(options->source_count, AUTHUM_HTTP_MAX_SOURCES) ||
+        lh_math_lt(options->port, 1) || lh_math_gt(options->port, LH_NET_PORT_MAX) ||
+        lh_math_lt(options->max_clients, 1) ||
+        lh_math_gt(options->max_clients, AUTHUM_HTTP_MAX_CLIENTS) ||
+        lh_math_lt(options->per_ip, 1) || lh_math_gt(options->per_ip, 64) ||
+        lh_math_lt(options->requests_per_second, 1) ||
+        lh_math_gt(options->requests_per_second, 1000) || lh_math_lt(options->timeout_seconds, 1) ||
+        lh_math_gt(options->timeout_seconds, 120) || lh_math_lt(options->cpu, -1) ||
+        lh_math_gt(options->cpu, 1023) || lh_math_lt(options->bytes_per_second, 1024) ||
+        lh_math_gt(options->bytes_per_second, 1073741824) ||
+        lh_math_lt(options->max_file_bytes, 1) || lh_math_gt(options->max_file_bytes, 1073741824) ||
         !terminated(options->bind, sizeof options->bind) ||
         !terminated(options->allow_dirs, sizeof options->allow_dirs) ||
         !terminated(options->allow_extensions, sizeof options->allow_extensions) ||
         !terminated(options->root_extensions, sizeof options->root_extensions) ||
         !terminated(options->deny_prefixes, sizeof options->deny_prefixes) ||
-        !*options->allow_extensions)
+        !lh_ptr_deref(options->allow_extensions))
     {
         return authum_bool_false;
     }
-    for (authum_usize_t index = 0; index < options->source_count; ++index)
+    for (authum_usize_t index = 0; lh_math_lt(index, options->source_count);
+         index = lh_math_add_one(index))
     {
-        if (options->sources[index][0] != '/' ||
+        if (lh_math_ne(options->sources[index][0], lh_char_map_slash) ||
             !terminated(options->sources[index], sizeof options->sources[index]))
         {
             return authum_bool_false;
@@ -69,21 +79,21 @@ service_open(authum_ptr context, const authum_http_options_t *options, authum_ch
         {
             snprintf(error, error_size, "invalid HTTP options or owner");
         }
-        return NULL;
+        return authum_null;
     }
     /* Bound per-owner service state independently of connection limits. */
     authum_usize_t count = 0;
     for (authum_http_server_t *entry = owner->head; entry; entry = entry->next)
     {
-        ++count;
+        count = lh_math_add_one(count);
     }
-    if (count >= 8)
+    if (lh_math_ge(count, 8))
     {
         if (error && error_size)
         {
             snprintf(error, error_size, "HTTP server limit reached for owner");
         }
-        return NULL;
+        return authum_null;
     }
     authum_http_server_t *server =
         authum_http_server_create(options, owner->threads, error, error_size);
@@ -117,12 +127,12 @@ service_close(authum_ptr context, authum_http_server_t *server)
         server->close_pending = authum_bool_true;
         return;
     }
-    authum_http_server_t **link = &owner->head;
-    while (*link != server)
+    authum_http_server_t **link = lh_addr_of(owner->head);
+    while (lh_math_ne(lh_ptr_deref(link), server))
     {
-        link = &(*link)->next;
+        link = lh_addr_of((lh_ptr_deref(link))->next);
     }
-    *link = server->next;
+    lh_ptr_deref(link) = server->next;
     authum_http_server_destroy(server);
 }
 
@@ -134,9 +144,9 @@ service_drain(authum_ptr owner, authum_http_server_t *server, authum_http_log_fn
     {
         return 0;
     }
-    ++server->drain_depth;
+    server->drain_depth = lh_math_add_one(server->drain_depth);
     authum_usize_t drained = authum_http_server_drain(server, sink, user, limit);
-    --server->drain_depth;
+    server->drain_depth = lh_math_sub_one(server->drain_depth);
     if (!server->drain_depth && server->close_pending)
     {
         service_close(owner, server);
@@ -156,9 +166,9 @@ authum_http_host_init(authum_http_owner_t *owner, const authum_threads_t *thread
 {
     static const authum_http_ops_t ops = {sizeof ops,    service_open,  service_shutdown,
                                           service_close, service_drain, service_memory};
-    owner->head = NULL;
+    owner->head = authum_null;
     owner->threads = threads;
-    service->ops = &ops;
+    service->ops = lh_addr_of(ops);
     service->owner = owner;
 }
 

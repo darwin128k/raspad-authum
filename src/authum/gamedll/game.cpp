@@ -1,4 +1,16 @@
-#include "game.h"
+#include <authum/gamedll/game.h>
+#include <authum/ptr.h>
+#include <authum/bool.h>
+#include <authum/byte.h>
+#include <authum/char.h>
+#include <authum/null.h>
+#include <authum/size.h>
+#include <authum/unused.h>
+#include <lh/cast/reinterpret.h>
+#include <lh/char/map.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
+#include <lh/memory/std.h>
 
 #include <authum/host/log.h>
 #include <authum/host/module.h>
@@ -29,13 +41,13 @@ typedef void(__stdcall *give_fn_t)(enginefuncs_t *, globalvars_t *);
 #else
 typedef void (*give_fn_t)(enginefuncs_t *, globalvars_t *);
 #endif
-typedef int (*get_entity_api_t)(DLL_FUNCTIONS *, int);  /* old: version by value */
-typedef int (*get_entity_api2_t)(DLL_FUNCTIONS *, int *);
-typedef int (*get_new_dll_funcs_t)(NEW_DLL_FUNCTIONS *, int *);
+typedef authum_i32_t (*get_entity_api_t)(DLL_FUNCTIONS *, authum_i32_t); /* old: version by value */
+typedef authum_i32_t (*get_entity_api2_t)(DLL_FUNCTIONS *, authum_i32_t *);
+typedef authum_i32_t (*get_new_dll_funcs_t)(NEW_DLL_FUNCTIONS *, authum_i32_t *);
 
 /* The real game library, open through lh's OS layer (dlopen / LoadLibrary). */
 lh_os_shared_t g_game;
-bool g_game_open = false;
+authum_bool_t g_game_open = false;
 
 /* The real game DLL is named in Authum's own file, next to authum.so.
  *
@@ -45,50 +57,52 @@ bool g_game_open = false;
  * resolved against the game dir, the way liblist.gam resolves it; an
  * absolute one is taken as it is. $AUTHUM_GAMEDLL overrides it (tests).
  */
-const char authum_gamedll_file[] = "gamedll.txt";
-const char authum_gamedll_default[] = "dlls/cs.so";
+const authum_char_t authum_gamedll_file[] = "gamedll.txt";
+const authum_char_t authum_gamedll_default[] = "dlls/cs.so";
 
 /* Trim the line in place: no comment, no surrounding spaces. */
 void
-trim(char *line)
+trim(authum_char_t *line)
 {
-    char *start = line;
-    char *end;
-    char *comment;
+    authum_char_t *start = line;
+    authum_char_t *end;
+    authum_char_t *comment;
 
-    comment = std::strchr(line, '#');
-    if (comment != nullptr)
+    comment = std::strchr(line, lh_char_map_hash);
+    if (lh_math_ne(comment, authum_null))
     {
-        *comment = '\0';
+        lh_ptr_deref(comment) = lh_char_map_nul;
     }
-    while (*start == ' ' || *start == '\t')
+    while (lh_math_eq(lh_ptr_deref(start), lh_char_map_space) ||
+           lh_math_eq(lh_ptr_deref(start), lh_char_map_ht))
     {
-        ++start;
+        start = lh_math_add_one(start);
     }
-    if (start != line)
+    if (lh_math_ne(start, line))
     {
-        std::memmove(line, start, std::strlen(start) + 1u);
+        lh_memory_std_move(line, start, lh_math_add(std::strlen(start), 1u));
     }
-    end = line + std::strlen(line);
-    while (end > line &&
-           (end[-1] == '\n' || end[-1] == '\r' || end[-1] == ' ' || end[-1] == '\t'))
+    end = lh_math_add(line, std::strlen(line));
+    while (lh_math_gt(end, line) &&
+           (lh_math_eq(end[-1], lh_char_map_lf) || lh_math_eq(end[-1], lh_char_map_cr) ||
+            lh_math_eq(end[-1], lh_char_map_space) || lh_math_eq(end[-1], lh_char_map_ht)))
     {
-        --end;
-        *end = '\0';
+        end = lh_math_sub_one(end);
+        lh_ptr_deref(end) = lh_char_map_nul;
     }
 }
 
 /* Authum's own folder — the parent of the host image (addons/authum). */
-bool
-host_dir(char *out, size_t out_size)
+authum_bool_t
+host_dir(authum_char_t *out, authum_usize_t out_size)
 {
     const lh_fs_path_t *image;
     lh_fs_path_t parent;
     lh_str_t scratch;
     const lh_str_ptr text;
-    bool ok;
+    authum_bool_t ok;
 
-    image = lh_os_module_get_path(&authum);
+    image = lh_os_module_get_path(lh_addr_of(authum));
     lh_fs_path_init(lh_addr_of(parent));
     lh_str_init(lh_addr_of(scratch));
     text = lh_fs_path_to_cstr(image, lh_fs_path_style_posix, lh_addr_of(scratch));
@@ -109,32 +123,32 @@ host_dir(char *out, size_t out_size)
 }
 
 /* The game DLL path as written in gamedll.txt (or $AUTHUM_GAMEDLL). */
-bool
-read_gamedll_name(const char *dir, char *out, size_t out_size)
+authum_bool_t
+read_gamedll_name(const authum_char_t *dir, authum_char_t *out, authum_usize_t out_size)
 {
-    const char *env = std::getenv("AUTHUM_GAMEDLL");
-    char path[600];
-    char line[256];
+    const authum_char_t *env = std::getenv("AUTHUM_GAMEDLL");
+    authum_char_t path[600];
+    authum_char_t line[256];
     FILE *f;
 
-    if (env != nullptr && env[0] != '\0')
+    if (lh_math_ne(env, authum_null) && lh_math_ne(env[0], lh_char_map_nul))
     {
         std::snprintf(out, out_size, "%s", env);
         return true;
     }
     std::snprintf(path, sizeof path, "%s/%s", dir, authum_gamedll_file);
     f = std::fopen(path, "r");
-    if (f == nullptr)
+    if (lh_math_eq(f, authum_null))
     {
-        authum_log_error("gamedll: no %s beside authum.so (looked at %s)",
-                         authum_gamedll_file, path);
+        authum_log_error("gamedll: no %s beside authum.so (looked at %s)", authum_gamedll_file,
+                         path);
         std::snprintf(out, out_size, "%s", authum_gamedll_default);
         return false;
     }
-    while (std::fgets(line, sizeof line, f) != nullptr)
+    while (lh_math_ne(std::fgets(line, sizeof line, f), authum_null))
     {
         trim(line);
-        if (line[0] == '\0')
+        if (lh_math_eq(line[0], lh_char_map_nul))
         {
             continue;
         }
@@ -147,6 +161,7 @@ read_gamedll_name(const char *dir, char *out, size_t out_size)
     std::snprintf(out, out_size, "%s", authum_gamedll_default);
     return false;
 }
+
 /* Open the real game library, through lh's OS layer — the same call on both
  * platforms (dlopen / LoadLibrary).
  *
@@ -155,8 +170,8 @@ read_gamedll_name(const char *dir, char *out, size_t out_size)
  * us. So the class names have to be found there: we export them ourselves
  * (src/authum/gamedll/game_classes.cpp) and each trampoline forwards to the game.
  */
-bool
-open_game(const char *path)
+authum_bool_t
+open_game(const authum_char_t *path)
 {
     lh_fs_path_t image;
     lh_str_t text;
@@ -176,22 +191,22 @@ open_game(const char *path)
     }
     lh_str_deinit(lh_addr_of(text));
     lh_fs_path_deinit(lh_addr_of(image));
-    return ok == lh_bool_true;
+    return lh_math_eq(ok, lh_bool_true);
 }
 } // namespace
 
-bool
+authum_bool_t
 gamedll_load(enginefuncs_t *engine_funcs, globalvars_t *globals)
 {
-    char game_dir[256] = "cstrike";
-    char dir[512];
-    char name[256];
-    char full[800];
+    authum_char_t game_dir[256] = "cstrike";
+    authum_char_t dir[512];
+    authum_char_t name[256];
+    authum_char_t full[800];
     give_fn_t give;
 
     /* The engine runs from the HLDS root; the mod dir ("cstrike") is relative
      * to it, and so are the game DLL and the paths inside it. */
-    if (g_engfuncs.pfnGetGameDir != nullptr)
+    if (lh_math_ne(g_engfuncs.pfnGetGameDir, authum_null))
     {
         g_engfuncs.pfnGetGameDir(game_dir);
     }
@@ -200,10 +215,10 @@ gamedll_load(enginefuncs_t *engine_funcs, globalvars_t *globals)
         authum_log_error("gamedll: cannot find Authum's own folder");
         return false;
     }
-    (void)read_gamedll_name(dir, name, sizeof name); /* e.g. "dlls/cs.so" */
+    authum_unused(read_gamedll_name(dir, name, sizeof name)); /* e.g. "dlls/cs.so" */
 
     /* The path is relative to the game dir, the way liblist.gam resolves it. */
-    if (name[0] == '/')
+    if (lh_math_eq(name[0], lh_char_map_slash))
     {
         std::snprintf(full, sizeof full, "%s", name); /* absolute: as it is */
     }
@@ -219,8 +234,8 @@ gamedll_load(enginefuncs_t *engine_funcs, globalvars_t *globals)
     }
     authum_log_info("gamedll: game DLL %s", full);
 
-    give = reinterpret_cast<give_fn_t>(gamedll_symbol("GiveFnptrsToDll"));
-    if (give == nullptr)
+    give = lh_cast_reinterpret(give_fn_t, gamedll_symbol("GiveFnptrsToDll"));
+    if (lh_math_eq(give, authum_null))
     {
         authum_log_error("gamedll: game DLL has no GiveFnptrsToDll");
         return false;
@@ -229,48 +244,48 @@ gamedll_load(enginefuncs_t *engine_funcs, globalvars_t *globals)
     return true;
 }
 
-bool
-gamedll_entity_api(DLL_FUNCTIONS *out, int interface_version)
+authum_bool_t
+gamedll_entity_api(DLL_FUNCTIONS *out, authum_i32_t interface_version)
 {
     /* The game's *old* GetEntityAPI, on purpose: besides filling the table it
      * sets up the entity hash table (its bucket count). The newer
      * GetEntityAPI2 fills the same table but leaves the hash alone — and the
      * game then divides by zero on the first entity. */
-    get_entity_api_t api1 = reinterpret_cast<get_entity_api_t>(gamedll_symbol("GetEntityAPI"));
+    get_entity_api_t api1 = lh_cast_reinterpret(get_entity_api_t, gamedll_symbol("GetEntityAPI"));
     get_entity_api2_t api2;
 
-    if (api1 != nullptr)
+    if (lh_math_ne(api1, authum_null))
     {
-        return api1(out, interface_version) != 0;
+        return lh_math_ne(api1(out, interface_version), 0);
     }
-    api2 = reinterpret_cast<get_entity_api2_t>(gamedll_symbol("GetEntityAPI2"));
-    if (api2 == nullptr)
+    api2 = lh_cast_reinterpret(get_entity_api2_t, gamedll_symbol("GetEntityAPI2"));
+    if (lh_math_eq(api2, authum_null))
     {
-        api2 = reinterpret_cast<get_entity_api2_t>(
-            gamedll_symbol("_Z13GetEntityAPI2P13DLL_FUNCTIONSPi"));
+        api2 = lh_cast_reinterpret(get_entity_api2_t,
+                                   gamedll_symbol("_Z13GetEntityAPI2P13DLL_FUNCTIONSPi"));
     }
-    if (api2 != nullptr)
+    if (lh_math_ne(api2, authum_null))
     {
-        int v = interface_version;
-        return api2(out, &v) != 0;
+        authum_i32_t v = interface_version;
+        return lh_math_ne(api2(out, lh_addr_of(v)), 0);
     }
     authum_log_error("gamedll: game DLL exports neither GetEntityAPI nor GetEntityAPI2");
     return false;
 }
 
-bool
-gamedll_new_functions(NEW_DLL_FUNCTIONS *out, int *interface_version)
+authum_bool_t
+gamedll_new_functions(NEW_DLL_FUNCTIONS *out, authum_i32_t *interface_version)
 {
     get_new_dll_funcs_t fn =
-        reinterpret_cast<get_new_dll_funcs_t>(gamedll_symbol("GetNewDLLFunctions"));
+        lh_cast_reinterpret(get_new_dll_funcs_t, gamedll_symbol("GetNewDLLFunctions"));
 
-    return fn != nullptr && fn(out, interface_version) != 0;
+    return lh_math_ne(fn, authum_null) && lh_math_ne(fn(out, interface_version), 0);
 }
 
-void *
-gamedll_symbol(const char *name)
+authum_ptr
+gamedll_symbol(const authum_char_t *name)
 {
-    return g_game_open ? lh_os_shared_get_sym(lh_addr_of(g_game), name) : nullptr;
+    return g_game_open ? lh_os_shared_get_sym(lh_addr_of(g_game), name) : authum_null;
 }
 
 } // namespace authum_gamedll

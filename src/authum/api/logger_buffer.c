@@ -1,4 +1,13 @@
 #include <authum/logger/buffer.h>
+#include <authum/null.h>
+#include <authum/bool.h>
+#include <authum/byte.h>
+#include <authum/char.h>
+#include <authum/size.h>
+#include <lh/cast/static.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
+#include <authum/memory.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -16,18 +25,19 @@ typedef struct authum_logger_buffer_impl
     authum_logger_buffer_line_t lines[];
 } authum_logger_buffer_impl_t;
 
-static _Thread_local authum_logger_buffer_t *m_capture;
+static _Thread_local authum_logger_buffer_t lh_ptr_deref(m_capture);
 
 authum_bool_t
 authum_logger_buffer_init(authum_logger_buffer_t *self, authum_logger_t *overflow,
                           authum_usize_t capacity)
 {
     authum_logger_buffer_impl_t *impl;
-    if (!self || self->impl || !capacity || capacity > 256)
+    if (!self || self->impl || !capacity || lh_math_gt(capacity, 256))
     {
         return authum_bool_false;
     }
-    impl = calloc(1, sizeof *impl + capacity * sizeof impl->lines[0]);
+    impl = authum_memory_alloc_zero(
+        1, lh_math_add(sizeof lh_ptr_deref(impl), lh_math_mul(capacity, sizeof impl->lines[0])));
     if (!impl)
     {
         return authum_bool_false;
@@ -45,19 +55,19 @@ authum_logger_buffer_destroy(authum_logger_buffer_t *self)
     {
         return;
     }
-    if (m_capture == self)
+    if (lh_math_eq(m_capture, self))
     {
-        m_capture = NULL;
+        m_capture = authum_null;
     }
-    free(self->impl);
-    self->impl = NULL;
+    authum_memory_free(self->impl);
+    self->impl = authum_null;
 }
 
 authum_logger_buffer_t *
 authum_logger_buffer_begin(authum_logger_buffer_t *self)
 {
     authum_logger_buffer_t *previous = m_capture;
-    m_capture = self && self->impl ? self : NULL;
+    m_capture = self && self->impl ? self : authum_null;
     return previous;
 }
 
@@ -70,7 +80,7 @@ authum_logger_buffer_end(authum_logger_buffer_t *previous)
 authum_bool_t
 authum_logger_buffer_active(void)
 {
-    return m_capture != NULL;
+    return lh_math_ne(m_capture, authum_null);
 }
 
 authum_bool_t
@@ -83,26 +93,26 @@ authum_logger_buffer_log_v(authum_logger_t *logger, authum_logger_level_t level,
     {
         return authum_bool_false;
     }
-    if (!logger || !fmt || level > authum_logger_level_debug)
+    if (!logger || !fmt || lh_math_gt(level, authum_logger_level_debug))
     {
         return authum_bool_true;
     }
     const authum_logger_channel_t *channel =
-        logger->owns_journal ? &logger->journal : logger->channel;
+        logger->owns_journal ? lh_addr_of(logger->journal) : logger->channel;
     if (!channel)
     {
         return authum_bool_true;
     }
     impl = m_capture->impl;
-    if (impl->count == impl->capacity)
+    if (lh_math_eq(impl->count, impl->capacity))
     {
-        ++impl->dropped;
+        impl->dropped = lh_math_add_one(impl->dropped);
         return authum_bool_true;
     }
-    line = &impl->lines[impl->count++];
+    line = lh_addr_of(impl->lines[impl->count++]);
     /* Copy the binding, not a temporary logger handle (authum_host_log uses one).
      * Channel ops and journal ownership must still outlive capture + flush. */
-    line->target = *channel;
+    line->target = lh_ptr_deref(channel);
     line->level = level;
     vsnprintf(line->text, sizeof line->text, fmt, ap);
     return authum_bool_true;
@@ -118,17 +128,17 @@ authum_logger_buffer_flush(authum_logger_buffer_t *self)
     {
         return;
     }
-    previous = authum_logger_buffer_begin(NULL);
-    for (i = 0; i < impl->count; ++i)
+    previous = authum_logger_buffer_begin(authum_null);
+    for (i = 0; lh_math_lt(i, impl->count); i = lh_math_add_one(i))
     {
         authum_logger_t logger = {0};
-        logger.channel = &impl->lines[i].target;
-        authum_logger_log(&logger, impl->lines[i].level, "%s", impl->lines[i].text);
+        logger.channel = lh_addr_of(impl->lines[i].target);
+        authum_logger_log(lh_addr_of(logger), impl->lines[i].level, "%s", impl->lines[i].text);
     }
     if (impl->dropped)
     {
         authum_logger_warning(impl->overflow, "%u background log messages dropped",
-                              (unsigned)impl->dropped);
+                              lh_cast_static(authum_u32_t, impl->dropped));
     }
     impl->count = impl->dropped = 0;
     authum_logger_buffer_end(previous);
@@ -137,6 +147,6 @@ authum_logger_buffer_flush(authum_logger_buffer_t *self)
 authum_usize_t
 authum_logger_buffer_dropped(const authum_logger_buffer_t *self)
 {
-    const authum_logger_buffer_impl_t *impl = self ? self->impl : NULL;
+    const authum_logger_buffer_impl_t *impl = self ? self->impl : authum_null;
     return impl ? impl->dropped : 0;
 }

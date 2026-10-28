@@ -1,23 +1,28 @@
 #include <authum/detour.h>
+#include <lh/cast/reinterpret.h>
+#include <lh/cast/static.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
+#include <lh/memory/std.h>
 
 #include <lh/os/memory.h>
 
-#include <stdint.h>
 #include <string.h>
 
 /* rel32 reaches anywhere only in a 32-bit address space. */
 #if defined(__i386__) || defined(_M_IX86)
-#define AUTHUM_DETOUR_X86 1
+#    define AUTHUM_DETOUR_X86 1
 #else
-#define AUTHUM_DETOUR_X86 0
+#    define AUTHUM_DETOUR_X86 0
 #endif
 
 authum_bool_t
 authum_detour_unprotect(authum_ptr address, authum_usize_t size)
 {
-    return lh_os_memory_protect(address, (lh_usize_t)size,
-                                lh_os_memory_access_read | lh_os_memory_access_write |
-                                    lh_os_memory_access_execute)
+    return lh_os_memory_protect(
+               address, lh_cast_static(lh_usize_t, size),
+               lh_math_bit_or(lh_math_bit_or(lh_os_memory_access_read, lh_os_memory_access_write),
+                              lh_os_memory_access_execute))
                ? authum_bool_true
                : authum_bool_false;
 }
@@ -25,11 +30,12 @@ authum_detour_unprotect(authum_ptr address, authum_usize_t size)
 void
 authum_detour_write_jump(authum_ptr target, authum_ptr hook)
 {
-    authum_byte_t *t = (authum_byte_t *)target;
-    int32_t rel = (int32_t)((intptr_t)hook - (intptr_t)target - AUTHUM_DETOUR_SIZE);
+    authum_byte_t *t = lh_cast_reinterpret(authum_byte_t *, target);
+    authum_i32_t rel =
+        lh_cast_static(authum_i32_t, lh_math_sub(lh_ptr_udiff(hook, target), AUTHUM_DETOUR_SIZE));
 
     t[0] = 0xE9u;
-    memcpy(t + 1, &rel, sizeof rel);
+    lh_memory_std_copy(lh_math_add(t, 1), lh_addr_of(rel), sizeof rel);
 }
 
 authum_bool_t
@@ -46,7 +52,7 @@ authum_detour_attach(authum_detour_t *self, authum_ptr target, authum_ptr hook)
     }
     self->target = target;
     self->hook = hook;
-    memcpy(self->saved, target, AUTHUM_DETOUR_SIZE);
+    lh_memory_std_copy(self->saved, target, AUTHUM_DETOUR_SIZE);
     authum_detour_write_jump(target, hook);
     self->attached = authum_bool_true;
     self->patched = authum_bool_true;
@@ -71,7 +77,7 @@ authum_detour_suspend(authum_detour_t *self)
     {
         return;
     }
-    memcpy(self->target, self->saved, AUTHUM_DETOUR_SIZE);
+    lh_memory_std_copy(self->target, self->saved, AUTHUM_DETOUR_SIZE);
     self->patched = authum_bool_false;
 }
 

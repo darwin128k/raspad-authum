@@ -1,4 +1,14 @@
 #include <authum/host/console.h>
+#include <authum/bool.h>
+#include <authum/byte.h>
+#include <authum/char.h>
+#include <authum/size.h>
+#include <lh/cast/reinterpret.h>
+#include <lh/cast/static.h>
+#include <lh/char/map.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
+#include <lh/memory/std.h>
 
 #include <authum/host/commands.h>
 #include <authum/cstr.h>
@@ -23,11 +33,11 @@ authum_console_reply(authum_command_print_fn print, authum_ptr out, const authum
 {
     authum_command_t cmd;
 
-    memset(&cmd, 0, sizeof cmd);
+    lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
     cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
-    authum_command_print(&cmd, line);
+    authum_command_print(lh_addr_of(cmd), line);
 }
 
 void
@@ -37,12 +47,14 @@ authum_console_fail(authum_command_print_fn print, authum_ptr out, const authum_
     authum_command_t cmd;
     const lh_os_error_desc_ptr desc = lh_os_get_last_error_desc();
 
-    memset(&cmd, 0, sizeof cmd);
+    lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
     cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
-    authum_command_printf(&cmd, "authum %s %s: FAILED (%s)", what, name,
-                          desc != lh_null ? (const char *)desc : "unknown error");
+    authum_command_printf(lh_addr_of(cmd), "authum %s %s: FAILED (%s)", what, name,
+                          lh_math_ne(desc, lh_null)
+                              ? lh_cast_reinterpret(const authum_char_t *, desc)
+                              : "unknown error");
 }
 
 void
@@ -51,33 +63,34 @@ authum_console_list(authum_command_print_fn print, authum_ptr out)
     authum_command_t cmd;
     authum_module_t *child;
     const authum_module_info_t *info;
-    unsigned i = 0u;
+    authum_u32_t i = 0u;
 
-    memset(&cmd, 0, sizeof cmd);
+    lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
     cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
-    authum_command_printf(&cmd,
-                          "Authum modules (%u):", (unsigned)authum_loader_get_loaded(&authum));
-    for (child = authum_loader_get_first(&authum); !authum_null_eq(child);
-         child = authum_loader_get_next(&authum, child))
+    authum_command_printf(
+        lh_addr_of(cmd), "Authum modules (%u):",
+        lh_cast_static(authum_u32_t, authum_loader_get_loaded(lh_addr_of(authum))));
+    for (child = authum_loader_get_first(lh_addr_of(authum)); !authum_null_eq(child);
+         child = authum_loader_get_next(lh_addr_of(authum), child))
     {
-        ++i;
+        i = lh_math_add_one(i);
         info = authum_module_get_info(child);
         if (authum_null_eq(info) || authum_null_eq(info->name))
         {
-            authum_command_printf(&cmd, "  %u. (unnamed)  RUNNING", i);
+            authum_command_printf(lh_addr_of(cmd), "  %u. (unnamed)  RUNNING", i);
             continue;
         }
-        authum_command_printf(&cmd, "  %u. %-16s %u.%u.%u  RUNNING%s", i, info->name,
+        authum_command_printf(lh_addr_of(cmd), "  %u. %-16s %u.%u.%u  RUNNING%s", i, info->name,
                               info->version.major, info->version.minor, info->version.patch,
                               authum_commands_host_has_scope(info->name) ? "  [commands]" : "");
     }
-    if (authum_loader_get_loaded(&authum) == 0u)
+    if (lh_math_eq(authum_loader_get_loaded(lh_addr_of(authum)), 0u))
     {
-        authum_command_print(&cmd, "  (none — authum load <module> or modules.list)");
+        authum_command_print(lh_addr_of(cmd), "  (none — authum load <module> or modules.list)");
     }
-    authum_command_print(&cmd, "authum help — all commands");
+    authum_command_print(lh_addr_of(cmd), "authum help — all commands");
 }
 
 void
@@ -90,7 +103,7 @@ authum_console_help(authum_command_print_fn print, authum_ptr out)
     authum_console_reply(print, out, "authum reload <module>     - unload then load");
     authum_console_reply(print, out, "authum version             - Authum + ABI");
     authum_console_reply(print, out, "authum <module> [help|…]   - module commands");
-    if (authum_commands_host_print_help(authum_null, print, out) == 0u)
+    if (lh_math_eq(authum_commands_host_print_help(authum_null, print, out), 0u))
     {
         authum_console_reply(print, out, "  (no module commands)");
     }
@@ -102,11 +115,11 @@ authum_console_version(authum_command_print_fn print, authum_ptr out)
     authum_command_t cmd;
     const authum_version_t abi = AUTHUM_MODULE_ABI;
 
-    memset(&cmd, 0, sizeof cmd);
+    lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
     cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
-    authum_command_printf(&cmd, "Authum %u.%u.%u (module ABI %u.%u.%u)",
+    authum_command_printf(lh_addr_of(cmd), "Authum %u.%u.%u (module ABI %u.%u.%u)",
                           authum_module_info.version.major, authum_module_info.version.minor,
                           authum_module_info.version.patch, abi.major, abi.minor, abi.patch);
 }
@@ -121,56 +134,59 @@ authum_console_info(authum_command_print_fn print, authum_ptr out, const authum_
     lh_str_t scratch;
     const lh_str_ptr path_text;
 
-    memset(&cmd, 0, sizeof cmd);
+    lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
     cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
 
-    if (authum_null_eq(name) || name[0] == '\0')
+    if (authum_null_eq(name) || lh_math_eq(name[0], lh_char_map_nul))
     {
         authum_console_version(print, out);
-        authum_command_printf(&cmd, "modules loaded: %u",
-                              (unsigned)authum_loader_get_loaded(&authum));
-        authum_command_printf(&cmd, "module commands: %u", (unsigned)authum_commands_host_count());
-        authum_command_print(&cmd, "use: authum info <module>");
+        authum_command_printf(
+            lh_addr_of(cmd), "modules loaded: %u",
+            lh_cast_static(authum_u32_t, authum_loader_get_loaded(lh_addr_of(authum))));
+        authum_command_printf(lh_addr_of(cmd), "module commands: %u",
+                              lh_cast_static(authum_u32_t, authum_commands_host_count()));
+        authum_command_print(lh_addr_of(cmd), "use: authum info <module>");
         return;
     }
 
-    child = authum_loader_find(&authum, name);
+    child = authum_loader_find(lh_addr_of(authum), name);
     if (authum_null_eq(child))
     {
-        authum_command_printf(&cmd, "authum info %s: not loaded", name);
+        authum_command_printf(lh_addr_of(cmd), "authum info %s: not loaded", name);
         return;
     }
     info = authum_module_get_info(child);
     if (authum_null_eq(info))
     {
-        authum_command_printf(&cmd, "authum info %s: no info", name);
+        authum_command_printf(lh_addr_of(cmd), "authum info %s: no info", name);
         return;
     }
-    authum_command_printf(&cmd, "name      %s", info->name);
-    authum_command_printf(&cmd, "version   %u.%u.%u", info->version.major, info->version.minor,
-                          info->version.patch);
-    authum_command_printf(&cmd, "abi       %u.%u.%u", info->abi.major, info->abi.minor,
+    authum_command_printf(lh_addr_of(cmd), "name      %s", info->name);
+    authum_command_printf(lh_addr_of(cmd), "version   %u.%u.%u", info->version.major,
+                          info->version.minor, info->version.patch);
+    authum_command_printf(lh_addr_of(cmd), "abi       %u.%u.%u", info->abi.major, info->abi.minor,
                           info->abi.patch);
-    if (!authum_null_eq(info->author) && info->author[0] != '\0')
+    if (!authum_null_eq(info->author) && lh_math_ne(info->author[0], lh_char_map_nul))
     {
-        authum_command_printf(&cmd, "author    %s", info->author);
+        authum_command_printf(lh_addr_of(cmd), "author    %s", info->author);
     }
-    if (!authum_null_eq(info->url) && info->url[0] != '\0')
+    if (!authum_null_eq(info->url) && lh_math_ne(info->url[0], lh_char_map_nul))
     {
-        authum_command_printf(&cmd, "url       %s", info->url);
+        authum_command_printf(lh_addr_of(cmd), "url       %s", info->url);
     }
-    authum_command_printf(&cmd, "status    %s",
+    authum_command_printf(lh_addr_of(cmd), "status    %s",
                           lh_os_module_is_started(child) ? "RUNNING" : "STOPPED");
-    authum_command_printf(&cmd, "commands  %s",
+    authum_command_printf(lh_addr_of(cmd), "commands  %s",
                           authum_commands_host_has_scope(info->name) ? "yes" : "no");
     image = lh_os_module_get_path(child);
     path_text = lh_null;
     if (lh_null_ne(image) && !lh_fs_path_is_empty(image))
     {
         path_text = lh_fs_path_to_cstr(image, lh_fs_path_style_posix, lh_addr_of(scratch));
-        authum_command_printf(&cmd, "path      %s", path_text != lh_null ? path_text : "?");
+        authum_command_printf(lh_addr_of(cmd), "path      %s",
+                              lh_math_ne(path_text, lh_null) ? path_text : "?");
         lh_str_deinit(lh_addr_of(scratch));
     }
 }
@@ -180,18 +196,18 @@ authum_console_load(authum_command_print_fn print, authum_ptr out, const authum_
 {
     authum_command_t cmd;
 
-    memset(&cmd, 0, sizeof cmd);
+    lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
     cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
-    if (authum_null_eq(name) || name[0] == '\0')
+    if (authum_null_eq(name) || lh_math_eq(name[0], lh_char_map_nul))
     {
-        authum_command_print(&cmd, "usage: authum load <module>");
+        authum_command_print(lh_addr_of(cmd), "usage: authum load <module>");
         return;
     }
-    if (authum_loader_load_name(&authum, name))
+    if (authum_loader_load_name(lh_addr_of(authum), name))
     {
-        authum_command_printf(&cmd, "authum load %s: OK", name);
+        authum_command_printf(lh_addr_of(cmd), "authum load %s: OK", name);
     }
     else
     {
@@ -204,18 +220,18 @@ authum_console_unload(authum_command_print_fn print, authum_ptr out, const authu
 {
     authum_command_t cmd;
 
-    memset(&cmd, 0, sizeof cmd);
+    lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
     cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
-    if (authum_null_eq(name) || name[0] == '\0')
+    if (authum_null_eq(name) || lh_math_eq(name[0], lh_char_map_nul))
     {
-        authum_command_print(&cmd, "usage: authum unload <module>");
+        authum_command_print(lh_addr_of(cmd), "usage: authum unload <module>");
         return;
     }
-    if (authum_loader_unload_name(&authum, name))
+    if (authum_loader_unload_name(lh_addr_of(authum), name))
     {
-        authum_command_printf(&cmd, "authum unload %s: OK", name);
+        authum_command_printf(lh_addr_of(cmd), "authum unload %s: OK", name);
     }
     else
     {
@@ -228,18 +244,18 @@ authum_console_reload(authum_command_print_fn print, authum_ptr out, const authu
 {
     authum_command_t cmd;
 
-    memset(&cmd, 0, sizeof cmd);
+    lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
     cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
-    if (authum_null_eq(name) || name[0] == '\0')
+    if (authum_null_eq(name) || lh_math_eq(name[0], lh_char_map_nul))
     {
-        authum_command_print(&cmd, "usage: authum reload <module>");
+        authum_command_print(lh_addr_of(cmd), "usage: authum reload <module>");
         return;
     }
-    if (authum_loader_reload_name(&authum, name))
+    if (authum_loader_reload_name(lh_addr_of(authum), name))
     {
-        authum_command_printf(&cmd, "authum reload %s: OK", name);
+        authum_command_printf(lh_addr_of(cmd), "authum reload %s: OK", name);
     }
     else
     {
@@ -255,7 +271,8 @@ authum_console_run(authum_usize_t argc, const authum_char_t *const *argv,
     const authum_char_t *name;
     const authum_char_t *arg;
 
-    if (argc == 0u || authum_null_eq(argv) || authum_cstr_eq(argv[0], "list", authum_bool_true) ||
+    if (lh_math_eq(argc, 0u) || authum_null_eq(argv) ||
+        authum_cstr_eq(argv[0], "list", authum_bool_true) ||
         authum_cstr_eq(argv[0], "status", authum_bool_true))
     {
         authum_console_list(print, out);
@@ -273,36 +290,37 @@ authum_console_run(authum_usize_t argc, const authum_char_t *const *argv,
     }
     if (authum_cstr_eq(argv[0], "info", authum_bool_true))
     {
-        authum_console_info(print, out, argc > 1u ? argv[1] : authum_null);
+        authum_console_info(print, out, lh_math_gt(argc, 1u) ? argv[1] : authum_null);
         return;
     }
     if (authum_cstr_eq(argv[0], "load", authum_bool_true))
     {
-        authum_console_load(print, out, argc > 1u ? argv[1] : authum_null);
+        authum_console_load(print, out, lh_math_gt(argc, 1u) ? argv[1] : authum_null);
         return;
     }
     if (authum_cstr_eq(argv[0], "unload", authum_bool_true))
     {
-        authum_console_unload(print, out, argc > 1u ? argv[1] : authum_null);
+        authum_console_unload(print, out, lh_math_gt(argc, 1u) ? argv[1] : authum_null);
         return;
     }
     if (authum_cstr_eq(argv[0], "reload", authum_bool_true))
     {
-        authum_console_reload(print, out, argc > 1u ? argv[1] : authum_null);
+        authum_console_reload(print, out, lh_math_gt(argc, 1u) ? argv[1] : authum_null);
         return;
     }
 
     scope = argv[0];
-    name = (argc > 1u) ? argv[1] : "help";
-    arg = (argc > 2u) ? argv[2] : authum_null;
+    name = (lh_math_gt(argc, 1u)) ? argv[1] : "help";
+    arg = (lh_math_gt(argc, 2u)) ? argv[2] : authum_null;
     authum_unused(arg);
-    if (authum_commands_host_run(scope, name, (argc > 2u) ? argc - 2u : 0u,
-                                 (argc > 2u) ? argv + 2 : authum_null, print, out))
+    if (authum_commands_host_run(scope, name, (lh_math_gt(argc, 2u)) ? lh_math_sub(argc, 2u) : 0u,
+                                 (lh_math_gt(argc, 2u)) ? lh_math_add(argv, 2) : authum_null, print,
+                                 out))
     {
         return;
     }
     if (authum_cstr_eq(name, "help", authum_bool_true) &&
-        authum_commands_host_print_help(scope, print, out) != 0u)
+        lh_math_ne(authum_commands_host_print_help(scope, print, out), 0u))
     {
         return;
     }

@@ -4,8 +4,21 @@
  * a handler blocked it) calls the real game's function. Everything else is the
  * game's own pointer, copied in hooks_fill_entity_table.
  */
-#include "game.h"
-#include "hooks.h"
+#include <authum/gamedll/game.h>
+#include <authum/bool.h>
+#include <authum/byte.h>
+#include <authum/char.h>
+#include <authum/null.h>
+#include <authum/size.h>
+#include <authum/unused.h>
+#include <lh/cast/const.h>
+#include <lh/cast/reinterpret.h>
+#include <lh/cast/static.h>
+#include <lh/char/map.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
+#include <lh/memory/std.h>
+#include <authum/gamedll/hooks.h>
 
 #include <authum/host/engine.h>
 #include <authum/event/client.h>
@@ -24,44 +37,47 @@ extern globalvars_t *gpGlobals;
 
 /* HLSDK's STRING(), without pulling in util.h / the Metamod callback macros. */
 #ifndef STRING
-#    define STRING(offset) (static_cast<const char *>(gpGlobals->pStringBase) + static_cast<int>(offset))
+#    define STRING(offset)                                                                         \
+        lh_math_add(lh_cast_static(const authum_char_t *, gpGlobals->pStringBase),                 \
+                    lh_cast_static(authum_i32_t, offset))
 #endif
 
 namespace authum_gamedll
 {
-void shutdown(void); /* defined in entry.cpp: brings Authum down */
+void
+shutdown(void); /* defined in entry.cpp: brings Authum down */
 
 namespace
 {
-DLL_FUNCTIONS g_game_dll;      /* the game's own callbacks */
-NEW_DLL_FUNCTIONS g_game_new;  /* the game's NEW_DLL_FUNCTIONS, if any */
-bool g_have_new = false;
+DLL_FUNCTIONS g_game_dll;     /* the game's own callbacks */
+NEW_DLL_FUNCTIONS g_game_new; /* the game's NEW_DLL_FUNCTIONS, if any */
+authum_bool_t g_have_new = false;
 
 void
-copy(authum_char_t *dst, size_t dst_size, const char *src)
+copy(authum_char_t *dst, authum_usize_t dst_size, const authum_char_t *src)
 {
-    std::snprintf(dst, dst_size, "%s", src != nullptr ? src : "");
+    std::snprintf(dst, dst_size, "%s", lh_math_ne(src, authum_null) ? src : "");
 }
 
 void
-client_fill(authum_event_client_t *ev, edict_t *entity, const char *name)
+client_fill(authum_event_client_t *ev, edict_t *entity, const authum_char_t *name)
 {
-    std::memset(ev, 0, sizeof *ev);
-    ev->size = static_cast<authum_usize_t>(sizeof *ev);
+    lh_memory_std_set(ev, 0, sizeof lh_ptr_deref(ev));
+    ev->size = lh_cast_static(authum_usize_t, sizeof lh_ptr_deref(ev));
     ev->allow = authum_bool_true;
-    ev->unix_time = static_cast<authum_i64_t>(std::time(nullptr));
-    if (gpGlobals != nullptr)
+    ev->unix_time = lh_cast_static(authum_i64_t, std::time(authum_null));
+    if (lh_math_ne(gpGlobals, authum_null))
     {
         ev->game_time = gpGlobals->time;
     }
-    if (entity == nullptr)
+    if (lh_math_eq(entity, authum_null))
     {
         return;
     }
     ev->index = g_engfuncs.pfnIndexOfEdict(entity);
     ev->userid = g_engfuncs.pfnGetPlayerUserId(entity);
     copy(ev->auth_id, sizeof ev->auth_id, g_engfuncs.pfnGetPlayerAuthId(entity));
-    if (name == nullptr && gpGlobals != nullptr)
+    if (lh_math_eq(name, authum_null) && lh_math_ne(gpGlobals, authum_null))
     {
         name = STRING(entity->v.netname);
     }
@@ -71,10 +87,10 @@ client_fill(authum_event_client_t *ev, edict_t *entity, const char *name)
 void
 server_fill(authum_event_server_t *ev)
 {
-    std::memset(ev, 0, sizeof *ev);
-    ev->size = static_cast<authum_usize_t>(sizeof *ev);
-    ev->unix_time = static_cast<authum_i64_t>(std::time(nullptr));
-    if (gpGlobals == nullptr)
+    lh_memory_std_set(ev, 0, sizeof lh_ptr_deref(ev));
+    ev->size = lh_cast_static(authum_usize_t, sizeof lh_ptr_deref(ev));
+    ev->unix_time = lh_cast_static(authum_i64_t, std::time(authum_null));
+    if (lh_math_eq(gpGlobals, authum_null))
     {
         return;
     }
@@ -87,20 +103,23 @@ server_fill(authum_event_server_t *ev)
 /* -- the wrappers: publish, then call the game (or supersede) -------------- */
 
 qboolean
-h_client_connect(edict_t *entity, const char *name, const char *address, char reject[128])
+h_client_connect(edict_t *entity, const authum_char_t *name, const authum_char_t *address,
+                 authum_char_t reject[128])
 {
     authum_event_client_t ev;
-    client_fill(&ev, entity, name);
+    client_fill(lh_addr_of(ev), entity, name);
     copy(ev.address, sizeof ev.address, address);
     authum_engine_host_set_client_address(ev.index, address);
-    (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_CONNECT, &ev);
+    authum_unused(authum_events_host_publish(AUTHUM_EVENT_CLIENT_CONNECT, lh_addr_of(ev)));
     if (!ev.allow)
     {
-        authum_engine_host_set_client_address(ev.index, nullptr);
-        copy(reject, 128, ev.reject_reason[0] != '\0' ? ev.reject_reason : "Connection refused.");
+        authum_engine_host_set_client_address(ev.index, authum_null);
+        copy(reject, 128,
+             lh_math_ne(ev.reject_reason[0], lh_char_map_nul) ? ev.reject_reason
+                                                              : "Connection refused.");
         return FALSE;
     }
-    return g_game_dll.pfnClientConnect != nullptr
+    return lh_math_ne(g_game_dll.pfnClientConnect, authum_null)
                ? g_game_dll.pfnClientConnect(entity, name, address, reject)
                : TRUE;
 }
@@ -109,26 +128,26 @@ void
 h_client_put_in_server(edict_t *entity)
 {
     authum_event_client_t ev;
-    client_fill(&ev, entity, nullptr);
-    (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_PUT_IN_SERVER, &ev);
-    if (g_game_dll.pfnClientPutInServer != nullptr)
+    client_fill(lh_addr_of(ev), entity, authum_null);
+    authum_unused(authum_events_host_publish(AUTHUM_EVENT_CLIENT_PUT_IN_SERVER, lh_addr_of(ev)));
+    if (lh_math_ne(g_game_dll.pfnClientPutInServer, authum_null))
     {
         g_game_dll.pfnClientPutInServer(entity);
     }
 }
 
 void
-h_client_user_info_changed(edict_t *entity, char *infobuffer)
+h_client_user_info_changed(edict_t *entity, authum_char_t *infobuffer)
 {
     authum_event_client_t ev;
-    const char *name = nullptr;
-    if (infobuffer != nullptr)
+    const authum_char_t *name = authum_null;
+    if (lh_math_ne(infobuffer, authum_null))
     {
-        name = g_engfuncs.pfnInfoKeyValue(infobuffer, const_cast<char *>("name"));
+        name = g_engfuncs.pfnInfoKeyValue(infobuffer, lh_cast_const(authum_char_t *, "name"));
     }
-    client_fill(&ev, entity, name);
-    (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_INFO_CHANGED, &ev);
-    if (g_game_dll.pfnClientUserInfoChanged != nullptr)
+    client_fill(lh_addr_of(ev), entity, name);
+    authum_unused(authum_events_host_publish(AUTHUM_EVENT_CLIENT_INFO_CHANGED, lh_addr_of(ev)));
+    if (lh_math_ne(g_game_dll.pfnClientUserInfoChanged, authum_null))
     {
         g_game_dll.pfnClientUserInfoChanged(entity, infobuffer);
     }
@@ -138,10 +157,10 @@ void
 h_client_disconnect(edict_t *entity)
 {
     authum_event_client_t ev;
-    client_fill(&ev, entity, nullptr);
-    (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_DISCONNECT, &ev);
-    authum_engine_host_set_client_address(ev.index, nullptr);
-    if (g_game_dll.pfnClientDisconnect != nullptr)
+    client_fill(lh_addr_of(ev), entity, authum_null);
+    authum_unused(authum_events_host_publish(AUTHUM_EVENT_CLIENT_DISCONNECT, lh_addr_of(ev)));
+    authum_engine_host_set_client_address(ev.index, authum_null);
+    if (lh_math_ne(g_game_dll.pfnClientDisconnect, authum_null))
     {
         g_game_dll.pfnClientDisconnect(entity);
     }
@@ -151,13 +170,13 @@ void
 h_client_kill(edict_t *entity)
 {
     authum_event_client_t ev;
-    client_fill(&ev, entity, nullptr);
-    (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_KILL, &ev);
+    client_fill(lh_addr_of(ev), entity, authum_null);
+    authum_unused(authum_events_host_publish(AUTHUM_EVENT_CLIENT_KILL, lh_addr_of(ev)));
     if (!ev.allow)
     {
         return; /* superseded: the player is not killed */
     }
-    if (g_game_dll.pfnClientKill != nullptr)
+    if (lh_math_ne(g_game_dll.pfnClientKill, authum_null))
     {
         g_game_dll.pfnClientKill(entity);
     }
@@ -167,38 +186,39 @@ void
 h_client_command(edict_t *entity)
 {
     authum_event_client_command_t ev;
-    int i;
-    std::memset(&ev, 0, sizeof ev);
-    ev.size = static_cast<authum_usize_t>(sizeof ev);
-    client_fill(&ev.client, entity, nullptr);
+    authum_i32_t i;
+    lh_memory_std_set(lh_addr_of(ev), 0, sizeof ev);
+    ev.size = lh_cast_static(authum_usize_t, sizeof ev);
+    client_fill(lh_addr_of(ev.client), entity, authum_null);
     ev.argc = g_engfuncs.pfnCmd_Argc();
-    for (i = 0; i < ev.argc && i < authum_event_client_command_argv_max; ++i)
+    for (i = 0; lh_math_lt(i, ev.argc) && lh_math_lt(i, authum_event_client_command_argv_max);
+         i = lh_math_add_one(i))
     {
         copy(ev.argv[i], sizeof ev.argv[i], g_engfuncs.pfnCmd_Argv(i));
     }
     copy(ev.args, sizeof ev.args, g_engfuncs.pfnCmd_Args());
-    (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_COMMAND, &ev);
+    authum_unused(authum_events_host_publish(AUTHUM_EVENT_CLIENT_COMMAND, lh_addr_of(ev)));
     if (ev.block)
     {
         return; /* superseded: the game never sees the command */
     }
-    if (g_game_dll.pfnClientCommand != nullptr)
+    if (lh_math_ne(g_game_dll.pfnClientCommand, authum_null))
     {
         g_game_dll.pfnClientCommand(entity);
     }
 }
 
-int
+authum_i32_t
 h_spawn(edict_t *entity)
 {
     /* worldspawn is the map's first entity: precaching is allowed from here. */
-    if (entity != nullptr && gpGlobals != nullptr &&
-        std::strcmp(STRING(entity->v.classname), "worldspawn") == 0)
+    if (lh_math_ne(entity, authum_null) && lh_math_ne(gpGlobals, authum_null) &&
+        lh_math_eq(std::strcmp(STRING(entity->v.classname), "worldspawn"), 0))
     {
         authum_event_server_t ev;
         authum_engine_host_set_precache(authum_bool_true);
-        server_fill(&ev);
-        (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_PRECACHE, &ev);
+        server_fill(lh_addr_of(ev));
+        authum_unused(authum_events_host_publish(AUTHUM_EVENT_SERVER_PRECACHE, lh_addr_of(ev)));
     }
     /* The engine spawns every entity through this slot. The game's own
      * `Spawn` is the old-style entry; the modern one is `DispatchSpawn`
@@ -207,40 +227,40 @@ h_spawn(edict_t *entity)
     {
         typedef void (*dispatch_fn_t)(edict_t *);
         dispatch_fn_t dispatch =
-            reinterpret_cast<dispatch_fn_t>(gamedll_symbol("_Z13DispatchSpawnP7edict_s"));
-        if (dispatch != nullptr)
+            lh_cast_reinterpret(dispatch_fn_t, gamedll_symbol("_Z13DispatchSpawnP7edict_s"));
+        if (lh_math_ne(dispatch, authum_null))
         {
             dispatch(entity);
             return 1;
         }
     }
-    return g_game_dll.pfnSpawn != nullptr ? g_game_dll.pfnSpawn(entity) : 0;
+    return lh_math_ne(g_game_dll.pfnSpawn, authum_null) ? g_game_dll.pfnSpawn(entity) : 0;
 }
 
 void
-h_server_activate(edict_t *edicts, int edict_count, int client_max)
+h_server_activate(edict_t *edicts, authum_i32_t edict_count, authum_i32_t client_max)
 {
     authum_event_server_t ev;
     /* Call the game first: the map is spawned after it returns. */
-    if (g_game_dll.pfnServerActivate != nullptr)
+    if (lh_math_ne(g_game_dll.pfnServerActivate, authum_null))
     {
         g_game_dll.pfnServerActivate(edicts, edict_count, client_max);
     }
     authum_engine_host_set_precache(authum_bool_false);
     authum_logs_reload();
-    server_fill(&ev);
+    server_fill(lh_addr_of(ev));
     ev.edict_count = edict_count;
     ev.max_clients = client_max;
-    (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_ACTIVATE, &ev);
+    authum_unused(authum_events_host_publish(AUTHUM_EVENT_SERVER_ACTIVATE, lh_addr_of(ev)));
 }
 
 void
 h_server_deactivate(void)
 {
     authum_event_server_t ev;
-    server_fill(&ev);
-    (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_DEACTIVATE, &ev);
-    if (g_game_dll.pfnServerDeactivate != nullptr)
+    server_fill(lh_addr_of(ev));
+    authum_unused(authum_events_host_publish(AUTHUM_EVENT_SERVER_DEACTIVATE, lh_addr_of(ev)));
+    if (lh_math_ne(g_game_dll.pfnServerDeactivate, authum_null))
     {
         g_game_dll.pfnServerDeactivate();
     }
@@ -251,9 +271,9 @@ h_start_frame(void)
 {
     authum_tasks_host_pump();
     authum_event_server_t ev;
-    server_fill(&ev);
-    (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_FRAME, &ev);
-    if (g_game_dll.pfnStartFrame != nullptr)
+    server_fill(lh_addr_of(ev));
+    authum_unused(authum_events_host_publish(AUTHUM_EVENT_SERVER_FRAME, lh_addr_of(ev)));
+    if (lh_math_ne(g_game_dll.pfnStartFrame, authum_null))
     {
         g_game_dll.pfnStartFrame();
     }
@@ -263,9 +283,9 @@ void
 h_game_shutdown(void)
 {
     authum_event_server_t ev;
-    server_fill(&ev);
-    (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_SHUTDOWN, &ev);
-    if (g_have_new && g_game_new.pfnGameShutdown != nullptr)
+    server_fill(lh_addr_of(ev));
+    authum_unused(authum_events_host_publish(AUTHUM_EVENT_SERVER_SHUTDOWN, lh_addr_of(ev)));
+    if (g_have_new && lh_math_ne(g_game_new.pfnGameShutdown, authum_null))
     {
         g_game_new.pfnGameShutdown();
     }
@@ -273,33 +293,34 @@ h_game_shutdown(void)
 }
 
 void
-h_cvar_value2(const edict_t *entity, int request_id, const char *cvar, const char *value)
+h_cvar_value2(const edict_t *entity, authum_i32_t request_id, const authum_char_t *cvar,
+              const authum_char_t *value)
 {
     authum_event_client_cvar_t ev;
-    std::memset(&ev, 0, sizeof ev);
-    ev.size = static_cast<authum_usize_t>(sizeof ev);
-    client_fill(&ev.client, const_cast<edict_t *>(entity), nullptr);
+    lh_memory_std_set(lh_addr_of(ev), 0, sizeof ev);
+    ev.size = lh_cast_static(authum_usize_t, sizeof ev);
+    client_fill(lh_addr_of(ev.client), lh_cast_const(edict_t *, entity), authum_null);
     ev.request_id = request_id;
     copy(ev.cvar, sizeof ev.cvar, cvar);
     copy(ev.value, sizeof ev.value, value);
-    (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_CVAR_VALUE, &ev);
-    if (g_have_new && g_game_new.pfnCvarValue2 != nullptr)
+    authum_unused(authum_events_host_publish(AUTHUM_EVENT_CLIENT_CVAR_VALUE, lh_addr_of(ev)));
+    if (g_have_new && lh_math_ne(g_game_new.pfnCvarValue2, authum_null))
     {
         g_game_new.pfnCvarValue2(entity, request_id, cvar, value);
     }
 }
 } // namespace
 
-bool
-hooks_fill_entity_table(DLL_FUNCTIONS *out, int interface_version)
+authum_bool_t
+hooks_fill_entity_table(DLL_FUNCTIONS *out, authum_i32_t interface_version)
 {
     /* Take the game's whole table, then overlay Authum's wrappers. */
-    std::memset(&g_game_dll, 0, sizeof g_game_dll);
-    if (!gamedll_entity_api(&g_game_dll, interface_version))
+    lh_memory_std_set(lh_addr_of(g_game_dll), 0, sizeof g_game_dll);
+    if (!gamedll_entity_api(lh_addr_of(g_game_dll), interface_version))
     {
         return false;
     }
-    std::memcpy(out, &g_game_dll, sizeof *out);
+    lh_memory_std_copy(out, lh_addr_of(g_game_dll), sizeof lh_ptr_deref(out));
 
     out->pfnClientConnect = h_client_connect;
     out->pfnClientConnect = h_client_connect;
@@ -315,14 +336,14 @@ hooks_fill_entity_table(DLL_FUNCTIONS *out, int interface_version)
     return true;
 }
 
-bool
-hooks_fill_new_table(NEW_DLL_FUNCTIONS *out, int *interface_version)
+authum_bool_t
+hooks_fill_new_table(NEW_DLL_FUNCTIONS *out, authum_i32_t *interface_version)
 {
-    std::memset(&g_game_new, 0, sizeof g_game_new);
-    g_have_new = gamedll_new_functions(&g_game_new, interface_version);
+    lh_memory_std_set(lh_addr_of(g_game_new), 0, sizeof g_game_new);
+    g_have_new = gamedll_new_functions(lh_addr_of(g_game_new), interface_version);
     /* The engine always needs a valid table from us; overlay our two hooks
      * over whatever the game provided (or over an empty table). */
-    std::memcpy(out, &g_game_new, sizeof *out);
+    lh_memory_std_copy(out, lh_addr_of(g_game_new), sizeof lh_ptr_deref(out));
     out->pfnCvarValue2 = h_cvar_value2;
     out->pfnGameShutdown = h_game_shutdown;
     return true;

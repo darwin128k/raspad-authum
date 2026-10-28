@@ -4,6 +4,12 @@
  */
 
 #include <authum/host/sandbox.h>
+#include <authum/size.h>
+#include <lh/cast/static.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
+#include <authum/memory.h>
+#include <lh/memory/std.h>
 #include <authum/unused.h>
 
 #include <lh/memory/allocator/initializer.h>
@@ -23,14 +29,14 @@ lh_ptr
 authum_sandbox_heap_alloc(lh_self_ptr self, lh_usize_t size)
 {
     authum_unused(self);
-    return lh_runtime_allocator_alloc(size);
+    return authum_memory_alloc(lh_cast_static(authum_usize_t, size));
 }
 
 lh_void
 authum_sandbox_heap_dealloc(lh_self_ptr self, lh_ptr ptr)
 {
     authum_unused(self);
-    lh_runtime_allocator_free(ptr);
+    authum_memory_free(ptr);
 }
 
 lh_memory_sized_allocator_t authum_sandbox_heap =
@@ -41,14 +47,14 @@ authum_sandbox_host_alloc(authum_ptr parent, authum_usize_t size)
 {
     authum_ptr ptr;
 
-    if (lh_null_eq(parent) || (lh_usize_t)size >= AUTHUM_SANDBOX_SIZE_MAX)
+    if (lh_null_eq(parent) || lh_math_ge(lh_cast_static(lh_usize_t, size), AUTHUM_SANDBOX_SIZE_MAX))
     {
         return lh_null;
     }
-    ptr = lh_memory_tree_alloc_child(parent, (lh_usize_t)size);
-    if (!lh_null_eq(ptr) && size > 0u)
+    ptr = lh_memory_tree_alloc_child(parent, lh_cast_static(lh_usize_t, size));
+    if (!lh_null_eq(ptr) && lh_math_gt(size, 0u))
     {
-        memset(ptr, 0, (size_t)size);
+        lh_memory_std_set(ptr, 0, lh_cast_static(authum_usize_t, size));
     }
     return ptr;
 }
@@ -56,11 +62,11 @@ authum_sandbox_host_alloc(authum_ptr parent, authum_usize_t size)
 authum_ptr
 authum_sandbox_host_realloc(authum_ptr ptr, authum_usize_t size)
 {
-    if (lh_null_eq(ptr) || (lh_usize_t)size >= AUTHUM_SANDBOX_SIZE_MAX)
+    if (lh_null_eq(ptr) || lh_math_ge(lh_cast_static(lh_usize_t, size), AUTHUM_SANDBOX_SIZE_MAX))
     {
         return lh_null;
     }
-    return lh_memory_tree_realloc(ptr, (lh_usize_t)size);
+    return lh_memory_tree_realloc(ptr, lh_cast_static(lh_usize_t, size));
 }
 
 void
@@ -76,7 +82,7 @@ authum_sandbox_host_set_destructor(authum_ptr ptr, authum_sandbox_destructor_fn 
     {
         return;
     }
-    lh_memory_tree_set_destructor(ptr, (lh_memory_tree_destructor_cb)fn);
+    lh_memory_tree_set_destructor(ptr, lh_cast_static(lh_memory_tree_destructor_cb, fn));
 }
 
 const authum_sandbox_ops_t authum_sandbox_host_ops_table = {
@@ -90,13 +96,13 @@ const authum_sandbox_ops_t authum_sandbox_host_ops_table = {
 const authum_sandbox_ops_t *
 authum_sandbox_host_ops(void)
 {
-    return &authum_sandbox_host_ops_table;
+    return lh_addr_of(authum_sandbox_host_ops_table);
 }
 
 authum_ptr
 authum_sandbox_host_root_create(void)
 {
-    return lh_memory_tree_alloc(&authum_sandbox_heap, 0u);
+    return lh_memory_tree_alloc(lh_addr_of(authum_sandbox_heap), 0u);
 }
 
 void

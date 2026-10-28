@@ -1,4 +1,11 @@
-#include "writer.h"
+#include <authum/host/logs/writer.h>
+#include <authum/null.h>
+#include <authum/bool.h>
+#include <authum/byte.h>
+#include <authum/size.h>
+#include <authum/unused.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
 #include <authum/host/threads.h>
 #include <authum/host/clock.h>
 #include <stdatomic.h>
@@ -23,7 +30,7 @@ static authum_logs_sink_t sink;
 static void
 pause_writer(void)
 {
-    (void)lh_os_thread_sleep(10);
+    authum_unused(lh_os_thread_sleep(10));
 }
 
 /**
@@ -32,8 +39,8 @@ pause_writer(void)
 static void
 stop_writer(authum_ptr user)
 {
-    (void)user;
-    atomic_store_explicit(&stopping, 1, memory_order_release);
+    authum_unused(user);
+    atomic_store_explicit(lh_addr_of(stopping), 1, memory_order_release);
 }
 
 /**
@@ -43,13 +50,14 @@ static void
 run_writer(authum_ptr user)
 {
     authum_i64_t last_flush = authum_clock_monotonic_ms(authum_clock_host());
-    unsigned reported = 0;
-    (void)user;
+    authum_u32_t reported = 0;
+    authum_unused(user);
     for (;;)
     {
-        unsigned request = atomic_load_explicit(&requested, memory_order_acquire);
+        authum_u32_t request = atomic_load_explicit(lh_addr_of(requested), memory_order_acquire);
         /* Bound a batch so sustained logging cannot starve flush/shutdown. */
-        for (unsigned count = 0; count < AUTHUM_LOGS_QUEUE_CAPACITY; ++count)
+        for (authum_usize_t count = 0; lh_math_lt(count, AUTHUM_LOGS_QUEUE_CAPACITY);
+             count = lh_math_add_one(count))
         {
             const authum_logs_record_t *record = lh_spsc_peek(records);
             if (!record)
@@ -59,21 +67,23 @@ run_writer(authum_ptr user)
             sink.emit(record);
             lh_spsc_release(records);
         }
-        unsigned losses = atomic_load_explicit(&dropped, memory_order_relaxed);
-        if (sink.dropped && losses != reported)
+        authum_u32_t losses = atomic_load_explicit(lh_addr_of(dropped), memory_order_relaxed);
+        if (sink.dropped && lh_math_ne(losses, reported))
         {
-            sink.dropped(losses - reported);
+            sink.dropped(lh_math_sub(losses, reported));
             reported = losses;
         }
         authum_i64_t now = authum_clock_monotonic_ms(authum_clock_host());
-        if (request != atomic_load_explicit(&completed, memory_order_relaxed) ||
-            now - last_flush >= 100)
+        if (lh_math_ne(request,
+                       atomic_load_explicit(lh_addr_of(completed), memory_order_relaxed)) ||
+            lh_math_ge(lh_math_sub(now, last_flush), 100))
         {
             sink.flush();
             last_flush = now;
-            atomic_store_explicit(&completed, request, memory_order_release);
+            atomic_store_explicit(lh_addr_of(completed), request, memory_order_release);
         }
-        if (atomic_load_explicit(&stopping, memory_order_acquire) && !lh_spsc_peek(records))
+        if (atomic_load_explicit(lh_addr_of(stopping), memory_order_acquire) &&
+            !lh_spsc_peek(records))
         {
             break;
         }
@@ -93,15 +103,15 @@ authum_bool_t
 authum_logs_writer_start(const authum_logs_sink_t *custom)
 {
     authum_logs_writer_stop();
-    atomic_init(&dropped, 0);
-    atomic_init(&requested, 0);
-    atomic_init(&completed, 0);
-    atomic_init(&stopping, 0);
+    atomic_init(lh_addr_of(dropped), 0);
+    atomic_init(lh_addr_of(requested), 0);
+    atomic_init(lh_addr_of(completed), 0);
+    atomic_init(lh_addr_of(stopping), 0);
     if (!custom)
     {
         return authum_bool_false;
     }
-    sink = *custom;
+    sink = lh_ptr_deref(custom);
     if (!sink.emit || !sink.flush || !sink.close)
     {
         return authum_bool_false;
@@ -111,12 +121,13 @@ authum_logs_writer_start(const authum_logs_sink_t *custom)
     {
         return authum_bool_false;
     }
-    authum_threads_host_init(&owner, &threads);
-    worker = authum_thread_start(&threads, run_writer, stop_writer, NULL, -1, 0, NULL, 0);
+    authum_threads_host_init(lh_addr_of(owner), lh_addr_of(threads));
+    worker = authum_thread_start(lh_addr_of(threads), run_writer, stop_writer, authum_null, -1, 0,
+                                 authum_null, 0);
     if (!worker)
     {
         lh_spsc_destroy(records);
-        records = NULL;
+        records = authum_null;
     }
     return worker ? authum_bool_true : authum_bool_false;
 }
@@ -133,7 +144,7 @@ authum_logs_writer_submit(const authum_logs_record_t *record)
     }
     if (!lh_spsc_push(records, record))
     {
-        atomic_fetch_add_explicit(&dropped, 1, memory_order_relaxed);
+        atomic_fetch_add_explicit(lh_addr_of(dropped), 1, memory_order_relaxed);
         return authum_bool_false;
     }
     return authum_bool_true;
@@ -149,11 +160,13 @@ authum_logs_writer_sync(authum_u32_t timeout_ms)
     {
         return authum_bool_false;
     }
-    unsigned request = atomic_fetch_add_explicit(&requested, 1, memory_order_release) + 1;
+    authum_u32_t request =
+        lh_math_add(atomic_fetch_add_explicit(lh_addr_of(requested), 1, memory_order_release), 1);
     authum_i64_t start = authum_clock_monotonic_ms(authum_clock_host());
-    while (atomic_load_explicit(&completed, memory_order_acquire) != request)
+    while (lh_math_ne(atomic_load_explicit(lh_addr_of(completed), memory_order_acquire), request))
     {
-        if (authum_clock_monotonic_ms(authum_clock_host()) - start >= timeout_ms)
+        if (lh_math_ge(lh_math_sub(authum_clock_monotonic_ms(authum_clock_host()), start),
+                       timeout_ms))
         {
             return authum_bool_false;
         }
@@ -170,11 +183,11 @@ authum_logs_writer_stop(void)
 {
     if (worker)
     {
-        (void)authum_thread_stop(&threads, worker);
-        worker = NULL;
-        authum_threads_host_drop_owner(&owner);
+        authum_unused(authum_thread_stop(lh_addr_of(threads), worker));
+        worker = authum_null;
+        authum_threads_host_drop_owner(lh_addr_of(owner));
         lh_spsc_destroy(records);
-        records = NULL;
+        records = authum_null;
     }
 }
 
@@ -184,5 +197,5 @@ authum_logs_writer_stop(void)
 authum_u32_t
 authum_logs_writer_dropped(void)
 {
-    return atomic_load_explicit(&dropped, memory_order_relaxed);
+    return atomic_load_explicit(lh_addr_of(dropped), memory_order_relaxed);
 }

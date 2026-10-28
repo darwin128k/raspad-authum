@@ -4,6 +4,7 @@
  */
 
 #include <authum/crypto/ed25519.h>
+#include <lh/cast/static.h>
 
 #include <lh/crypto/ed25519.h>
 #include <lh/crypto/wipe.h>
@@ -21,7 +22,7 @@ authum_crypto_ed25519_sign(authum_byte_t signature[AUTHUM_CRYPTO_ED25519_SIGNATU
                            const authum_byte_t secret_key[AUTHUM_CRYPTO_ED25519_SECRET_KEY_SIZE],
                            const authum_byte_t *message, authum_usize_t size)
 {
-    lh_crypto_ed25519_sign(signature, secret_key, message, (lh_usize_t)size);
+    lh_crypto_ed25519_sign(signature, secret_key, message, lh_cast_static(lh_usize_t, size));
 }
 
 authum_bool_t
@@ -29,7 +30,7 @@ authum_crypto_ed25519_check(const authum_byte_t signature[AUTHUM_CRYPTO_ED25519_
                             const authum_byte_t public_key[AUTHUM_CRYPTO_ED25519_PUBLIC_KEY_SIZE],
                             const authum_byte_t *message, authum_usize_t size)
 {
-    return lh_crypto_ed25519_check(signature, public_key, message, (lh_usize_t)size)
+    return lh_crypto_ed25519_check(signature, public_key, message, lh_cast_static(lh_usize_t, size))
                ? authum_bool_true
                : authum_bool_false;
 }
@@ -37,5 +38,5 @@ authum_crypto_ed25519_check(const authum_byte_t signature[AUTHUM_CRYPTO_ED25519_
 void
 authum_crypto_wipe(authum_ptr secret, authum_usize_t size)
 {
-    lh_crypto_wipe(secret, (lh_usize_t)size);
+    lh_crypto_wipe(secret, lh_cast_static(lh_usize_t, size));
 }

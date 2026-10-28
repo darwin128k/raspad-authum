@@ -1,4 +1,6 @@
 #include <authum/host/errors.h>
+#include <authum/ptr.h>
+#include <authum/unused.h>
 #include <authum/host/loader.h>
 #include <authum/host/module.h>
 #include <authum/module/api.h>
@@ -11,7 +13,7 @@ authum_module_t authum;
 
 /* from child.c */
 const authum_module_info_t *
-authum_child_peek_info(const void *data);
+authum_child_peek_info(authum_cptr data);
 
 lh_bool_t
 authum_module_take_info(authum_module_t *self)
@@ -32,7 +34,7 @@ authum_module_take_info(authum_module_t *self)
         lh_os_set_last_error_lit(authum_error_code_invalid_info, "invalid authum_module_info");
         return lh_bool_false;
     }
-    if (!authum_version_is_abi_compatible(&info->abi, &required))
+    if (!authum_version_is_abi_compatible(lh_addr_of(info->abi), lh_addr_of(required)))
     {
         lh_os_set_last_error_lit(authum_error_code_incompatible_abi, "incompatible module abi");
         return lh_bool_false;
@@ -54,7 +56,7 @@ authum_module_start(authum_module_t *self)
     }
     if (lh_null_ne(lh_os_module_get_owner(self)))
     {
-        (void)authum_loader_load_modules(self);
+        authum_unused(authum_loader_load_modules(self));
     }
     return lh_bool_true;
 }

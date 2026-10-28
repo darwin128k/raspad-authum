@@ -1,4 +1,11 @@
 #include <authum/host/commands.h>
+#include <authum/ptr.h>
+#include <authum/memory.h>
+#include <authum/char.h>
+#include <authum/size.h>
+#include <authum/unused.h>
+#include <lh/cast/static.h>
+#include <lh/memory/std.h>
 #include <authum/host/errors.h>
 #include <authum/host/events.h>
 #include <authum/host.h>
@@ -63,7 +70,7 @@ typedef struct authum_child_data
 } authum_child_data_t;
 
 const authum_module_info_t *
-authum_child_peek_info(const void *data)
+authum_child_peek_info(authum_cptr data)
 {
     if (lh_null_eq(data))
     {
@@ -73,16 +80,16 @@ authum_child_peek_info(const void *data)
 }
 
 void
-authum_child_bind_path(authum_path_t *slot, const authum_path_t **field, const char *text)
+authum_child_bind_path(authum_path_t *slot, const authum_path_t **field, const authum_char_t *text)
 {
     if (authum_path_set_cstr(slot, text) && !authum_path_is_empty(slot))
     {
-        *field = slot;
+        lh_ptr_deref(field) = slot;
     }
     else
     {
         authum_path_clear(slot);
-        *field = lh_null;
+        lh_ptr_deref(field) = lh_null;
     }
 }
 
@@ -95,7 +102,7 @@ authum_child_bind_lh_path(authum_path_t *slot, const authum_path_t **field,
     if (lh_fs_path_is_empty(path))
     {
         authum_path_clear(slot);
-        *field = lh_null;
+        lh_ptr_deref(field) = lh_null;
         return;
     }
     authum_child_bind_path(slot, field, lh_fs_path_to_cstr(path, style, lh_addr_of(scratch)));
@@ -109,25 +116,25 @@ authum_child_bind_join(authum_path_t *slot, const authum_path_t **field, const a
     if (authum_null_eq(dir) || authum_path_is_empty(dir))
     {
         authum_path_clear(slot);
-        *field = lh_null;
+        lh_ptr_deref(field) = lh_null;
         return;
     }
     if (authum_path_join(slot, dir, leaf) && !authum_path_is_empty(slot))
     {
-        *field = slot;
+        lh_ptr_deref(field) = slot;
     }
     else
     {
         authum_path_clear(slot);
-        *field = lh_null;
+        lh_ptr_deref(field) = lh_null;
     }
 }
 
 void
 authum_child_fill_under_game(authum_child_data_t *data)
 {
-    authum_env_t *env = &data->env;
-    authum_child_paths_t *paths = &data->paths;
+    authum_env_t *env = lh_addr_of(data->env);
+    authum_child_paths_t *paths = lh_addr_of(data->paths);
 
     if (lh_null_eq(env->game))
     {
@@ -136,23 +143,28 @@ authum_child_fill_under_game(authum_child_data_t *data)
 
     if (lh_null_eq(env->models))
     {
-        authum_child_bind_join(&paths->models, &env->models, env->game, "models");
+        authum_child_bind_join(lh_addr_of(paths->models), lh_addr_of(env->models), env->game,
+                               "models");
     }
     if (lh_null_eq(env->sprites))
     {
-        authum_child_bind_join(&paths->sprites, &env->sprites, env->game, "sprites");
+        authum_child_bind_join(lh_addr_of(paths->sprites), lh_addr_of(env->sprites), env->game,
+                               "sprites");
     }
     if (lh_null_eq(env->addons))
     {
-        authum_child_bind_join(&paths->addons, &env->addons, env->game, "addons");
+        authum_child_bind_join(lh_addr_of(paths->addons), lh_addr_of(env->addons), env->game,
+                               "addons");
     }
     if (lh_null_eq(env->authum) && !lh_null_eq(env->addons))
     {
-        authum_child_bind_join(&paths->authum, &env->authum, env->addons, "authum");
+        authum_child_bind_join(lh_addr_of(paths->authum), lh_addr_of(env->authum), env->addons,
+                               "authum");
     }
     if (lh_null_eq(env->modules) && !lh_null_eq(env->authum))
     {
-        authum_child_bind_join(&paths->modules, &env->modules, env->authum, "modules");
+        authum_child_bind_join(lh_addr_of(paths->modules), lh_addr_of(env->modules), env->authum,
+                               "modules");
     }
 }
 
@@ -180,22 +192,25 @@ authum_child_bind_parent(authum_path_t *slot, const authum_path_t **field,
 void
 authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
 {
-    authum_env_t *env = &data->env;
-    authum_child_paths_t *paths = &data->paths;
+    authum_env_t *env = lh_addr_of(data->env);
+    authum_child_paths_t *paths = lh_addr_of(data->paths);
     authum_path_t up;
 
-    memset(env, 0, sizeof(*env));
-    memset(paths, 0, sizeof(*paths));
-    env->size = sizeof(*env);
+    lh_memory_std_set(env, 0, sizeof(lh_ptr_deref(env)));
+    lh_memory_std_set(paths, 0, sizeof(lh_ptr_deref(paths)));
+    env->size = sizeof(lh_ptr_deref(env));
     data->host.env = env;
 
-    authum_child_bind_parent(&paths->authum, &env->authum, lh_os_module_get_path(&authum));
-    if (!lh_null_eq(env->authum) && authum_path_parent(&up, env->authum))
+    authum_child_bind_parent(lh_addr_of(paths->authum), lh_addr_of(env->authum),
+                             lh_os_module_get_path(lh_addr_of(authum)));
+    if (!lh_null_eq(env->authum) && authum_path_parent(lh_addr_of(up), env->authum))
     {
-        authum_child_bind_path(&paths->addons, &env->addons, authum_path_as_cstr(&up));
-        if (authum_path_parent(&up, env->addons))
+        authum_child_bind_path(lh_addr_of(paths->addons), lh_addr_of(env->addons),
+                               authum_path_as_cstr(lh_addr_of(up)));
+        if (authum_path_parent(lh_addr_of(up), env->addons))
         {
-            authum_child_bind_path(&paths->game, &env->game, authum_path_as_cstr(&up));
+            authum_child_bind_path(lh_addr_of(paths->game), lh_addr_of(env->game),
+                                   authum_path_as_cstr(lh_addr_of(up)));
         }
     }
 
@@ -203,17 +218,22 @@ authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
     {
         authum_char_t buf[authum_path_capacity];
 
-        memset(buf, 0, sizeof(buf));
-        authum_engine_get_game_dir(data->host.engine, buf, (authum_usize_t)sizeof(buf));
-        authum_child_bind_path(&paths->game, &env->game, buf);
+        lh_memory_std_set(buf, 0, sizeof(buf));
+        authum_engine_get_game_dir(data->host.engine, buf,
+                                   lh_cast_static(authum_usize_t, sizeof(buf)));
+        authum_child_bind_path(lh_addr_of(paths->game), lh_addr_of(env->game), buf);
     }
 
     authum_child_fill_under_game(data);
 
-    authum_child_bind_parent(&paths->module, &env->module, lh_os_module_get_path(child));
-    authum_child_bind_join(&paths->module_config, &env->module_config, env->module, "configs");
-    authum_child_bind_join(&paths->module_lang, &env->module_lang, env->module, "lang");
-    authum_child_bind_join(&paths->module_data, &env->module_data, env->module, "data");
+    authum_child_bind_parent(lh_addr_of(paths->module), lh_addr_of(env->module),
+                             lh_os_module_get_path(child));
+    authum_child_bind_join(lh_addr_of(paths->module_config), lh_addr_of(env->module_config),
+                           env->module, "configs");
+    authum_child_bind_join(lh_addr_of(paths->module_lang), lh_addr_of(env->module_lang),
+                           env->module, "lang");
+    authum_child_bind_join(lh_addr_of(paths->module_data), lh_addr_of(env->module_data),
+                           env->module, "data");
     /* Roots describe locations; writers create directories when needed. */
 }
 
@@ -227,9 +247,9 @@ void
 authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
 {
     authum_module_t *parent;
-    authum_host_t *out = &data->host;
+    authum_host_t *out = lh_addr_of(data->host);
 
-    out->size = sizeof(*out);
+    out->size = sizeof(lh_ptr_deref(out));
     out->engine_funcs = lh_null;
     out->globals = lh_null;
     out->env = lh_null;
@@ -238,41 +258,45 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
 
     data->sandbox.ops = authum_sandbox_host_ops();
     data->sandbox.root = authum_sandbox_host_root_create();
-    out->sandbox = &data->sandbox;
+    out->sandbox = lh_addr_of(data->sandbox);
 
     data->events.ops = authum_events_host_ops();
     data->events.owner = data;
-    out->events = &data->events;
+    out->events = lh_addr_of(data->events);
 
     data->logger.ops = authum_logs_ops();
     data->logger.owner = data;
-    out->logger = &data->logger;
+    out->logger = lh_addr_of(data->logger);
 
     data->commands.ops = authum_commands_host_ops();
     data->commands.owner = data;
     data->commands.scope = data->info->name;
-    out->commands = &data->commands;
+    out->commands = lh_addr_of(data->commands);
     data->tasks.ops = authum_tasks_host_ops();
     data->tasks.owner = data;
-    out->tasks = &data->tasks;
-    authum_threads_host_init(&data->thread_owner, &data->threads);
-    out->threads = &data->threads;
-    authum_http_host_init(&data->http_owner, &data->threads, &data->http);
-    out->http = &data->http;
+    out->tasks = lh_addr_of(data->tasks);
+    authum_threads_host_init(lh_addr_of(data->thread_owner), lh_addr_of(data->threads));
+    out->threads = lh_addr_of(data->threads);
+    authum_http_host_init(lh_addr_of(data->http_owner), lh_addr_of(data->threads),
+                          lh_addr_of(data->http));
+    out->http = lh_addr_of(data->http);
     out->clock = authum_clock_host();
     parent = lh_os_module_get_parent(child);
     if (!lh_null_eq(parent))
     {
-        out->engine_funcs =
-            (authum_host_get_ptr_fn)lh_os_module_get_sym(parent, "authum_engine_funcs");
-        out->globals = (authum_host_get_ptr_fn)lh_os_module_get_sym(parent, "authum_globals");
+        out->engine_funcs = lh_cast_static(authum_host_get_ptr_fn,
+                                           lh_os_module_get_sym(parent, "authum_engine_funcs"));
+        out->globals =
+            lh_cast_static(authum_host_get_ptr_fn, lh_os_module_get_sym(parent, "authum_globals"));
     }
 
     authum_child_fill_env(child, data);
     /* Standard placeholder names come from the module's own environment. */
-    authum_placeholder_host_init_env(&data->placeholders, &data->env, &data->placeholder_service);
-    out->placeholders = &data->placeholder_service;
-    (void)authum_logs_open(data, data->info->name, authum_path_as_cstr_or_null(data->env.module));
+    authum_placeholder_host_init_env(lh_addr_of(data->placeholders), lh_addr_of(data->env),
+                                     lh_addr_of(data->placeholder_service));
+    out->placeholders = lh_addr_of(data->placeholder_service);
+    authum_unused(
+        authum_logs_open(data, data->info->name, authum_path_as_cstr_or_null(data->env.module)));
 }
 
 /** After `stop` (or a failed `start`): drop the module's subscriptions and
@@ -280,16 +304,16 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
 void
 authum_child_release(authum_child_data_t *data)
 {
-    authum_threads_host_stop_owner(&data->thread_owner);
-    authum_http_host_drop_owner(&data->http_owner);
-    authum_threads_host_drop_owner(&data->thread_owner);
-    authum_placeholder_host_drop_owner(&data->placeholders);
+    authum_threads_host_stop_owner(lh_addr_of(data->thread_owner));
+    authum_http_host_drop_owner(lh_addr_of(data->http_owner));
+    authum_threads_host_drop_owner(lh_addr_of(data->thread_owner));
+    authum_placeholder_host_drop_owner(lh_addr_of(data->placeholders));
     authum_tasks_host_drop_owner(data);
     authum_commands_host_drop_owner(data);
     authum_events_host_drop_owner(data);
     authum_logs_close(data);
     authum_sandbox_host_root_destroy(data->sandbox.root);
-    lh_runtime_allocator_free(data);
+    authum_memory_free(data);
 }
 
 lh_bool_t
@@ -308,25 +332,25 @@ authum_child_start(authum_module_t *self)
         return lh_bool_false;
     }
 
-    data = lh_ptr_cast(authum_child_data_t, lh_runtime_allocator_alloc(sizeof(*data)));
+    data = lh_ptr_cast(authum_child_data_t, authum_memory_alloc(sizeof(lh_ptr_deref(data))));
     if (lh_null_eq(data))
     {
         lh_os_set_last_error_lit(lh_os_error_code_out_of_memory, "child data");
         return lh_bool_false;
     }
-    memset(data, 0, sizeof(*data));
+    lh_memory_std_set(data, 0, sizeof(lh_ptr_deref(data)));
 
     data->info = lh_ptr_ccast(authum_module_info_t, sym_info);
     data->api = lh_ptr_ccast(authum_module_api_t, sym_api);
     if (lh_null_eq(data->info->name) || lh_null_eq(data->api->start))
     {
-        lh_runtime_allocator_free(data);
+        authum_memory_free(data);
         lh_os_set_last_error_lit(authum_error_code_invalid_info, "invalid module info/api");
         return lh_bool_false;
     }
-    if (!authum_version_is_abi_compatible(&data->info->abi, &required))
+    if (!authum_version_is_abi_compatible(lh_addr_of(data->info->abi), lh_addr_of(required)))
     {
-        lh_runtime_allocator_free(data);
+        authum_memory_free(data);
         lh_os_set_last_error_lit(authum_error_code_incompatible_abi, "incompatible module abi");
         return lh_bool_false;
     }
@@ -334,7 +358,7 @@ authum_child_start(authum_module_t *self)
     authum_child_fill_host(self, data);
     lh_os_module_set_data(self, data);
 
-    if (!data->api->start(&data->host))
+    if (!data->api->start(lh_addr_of(data->host)))
     {
         lh_os_module_set_data(self, lh_null);
         authum_child_release(data);
@@ -355,7 +379,7 @@ authum_child_stop(authum_module_t *self)
     }
     if (!lh_null_eq(data->api) && !lh_null_eq(data->api->stop))
     {
-        authum_threads_host_stop_owner(&data->thread_owner);
+        authum_threads_host_stop_owner(lh_addr_of(data->thread_owner));
         authum_tasks_host_drop_owner(data);
         data->api->stop();
     }
@@ -393,7 +417,7 @@ authum_child_load(lh_os_loader_t *loader, const lh_fs_path_t *path)
         lh_os_module_destroy(child);
         return lh_null;
     }
-    lh_os_module_set_ops(child, &authum_child_ops);
+    lh_os_module_set_ops(child, lh_addr_of(authum_child_ops));
 
     if (!lh_os_module_start(child))
     {

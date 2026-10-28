@@ -11,6 +11,7 @@
 #define AUTHUM_HOST_ENGINE_H
 
 #include <authum/byte.h>
+#include <lh/util/ptr.h>
 #include <authum/char.h>
 #include <authum/engine.h>
 #include <authum/extern.h>
@@ -18,8 +19,7 @@
 AUTHUM_EXTERN_C_BEGIN
 
 /** The table the host puts on every ::authum_host_t. */
-const authum_engine_t *
-authum_engine(void);
+const authum_engine_t lh_ptr_deref(authum_engine(void));
 
 /** Open / close the precache window (worldspawn's Spawn … ServerActivate). */
 void

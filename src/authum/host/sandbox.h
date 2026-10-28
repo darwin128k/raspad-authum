@@ -10,13 +10,13 @@
 #define AUTHUM_HOST_SANDBOX_H
 
 #include <authum/extern.h>
+#include <lh/util/ptr.h>
 #include <authum/ptr.h>
 #include <authum/sandbox/ops.h>
 
 AUTHUM_EXTERN_C_BEGIN
 
-const authum_sandbox_ops_t *
-authum_sandbox_host_ops(void);
+const authum_sandbox_ops_t lh_ptr_deref(authum_sandbox_host_ops(void));
 
 /** New empty root (owns nothing yet). */
 authum_ptr

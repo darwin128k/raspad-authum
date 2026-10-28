@@ -9,6 +9,7 @@
 #define AUTHUM_CLIENT_H
 
 #include <authum/array.h>
+#include <authum/memory.h>
 #include <authum/bool.h>
 #include <authum/byte.h>
 #include <authum/cfg.h>

@@ -45,11 +45,11 @@ void
 authum_log_deinit(void);
 
 void
-authum_log_info(const char *fmt, ...);
+authum_log_info(const authum_char_t *fmt, ...);
 void
-authum_log_warning(const char *fmt, ...);
+authum_log_warning(const authum_char_t *fmt, ...);
 void
-authum_log_error(const char *fmt, ...);
+authum_log_error(const authum_char_t *fmt, ...);
 
 AUTHUM_EXTERN_C_END
 

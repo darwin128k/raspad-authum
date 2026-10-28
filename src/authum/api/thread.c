@@ -1,9 +1,13 @@
 #include <authum/thread.h>
+#include <authum/bool.h>
+#include <authum/byte.h>
+#include <authum/char.h>
+#include <authum/size.h>
 #include <stdio.h>
 
 authum_thread_t *
 authum_thread_start(const authum_threads_t *threads, authum_thread_fn run, authum_thread_fn wake,
-                    authum_ptr user, int cpu, unsigned flags, authum_char_t *error,
+                    authum_ptr user, authum_i32_t cpu, authum_u32_t flags, authum_char_t *error,
                     authum_usize_t error_size)
 {
     if (error && error_size)

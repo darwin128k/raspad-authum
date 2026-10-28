@@ -12,9 +12,13 @@
 
 /**
  * @def authum_null
- * @brief Null pointer (::authum_ptr).
+ * @brief Null pointer: typed zero in C, nullptr in C++.
  */
-#define authum_null ((authum_ptr)0)
+#ifdef __cplusplus
+#    define authum_null nullptr
+#else
+#    define authum_null ((authum_ptr)0)
+#endif
 
 /**
  * @def authum_null_eq(p)

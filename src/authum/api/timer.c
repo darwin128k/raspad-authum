@@ -6,6 +6,9 @@
  */
 
 #include <authum/timer.h>
+#include <lh/cast/reinterpret.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
 
 #include <authum/array.h>
 #include <authum/event/server.h>
@@ -36,20 +39,23 @@ authum_u64_t
 authum_timer_us(authum_float_t seconds)
 {
     /* Rounded: 0.01f * 1e6 is 9999.9998, and truncating would lose 1 µs a frame. */
-    return seconds > 0.0f ? (authum_u64_t)(seconds * 1000000.0f + 0.5f) : 0u;
+    return lh_math_gt(seconds, 0.0f)
+               ? (authum_u64_t)(lh_math_add(lh_math_mul(seconds, 1000000.0f), 0.5f))
+               : 0u;
 }
 
 void
 authum_timer_sweep(void)
 {
-    authum_usize_t i = authum_array_size(&authum_timers);
+    authum_usize_t i = authum_array_size(lh_addr_of(authum_timers));
 
-    while (i > 0u)
+    while (lh_math_gt(i, 0u))
     {
-        --i;
-        if (((authum_timer_t *)authum_array_at(&authum_timers, i))->dead)
+        i = lh_math_sub_one(i);
+        if ((lh_cast_reinterpret(authum_timer_t *, authum_array_at(lh_addr_of(authum_timers), i)))
+                ->dead)
         {
-            authum_array_remove_at(&authum_timers, i);
+            authum_array_remove_at(lh_addr_of(authum_timers), i);
         }
     }
 }
@@ -57,31 +63,33 @@ authum_timer_sweep(void)
 authum_event_result_t
 authum_timer_on_frame(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 {
-    const authum_event_server_t *ev = (const authum_event_server_t *)payload;
+    const authum_event_server_t *ev = lh_cast_reinterpret(const authum_event_server_t *, payload);
     authum_usize_t i;
 
     authum_unused(name);
     authum_unused(user);
-    if (authum_null_eq(ev) || ev->size < sizeof *ev)
+    if (authum_null_eq(ev) || lh_math_lt(ev->size, sizeof lh_ptr_deref(ev)))
     {
         return authum_event_result_continue;
     }
-    authum_timers_clock += authum_timer_us(ev->frame_time);
+    authum_timers_clock = lh_math_add(authum_timers_clock, authum_timer_us(ev->frame_time));
     authum_timers_running = authum_bool_true;
     /* By index: a callback may add timers and the array may move. */
-    for (i = 0u; i < authum_array_size(&authum_timers); ++i)
+    for (i = 0u; lh_math_lt(i, authum_array_size(lh_addr_of(authum_timers)));
+         i = lh_math_add_one(i))
     {
-        authum_timer_t *timer = (authum_timer_t *)authum_array_at(&authum_timers, i);
+        authum_timer_t *timer =
+            lh_cast_reinterpret(authum_timer_t *, authum_array_at(lh_addr_of(authum_timers), i));
         authum_timer_fn fn;
         authum_ptr fn_user;
 
-        if (timer->dead || timer->due > authum_timers_clock)
+        if (timer->dead || lh_math_gt(timer->due, authum_timers_clock))
         {
             continue;
         }
         fn = timer->fn;
         fn_user = timer->user;
-        if (timer->interval == 0u)
+        if (lh_math_eq(timer->interval, 0u))
         {
             timer->dead = authum_bool_true;
         }
@@ -89,9 +97,9 @@ authum_timer_on_frame(const authum_char_t *name, authum_ptr payload, authum_ptr 
         {
             timer->due += timer->interval;
             /* Fell behind (a long frame): no burst of catch-up calls. */
-            if (timer->due <= authum_timers_clock)
+            if (lh_math_le(timer->due, authum_timers_clock))
             {
-                timer->due = authum_timers_clock + timer->interval;
+                timer->due = lh_math_add(authum_timers_clock, timer->interval);
             }
         }
         fn(fn_user);
@@ -107,14 +115,15 @@ authum_timer_add(const authum_host_t *host, authum_float_t delay, authum_float_t
 {
     authum_timer_t timer;
 
-    if (fn == 0)
+    if (lh_math_eq(fn, 0))
     {
         return 0u;
     }
     if (!authum_timers_ready)
     {
         if (authum_null_eq(host) ||
-            !authum_array_init(&authum_timers, authum_host_sandbox(host), sizeof(authum_timer_t)) ||
+            !authum_array_init(lh_addr_of(authum_timers), authum_host_sandbox(host),
+                               sizeof(authum_timer_t)) ||
             !authum_host_subscribe(host, AUTHUM_EVENT_SERVER_FRAME, authum_timer_on_frame,
                                    authum_null))
         {
@@ -123,16 +132,18 @@ authum_timer_add(const authum_host_t *host, authum_float_t delay, authum_float_t
         authum_timers_ready = authum_bool_true;
     }
     timer.id = authum_timers_next_id++;
-    if (authum_timers_next_id == 0u)
+    if (lh_math_eq(authum_timers_next_id, 0u))
     {
         authum_timers_next_id = 1u;
     }
-    timer.due = authum_timers_clock + authum_timer_us(delay);
+    timer.due = lh_math_add(authum_timers_clock, authum_timer_us(delay));
     timer.interval = authum_timer_us(interval);
     timer.fn = fn;
     timer.user = user;
     timer.dead = authum_bool_false;
-    return authum_null_eq(authum_array_push(&authum_timers, &timer)) ? 0u : timer.id;
+    return authum_null_eq(authum_array_push(lh_addr_of(authum_timers), lh_addr_of(timer)))
+               ? 0u
+               : timer.id;
 }
 
 authum_bool_t
@@ -140,11 +151,13 @@ authum_timer_remove(authum_u32_t id)
 {
     authum_usize_t i;
 
-    for (i = 0u; i < authum_array_size(&authum_timers); ++i)
+    for (i = 0u; lh_math_lt(i, authum_array_size(lh_addr_of(authum_timers)));
+         i = lh_math_add_one(i))
     {
-        authum_timer_t *timer = (authum_timer_t *)authum_array_at(&authum_timers, i);
+        authum_timer_t *timer =
+            lh_cast_reinterpret(authum_timer_t *, authum_array_at(lh_addr_of(authum_timers), i));
 
-        if (timer->id == id && !timer->dead)
+        if (lh_math_eq(timer->id, id) && !timer->dead)
         {
             timer->dead = authum_bool_true;
             if (!authum_timers_running)
@@ -162,9 +175,11 @@ authum_timer_clear(void)
 {
     authum_usize_t i;
 
-    for (i = 0u; i < authum_array_size(&authum_timers); ++i)
+    for (i = 0u; lh_math_lt(i, authum_array_size(lh_addr_of(authum_timers)));
+         i = lh_math_add_one(i))
     {
-        ((authum_timer_t *)authum_array_at(&authum_timers, i))->dead = authum_bool_true;
+        (lh_cast_reinterpret(authum_timer_t *, authum_array_at(lh_addr_of(authum_timers), i)))
+            ->dead = authum_bool_true;
     }
     if (!authum_timers_running)
     {
@@ -178,9 +193,15 @@ authum_timer_count(void)
     authum_usize_t i;
     authum_usize_t count = 0u;
 
-    for (i = 0u; i < authum_array_size(&authum_timers); ++i)
+    for (i = 0u; lh_math_lt(i, authum_array_size(lh_addr_of(authum_timers)));
+         i = lh_math_add_one(i))
     {
-        count += ((authum_timer_t *)authum_array_at(&authum_timers, i))->dead ? 0u : 1u;
+        count = lh_math_add(
+            count,
+            (lh_cast_reinterpret(authum_timer_t *, authum_array_at(lh_addr_of(authum_timers), i)))
+                    ->dead
+                ? 0u
+                : 1u);
     }
     return count;
 }
