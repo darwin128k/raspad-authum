@@ -1,7 +1,5 @@
 #include <authum/host/http/internal.h>
-#include <lh/memory/std.h>
 #include <lh/http/parser.h>
-#include <strings.h>
 
 void
 authum_http_request_read(authum_http_client_t *client, const authum_i32_t *roots,
@@ -22,27 +20,35 @@ authum_http_request_read(authum_http_client_t *client, const authum_i32_t *roots
     }
     if (lh_math_ne(parsed, lh_http_parse_complete) ||
         lh_math_ne(lh_http_parser_get_consumed(lh_addr_of(parser)), client->used) ||
-        lh_math_gt(request.version_minor, 1))
+        lh_math_gt(lh_http_request_get_version_minor(lh_addr_of(request)), 1))
     {
         authum_http_response_set(client, 400, "Bad Request", 0, 1);
         return;
     }
-    const authum_char_t *method = request.method.begin, *path = request.target.begin;
-    authum_usize_t method_length = request.method.size, path_length = request.target.size;
-    authum_http_access_token(client->method, sizeof client->method, method, method_length);
+    const lh_str_view_t *method = lh_http_request_get_method(lh_addr_of(request));
+    const lh_str_view_t *target = lh_http_request_get_target(lh_addr_of(request));
+    const authum_char_t *path = lh_str_view_get_data(target);
+    authum_usize_t path_length = lh_str_view_get_size(target);
+    authum_http_access_token(client->method, sizeof client->method, lh_str_view_get_data(method),
+                             lh_str_view_get_size(method));
     authum_http_access_token(client->path, sizeof client->path, path, path_length);
-    authum_i32_t head = lh_math_eq(method_length, 4) && !lh_memory_std_compare(method, "HEAD", 4);
-    if (!head && !(lh_math_eq(method_length, 3) && !lh_memory_std_compare(method, "GET", 3)))
+    const lh_str_view_t get = lh_str_view_initializer_lit("GET");
+    const lh_str_view_t head_method = lh_str_view_initializer_lit("HEAD");
+    authum_i32_t head = lh_str_view_equals(method, lh_addr_of(head_method), lh_bool_false);
+    if (!head && !lh_str_view_equals(method, lh_addr_of(get), lh_bool_false))
     {
         authum_http_response_set(client, 405, "Method Not Allowed", 0, 1);
         return;
     }
-    for (authum_usize_t i = 0; lh_math_lt(i, request.header_count); i = lh_math_add_one(i))
+    /* Field names compare without ASCII case; a body is not served, so its framing is refused. */
+    const lh_str_view_t transfer_encoding = lh_str_view_initializer_lit("Transfer-Encoding");
+    const lh_str_view_t content_length = lh_str_view_initializer_lit("Content-Length");
+    for (authum_usize_t i = 0; lh_math_lt(i, lh_http_request_get_header_count(lh_addr_of(request)));
+         i = lh_math_add_one(i))
     {
-        if ((lh_math_eq(headers[i].name.size, 17) &&
-             !strncasecmp(headers[i].name.begin, "Transfer-Encoding", 17)) ||
-            (lh_math_eq(headers[i].name.size, 14) &&
-             !strncasecmp(headers[i].name.begin, "Content-Length", 14)))
+        const lh_str_view_t *name = lh_http_header_get_name(lh_addr_of(headers[i]));
+        if (lh_str_view_equals(name, lh_addr_of(transfer_encoding), lh_bool_true) ||
+            lh_str_view_equals(name, lh_addr_of(content_length), lh_bool_true))
         {
             authum_http_response_set(client, 400, "Bad Request", 0, 1);
             return;

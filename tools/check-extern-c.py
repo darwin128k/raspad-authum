@@ -208,7 +208,9 @@ def with_marker_header(lines, path):
             includes.closure(match.group(1), seen)
     if needed in seen:
         return lines
-    last = max(i for i, line in enumerate(lines) if line.startswith('#include'))
+    # Before the first use of a marker: an include further down may follow it.
+    first_use = next(i for i, line in enumerate(lines) if line.strip() in (PAIRS[0] + PAIRS[1]))
+    last = max(i for i, line in enumerate(lines[:first_use]) if line.startswith('#include'))
     return lines[:last + 1] + [f'#include <{needed}>'] + lines[last + 1:]
 
 
@@ -250,6 +252,18 @@ def main():
                             new = with_marker_header(new, path)
                             open(path, 'wb').write('\n'.join(new).replace('\n', newline).encode('utf-8'))
                     continue
+                for (begin_mark, end_mark), header_name in zip(
+                        PAIRS, ('lh/compiler/extern/c.h', 'authum/extern.h')):
+                    opened = [i for i, line in enumerate(lines) if line.strip() == begin_mark]
+                    closed = [i for i, line in enumerate(lines) if line.strip() == end_mark]
+                    included = [i for i, line in enumerate(lines)
+                                if line.strip() == f'#include <{header_name}>']
+                    if len(opened) != len(closed):
+                        print(f'{path}: {len(opened)} {begin_mark} but {len(closed)} {end_mark}')
+                        manual.append(path)
+                    if opened and included and included[0] > opened[0]:
+                        print(f'{path}: <{header_name}> is included after {begin_mark} is used')
+                        manual.append(path)
                 for begin_mark, end_mark in PAIRS:
                     if not any(line.strip() in (begin_mark, end_mark) for line in lines):
                         continue
