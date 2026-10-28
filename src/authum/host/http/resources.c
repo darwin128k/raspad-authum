@@ -1,10 +1,9 @@
-#define _GNU_SOURCE
 #include "internal.h"
-#include <fcntl.h>
-#include <sys/stat.h>
+#include <lh/os/system/fs/file.h>
 
-int
-authum_http_policy_contains(const char *list, const char *value, size_t n, int prefix)
+static authum_bool_t
+authum_http_policy_contains(const authum_char_t *list, const authum_char_t *value, authum_usize_t n,
+                            authum_bool_t prefix)
 {
     while (*list)
     {
@@ -12,12 +11,12 @@ authum_http_policy_contains(const char *list, const char *value, size_t n, int p
         {
             ++list;
         }
-        const char *e = strchr(list, ' ');
-        size_t z = e ? (size_t)(e - list) : strlen(list);
+        const authum_char_t *e = strchr(list, ' ');
+        authum_usize_t z = e ? (authum_usize_t)(e - list) : (authum_usize_t)strlen(list);
         if (z && (prefix ? n >= z && !memcmp(list, value, z) && (n == z || value[z] == '/')
                          : z == n && !memcmp(list, value, n)))
         {
-            return 1;
+            return authum_bool_true;
         }
         list += z;
         if (!*list)
@@ -25,21 +24,26 @@ authum_http_policy_contains(const char *list, const char *value, size_t n, int p
             break;
         }
     }
-    return 0;
+    return authum_bool_false;
 }
 
-int
-authum_http_resource_open(int root, const authum_http_options_t *options, const char *url,
-                          size_t len, off_t *length)
+authum_i32_t
+authum_http_resource_open(authum_i32_t root, const authum_http_options_t *options,
+                          const authum_char_t *url, authum_usize_t len, off_t *length)
 {
-    char path[2048];
+    authum_char_t path[2048];
     if (len < 2 || len >= sizeof path || url[0] != '/')
     {
         return -1;
     }
-    for (size_t i = 1; i < len; i++)
+    for (authum_usize_t i = 1; i < len; i++)
     {
-        unsigned char x = url[i];
+        authum_char_t x = url[i];
+        /* Hidden names are HTTP policy; LH only rejects dot traversal. */
+        if (x == '.' && url[i - 1] == '/')
+        {
+            return -1;
+        }
         if (!((x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z') || (x >= '0' && x <= '9') ||
               x == '_' || x == '-' || x == '.' || x == '/' || x == '$'))
         {
@@ -52,58 +56,34 @@ authum_http_resource_open(int root, const authum_http_options_t *options, const 
     {
         return -1;
     }
-    char *slash = strchr(path, '/');
-    if (slash && !authum_http_policy_contains(options->allow_dirs, path, (size_t)(slash - path), 0))
+    authum_char_t *slash = strchr(path, '/');
+    if (slash &&
+        !authum_http_policy_contains(options->allow_dirs, path, (authum_usize_t)(slash - path), 0))
     {
         return -1;
     }
     /* Root files have a separate explicit extension allow-list. */
-    const char *ext = strrchr(path, '.');
+    const authum_char_t *ext = strrchr(path, '.');
     if (!ext ||
-        !authum_http_policy_contains(options->allow_extensions, ext + 1, strlen(ext + 1), 0) ||
-        (!slash &&
-         !authum_http_policy_contains(options->root_extensions, ext + 1, strlen(ext + 1), 0)))
+        !authum_http_policy_contains(options->allow_extensions, ext + 1,
+                                     (authum_usize_t)strlen(ext + 1), 0) ||
+        (!slash && !authum_http_policy_contains(options->root_extensions, ext + 1,
+                                                (authum_usize_t)strlen(ext + 1), 0)))
     {
         return -1;
     }
-    int dir = dup(root);
-    if (dir < 0)
+    lh_fs_size_t size;
+    lh_os_system_fs_file_handle_t file = lh_os_system_fs_file_open_read_at(root, path, &size);
+    if (file == LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID)
     {
         return -1;
     }
-    char *part = path;
-    for (;;)
+    if (size > options->max_file_bytes)
     {
-        char *end = strchr(part, '/');
-        if (end)
-        {
-            *end = 0;
-        }
-        if (!*part || part[0] == '.')
-        {
-            close(dir);
-            return -1;
-        }
-        int next = openat(dir, part,
-                          O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK | (end ? O_DIRECTORY : 0));
-        close(dir);
-        if (next < 0)
-        {
-            return -1;
-        }
-        if (!end)
-        {
-            struct stat st;
-            if (fstat(next, &st) || !S_ISREG(st.st_mode) || st.st_size < 0 ||
-                (authum_u64_t)st.st_size > options->max_file_bytes)
-            {
-                close(next);
-                return -1;
-            }
-            *length = st.st_size;
-            return next;
-        }
-        dir = next;
-        part = end + 1;
+        lh_os_system_fs_file_close(file);
+        return -1;
     }
+    /* The Linux HTTP transport still uses the native sendfile offset type. */
+    *length = (off_t)size;
+    return (authum_i32_t)file;
 }
