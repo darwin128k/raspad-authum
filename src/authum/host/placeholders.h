@@ -103,15 +103,17 @@ authum_bool_t
 authum_placeholder_is_standard(const authum_char_t *name, authum_usize_t length);
 
 /** The standard name for @p standard, or null when there is none. */
-const char *
+const authum_char_t *
 authum_placeholder_standard_name(authum_placeholder_standard_t standard);
 
 /**
  * @brief Canonical absolute form of @p input, written to @p out.
  *
  * Symlinks are resolved and `.`/`..` folded, so the result may be published
- * as a source root. A path that cannot be resolved is written unchanged;
- * false is returned only when it does not fit in @p size.
+ * as a source root. A path that cannot be resolved is written unchanged,
+ * including a missing path, on both platforms. Returns false for null pointers,
+ * zero capacity or insufficient space; @p out is then unchanged. Input and
+ * output may overlap.
  */
 authum_bool_t
 authum_placeholder_canonical(const authum_char_t *input, authum_char_t *out, authum_usize_t size);
