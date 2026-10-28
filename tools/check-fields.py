@@ -31,7 +31,9 @@ def accesses(path):
             base = a.group(1) or a.group(2)
             if base and base[0].isdigit():
                 continue
-            accessor = re.search(r'_(get|set)_' + re.escape(field) + r'(_mut|_v)?$', name)
+            single = re.escape(field[:-1]) if field.endswith('s') else re.escape(field)
+            accessor = (re.search(r'_(get|set|init)_(' + re.escape(field) + '|' + single + r')(_mut|_v)?$', name) or
+                        re.search(r'_is_' + re.escape(field) + r'(_\w+)?$', name))
             if accessor:
                 continue
             found.append((line0 + body.count('\n', 0, a.start()), name, base, field))
