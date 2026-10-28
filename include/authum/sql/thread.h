@@ -1,5 +1,6 @@
 #ifndef AUTHUM_SQL_THREAD_H
 #define AUTHUM_SQL_THREAD_H
+
 #include <authum/host.h>
 #include <authum/sql.h>
 
@@ -18,6 +19,7 @@ typedef struct authum_sql_thread_result
     authum_bool_t connected, success;
     authum_char_t error[authum_sql_errmsg_max];
 } authum_sql_thread_result_t;
+
 /** Worker-only SQL batch. Copy wanted rows into user-owned storage before
  * returning. No engine/host-log/event APIs here. Immutable environment/path
  * getters and a private buffered logger are allowed. Finalize every statement.
@@ -29,6 +31,7 @@ typedef void (*authum_sql_thread_complete_fn)(const authum_sql_thread_result_t *
 /** Synchronous connect using the same description as a threaded query. */
 authum_bool_t
 authum_sql_connect(authum_sql_t *db, const authum_sql_connection_t *connection);
+
 /** New private connection per task, closed in the worker after work returns.
  * complete and destroy run on the game thread; no completion after unload.
  * As with tasks_submit, false leaves user ownership with the caller.

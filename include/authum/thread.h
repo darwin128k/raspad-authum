@@ -1,11 +1,13 @@
 #ifndef AUTHUM_THREAD_H
 #define AUTHUM_THREAD_H
+
 #include <authum/abi.h>
 #include <authum/bool.h>
 #include <authum/char.h>
 #include <authum/extern.h>
 #include <authum/ptr.h>
 #include <authum/size.h>
+
 AUTHUM_EXTERN_C_BEGIN
 typedef struct authum_thread authum_thread_t;
 typedef void (*authum_thread_fn)(authum_ptr user);
@@ -46,5 +48,6 @@ authum_thread_start(const authum_threads_t *threads, authum_thread_fn run, authu
  * Safe after the host already joined this owner's threads before module stop. */
 authum_bool_t
 authum_thread_stop(const authum_threads_t *threads, authum_thread_t *thread);
+
 AUTHUM_EXTERN_C_END
 #endif

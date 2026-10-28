@@ -46,8 +46,10 @@ authum_log_deinit(void);
 
 void
 authum_log_info(const authum_char_t *fmt, ...);
+
 void
 authum_log_warning(const authum_char_t *fmt, ...);
+
 void
 authum_log_error(const authum_char_t *fmt, ...);
 

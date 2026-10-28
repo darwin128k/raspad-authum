@@ -64,18 +64,22 @@ typedef struct authum_http_service
  * operations. The worker never invokes a module's callbacks. */
 void
 authum_http_options_init(authum_http_options_t *options);
+
 authum_bool_t
 authum_http_source_add(authum_http_options_t *options, const authum_char_t *path);
+
 authum_http_server_t *
 authum_http_open(const authum_http_service_t *service, const authum_http_options_t *options,
                  authum_char_t *error, authum_usize_t error_size);
 /** Stop/join but retain queued access records until close. */
 void
 authum_http_shutdown(const authum_http_service_t *service, authum_http_server_t *server);
+
 /** Stop/join and free the server. The host also reclaims forgotten servers.
  * Inside a drain callback, destruction waits until drain returns. */
 void
 authum_http_close(const authum_http_service_t *service, authum_http_server_t *server);
+
 authum_usize_t
 authum_http_drain(const authum_http_service_t *service, authum_http_server_t *server,
                   authum_http_log_fn sink, authum_ptr user, authum_usize_t limit);
