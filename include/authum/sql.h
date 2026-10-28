@@ -17,8 +17,6 @@
 #include <authum/sql/driver.h>
 #include <authum/size.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 enum
 {
 	authum_sql_errmsg_max = 256
@@ -40,6 +38,8 @@ struct authum_sql_stmt
 	authum_ptr stmt;
 };
 typedef struct authum_sql_stmt authum_sql_stmt_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 void authum_sql_init(authum_sql_t *self);
 

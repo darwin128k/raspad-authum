@@ -8,8 +8,6 @@
 
 #include <authum/command.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 enum
 {
     /** Longest module or command name (letters, digits, `_`, `-`, `.`). */
@@ -36,7 +34,5 @@ struct authum_command_def
     authum_ptr user;
 };
 typedef struct authum_command_def authum_command_def_t;
-
-AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_COMMAND_DEF_H */

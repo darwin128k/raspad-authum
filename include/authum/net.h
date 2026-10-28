@@ -20,10 +20,10 @@
 #include <authum/extern.h>
 #include <authum/size.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 /** Room for "255.255.255.255" and the NUL. */
 #define AUTHUM_NET_IPV4_TEXT_SIZE 16
+
+AUTHUM_EXTERN_C_BEGIN
 
 /**
  * True for addresses routable on the internet: not loopback, private

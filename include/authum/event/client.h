@@ -30,8 +30,6 @@
 #include <authum/float.h>
 #include <authum/size.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 #define AUTHUM_EVENT_CLIENT_CONNECT "authum.client.connect"
 #define AUTHUM_EVENT_CLIENT_PUT_IN_SERVER "authum.client.put_in_server"
 #define AUTHUM_EVENT_CLIENT_INFO_CHANGED "authum.client.info_changed"
@@ -112,7 +110,5 @@ struct authum_event_client_cvar
     authum_char_t value[authum_event_client_cvar_value_max];
 };
 typedef struct authum_event_client_cvar authum_event_client_cvar_t;
-
-AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_EVENT_CLIENT_H */

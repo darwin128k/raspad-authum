@@ -26,8 +26,6 @@
 #include <authum/float.h>
 #include <authum/size.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 /** Prefix of the per-message event names (`authum.message.DeathMsg`). */
 #define AUTHUM_EVENT_MESSAGE_PREFIX "authum.message."
 
@@ -73,6 +71,8 @@ struct authum_event_message
     authum_bool_t block;
 };
 typedef struct authum_event_message authum_event_message_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /** Argument @p i as an integer (byte … long, entity); 0 when out of range. */
 authum_i32_t

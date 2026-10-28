@@ -12,8 +12,6 @@
 #include <authum/cfg/kind.h>
 #include <authum/cstr.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 /**
  * @struct authum_cfg_item
  * @brief One `key` mapped to a field at @p ptr.
@@ -29,7 +27,5 @@ struct authum_cfg_item
     authum_usize_t size;
 };
 typedef struct authum_cfg_item authum_cfg_item_t;
-
-AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_CFG_ITEM_H */

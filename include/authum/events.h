@@ -28,8 +28,6 @@
 
 #include <authum/events/ops.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 /**
  * @struct authum_events
  * @brief Per-module handle: host ops + who is calling.
@@ -40,6 +38,8 @@ struct authum_events
     authum_ptr owner;
 };
 typedef struct authum_events authum_events_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /**
  * Call @p fn for every event named @p name until unsubscribed or unloaded.

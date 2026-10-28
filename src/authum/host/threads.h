@@ -3,14 +3,14 @@
 
 #include <authum/thread.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 typedef struct authum_thread_owner
 {
     authum_thread_t *head;
     authum_u32_t count;
     authum_i32_t closing;
 } authum_thread_owner_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /**
  * @brief Initialize owner state and bind the public thread facade before first use.

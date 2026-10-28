@@ -30,6 +30,8 @@ AUTHUM_EXTERN_C_BEGIN
 
 typedef authum_ptr (*authum_host_get_ptr_fn)(void);
 
+AUTHUM_EXTERN_C_END
+
 typedef struct authum_host
 {
     /** sizeof this table as built by the host — see <authum/abi.h>. */
@@ -75,6 +77,8 @@ typedef struct authum_host
     /** Path placeholders: standard names and those modules registered. */
     const authum_placeholder_service_t *placeholders;
 } authum_host_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /* --- getters (modules: only these) --------------------------------------- */
 const authum_http_service_t *

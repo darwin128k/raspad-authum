@@ -16,8 +16,6 @@
 #include <authum/ptr.h>
 #include <authum/size.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 /**
  * @def AUTHUM_CRYPTO_ED25519_SEED_SIZE
  * @brief Random seed a key pair is derived from (32).
@@ -41,6 +39,8 @@ AUTHUM_EXTERN_C_BEGIN
  * @brief Signature length in bytes (64).
  */
 #define AUTHUM_CRYPTO_ED25519_SIGNATURE_SIZE 64u
+
+AUTHUM_EXTERN_C_BEGIN
 
 /**
  * Derive a key pair from @p seed. The seed is wiped afterwards — keep a

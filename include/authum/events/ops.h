@@ -14,8 +14,6 @@
 #include <authum/abi.h>
 #include <authum/event/handler.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 struct authum_events_ops
 {
     /** sizeof this table as built by the host — see <authum/abi.h>. */
@@ -28,7 +26,5 @@ struct authum_events_ops
                                      authum_ptr payload);
 };
 typedef struct authum_events_ops authum_events_ops_t;
-
-AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_EVENTS_OPS_H */

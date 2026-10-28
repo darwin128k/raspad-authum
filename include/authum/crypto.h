@@ -19,8 +19,6 @@
 #include <authum/crypto/sha.h>
 #include <authum/null.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 /**
  * @struct authum_crypto
  * @brief Ops table: Rijndael + SHA subset, filled by the host from lh.
@@ -45,6 +43,8 @@ typedef struct authum_crypto
     authum_usize_t (*sha_hash)(authum_crypto_sha_kind_t kind, authum_ptr data,
                                authum_usize_t size, authum_ptr out, authum_usize_t out_size);
 } authum_crypto_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /** @see ::lh_crypto_rijndael_init */
 authum_bool_t

@@ -17,8 +17,6 @@
 
 #include <authum/commands/ops.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 /**
  * @struct authum_commands
  * @brief Per-module handle: host ops + who is calling + its module word.
@@ -30,6 +28,8 @@ struct authum_commands
     const authum_char_t *scope;
 };
 typedef struct authum_commands authum_commands_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /**
  * Add `authum <scope> <def->name>`. False on a bad name, a missing handler,

@@ -5,13 +5,13 @@
 #include <authum/char.h>
 #include <authum/extern.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 typedef struct authum_clock
 {
     authum_usize_t size;
     authum_i64_t (*monotonic_ms)(void);
 } authum_clock_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /** Elapsed monotonic milliseconds, not calendar time. Safe on workers.
  * Zero means unavailable. Never use game/map time for network deadlines. */

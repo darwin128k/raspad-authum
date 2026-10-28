@@ -4,13 +4,13 @@
 #include <authum/http.h>
 #include <authum/thread.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 typedef struct authum_http_owner
 {
     authum_http_server_t *head;
     const authum_threads_t *threads;
 } authum_http_owner_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 void
 authum_http_host_init(authum_http_owner_t *owner, const authum_threads_t *threads,

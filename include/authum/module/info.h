@@ -11,8 +11,6 @@
 #include <authum/module/info/fields.h>
 #include <authum/version.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 /**
  * @def AUTHUM_MODULE_INFO_SYM
  * @brief Exported symbol name of ::authum_module_info_t.
@@ -40,6 +38,8 @@ struct authum_module_info
 };
 
 typedef struct authum_module_info authum_module_info_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 AUTHUM_MODULE_EXPORT extern authum_module_info_t authum_module_info;
 

@@ -27,8 +27,6 @@
 #include <authum/float.h>
 #include <authum/null.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 /** Where ::authum_engine_client_print puts the text. */
 enum
 {
@@ -180,6 +178,8 @@ enum
     /** Changing it is not written to the log. */
     authum_engine_cvar_unlogged = 256
 };
+
+AUTHUM_EXTERN_C_BEGIN
 
 /* --- server ------------------------------------------------------------ */
 

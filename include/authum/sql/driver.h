@@ -8,8 +8,6 @@
 
 #include <authum/extern.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 enum authum_sql_driver
 {
     /** Local file via vendored SQLite (default). */
@@ -18,7 +16,5 @@ enum authum_sql_driver
     authum_sql_driver_mysql = 1
 };
 typedef enum authum_sql_driver authum_sql_driver_t;
-
-AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_SQL_DRIVER_H */

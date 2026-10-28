@@ -16,8 +16,6 @@
 #include <authum/logger/options.h>
 #include <authum/ptr.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 struct authum_logger_ops
 {
     /** sizeof this table as built by the host — see <authum/abi.h>. */
@@ -45,7 +43,5 @@ struct authum_logger_channel
     authum_ptr owner;
 };
 typedef struct authum_logger_channel authum_logger_channel_t;
-
-AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_LOGGER_OPS_H */

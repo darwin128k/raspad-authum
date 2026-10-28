@@ -7,8 +7,6 @@
 #include <authum/extern.h>
 #include <authum/ptr.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 enum
 {
     AUTHUM_HTTP_MAX_SOURCES = 16,
@@ -37,7 +35,12 @@ typedef struct authum_http_options
 } authum_http_options_t;
 
 typedef struct authum_http_server authum_http_server_t;
+
+AUTHUM_EXTERN_C_BEGIN
+
 typedef void (*authum_http_log_fn)(const authum_char_t *line, authum_ptr user);
+
+AUTHUM_EXTERN_C_END
 
 typedef struct authum_http_ops
 {
@@ -56,6 +59,8 @@ typedef struct authum_http_service
     const authum_http_ops_t *ops;
     authum_ptr owner;
 } authum_http_service_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /** Static HTTP server constructor. Sources must be absolute resource-tree
  * paths; placeholder expansion belongs to the module. Configure before open.

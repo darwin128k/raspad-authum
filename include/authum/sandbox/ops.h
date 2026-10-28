@@ -20,6 +20,8 @@ AUTHUM_EXTERN_C_BEGIN
 /** Runs on a block just before it is freed (close a file, drop a handle, …). */
 typedef void (*authum_sandbox_destructor_fn)(authum_ptr ptr);
 
+AUTHUM_EXTERN_C_END
+
 struct authum_sandbox_ops
 {
     /** sizeof this table as built by the host — see <authum/abi.h>. */
@@ -33,7 +35,5 @@ struct authum_sandbox_ops
     void (*set_destructor)(authum_ptr ptr, authum_sandbox_destructor_fn fn);
 };
 typedef struct authum_sandbox_ops authum_sandbox_ops_t;
-
-AUTHUM_EXTERN_C_END
 
 #endif /* AUTHUM_SANDBOX_OPS_H */

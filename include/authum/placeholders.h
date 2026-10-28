@@ -37,8 +37,6 @@
 #include <authum/extern.h>
 #include <authum/ptr.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 typedef struct authum_placeholder_ops
 {
     authum_usize_t size;
@@ -57,6 +55,8 @@ typedef struct authum_placeholder_service
     const authum_placeholder_ops_t *ops;
     authum_ptr owner;
 } authum_placeholder_service_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /**
  * Expand @p template into @p out.

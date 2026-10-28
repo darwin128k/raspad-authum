@@ -20,15 +20,17 @@
 #include <authum/ptr.h>
 #include <authum/size.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 enum
 {
     /** Longest line ::authum_command_printf builds (longer output is cut). */
     authum_command_line_max = 512
 };
 
+AUTHUM_EXTERN_C_BEGIN
+
 typedef void (*authum_command_print_fn)(authum_ptr out, const authum_char_t *text);
+
+AUTHUM_EXTERN_C_END
 
 /**
  * @struct authum_command
@@ -48,6 +50,8 @@ struct authum_command
     authum_ptr out;
 };
 typedef struct authum_command authum_command_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 /**
  * Handler. Return ::authum_bool_false for bad usage: the host then prints

@@ -35,8 +35,6 @@
 #include <authum/abi.h>
 #include <authum/path.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 /**
  * @struct authum_env
  * @brief Well-known directories for one loaded module.
@@ -60,6 +58,8 @@ struct authum_env
     const authum_path_t *module_data;   /**< `modules/<module>/data` (location only). */
 };
 typedef struct authum_env authum_env_t;
+
+AUTHUM_EXTERN_C_BEGIN
 
 const authum_path_t *
 authum_env_game(const authum_env_t *env);
