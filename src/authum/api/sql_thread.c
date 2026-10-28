@@ -14,8 +14,8 @@ typedef struct authum_sql_thread_job
     authum_task_fn destroy;
     authum_ptr user;
     authum_sql_thread_result_t result;
-    size_t strings_size;
-    char strings[];
+    authum_usize_t strings_size;
+    authum_char_t strings[];
 } authum_sql_thread_job_t;
 
 authum_bool_t
@@ -43,8 +43,9 @@ authum_sql_thread_run(authum_ptr arg)
 {
     authum_sql_thread_job_t *job = arg;
     authum_sql_t db;
-    const lh_sql_mysql_api_t *api =
-        job->connection.driver == authum_sql_driver_mysql ? lh_sql_mysql_api_get_default() : NULL;
+    const lh_sql_mysql_api_t *api = job->connection.driver == authum_sql_driver_mysql
+                                        ? lh_sql_mysql_api_get_default()
+                                        : authum_null;
     authum_sql_init(&db);
     job->result.connected = authum_sql_connect(&db, &job->connection);
     if (job->result.connected)
@@ -95,9 +96,9 @@ authum_sql_thread_query(const authum_host_t *host, const authum_sql_connection_t
                         authum_task_fn destroy, authum_ptr user)
 {
     authum_sql_thread_job_t *job;
-    size_t strings_size = 0;
-    char *next;
-    unsigned i;
+    authum_usize_t strings_size = 0;
+    authum_char_t *next;
+    authum_usize_t i;
     if (!c || !work || !authum_host_tasks(host))
     {
         return authum_bool_false;
@@ -109,17 +110,19 @@ authum_sql_thread_query(const authum_host_t *host, const authum_sql_connection_t
     {
         return authum_bool_false;
     }
-    const char *values[] = {c->path, c->host, c->user, c->database, c->password};
+    const authum_char_t *values[] = {c->path, c->host, c->user, c->database, c->password};
+    authum_usize_t lengths[sizeof values / sizeof values[0]] = {0};
     for (i = 0; i < sizeof values / sizeof values[0]; ++i)
     {
         if (values[i])
         {
-            size_t length = strlen(values[i]);
-            if (length >= SIZE_MAX - sizeof *job - strings_size)
+            authum_u64_t length = strlen(values[i]);
+            if (length >= UINT32_MAX - sizeof *job - strings_size)
             {
                 return authum_bool_false;
             }
-            strings_size += length + 1;
+            lengths[i] = (authum_usize_t)length + 1u;
+            strings_size += lengths[i];
         }
     }
     job = calloc(1, sizeof *job + strings_size);
@@ -130,16 +133,16 @@ authum_sql_thread_query(const authum_host_t *host, const authum_sql_connection_t
     job->connection = *c;
     job->strings_size = strings_size;
     next = job->strings;
-    const char **fields[] = {&job->connection.path, &job->connection.host, &job->connection.user,
-                             &job->connection.database, &job->connection.password};
+    const authum_char_t **fields[] = {&job->connection.path, &job->connection.host,
+                                      &job->connection.user, &job->connection.database,
+                                      &job->connection.password};
     for (i = 0; i < sizeof values / sizeof values[0]; ++i)
     {
         if (values[i])
         {
-            size_t length = strlen(values[i]) + 1;
-            memcpy(next, values[i], length);
+            memcpy(next, values[i], lengths[i]);
             *fields[i] = next;
-            next += length;
+            next += lengths[i];
         }
     }
     job->work = work;
