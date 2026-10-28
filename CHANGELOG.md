@@ -18,6 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Independent private-file, host-copy and console settings, and per-channel
   retention. Worker-side cleanup runs at registration/reload and every 24
   hours, including idle channels, without deleting open files or invalid dates.
+- Managed thread service (ABI 1.1): `authum_host_threads(host)` starts, stops
+  and joins long-lived workers per module owner. The host wakes and joins the
+  workers of an unloading module before calling its stop callback.
+- Shared HTTP service and monotonic clock (ABI 1.2): owner-bound static-file
+  servers with source, extension and size policy. Modules no longer implement
+  sockets, request parsing or worker lifecycle.
+- Placeholder service (ABI 1.3): the host resolves `{game}`, `{module}`,
+  `{data}`, `{config}`, `{lang}` and the per-module registrations, so a module
+  never parses a path template itself.
 
 ### Changed
 
@@ -388,7 +397,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AUTHUM_LH_LINK_MODE`: `needed` (default) or `whole` (static lh only)
 - Docs: writing a module, logging policy, gate, loader
 - Linux CI on `master` (i386 Release) and release workflow that attaches `authum_mm.so` to tag `v*`
-- Ready binary: [Releases](https://github.com/darwin128k/rapad-authum/releases) (`authum_mm.so`)
+- Ready binary: [Releases](https://github.com/darwin128k/raspad-authum/releases) (`authum_mm.so`)
 
 ### Changed
 
@@ -404,6 +413,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Module loader (`modules.list` or `modules/` scan) on lh
 - Apache-2.0; `lib/lh` pinned to branch `0.4.0`
 
-[Unreleased]: https://github.com/darwin128k/rapad-authum/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/darwin128k/rapad-authum/releases/tag/v1.0.0
-[0.1.0]: https://github.com/darwin128k/rapad-authum/tree/0.1.0
+[Unreleased]: https://github.com/darwin128k/raspad-authum/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/darwin128k/raspad-authum/releases/tag/v4.0.0
+[3.0.0]: https://github.com/darwin128k/raspad-authum/releases/tag/v3.0.0
+[2.0.1]: https://github.com/darwin128k/raspad-authum/releases/tag/v2.0.1
+[2.0.0]: https://github.com/darwin128k/raspad-authum/releases/tag/v2.0.0
+[1.0.0]: https://github.com/darwin128k/raspad-authum/releases/tag/v1.0.0
+[0.1.0]: https://github.com/darwin128k/raspad-authum/tree/0.1.0
