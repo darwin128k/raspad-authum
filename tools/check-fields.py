@@ -32,7 +32,7 @@ def accesses(path):
             if base and base[0].isdigit():
                 continue
             single = re.escape(field[:-1]) if field.endswith('s') else re.escape(field)
-            accessor = (re.search(r'_(get|set|init)_(' + re.escape(field) + '|' + single + r')(_mut|_v)?$', name) or
+            accessor = (re.search(r'_(get|set|init)_(' + re.escape(field) + '|' + single + r')(_mut|_v|_fn|_str|_word)?$', name) or
                         re.search(r'_is_' + re.escape(field) + r'(_\w+)?$', name))
             if accessor:
                 continue
