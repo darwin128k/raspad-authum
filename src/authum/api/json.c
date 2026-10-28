@@ -1,4 +1,9 @@
 #include <authum/json.h>
+#include <lh/cast/static.h>
+#include <lh/char/map.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
+#include <lh/memory/std.h>
 
 #include <lh/json.h>
 
@@ -16,9 +21,9 @@ authum_json_read(const authum_char_t *json, lh_json_node_t *root)
     {
         return authum_bool_false;
     }
-    lh_str_view_init(&text, json);
-    lh_json_reader_init(&reader, text);
-    return lh_json_reader_read(&reader, root) ? authum_bool_true : authum_bool_false;
+    lh_str_view_init(lh_addr_of(text), json);
+    lh_json_reader_init(lh_addr_of(reader), text);
+    return lh_json_reader_read(lh_addr_of(reader), root) ? authum_bool_true : authum_bool_false;
 }
 
 /* The member @p key of the object @p root, or null. */
@@ -27,11 +32,11 @@ authum_json_object_find(const lh_json_node_t *root, const authum_char_t *key)
 {
     lh_str_view_t name;
 
-    if (authum_null_eq(key) || key[0] == '\0')
+    if (authum_null_eq(key) || lh_math_eq(key[0], lh_char_map_nul))
     {
         return authum_null;
     }
-    lh_str_view_init(&name, key);
+    lh_str_view_init(lh_addr_of(name), key);
     return lh_json_node_get_member(root, name);
 }
 
@@ -43,34 +48,35 @@ authum_json_object_get_cstr(const authum_char_t *json, const authum_char_t *key,
     const lh_json_node_t *member;
     authum_bool_t found = authum_bool_false;
 
-    if (authum_null_eq(out) || out_size == 0u)
+    if (authum_null_eq(out) || lh_math_eq(out_size, 0u))
     {
         return authum_bool_false;
     }
-    out[0] = '\0';
+    out[0] = lh_char_map_nul;
 
-    if (authum_json_read(json, &root))
+    if (authum_json_read(json, lh_addr_of(root)))
     {
-        member = authum_json_object_find(&root, key);
+        member = authum_json_object_find(lh_addr_of(root), key);
         if (!authum_null_eq(member) && lh_json_node_has_kind(member, lh_json_kind_string))
         {
             const lh_str_view_t value = lh_json_node_get_str(member);
-            authum_usize_t n = (authum_usize_t)lh_str_view_get_size(&value);
+            authum_usize_t n =
+                lh_cast_static(authum_usize_t, lh_str_view_get_size(lh_addr_of(value)));
 
             /* Truncated to the buffer, as before; the text is already unescaped. */
-            if (n > out_size - 1u)
+            if (lh_math_gt(n, lh_math_sub(out_size, 1u)))
             {
-                n = out_size - 1u;
+                n = lh_math_sub(out_size, 1u);
             }
-            if (n > 0u)
+            if (lh_math_gt(n, 0u))
             {
-                memcpy(out, lh_str_view_get_data(&value), n);
+                lh_memory_std_copy(out, lh_str_view_get_data(lh_addr_of(value)), n);
             }
-            out[n] = '\0';
+            out[n] = lh_char_map_nul;
             found = authum_bool_true;
         }
     }
-    lh_json_node_deinit(&root);
+    lh_json_node_deinit(lh_addr_of(root));
     return found;
 }
 
@@ -86,17 +92,17 @@ authum_json_object_get_i32(const authum_char_t *json, const authum_char_t *key, 
     {
         return authum_bool_false;
     }
-    if (authum_json_read(json, &root))
+    if (authum_json_read(json, lh_addr_of(root)))
     {
-        member = authum_json_object_find(&root, key);
-        if (!authum_null_eq(member) && lh_json_node_get_sint(member, &value) &&
-            value >= -2147483647LL - 1 && value <= 2147483647LL)
+        member = authum_json_object_find(lh_addr_of(root), key);
+        if (!authum_null_eq(member) && lh_json_node_get_sint(member, lh_addr_of(value)) &&
+            lh_math_ge(value, lh_math_sub(-2147483647LL, 1)) && lh_math_le(value, 2147483647LL))
         {
-            *out = (authum_i32_t)value;
+            lh_ptr_deref(out) = lh_cast_static(authum_i32_t, value);
             found = authum_bool_true;
         }
     }
-    lh_json_node_deinit(&root);
+    lh_json_node_deinit(lh_addr_of(root));
     return found;
 }
 
@@ -106,7 +112,7 @@ authum_json_object_get_i32_or(const authum_char_t *json, const authum_char_t *ke
 {
     authum_i32_t v;
 
-    if (authum_json_object_get_i32(json, key, &v))
+    if (authum_json_object_get_i32(json, key, lh_addr_of(v)))
     {
         return v;
     }

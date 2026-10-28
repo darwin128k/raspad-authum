@@ -11,6 +11,7 @@
 #define AUTHUM_HOST_EVENTS_H
 
 #include <authum/char.h>
+#include <lh/util/ptr.h>
 #include <authum/event/result.h>
 #include <authum/events/ops.h>
 #include <authum/extern.h>
@@ -19,8 +20,7 @@
 
 AUTHUM_EXTERN_C_BEGIN
 
-const authum_events_ops_t *
-authum_events_host_ops(void);
+const authum_events_ops_t lh_ptr_deref(authum_events_host_ops(void));
 
 /** Publish as the host itself (`authum.*` events from engine hooks). */
 authum_event_result_t

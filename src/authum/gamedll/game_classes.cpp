@@ -6,9 +6,13 @@
  * exports has to be exported by us too — each one forwards to the game.
  */
 
-#include "game.h"
+#include <authum/gamedll/game.h>
 
 #include <authum/export.h>
+#include <authum/ptr.h>
+#include <authum/char.h>
+#include <authum/null.h>
+#include <lh/cast/reinterpret.h>
 
 #include <extdll.h>
 
@@ -17,8 +21,8 @@
 
 namespace
 {
-void *
-class_symbol(const char *name)
+authum_ptr
+class_symbol(const authum_char_t *name)
 {
     return authum_gamedll::gamedll_symbol(name);
 }
@@ -28,8 +32,8 @@ AUTHUM_CLASS void
 ambient_generic(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("ambient_generic"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("ambient_generic"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -39,8 +43,8 @@ AUTHUM_CLASS void
 ammo_338magnum(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("ammo_338magnum"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("ammo_338magnum"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -50,8 +54,8 @@ AUTHUM_CLASS void
 ammo_357sig(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("ammo_357sig"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("ammo_357sig"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -61,8 +65,8 @@ AUTHUM_CLASS void
 ammo_45acp(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("ammo_45acp"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("ammo_45acp"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -72,8 +76,8 @@ AUTHUM_CLASS void
 ammo_50ae(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("ammo_50ae"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("ammo_50ae"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -83,8 +87,8 @@ AUTHUM_CLASS void
 ammo_556nato(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("ammo_556nato"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("ammo_556nato"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -94,8 +98,8 @@ AUTHUM_CLASS void
 ammo_556natobox(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("ammo_556natobox"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("ammo_556natobox"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -105,8 +109,8 @@ AUTHUM_CLASS void
 ammo_57mm(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("ammo_57mm"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("ammo_57mm"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -116,8 +120,8 @@ AUTHUM_CLASS void
 ammo_762nato(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("ammo_762nato"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("ammo_762nato"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -127,8 +131,8 @@ AUTHUM_CLASS void
 ammo_9mm(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("ammo_9mm"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("ammo_9mm"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -138,8 +142,8 @@ AUTHUM_CLASS void
 ammo_buckshot(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("ammo_buckshot"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("ammo_buckshot"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -149,8 +153,8 @@ AUTHUM_CLASS void
 anglemod(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("anglemod"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("anglemod"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -160,8 +164,8 @@ AUTHUM_CLASS void
 armoury_entity(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("armoury_entity"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("armoury_entity"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -171,8 +175,8 @@ AUTHUM_CLASS void
 beam(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("beam"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("beam"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -182,8 +186,8 @@ AUTHUM_CLASS void
 bodyque(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("bodyque"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("bodyque"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -193,8 +197,8 @@ AUTHUM_CLASS void
 button_target(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("button_target"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("button_target"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -204,8 +208,8 @@ AUTHUM_CLASS void
 cycler(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("cycler"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("cycler"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -215,8 +219,8 @@ AUTHUM_CLASS void
 cycler_prdroid(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("cycler_prdroid"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("cycler_prdroid"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -226,8 +230,8 @@ AUTHUM_CLASS void
 cycler_sprite(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("cycler_sprite"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("cycler_sprite"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -237,8 +241,8 @@ AUTHUM_CLASS void
 cycler_weapon(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("cycler_weapon"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("cycler_weapon"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -248,8 +252,8 @@ AUTHUM_CLASS void
 cycler_wreckage(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("cycler_wreckage"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("cycler_wreckage"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -259,8 +263,8 @@ AUTHUM_CLASS void
 env_beam(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_beam"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_beam"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -270,8 +274,8 @@ AUTHUM_CLASS void
 env_beverage(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_beverage"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_beverage"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -281,8 +285,8 @@ AUTHUM_CLASS void
 env_blood(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_blood"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_blood"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -292,8 +296,8 @@ AUTHUM_CLASS void
 env_bombglow(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_bombglow"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_bombglow"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -303,8 +307,8 @@ AUTHUM_CLASS void
 env_bubbles(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_bubbles"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_bubbles"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -314,8 +318,8 @@ AUTHUM_CLASS void
 env_debris(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_debris"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_debris"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -325,8 +329,8 @@ AUTHUM_CLASS void
 env_explosion(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_explosion"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_explosion"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -336,8 +340,8 @@ AUTHUM_CLASS void
 env_fade(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_fade"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_fade"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -347,8 +351,8 @@ AUTHUM_CLASS void
 env_fog(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_fog"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_fog"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -358,8 +362,8 @@ AUTHUM_CLASS void
 env_funnel(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_funnel"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_funnel"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -369,8 +373,8 @@ AUTHUM_CLASS void
 env_global(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_global"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_global"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -380,8 +384,8 @@ AUTHUM_CLASS void
 env_glow(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_glow"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_glow"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -391,8 +395,8 @@ AUTHUM_CLASS void
 env_laser(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_laser"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_laser"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -402,8 +406,8 @@ AUTHUM_CLASS void
 env_lightning(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_lightning"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_lightning"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -413,8 +417,8 @@ AUTHUM_CLASS void
 env_message(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_message"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_message"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -424,8 +428,8 @@ AUTHUM_CLASS void
 env_rain(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_rain"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_rain"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -435,8 +439,8 @@ AUTHUM_CLASS void
 env_render(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_render"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_render"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -446,8 +450,8 @@ AUTHUM_CLASS void
 env_shake(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_shake"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_shake"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -457,8 +461,8 @@ AUTHUM_CLASS void
 env_shooter(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_shooter"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_shooter"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -468,8 +472,8 @@ AUTHUM_CLASS void
 env_snow(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_snow"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_snow"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -479,8 +483,8 @@ AUTHUM_CLASS void
 env_sound(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_sound"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_sound"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -490,8 +494,8 @@ AUTHUM_CLASS void
 env_spark(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_spark"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_spark"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -501,8 +505,8 @@ AUTHUM_CLASS void
 env_sprite(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("env_sprite"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("env_sprite"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -512,8 +516,8 @@ AUTHUM_CLASS void
 fireanddie(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("fireanddie"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("fireanddie"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -523,8 +527,8 @@ AUTHUM_CLASS void
 func_bomb_target(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_bomb_target"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_bomb_target"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -534,8 +538,8 @@ AUTHUM_CLASS void
 func_breakable(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_breakable"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_breakable"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -545,8 +549,8 @@ AUTHUM_CLASS void
 func_button(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_button"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_button"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -556,8 +560,8 @@ AUTHUM_CLASS void
 func_buyzone(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_buyzone"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_buyzone"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -567,8 +571,8 @@ AUTHUM_CLASS void
 func_conveyor(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_conveyor"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_conveyor"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -578,8 +582,8 @@ AUTHUM_CLASS void
 func_door(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_door"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_door"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -589,8 +593,8 @@ AUTHUM_CLASS void
 func_door_rotating(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_door_rotating"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_door_rotating"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -600,8 +604,8 @@ AUTHUM_CLASS void
 func_escapezone(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_escapezone"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_escapezone"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -611,8 +615,8 @@ AUTHUM_CLASS void
 func_friction(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_friction"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_friction"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -622,8 +626,8 @@ AUTHUM_CLASS void
 func_grencatch(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_grencatch"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_grencatch"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -633,8 +637,8 @@ AUTHUM_CLASS void
 func_guntarget(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_guntarget"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_guntarget"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -644,8 +648,8 @@ AUTHUM_CLASS void
 func_healthcharger(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_healthcharger"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_healthcharger"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -655,8 +659,8 @@ AUTHUM_CLASS void
 func_hostage_rescue(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_hostage_rescue"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_hostage_rescue"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -666,8 +670,8 @@ AUTHUM_CLASS void
 func_illusionary(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_illusionary"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_illusionary"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -677,8 +681,8 @@ AUTHUM_CLASS void
 func_ladder(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_ladder"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_ladder"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -688,8 +692,8 @@ AUTHUM_CLASS void
 func_monsterclip(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_monsterclip"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_monsterclip"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -699,8 +703,8 @@ AUTHUM_CLASS void
 func_mortar_field(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_mortar_field"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_mortar_field"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -710,8 +714,8 @@ AUTHUM_CLASS void
 func_pendulum(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_pendulum"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_pendulum"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -721,8 +725,8 @@ AUTHUM_CLASS void
 func_plat(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_plat"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_plat"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -732,8 +736,8 @@ AUTHUM_CLASS void
 func_platrot(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_platrot"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_platrot"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -743,8 +747,8 @@ AUTHUM_CLASS void
 func_pushable(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_pushable"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_pushable"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -754,8 +758,8 @@ AUTHUM_CLASS void
 func_rain(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_rain"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_rain"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -765,8 +769,8 @@ AUTHUM_CLASS void
 func_recharge(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_recharge"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_recharge"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -776,8 +780,8 @@ AUTHUM_CLASS void
 func_rot_button(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_rot_button"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_rot_button"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -787,8 +791,8 @@ AUTHUM_CLASS void
 func_rotating(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_rotating"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_rotating"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -798,8 +802,8 @@ AUTHUM_CLASS void
 func_snow(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_snow"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_snow"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -809,8 +813,8 @@ AUTHUM_CLASS void
 func_tank(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_tank"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_tank"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -820,8 +824,8 @@ AUTHUM_CLASS void
 func_tankcontrols(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_tankcontrols"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_tankcontrols"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -831,8 +835,8 @@ AUTHUM_CLASS void
 func_tanklaser(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_tanklaser"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_tanklaser"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -842,8 +846,8 @@ AUTHUM_CLASS void
 func_tankmortar(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_tankmortar"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_tankmortar"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -853,8 +857,8 @@ AUTHUM_CLASS void
 func_tankrocket(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_tankrocket"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_tankrocket"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -864,8 +868,8 @@ AUTHUM_CLASS void
 func_trackautochange(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_trackautochange"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_trackautochange"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -875,8 +879,8 @@ AUTHUM_CLASS void
 func_trackchange(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_trackchange"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_trackchange"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -886,8 +890,8 @@ AUTHUM_CLASS void
 func_tracktrain(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_tracktrain"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_tracktrain"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -897,8 +901,8 @@ AUTHUM_CLASS void
 func_train(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_train"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_train"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -908,8 +912,8 @@ AUTHUM_CLASS void
 func_traincontrols(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_traincontrols"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_traincontrols"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -919,8 +923,8 @@ AUTHUM_CLASS void
 func_vehicle(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_vehicle"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_vehicle"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -930,8 +934,8 @@ AUTHUM_CLASS void
 func_vehiclecontrols(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_vehiclecontrols"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_vehiclecontrols"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -941,8 +945,8 @@ AUTHUM_CLASS void
 func_vip_safetyzone(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_vip_safetyzone"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_vip_safetyzone"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -952,8 +956,8 @@ AUTHUM_CLASS void
 func_wall(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_wall"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_wall"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -963,8 +967,8 @@ AUTHUM_CLASS void
 func_wall_toggle(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_wall_toggle"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_wall_toggle"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -974,8 +978,8 @@ AUTHUM_CLASS void
 func_water(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_water"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_water"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -985,8 +989,8 @@ AUTHUM_CLASS void
 func_weaponcheck(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("func_weaponcheck"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("func_weaponcheck"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -996,8 +1000,8 @@ AUTHUM_CLASS void
 game_counter(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("game_counter"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("game_counter"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1007,8 +1011,8 @@ AUTHUM_CLASS void
 game_counter_set(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("game_counter_set"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("game_counter_set"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1018,8 +1022,8 @@ AUTHUM_CLASS void
 game_end(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("game_end"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("game_end"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1029,8 +1033,8 @@ AUTHUM_CLASS void
 game_player_equip(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("game_player_equip"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("game_player_equip"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1040,8 +1044,8 @@ AUTHUM_CLASS void
 game_player_hurt(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("game_player_hurt"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("game_player_hurt"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1051,8 +1055,8 @@ AUTHUM_CLASS void
 game_player_team(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("game_player_team"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("game_player_team"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1062,8 +1066,8 @@ AUTHUM_CLASS void
 game_score(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("game_score"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("game_score"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1073,8 +1077,8 @@ AUTHUM_CLASS void
 game_team_master(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("game_team_master"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("game_team_master"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1084,8 +1088,8 @@ AUTHUM_CLASS void
 game_team_set(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("game_team_set"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("game_team_set"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1095,8 +1099,8 @@ AUTHUM_CLASS void
 game_text(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("game_text"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("game_text"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1106,8 +1110,8 @@ AUTHUM_CLASS void
 game_zone_player(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("game_zone_player"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("game_zone_player"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1117,8 +1121,8 @@ AUTHUM_CLASS void
 gibshooter(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("gibshooter"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("gibshooter"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1128,8 +1132,8 @@ AUTHUM_CLASS void
 grenade(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("grenade"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("grenade"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1139,8 +1143,8 @@ AUTHUM_CLASS void
 hostage_entity(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("hostage_entity"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("hostage_entity"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1150,8 +1154,8 @@ AUTHUM_CLASS void
 info_bomb_target(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("info_bomb_target"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("info_bomb_target"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1161,8 +1165,8 @@ AUTHUM_CLASS void
 info_hostage_rescue(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("info_hostage_rescue"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("info_hostage_rescue"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1172,8 +1176,8 @@ AUTHUM_CLASS void
 info_intermission(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("info_intermission"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("info_intermission"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1183,8 +1187,8 @@ AUTHUM_CLASS void
 info_landmark(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("info_landmark"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("info_landmark"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1194,8 +1198,8 @@ AUTHUM_CLASS void
 info_map_parameters(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("info_map_parameters"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("info_map_parameters"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1205,8 +1209,8 @@ AUTHUM_CLASS void
 info_null(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("info_null"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("info_null"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1216,8 +1220,8 @@ AUTHUM_CLASS void
 info_player_deathmatch(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("info_player_deathmatch"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("info_player_deathmatch"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1227,8 +1231,8 @@ AUTHUM_CLASS void
 info_player_start(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("info_player_start"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("info_player_start"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1238,8 +1242,8 @@ AUTHUM_CLASS void
 info_target(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("info_target"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("info_target"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1249,8 +1253,8 @@ AUTHUM_CLASS void
 info_teleport_destination(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("info_teleport_destination"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("info_teleport_destination"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1260,8 +1264,8 @@ AUTHUM_CLASS void
 info_vip_start(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("info_vip_start"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("info_vip_start"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1271,8 +1275,8 @@ AUTHUM_CLASS void
 infodecal(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("infodecal"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("infodecal"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1282,8 +1286,8 @@ AUTHUM_CLASS void
 item_airtank(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("item_airtank"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("item_airtank"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1293,8 +1297,8 @@ AUTHUM_CLASS void
 item_antidote(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("item_antidote"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("item_antidote"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1304,8 +1308,8 @@ AUTHUM_CLASS void
 item_assaultsuit(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("item_assaultsuit"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("item_assaultsuit"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1315,8 +1319,8 @@ AUTHUM_CLASS void
 item_battery(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("item_battery"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("item_battery"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1326,8 +1330,8 @@ AUTHUM_CLASS void
 item_healthkit(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("item_healthkit"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("item_healthkit"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1337,8 +1341,8 @@ AUTHUM_CLASS void
 item_kevlar(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("item_kevlar"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("item_kevlar"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1348,8 +1352,8 @@ AUTHUM_CLASS void
 item_longjump(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("item_longjump"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("item_longjump"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1359,8 +1363,8 @@ AUTHUM_CLASS void
 item_security(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("item_security"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("item_security"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1370,8 +1374,8 @@ AUTHUM_CLASS void
 item_sodacan(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("item_sodacan"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("item_sodacan"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1381,8 +1385,8 @@ AUTHUM_CLASS void
 item_suit(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("item_suit"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("item_suit"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1392,8 +1396,8 @@ AUTHUM_CLASS void
 item_thighpack(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("item_thighpack"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("item_thighpack"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1403,8 +1407,8 @@ AUTHUM_CLASS void
 light(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("light"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("light"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1414,8 +1418,8 @@ AUTHUM_CLASS void
 light_environment(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("light_environment"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("light_environment"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1425,8 +1429,8 @@ AUTHUM_CLASS void
 light_spot(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("light_spot"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("light_spot"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1436,8 +1440,8 @@ AUTHUM_CLASS void
 momentary_door(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("momentary_door"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("momentary_door"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1447,8 +1451,8 @@ AUTHUM_CLASS void
 momentary_rot_button(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("momentary_rot_button"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("momentary_rot_button"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1458,8 +1462,8 @@ AUTHUM_CLASS void
 monster_hevsuit_dead(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("monster_hevsuit_dead"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("monster_hevsuit_dead"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1469,8 +1473,8 @@ AUTHUM_CLASS void
 monster_mortar(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("monster_mortar"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("monster_mortar"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1480,8 +1484,8 @@ AUTHUM_CLASS void
 monster_scientist(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("monster_scientist"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("monster_scientist"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1491,8 +1495,8 @@ AUTHUM_CLASS void
 multi_manager(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("multi_manager"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("multi_manager"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1502,8 +1506,8 @@ AUTHUM_CLASS void
 multisource(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("multisource"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("multisource"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1513,8 +1517,8 @@ AUTHUM_CLASS void
 path_corner(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("path_corner"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("path_corner"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1524,8 +1528,8 @@ AUTHUM_CLASS void
 path_track(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("path_track"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("path_track"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1535,8 +1539,8 @@ AUTHUM_CLASS void
 player(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("player"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("player"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1546,8 +1550,8 @@ AUTHUM_CLASS void
 player_loadsaved(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("player_loadsaved"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("player_loadsaved"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1557,8 +1561,8 @@ AUTHUM_CLASS void
 player_weaponstrip(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("player_weaponstrip"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("player_weaponstrip"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1568,8 +1572,8 @@ AUTHUM_CLASS void
 soundent(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("soundent"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("soundent"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1579,8 +1583,8 @@ AUTHUM_CLASS void
 spark_shower(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("spark_shower"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("spark_shower"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1590,8 +1594,8 @@ AUTHUM_CLASS void
 speaker(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("speaker"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("speaker"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1601,8 +1605,8 @@ AUTHUM_CLASS void
 target_cdaudio(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("target_cdaudio"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("target_cdaudio"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1612,8 +1616,8 @@ AUTHUM_CLASS void
 test_effect(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("test_effect"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("test_effect"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1623,8 +1627,8 @@ AUTHUM_CLASS void
 trigger(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("trigger"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("trigger"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1634,8 +1638,8 @@ AUTHUM_CLASS void
 trigger_auto(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("trigger_auto"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("trigger_auto"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1645,8 +1649,8 @@ AUTHUM_CLASS void
 trigger_autosave(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("trigger_autosave"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("trigger_autosave"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1656,8 +1660,8 @@ AUTHUM_CLASS void
 trigger_camera(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("trigger_camera"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("trigger_camera"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1667,8 +1671,8 @@ AUTHUM_CLASS void
 trigger_cdaudio(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("trigger_cdaudio"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("trigger_cdaudio"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1678,8 +1682,8 @@ AUTHUM_CLASS void
 trigger_changelevel(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("trigger_changelevel"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("trigger_changelevel"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1689,8 +1693,8 @@ AUTHUM_CLASS void
 trigger_changetarget(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("trigger_changetarget"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("trigger_changetarget"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1700,8 +1704,8 @@ AUTHUM_CLASS void
 trigger_counter(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("trigger_counter"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("trigger_counter"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1711,8 +1715,8 @@ AUTHUM_CLASS void
 trigger_endsection(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("trigger_endsection"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("trigger_endsection"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1722,8 +1726,8 @@ AUTHUM_CLASS void
 trigger_gravity(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("trigger_gravity"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("trigger_gravity"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1733,8 +1737,8 @@ AUTHUM_CLASS void
 trigger_hurt(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("trigger_hurt"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("trigger_hurt"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1744,8 +1748,8 @@ AUTHUM_CLASS void
 trigger_monsterjump(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("trigger_monsterjump"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("trigger_monsterjump"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1755,8 +1759,8 @@ AUTHUM_CLASS void
 trigger_multiple(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("trigger_multiple"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("trigger_multiple"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1766,8 +1770,8 @@ AUTHUM_CLASS void
 trigger_once(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("trigger_once"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("trigger_once"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1777,8 +1781,8 @@ AUTHUM_CLASS void
 trigger_push(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("trigger_push"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("trigger_push"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1788,8 +1792,8 @@ AUTHUM_CLASS void
 trigger_relay(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("trigger_relay"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("trigger_relay"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1799,8 +1803,8 @@ AUTHUM_CLASS void
 trigger_teleport(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("trigger_teleport"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("trigger_teleport"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1810,8 +1814,8 @@ AUTHUM_CLASS void
 trigger_transition(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("trigger_transition"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("trigger_transition"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1821,8 +1825,8 @@ AUTHUM_CLASS void
 weapon_ak47(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_ak47"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_ak47"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1832,8 +1836,8 @@ AUTHUM_CLASS void
 weapon_aug(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_aug"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_aug"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1843,8 +1847,8 @@ AUTHUM_CLASS void
 weapon_awp(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_awp"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_awp"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1854,8 +1858,8 @@ AUTHUM_CLASS void
 weapon_c4(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_c4"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_c4"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1865,8 +1869,8 @@ AUTHUM_CLASS void
 weapon_deagle(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_deagle"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_deagle"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1876,8 +1880,8 @@ AUTHUM_CLASS void
 weapon_elite(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_elite"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_elite"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1887,8 +1891,8 @@ AUTHUM_CLASS void
 weapon_famas(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_famas"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_famas"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1898,8 +1902,8 @@ AUTHUM_CLASS void
 weapon_fiveseven(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_fiveseven"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_fiveseven"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1909,8 +1913,8 @@ AUTHUM_CLASS void
 weapon_flashbang(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_flashbang"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_flashbang"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1920,8 +1924,8 @@ AUTHUM_CLASS void
 weapon_g3sg1(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_g3sg1"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_g3sg1"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1931,8 +1935,8 @@ AUTHUM_CLASS void
 weapon_galil(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_galil"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_galil"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1942,8 +1946,8 @@ AUTHUM_CLASS void
 weapon_glock18(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_glock18"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_glock18"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1953,8 +1957,8 @@ AUTHUM_CLASS void
 weapon_hegrenade(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_hegrenade"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_hegrenade"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1964,8 +1968,8 @@ AUTHUM_CLASS void
 weapon_knife(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_knife"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_knife"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1975,8 +1979,8 @@ AUTHUM_CLASS void
 weapon_m249(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_m249"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_m249"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1986,8 +1990,8 @@ AUTHUM_CLASS void
 weapon_m3(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_m3"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_m3"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -1997,8 +2001,8 @@ AUTHUM_CLASS void
 weapon_m4a1(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_m4a1"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_m4a1"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -2008,8 +2012,8 @@ AUTHUM_CLASS void
 weapon_mac10(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_mac10"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_mac10"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -2019,8 +2023,8 @@ AUTHUM_CLASS void
 weapon_mp5navy(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_mp5navy"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_mp5navy"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -2030,8 +2034,8 @@ AUTHUM_CLASS void
 weapon_p228(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_p228"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_p228"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -2041,8 +2045,8 @@ AUTHUM_CLASS void
 weapon_p90(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_p90"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_p90"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -2052,8 +2056,8 @@ AUTHUM_CLASS void
 weapon_scout(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_scout"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_scout"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -2063,8 +2067,8 @@ AUTHUM_CLASS void
 weapon_sg550(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_sg550"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_sg550"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -2074,8 +2078,8 @@ AUTHUM_CLASS void
 weapon_sg552(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_sg552"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_sg552"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -2085,8 +2089,8 @@ AUTHUM_CLASS void
 weapon_shield(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_shield"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_shield"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -2096,8 +2100,8 @@ AUTHUM_CLASS void
 weapon_smokegrenade(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_smokegrenade"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_smokegrenade"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -2107,8 +2111,8 @@ AUTHUM_CLASS void
 weapon_tmp(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_tmp"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_tmp"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -2118,8 +2122,8 @@ AUTHUM_CLASS void
 weapon_ump45(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_ump45"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_ump45"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -2129,8 +2133,8 @@ AUTHUM_CLASS void
 weapon_usp(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_usp"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_usp"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -2140,8 +2144,8 @@ AUTHUM_CLASS void
 weapon_xm1014(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weapon_xm1014"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weapon_xm1014"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -2151,8 +2155,8 @@ AUTHUM_CLASS void
 weaponbox(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("weaponbox"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("weaponbox"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }
@@ -2162,8 +2166,8 @@ AUTHUM_CLASS void
 world_items(entvars_t *pev)
 {
     typedef void (*fn_t)(entvars_t *);
-    fn_t fn = reinterpret_cast<fn_t>(class_symbol("world_items"));
-    if (fn != nullptr)
+    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol("world_items"));
+    if (!authum_null_eq(fn))
     {
         fn(pev);
     }

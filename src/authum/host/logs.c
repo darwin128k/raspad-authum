@@ -5,8 +5,22 @@
  */
 
 #include <authum/host/logs.h>
-#include "logs/writer.h"
-#include "logs/files.h"
+#include <authum/memory.h>
+#include <authum/bool.h>
+#include <authum/byte.h>
+#include <authum/char.h>
+#include <authum/size.h>
+#include <authum/unused.h>
+#include <lh/cast/reinterpret.h>
+#include <lh/cast/static.h>
+#include <lh/char/map.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
+#include <lh/char/letter.h>
+#include <lh/char/digit.h>
+#include <lh/memory/std.h>
+#include <authum/host/logs/writer.h>
+#include <authum/host/logs/files.h>
 
 #include <authum/cfg.h>
 #include <authum/cstr.h>
@@ -40,11 +54,11 @@ struct authum_logs_channel
     /** Folder name: `qproto`, or `bans` under `qproto/` for a journal. */
     authum_char_t name[authum_logs_name_max];
     /** How lines are tagged elsewhere: `qproto`, `qproto/bans`. */
-    authum_char_t tag[authum_logs_name_max * 2];
+    authum_char_t tag[lh_math_mul(authum_logs_name_max, 2)];
     /** Most verbose level written to the file, or ::authum_logs_level_off. */
-    int level;
-    int console_level;
-    int host_level;
+    authum_i32_t level;
+    authum_i32_t console_level;
+    authum_i32_t host_level;
     long keep_days;
     authum_bool_t file_enabled;
     authum_logger_format_t format;
@@ -58,7 +72,7 @@ authum_path_t authum_logs_root;
 authum_logs_mirror_fn authum_logs_mirror;
 authum_logs_clock_fn authum_logs_clock;
 static authum_logs_channel_t authum_logs_defaults;
-static int authum_logs_environment_level;
+static authum_i32_t authum_logs_environment_level;
 static authum_bool_t authum_logs_environment_override;
 authum_logs_channel_t authum_logs_host;
 authum_logs_channel_t *authum_logs_head;
@@ -76,14 +90,14 @@ authum_logs_schedule_cleanup(const authum_logs_channel_t *channel)
     record.keep_days = channel->keep_days;
     record.time = authum_logs_clock ? authum_logs_clock() : time(authum_null);
     record.maintenance = authum_bool_true;
-    (void)authum_logs_writer_submit(&record);
+    authum_unused(authum_logs_writer_submit(lh_addr_of(record)));
 }
 
 /* --- config --------------------------------------------------------------- */
 
 /** `off` / `none` → off; a level name → that level; anything else → @p fallback. */
-int
-authum_logs_parse_level(const authum_char_t *value, int fallback)
+authum_i32_t
+authum_logs_parse_level(const authum_char_t *value, authum_i32_t fallback)
 {
     authum_logger_level_t level;
 
@@ -96,7 +110,8 @@ authum_logs_parse_level(const authum_char_t *value, int fallback)
     {
         return authum_logs_level_off;
     }
-    return authum_logger_level_parse(value, &level) ? (int)level : fallback;
+    return authum_logger_level_parse(value, lh_addr_of(level)) ? lh_cast_static(authum_i32_t, level)
+                                                               : fallback;
 }
 
 authum_bool_t
@@ -104,18 +119,19 @@ authum_logs_cfg_open(authum_cfg_t *cfg)
 {
     authum_path_t path;
 
-    return (authum_path_join(&path, &authum_logs_root, "configs/authum.cfg") &&
-            authum_cfg_open(cfg, &path))
+    return (authum_path_join(lh_addr_of(path), lh_addr_of(authum_logs_root),
+                             "configs/authum.cfg") &&
+            authum_cfg_open(cfg, lh_addr_of(path)))
                ? authum_bool_true
                : authum_bool_false;
 }
 
 /** Apply only present, valid keys. Missing/invalid values preserve inheritance. */
 static void
-authum_logs_apply(authum_logs_channel_t *channel, authum_cfg_t *cfg, const char *prefix)
+authum_logs_apply(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authum_char_t *prefix)
 {
-    char key[160];
-    const char *value;
+    authum_char_t key[160];
+    const authum_char_t *value;
 #define LOG_VALUE(suffix)                                                                          \
     (snprintf(key, sizeof key, "%s%s", prefix, suffix), authum_cfg_get_value(cfg, key))
     channel->level = authum_logs_parse_level(LOG_VALUE("log_level"), channel->level);
@@ -125,10 +141,11 @@ authum_logs_apply(authum_logs_channel_t *channel, authum_cfg_t *cfg, const char 
     value = LOG_VALUE("log_keep_days");
     if (value)
     {
-        char *end;
-        long days = strtol(value, &end, 10);
+        authum_char_t *end;
+        long days = strtol(value, lh_addr_of(end), 10);
         /* Bound calendar arithmetic; reject overflow, negatives and trailing garbage. */
-        if (end != value && *end == '\0' && days >= 0 && days <= 36500)
+        if (lh_math_ne(end, value) && lh_math_eq(lh_ptr_deref(end), lh_char_map_nul) &&
+            lh_math_ge(days, 0) && lh_math_le(days, 36500))
         {
             channel->keep_days = days;
         }
@@ -172,15 +189,15 @@ authum_logs_inherit(authum_logs_channel_t *channel, const authum_logs_channel_t 
 }
 
 static void
-authum_logs_admin(authum_logs_channel_t *channel, authum_cfg_t *cfg, const char *tag)
+authum_logs_admin(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authum_char_t *tag)
 {
-    char prefix[144];
+    authum_char_t prefix[144];
     snprintf(prefix, sizeof prefix, "%s.", tag);
-    for (char *p = prefix; *p; ++p)
+    for (authum_char_t *p = prefix; lh_ptr_deref(p); p = lh_math_add_one(p))
     {
-        if (*p == '/')
+        if (lh_math_eq(lh_ptr_deref(p), lh_char_map_slash))
         {
-            *p = '.';
+            lh_ptr_deref(p) = lh_char_map_period;
         }
     }
     authum_logs_apply(channel, cfg, prefix);
@@ -192,15 +209,16 @@ authum_logs_read_channel_level(authum_logs_channel_t *channel, authum_cfg_t *adm
     authum_cfg_t local;
     const authum_logs_channel_t *module = channel->parent ? channel->parent : channel;
     /* Resolve each channel afresh: admin module overrides outrank local journal keys. */
-    authum_logs_inherit(channel, &authum_logs_defaults);
-    if (channel != &authum_logs_host && authum_cfg_open(&local, &module->config))
+    authum_logs_inherit(channel, lh_addr_of(authum_logs_defaults));
+    if (lh_math_ne(channel, lh_addr_of(authum_logs_host)) &&
+        authum_cfg_open(lh_addr_of(local), lh_addr_of(module->config)))
     {
-        authum_logs_apply(channel, &local, "");
+        authum_logs_apply(channel, lh_addr_of(local), "");
         if (channel->parent)
         {
-            authum_logs_admin(channel, &local, channel->name);
+            authum_logs_admin(channel, lh_addr_of(local), channel->name);
         }
-        authum_cfg_close(&local);
+        authum_cfg_close(lh_addr_of(local));
     }
     if (admin)
     {
@@ -221,10 +239,10 @@ void
 authum_logs_read_cfg(void)
 {
     authum_cfg_t cfg;
-    authum_cfg_t *open = authum_logs_cfg_open(&cfg) ? &cfg : authum_null;
+    authum_cfg_t *open = authum_logs_cfg_open(lh_addr_of(cfg)) ? lh_addr_of(cfg) : authum_null;
     authum_logs_channel_t *channel;
-    int pass;
-    memset(&authum_logs_defaults, 0, sizeof authum_logs_defaults);
+    authum_i32_t pass;
+    lh_memory_std_set(lh_addr_of(authum_logs_defaults), 0, sizeof authum_logs_defaults);
     authum_logs_defaults.level = authum_logger_level_info;
     authum_logs_defaults.console_level = authum_logger_level_warning;
     authum_logs_defaults.host_level = authum_logger_level_warning;
@@ -233,14 +251,14 @@ authum_logs_read_cfg(void)
     authum_logs_defaults.format = authum_logger_format_standard;
     if (!authum_null_eq(open))
     {
-        authum_logs_apply(&authum_logs_defaults, open, "");
+        authum_logs_apply(lh_addr_of(authum_logs_defaults), open, "");
     }
-    authum_logs_read_channel_level(&authum_logs_host, open);
-    for (pass = 0; pass < 2; ++pass)
+    authum_logs_read_channel_level(lh_addr_of(authum_logs_host), open);
+    for (pass = 0; lh_math_lt(pass, 2); pass = lh_math_add_one(pass))
     {
         for (channel = authum_logs_head; !authum_null_eq(channel); channel = channel->next)
         {
-            if ((pass == 0) == authum_null_eq(channel->parent))
+            if (lh_math_eq((lh_math_eq(pass, 0)), authum_null_eq(channel->parent)))
             {
                 authum_logs_read_channel_level(channel, open);
             }
@@ -250,7 +268,7 @@ authum_logs_read_cfg(void)
     {
         authum_cfg_close(open);
     }
-    authum_logs_schedule_cleanup(&authum_logs_host);
+    authum_logs_schedule_cleanup(lh_addr_of(authum_logs_host));
     for (channel = authum_logs_head; channel; channel = channel->next)
     {
         authum_logs_schedule_cleanup(channel);
@@ -265,16 +283,18 @@ authum_logs_set_name(authum_char_t *out, authum_usize_t out_size, const authum_c
 {
     authum_usize_t i;
 
-    for (i = 0u; name[i] != '\0' && i < out_size - 1u; ++i)
+    for (i = 0u; lh_math_ne(name[i], lh_char_map_nul) && lh_math_lt(i, lh_math_sub(out_size, 1u));
+         i = lh_math_add_one(i))
     {
         authum_char_t c = name[i];
-        out[i] = ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
-                  c == '_' || c == '-' || c == '.')
-                     ? c
-                     : '_';
+        out[i] =
+            (lh_char_is_letter(c) || lh_char_is_digit(c) || lh_math_eq(c, lh_char_map_underscore) ||
+             lh_math_eq(c, lh_char_map_minus) || lh_math_eq(c, lh_char_map_period))
+                ? c
+                : lh_char_map_underscore;
     }
-    out[i] = '\0';
-    if (i == 0u || strcmp(out, ".") == 0 || strcmp(out, "..") == 0)
+    out[i] = lh_char_map_nul;
+    if (lh_math_eq(i, 0u) || lh_math_eq(strcmp(out, "."), 0) || lh_math_eq(strcmp(out, ".."), 0))
     {
         authum_cstr_copy(out, out_size, "module");
     }
@@ -296,7 +316,7 @@ authum_logs_emit(authum_logs_channel_t *channel, authum_logger_level_t level,
     {
         authum_cstr_copy(record.tag, sizeof record.tag, from);
     }
-    (void)authum_logs_writer_submit(&record);
+    authum_unused(authum_logs_writer_submit(lh_addr_of(record)));
 }
 
 /* --- channels ------------------------------------------------------------- */
@@ -308,11 +328,11 @@ authum_logs_find(authum_ptr owner)
 
     if (authum_null_eq(owner))
     {
-        return &authum_logs_host;
+        return lh_addr_of(authum_logs_host);
     }
     for (channel = authum_logs_head; !authum_null_eq(channel); channel = channel->next)
     {
-        if (channel->owner == owner)
+        if (lh_math_eq(channel->owner, owner))
         {
             return channel;
         }
@@ -324,8 +344,10 @@ authum_logs_find(authum_ptr owner)
 authum_bool_t
 authum_logs_copies_to_host(const authum_logs_channel_t *channel, authum_logger_level_t level)
 {
-    return (channel != &authum_logs_host && (int)level <= channel->host_level &&
-            authum_logs_host.file_enabled && (int)level <= authum_logs_host.level)
+    return (lh_math_ne(channel, lh_addr_of(authum_logs_host)) &&
+            lh_math_le(lh_cast_static(authum_i32_t, level), channel->host_level) &&
+            authum_logs_host.file_enabled &&
+            lh_math_le(lh_cast_static(authum_i32_t, level), authum_logs_host.level))
                ? authum_bool_true
                : authum_bool_false;
 }
@@ -333,8 +355,10 @@ authum_logs_copies_to_host(const authum_logs_channel_t *channel, authum_logger_l
 authum_bool_t
 authum_logs_mirrors(const authum_logs_channel_t *channel, authum_logger_level_t level)
 {
-    return (authum_logs_mirror != 0 && (int)level <= channel->console_level) ? authum_bool_true
-                                                                             : authum_bool_false;
+    return (lh_math_ne(authum_logs_mirror, 0) &&
+            lh_math_le(lh_cast_static(authum_i32_t, level), channel->console_level))
+               ? authum_bool_true
+               : authum_bool_false;
 }
 
 authum_bool_t
@@ -351,8 +375,9 @@ authum_logs_is_enabled(authum_ptr owner, authum_logger_level_t level)
     {
         return authum_bool_false;
     }
-    return ((int)level <= channel->level && level <= authum_logger_level_debug &&
-            (!channel->parent || channel->parent->level != authum_logs_level_off) &&
+    return (lh_math_le(lh_cast_static(authum_i32_t, level), channel->level) &&
+            lh_math_le(level, authum_logger_level_debug) &&
+            (!channel->parent || lh_math_ne(channel->parent->level, authum_logs_level_off)) &&
             (channel->file_enabled || authum_logs_copies_to_host(channel, level) ||
              authum_logs_mirrors(channel, level)))
                ? authum_bool_true
@@ -384,7 +409,7 @@ authum_logs_write(authum_ptr owner, authum_logger_level_t level, const authum_ch
     }
     if (authum_logs_copies_to_host(channel, level))
     {
-        authum_logs_emit(&authum_logs_host, level, text, channel->tag);
+        authum_logs_emit(lh_addr_of(authum_logs_host), level, text, channel->tag);
     }
     if (authum_logs_mirrors(channel, level))
     {
@@ -402,13 +427,14 @@ authum_logs_add(authum_ptr owner, authum_logs_channel_t *parent, const authum_ch
     authum_logs_channel_t *channel;
     authum_cfg_t cfg;
 
-    channel = (authum_logs_channel_t *)lh_runtime_allocator_alloc(sizeof *channel);
+    channel = lh_cast_reinterpret(authum_logs_channel_t *,
+                                  authum_memory_alloc(sizeof lh_ptr_deref(channel)));
     if (authum_null_eq(channel))
     {
         return authum_null;
     }
-    memset(channel, 0, sizeof *channel);
-    channel->owner = authum_null_eq(owner) ? (authum_ptr)channel : owner;
+    lh_memory_std_set(channel, 0, sizeof lh_ptr_deref(channel));
+    channel->owner = authum_null_eq(owner) ? lh_cast_static(authum_ptr, channel) : owner;
     channel->parent = parent;
     channel->refs = 1u;
     authum_logs_set_name(channel->name, sizeof channel->name, name);
@@ -424,39 +450,40 @@ authum_logs_add(authum_ptr owner, authum_logs_channel_t *parent, const authum_ch
      * modules/<name>/logs */
     if (!authum_null_eq(parent))
     {
-        (void)authum_path_join(&channel->dir, &parent->dir, channel->name);
+        authum_unused(
+            authum_path_join(lh_addr_of(channel->dir), lh_addr_of(parent->dir), channel->name));
     }
-    else if (!authum_null_eq(module_dir) && module_dir[0] != 0 &&
-             authum_path_set_cstr(&base, module_dir))
+    else if (!authum_null_eq(module_dir) && lh_math_ne(module_dir[0], 0) &&
+             authum_path_set_cstr(lh_addr_of(base), module_dir))
     {
-        (void)authum_path_join(&channel->dir, &base, "logs");
+        authum_unused(authum_path_join(lh_addr_of(channel->dir), lh_addr_of(base), "logs"));
     }
-    else if (authum_path_join(&modules, &authum_logs_root, "modules") &&
-             authum_path_join(&base, &modules, channel->name))
+    else if (authum_path_join(lh_addr_of(modules), lh_addr_of(authum_logs_root), "modules") &&
+             authum_path_join(lh_addr_of(base), lh_addr_of(modules), channel->name))
     {
-        (void)authum_path_join(&channel->dir, &base, "logs");
+        authum_unused(authum_path_join(lh_addr_of(channel->dir), lh_addr_of(base), "logs"));
     }
     if (!parent)
     {
         authum_path_t configs;
-        char leaf[authum_logs_name_max + 5];
+        authum_char_t leaf[lh_math_add(authum_logs_name_max, 5)];
         snprintf(leaf, sizeof leaf, "%s.cfg", channel->name);
-        if (!authum_path_join(&configs, &base, "configs") ||
-            !authum_path_join(&channel->config, &configs, leaf))
+        if (!authum_path_join(lh_addr_of(configs), lh_addr_of(base), "configs") ||
+            !authum_path_join(lh_addr_of(channel->config), lh_addr_of(configs), leaf))
         {
-            lh_runtime_allocator_free(channel);
+            authum_memory_free(channel);
             return authum_null;
         }
     }
-    if (!authum_path_as_cstr(&channel->dir)[0])
+    if (!authum_path_as_cstr(lh_addr_of(channel->dir))[0])
     {
-        lh_runtime_allocator_free(channel);
+        authum_memory_free(channel);
         return authum_null;
     }
-    if (authum_logs_cfg_open(&cfg))
+    if (authum_logs_cfg_open(lh_addr_of(cfg)))
     {
-        authum_logs_read_channel_level(channel, &cfg);
-        authum_cfg_close(&cfg);
+        authum_logs_read_channel_level(channel, lh_addr_of(cfg));
+        authum_cfg_close(lh_addr_of(cfg));
     }
     else
     {
@@ -473,12 +500,13 @@ authum_logs_free(authum_logs_channel_t *channel)
 {
     authum_logs_channel_t **link;
 
-    for (link = &authum_logs_head; !authum_null_eq(*link); link = &(*link)->next)
+    for (link = lh_addr_of(authum_logs_head); !authum_null_eq(lh_ptr_deref(link));
+         link = lh_addr_of((lh_ptr_deref(link))->next))
     {
-        if (*link == channel)
+        if (lh_math_eq(lh_ptr_deref(link), channel))
         {
-            *link = channel->next;
-            lh_runtime_allocator_free(channel);
+            lh_ptr_deref(link) = channel->next;
+            authum_memory_free(channel);
             return;
         }
     }
@@ -514,7 +542,7 @@ authum_logs_close(authum_ptr owner)
     for (it = authum_logs_head; !authum_null_eq(it);)
     {
         authum_logs_channel_t *next = it->next;
-        if (it->parent == channel)
+        if (lh_math_eq(it->parent, channel))
         {
             authum_logs_free(it);
         }
@@ -531,16 +559,16 @@ authum_logs_open_journal(authum_ptr owner, const authum_char_t *name)
     authum_char_t clean[authum_logs_name_max];
 
     if (authum_null_eq(module) || !authum_null_eq(module->parent) || authum_null_eq(name) ||
-        name[0] == '\0')
+        lh_math_eq(name[0], lh_char_map_nul))
     {
         return authum_null;
     }
     authum_logs_set_name(clean, sizeof clean, name);
     for (channel = authum_logs_head; !authum_null_eq(channel); channel = channel->next)
     {
-        if (channel->parent == module && strcmp(channel->name, clean) == 0)
+        if (lh_math_eq(channel->parent, module) && lh_math_eq(strcmp(channel->name, clean), 0))
         {
-            ++channel->refs;
+            channel->refs = lh_math_add_one(channel->refs);
             return channel->owner;
         }
     }
@@ -558,7 +586,7 @@ authum_logs_close_journal(authum_ptr journal)
     {
         return;
     }
-    if (--channel->refs == 0u)
+    if (lh_math_eq(--channel->refs, 0u))
     {
         authum_logs_free(channel);
     }
@@ -567,9 +595,9 @@ authum_logs_close_journal(authum_ptr journal)
 static authum_ptr
 authum_logs_construct(authum_ptr owner, const authum_logger_options_t *options)
 {
-    if (!options || options->size < sizeof *options ||
-        options->format < authum_logger_format_inherit ||
-        options->format > authum_logger_format_raw)
+    if (!options || lh_math_lt(options->size, sizeof lh_ptr_deref(options)) ||
+        lh_math_lt(options->format, authum_logger_format_inherit) ||
+        lh_math_gt(options->format, authum_logger_format_raw))
     {
         return authum_null;
     }
@@ -579,17 +607,17 @@ authum_logs_construct(authum_ptr owner, const authum_logger_options_t *options)
         return authum_null;
     }
     authum_logs_channel_t *channel = authum_logs_find(journal);
-    if (channel->refs > 1 && channel->default_format != options->format)
+    if (lh_math_gt(channel->refs, 1) && lh_math_ne(channel->default_format, options->format))
     {
         authum_logs_close_journal(journal);
         return authum_null;
     }
     channel->default_format = options->format;
     authum_cfg_t cfg;
-    if (authum_logs_cfg_open(&cfg))
+    if (authum_logs_cfg_open(lh_addr_of(cfg)))
     {
-        authum_logs_read_channel_level(channel, &cfg);
-        authum_cfg_close(&cfg);
+        authum_logs_read_channel_level(channel, lh_addr_of(cfg));
+        authum_cfg_close(lh_addr_of(cfg));
     }
     else
     {
@@ -604,32 +632,32 @@ authum_bool_t
 authum_logs_init(const authum_char_t *root, authum_logs_mirror_fn mirror)
 {
     authum_logs_deinit();
-    if (!authum_path_set_cstr(&authum_logs_root, root))
+    if (!authum_path_set_cstr(lh_addr_of(authum_logs_root), root))
     {
         return authum_bool_false;
     }
     authum_logs_mirror = mirror;
     /* Environment is sampled once at startup, never on the write path. */
-    const char *environment = getenv("AUTHUM_LOG_LEVEL");
+    const authum_char_t *environment = getenv("AUTHUM_LOG_LEVEL");
     authum_logs_environment_level = authum_logs_parse_level(environment, -2);
-    authum_logs_environment_override = authum_logs_environment_level != -2;
-    memset(&authum_logs_host, 0, sizeof authum_logs_host);
+    authum_logs_environment_override = lh_math_ne(authum_logs_environment_level, -2);
+    lh_memory_std_set(lh_addr_of(authum_logs_host), 0, sizeof authum_logs_host);
     authum_logs_set_name(authum_logs_host.name, sizeof authum_logs_host.name, "authum");
     authum_cstr_copy(authum_logs_host.tag, sizeof authum_logs_host.tag, "authum");
-    if (!authum_path_join(&authum_logs_host.dir, &authum_logs_root, "logs"))
+    if (!authum_path_join(lh_addr_of(authum_logs_host.dir), lh_addr_of(authum_logs_root), "logs"))
     {
         return authum_bool_false;
     }
     authum_logs_read_cfg();
     const authum_logs_sink_t sink = {authum_logs_files_emit, authum_logs_files_flush,
                                      authum_logs_files_close, authum_logs_files_dropped};
-    authum_logs_files_set_root(&authum_logs_host.dir);
-    if (!authum_logs_writer_start(&sink))
+    authum_logs_files_set_root(lh_addr_of(authum_logs_host.dir));
+    if (!authum_logs_writer_start(lh_addr_of(sink)))
     {
         return authum_bool_false;
     }
     authum_logs_ready = authum_bool_true;
-    authum_logs_schedule_cleanup(&authum_logs_host);
+    authum_logs_schedule_cleanup(lh_addr_of(authum_logs_host));
     return authum_bool_true;
 }
 
@@ -678,5 +706,5 @@ const authum_logger_ops_t authum_logs_ops_table = {
 const authum_logger_ops_t *
 authum_logs_ops(void)
 {
-    return &authum_logs_ops_table;
+    return lh_addr_of(authum_logs_ops_table);
 }

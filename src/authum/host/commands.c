@@ -8,6 +8,15 @@
  */
 
 #include <authum/host/commands.h>
+#include <authum/memory.h>
+#include <lh/cast/reinterpret.h>
+#include <lh/cast/static.h>
+#include <lh/char/map.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
+#include <lh/char/letter.h>
+#include <lh/char/digit.h>
+#include <lh/memory/std.h>
 
 #include <authum/cstr.h>
 #include <authum/null.h>
@@ -44,17 +53,20 @@ authum_commands_host_is_word(const authum_char_t *text)
     {
         return authum_bool_false;
     }
-    for (; text[len] != '\0'; ++len)
+    for (; lh_math_ne(text[len], lh_char_map_nul); len = lh_math_add_one(len))
     {
         c = text[len];
-        if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
-              c == '_' || c == '-' || c == '.'))
+        if (!(lh_char_is_letter(c) || lh_char_is_digit(c) ||
+              lh_math_eq(c, lh_char_map_underscore) || lh_math_eq(c, lh_char_map_minus) ||
+              lh_math_eq(c, lh_char_map_period)))
         {
             return authum_bool_false;
         }
     }
-    return (len > 0u && len < (authum_usize_t)authum_command_word_max) ? authum_bool_true
-                                                                       : authum_bool_false;
+    return (lh_math_gt(len, 0u) &&
+            lh_math_lt(len, lh_cast_static(authum_usize_t, authum_command_word_max)))
+               ? authum_bool_true
+               : authum_bool_false;
 }
 
 authum_commands_entry_t *
@@ -76,23 +88,23 @@ authum_commands_find(const authum_char_t *scope, const authum_char_t *name)
 void
 authum_commands_sweep(void)
 {
-    authum_commands_entry_t **link = &authum_commands_head;
+    authum_commands_entry_t **link = lh_addr_of(authum_commands_head);
 
-    if (authum_commands_depth != 0u)
+    if (lh_math_ne(authum_commands_depth, 0u))
     {
         return;
     }
-    while (!authum_null_eq(*link))
+    while (!authum_null_eq(lh_ptr_deref(link)))
     {
-        authum_commands_entry_t *e = *link;
+        authum_commands_entry_t *e = lh_ptr_deref(link);
         if (e->dead)
         {
-            *link = e->next;
-            lh_runtime_allocator_free(e);
+            lh_ptr_deref(link) = e->next;
+            authum_memory_free(e);
         }
         else
         {
-            link = &e->next;
+            link = lh_addr_of(e->next);
         }
     }
 }
@@ -101,10 +113,10 @@ authum_bool_t
 authum_commands_host_add(authum_ptr owner, const authum_char_t *scope,
                          const authum_command_def_t *def)
 {
-    authum_commands_entry_t **link = &authum_commands_head;
+    authum_commands_entry_t **link = lh_addr_of(authum_commands_head);
     authum_commands_entry_t *e;
 
-    if (authum_null_eq(def) || def->fn == 0 || !authum_commands_host_is_word(scope) ||
+    if (authum_null_eq(def) || lh_math_eq(def->fn, 0) || !authum_commands_host_is_word(scope) ||
         !authum_commands_host_is_word(def->name))
     {
         return authum_bool_false;
@@ -112,19 +124,21 @@ authum_commands_host_add(authum_ptr owner, const authum_char_t *scope,
     e = authum_commands_find(scope, def->name);
     if (!authum_null_eq(e))
     {
-        return (e->owner == owner && e->fn == def->fn && e->user == def->user) ? authum_bool_true
-                                                                               : authum_bool_false;
+        return (lh_math_eq(e->owner, owner) && lh_math_eq(e->fn, def->fn) &&
+                lh_math_eq(e->user, def->user))
+                   ? authum_bool_true
+                   : authum_bool_false;
     }
-    while (!authum_null_eq(*link))
+    while (!authum_null_eq(lh_ptr_deref(link)))
     {
-        link = &(*link)->next;
+        link = lh_addr_of((lh_ptr_deref(link))->next);
     }
-    e = (authum_commands_entry_t *)lh_runtime_allocator_alloc(sizeof *e);
+    e = lh_cast_reinterpret(authum_commands_entry_t *, authum_memory_alloc(sizeof lh_ptr_deref(e)));
     if (authum_null_eq(e))
     {
         return authum_bool_false;
     }
-    memset(e, 0, sizeof *e);
+    lh_memory_std_set(e, 0, sizeof lh_ptr_deref(e));
     e->owner = owner;
     e->fn = def->fn;
     e->user = def->user;
@@ -132,7 +146,7 @@ authum_commands_host_add(authum_ptr owner, const authum_char_t *scope,
     authum_cstr_copy(e->name, sizeof e->name, def->name);
     authum_cstr_copy(e->usage, sizeof e->usage, def->usage);
     authum_cstr_copy(e->help, sizeof e->help, def->help);
-    *link = e;
+    lh_ptr_deref(link) = e;
     return authum_bool_true;
 }
 
@@ -141,7 +155,7 @@ authum_commands_host_remove(authum_ptr owner, const authum_char_t *scope, const 
 {
     authum_commands_entry_t *e = authum_commands_find(scope, name);
 
-    if (authum_null_eq(e) || e->owner != owner)
+    if (authum_null_eq(e) || lh_math_ne(e->owner, owner))
     {
         return authum_bool_false;
     }
@@ -159,7 +173,7 @@ const authum_commands_ops_t authum_commands_host_ops_table = {
 const authum_commands_ops_t *
 authum_commands_host_ops(void)
 {
-    return &authum_commands_host_ops_table;
+    return lh_addr_of(authum_commands_host_ops_table);
 }
 
 void
@@ -168,13 +182,13 @@ authum_commands_host_print_entry(const authum_commands_entry_t *e, authum_comman
 {
     authum_command_t cmd;
 
-    memset(&cmd, 0, sizeof cmd);
+    lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
     cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
-    authum_command_printf(&cmd, "%sauthum %s %s%s%s%s%s", prefix, e->scope, e->name,
-                          e->usage[0] != '\0' ? " " : "", e->usage,
-                          e->help[0] != '\0' ? "  - " : "", e->help);
+    authum_command_printf(lh_addr_of(cmd), "%sauthum %s %s%s%s%s%s", prefix, e->scope, e->name,
+                          lh_math_ne(e->usage[0], lh_char_map_nul) ? " " : "", e->usage,
+                          lh_math_ne(e->help[0], lh_char_map_nul) ? "  - " : "", e->help);
 }
 
 authum_bool_t
@@ -190,7 +204,7 @@ authum_commands_host_run(const authum_char_t *scope, const authum_char_t *name, 
     {
         return authum_bool_false;
     }
-    memset(&cmd, 0, sizeof cmd);
+    lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
     cmd.size = sizeof cmd;
     cmd.scope = e->scope;
     cmd.name = e->name;
@@ -199,13 +213,13 @@ authum_commands_host_run(const authum_char_t *scope, const authum_char_t *name, 
     cmd.print = print;
     cmd.out = out;
 
-    ++authum_commands_depth;
-    ok = e->fn(&cmd, e->user);
+    authum_commands_depth = lh_math_add_one(authum_commands_depth);
+    ok = e->fn(lh_addr_of(cmd), e->user);
     if (!ok)
     {
         authum_commands_host_print_entry(e, print, out, "usage: ");
     }
-    --authum_commands_depth;
+    authum_commands_depth = lh_math_sub_one(authum_commands_depth);
     authum_commands_sweep();
     return authum_bool_true;
 }
@@ -240,7 +254,7 @@ authum_commands_host_print_help(const authum_char_t *scope, authum_command_print
             continue;
         }
         authum_commands_host_print_entry(e, print, out, "  ");
-        ++n;
+        n = lh_math_add_one(n);
     }
     return n;
 }
@@ -252,7 +266,7 @@ authum_commands_host_drop_owner(authum_ptr owner)
 
     for (e = authum_commands_head; !authum_null_eq(e); e = e->next)
     {
-        if (e->owner == owner)
+        if (lh_math_eq(e->owner, owner))
         {
             e->dead = authum_bool_true;
         }
@@ -270,7 +284,7 @@ authum_commands_host_count(void)
     {
         if (!e->dead)
         {
-            ++n;
+            n = lh_math_add_one(n);
         }
     }
     return n;

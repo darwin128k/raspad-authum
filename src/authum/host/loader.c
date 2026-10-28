@@ -1,4 +1,8 @@
 #include <authum/host/errors.h>
+#include <authum/byte.h>
+#include <authum/char.h>
+#include <authum/unused.h>
+#include <lh/cast/reinterpret.h>
 #include <authum/host/loader.h>
 #include <authum/host/tasks.h>
 #include <authum/host/log.h>
@@ -83,7 +87,8 @@ authum_loader_is_host_image(const lh_fs_path_t *path)
     {
         return lh_bool_false;
     }
-    lh_str_view_from_offset(lh_addr_of(part), 0U, lh_math_sub(part_size, ext_size), lh_addr_of(stem));
+    lh_str_view_from_offset(lh_addr_of(part), 0U, lh_math_sub(part_size, ext_size),
+                            lh_addr_of(stem));
     host_mm = lh_str_view_lit("authum");
     if (lh_str_view_equals(lh_addr_of(stem), lh_addr_of(host_mm), lh_bool_true))
     {
@@ -190,13 +195,15 @@ authum_loader_log_attempt(const lh_fs_path_t *path, lh_bool_t ok)
     path_text = lh_fs_path_to_cstr(path, lh_fs_path_style_posix, lh_addr_of(scratch));
     if (ok)
     {
-        authum_log_info("module OK: %s", path_text != lh_null ? path_text : "?");
+        authum_log_info("module OK: %s", lh_math_ne(path_text, lh_null) ? path_text : "?");
     }
     else
     {
         desc = lh_os_get_last_error_desc();
-        authum_log_error("module FAIL: %s (%s)", path_text != lh_null ? path_text : "?",
-                         desc != lh_null ? (const char *)desc : "unknown error");
+        authum_log_error("module FAIL: %s (%s)", lh_math_ne(path_text, lh_null) ? path_text : "?",
+                         lh_math_ne(desc, lh_null)
+                             ? lh_cast_reinterpret(const authum_char_t *, desc)
+                             : "unknown error");
     }
     lh_str_deinit(lh_addr_of(scratch));
 }
@@ -386,7 +393,7 @@ authum_loader_scan(authum_module_t *self, const lh_fs_path_t *dir, const lh_fs_p
         {
             continue;
         }
-        (void)authum_loader_load_logged(self, lh_addr_of(full));
+        authum_unused(authum_loader_load_logged(self, lh_addr_of(full)));
     }
 
     lh_os_fs_dir_close(lh_addr_of(listing));
@@ -491,7 +498,7 @@ authum_loader_list_load_path(authum_module_t *self, const lh_fs_path_t *modules,
                              lh_bool_t have_modules, const lh_str_view_t *path_text,
                              lh_fs_path_t *item, lh_fs_path_t *full)
 {
-    lh_fs_path_set(item, *path_text, lh_os_system_fs_path_style_native());
+    lh_fs_path_set(item, lh_ptr_deref(path_text), lh_os_system_fs_path_style_native());
     if (lh_fs_path_is_absolute(item))
     {
         if (!authum_loader_resolve_image(lh_null, item, full))
@@ -499,13 +506,14 @@ authum_loader_list_load_path(authum_module_t *self, const lh_fs_path_t *modules,
             authum_log_error("modules.list resolve failed");
             return;
         }
-        (void)authum_loader_load_logged(self, full);
+        authum_unused(authum_loader_load_logged(self, full));
         return;
     }
     if (!have_modules)
     {
         authum_log_error("modules.list entry skipped (no modules/ beside image): %.*s",
-                         (int)lh_str_view_get_size(path_text), lh_str_view_get_data(path_text));
+                         lh_cast_static(authum_i32_t, lh_str_view_get_size(path_text)),
+                         lh_str_view_get_data(path_text));
         return;
     }
     if (!authum_loader_resolve_image(modules, item, full))
@@ -513,7 +521,7 @@ authum_loader_list_load_path(authum_module_t *self, const lh_fs_path_t *modules,
         authum_log_error("modules.list resolve failed");
         return;
     }
-    (void)authum_loader_load_logged(self, full);
+    authum_unused(authum_loader_load_logged(self, full));
 }
 
 lh_bool_t
@@ -537,7 +545,7 @@ authum_loader_load_list(authum_module_t *self, const lh_fs_path_t *path)
         return lh_bool_false;
     }
 
-#if LH_COMPILER_OS == LH_COMPILER_OS_WINDOWS
+#if lh_math_eq(LH_COMPILER_OS, LH_COMPILER_OS_WINDOWS)
     os_section = lh_str_view_lit("win32");
 #else
     os_section = lh_str_view_lit("linux");
@@ -573,8 +581,9 @@ authum_loader_load_list(authum_module_t *self, const lh_fs_path_t *path)
             if (!authum_loader_list_read_section(lh_addr_of(line), lh_addr_of(section)))
             {
                 lh_os_set_last_error_lit(authum_error_code_bad_modules_list, "bad modules.list");
-                authum_log_error("modules.list parse error at line %lu",
-                                 (unsigned long)lh_str_line_reader_get_number(lh_addr_of(reader)));
+                authum_log_error(
+                    "modules.list parse error at line %lu",
+                    lh_cast_static(lh_ulong_t, lh_str_line_reader_get_number(lh_addr_of(reader))));
                 ok = lh_bool_false;
                 break;
             }
@@ -643,7 +652,7 @@ authum_loader_load_modules(authum_module_t *self)
             list_text =
                 lh_fs_path_to_cstr(lh_addr_of(ini), lh_fs_path_style_posix, lh_addr_of(scratch));
             authum_log_info("loading modules from %s",
-                            list_text != lh_null ? list_text : "modules.list");
+                            lh_math_ne(list_text, lh_null) ? list_text : "modules.list");
             lh_str_deinit(lh_addr_of(scratch));
         }
         ok = authum_loader_load_list(self, lh_addr_of(ini));
@@ -669,7 +678,7 @@ authum_loader_load_modules(authum_module_t *self)
 
         dir_text = lh_fs_path_to_cstr(lh_addr_of(dir), lh_fs_path_style_posix, lh_addr_of(scratch));
         authum_log_info("no modules.list — scanning %s",
-                        dir_text != lh_null ? dir_text : "modules/");
+                        lh_math_ne(dir_text, lh_null) ? dir_text : "modules/");
         lh_str_deinit(lh_addr_of(scratch));
     }
     ok = authum_loader_scan(self, lh_addr_of(dir), image);
@@ -685,7 +694,10 @@ authum_loader_unload_all(authum_module_t *self)
 {
     lh_os_loader_t *loader;
 
-    if (authum_tasks_host_dispatching()) return;
+    if (authum_tasks_host_dispatching())
+    {
+        return;
+    }
 
     loader = lh_os_module_get_loader(self);
     if (lh_null_ne(loader))
@@ -747,14 +759,14 @@ authum_loader_get(authum_module_t *self, lh_uindex_t index)
 }
 
 authum_module_t *
-authum_loader_find(authum_module_t *self, const char *name)
+authum_loader_find(authum_module_t *self, const authum_char_t *name)
 {
     authum_module_t *child;
     const authum_module_info_t *info;
     lh_str_view_t want;
     lh_str_view_t have;
 
-    if (lh_null_eq(name) || name[0] == '\0')
+    if (lh_null_eq(name) || lh_math_eq(name[0], lh_char_map_nul))
     {
         return lh_null;
     }
@@ -778,14 +790,14 @@ authum_loader_find(authum_module_t *self, const char *name)
 }
 
 lh_bool_t
-authum_loader_resolve_name(authum_module_t *self, const char *name, lh_fs_path_t *out)
+authum_loader_resolve_name(authum_module_t *self, const authum_char_t *name, lh_fs_path_t *out)
 {
     lh_fs_path_t modules;
     lh_fs_path_t entry;
     lh_str_view_t name_view;
     lh_bool_t ok;
 
-    if (lh_null_eq(name) || name[0] == '\0' || lh_null_eq(out))
+    if (lh_null_eq(name) || lh_math_eq(name[0], lh_char_map_nul) || lh_null_eq(out))
     {
         return lh_bool_false;
     }
@@ -795,7 +807,8 @@ authum_loader_resolve_name(authum_module_t *self, const char *name, lh_fs_path_t
     {
         lh_fs_path_deinit(lh_addr_of(modules));
         lh_fs_path_deinit(lh_addr_of(entry));
-        lh_os_set_last_error_lit(lh_os_error_code_path_empty, "no modules/ beside the Authum image");
+        lh_os_set_last_error_lit(lh_os_error_code_path_empty,
+                                 "no modules/ beside the Authum image");
         return lh_bool_false;
     }
     name_view =
@@ -813,7 +826,7 @@ authum_loader_resolve_name(authum_module_t *self, const char *name, lh_fs_path_t
 }
 
 lh_bool_t
-authum_loader_load_name(authum_module_t *self, const char *name)
+authum_loader_load_name(authum_module_t *self, const authum_char_t *name)
 {
     lh_fs_path_t path;
     lh_bool_t ok;
@@ -835,14 +848,15 @@ authum_loader_load_name(authum_module_t *self, const char *name)
 }
 
 lh_bool_t
-authum_loader_unload_name(authum_module_t *self, const char *name)
+authum_loader_unload_name(authum_module_t *self, const authum_char_t *name)
 {
     lh_os_loader_t *loader;
     authum_module_t *child;
 
     if (authum_tasks_host_dispatching())
     {
-        lh_os_set_last_error_lit(lh_os_error_code_not_open, "cannot unload modules inside a task callback");
+        lh_os_set_last_error_lit(lh_os_error_code_not_open,
+                                 "cannot unload modules inside a task callback");
         return lh_bool_false;
     }
 
@@ -858,7 +872,7 @@ authum_loader_unload_name(authum_module_t *self, const char *name)
 }
 
 lh_bool_t
-authum_loader_reload_name(authum_module_t *self, const char *name)
+authum_loader_reload_name(authum_module_t *self, const authum_char_t *name)
 {
     authum_module_t *child;
     lh_fs_path_t path;

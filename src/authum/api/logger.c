@@ -1,4 +1,14 @@
 #include <authum/logger.h>
+#include <authum/bool.h>
+#include <authum/byte.h>
+#include <authum/char.h>
+#include <authum/size.h>
+#include <lh/cast/reinterpret.h>
+#include <lh/cast/static.h>
+#include <lh/char/map.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
+#include <lh/memory/std.h>
 #include <authum/logger/buffer.h>
 
 #include <authum/abi.h>
@@ -29,11 +39,13 @@ authum_logger_level_parse(const authum_char_t *name, authum_logger_level_t *out)
     {
         return authum_bool_false;
     }
-    for (i = 0u; i < sizeof authum_logger_level_names / sizeof authum_logger_level_names[0]; ++i)
+    for (i = 0u; lh_math_lt(
+             i, lh_math_div(sizeof authum_logger_level_names, sizeof authum_logger_level_names[0]));
+         i = lh_math_add_one(i))
     {
         if (authum_cstr_eq(name, authum_logger_level_names[i].name, authum_bool_true))
         {
-            *out = authum_logger_level_names[i].level;
+            lh_ptr_deref(out) = authum_logger_level_names[i].level;
             return authum_bool_true;
         }
     }
@@ -43,7 +55,8 @@ authum_logger_level_parse(const authum_char_t *name, authum_logger_level_t *out)
 const authum_char_t *
 authum_logger_level_name(authum_logger_level_t level)
 {
-    return level <= authum_logger_level_debug ? authum_logger_level_names[level].name : "?";
+    return lh_math_le(level, authum_logger_level_debug) ? authum_logger_level_names[level].name
+                                                        : "?";
 }
 
 void
@@ -80,7 +93,7 @@ authum_logger_get_channel(const authum_logger_t *self)
     {
         return authum_null;
     }
-    return self->owns_journal ? &self->journal : self->channel;
+    return self->owns_journal ? lh_addr_of(self->journal) : self->channel;
 }
 
 void
@@ -88,7 +101,7 @@ authum_logger_init(authum_logger_t *self, const authum_host_t *host)
 {
     if (!authum_null_eq(self))
     {
-        memset(self, 0, sizeof *self);
+        lh_memory_std_set(self, 0, sizeof lh_ptr_deref(self));
         self->channel = authum_host_logger(host);
     }
 }
@@ -107,7 +120,7 @@ authum_logger_open(authum_logger_t *self, const authum_host_t *host, const authu
     module = self->channel;
     if (authum_null_eq(module) || authum_null_eq(module->ops) ||
         !AUTHUM_ABI_HAS(module->ops, open) || !AUTHUM_ABI_HAS(module->ops, close) ||
-        authum_null_eq(name) || name[0] == '\0')
+        authum_null_eq(name) || lh_math_eq(name[0], lh_char_map_nul))
     {
         self->channel = authum_null;
         return authum_bool_false;
@@ -135,7 +148,7 @@ authum_logger_close(authum_logger_t *self)
     {
         self->journal.ops->close(self->journal.owner);
     }
-    memset(self, 0, sizeof *self);
+    lh_memory_std_set(self, 0, sizeof lh_ptr_deref(self));
 }
 
 authum_bool_t
@@ -150,7 +163,8 @@ authum_logger_create(authum_logger_t *self, const authum_host_t *host,
     const authum_logger_channel_t *module = self->channel;
     self->channel = authum_null;
     if (!module || !module->ops || !AUTHUM_ABI_HAS(module->ops, construct) ||
-        !AUTHUM_ABI_HAS(module->ops, close) || !options || options->size < sizeof *options)
+        !AUTHUM_ABI_HAS(module->ops, close) || !options ||
+        lh_math_lt(options->size, sizeof lh_ptr_deref(options)))
     {
         return authum_bool_false;
     }
@@ -170,17 +184,20 @@ authum_host_log(const authum_host_t *host, authum_logger_level_t level, const au
                 ...)
 {
     authum_logger_t log;
-    authum_logger_init(&log, host);
+    authum_logger_init(lh_addr_of(log), host);
     va_list args;
     va_start(args, fmt);
-    authum_logger_log_v(&log, level, fmt, args);
+    authum_logger_log_v(lh_addr_of(log), level, fmt, args);
     va_end(args);
 }
 
 authum_bool_t
 authum_logger_is_enabled(const authum_logger_t *self, authum_logger_level_t level)
 {
-    if (authum_logger_buffer_active()) return self && level <= authum_logger_level_debug;
+    if (authum_logger_buffer_active())
+    {
+        return self && lh_math_le(level, authum_logger_level_debug);
+    }
     return authum_logger_channel_is_enabled(authum_logger_get_channel(self), level);
 }
 
@@ -190,7 +207,10 @@ authum_logger_log_v(authum_logger_t *self, authum_logger_level_t level, const au
 {
     authum_char_t buf[authum_logger_line_max];
 
-    if (authum_logger_buffer_log_v(self, level, fmt, ap)) return;
+    if (authum_logger_buffer_log_v(self, level, fmt, ap))
+    {
+        return;
+    }
 
     if (authum_null_eq(fmt) || !authum_logger_is_enabled(self, level))
     {
@@ -217,22 +237,26 @@ authum_logger_hex_dump(authum_logger_t *self, const authum_char_t *label, authum
     authum_char_t line[128];
     authum_usize_t i;
 
-    if (authum_null_eq(label) || (authum_null_eq(data) && len != 0u) ||
+    if (authum_null_eq(label) || (authum_null_eq(data) && lh_math_ne(len, 0u)) ||
         !authum_logger_is_enabled(self, authum_logger_level_debug))
     {
         return;
     }
 
-    p = (const authum_byte_t *)data;
-    authum_logger_debug(self, "%s (%u bytes):", label, (unsigned)len);
+    p = lh_cast_reinterpret(const authum_byte_t *, data);
+    authum_logger_debug(self, "%s (%u bytes):", label, lh_cast_static(authum_u32_t, len));
 
-    for (i = 0u; i < len; i += 16u)
+    for (i = 0u; lh_math_lt(i, len); i = lh_math_add(i, 16u))
     {
-        int pos = snprintf(line, sizeof line, "  %04x: ", (unsigned)i);
+        authum_i32_t pos = snprintf(line, sizeof line, "  %04x: ", lh_cast_static(authum_u32_t, i));
         authum_usize_t j;
-        for (j = 0u; j < 16u && (i + j) < len; ++j)
+        for (j = 0u; lh_math_lt(j, 16u) && lh_math_lt((lh_math_add(i, j)), len);
+             j = lh_math_add_one(j))
         {
-            pos += snprintf(line + pos, sizeof line - (authum_usize_t)pos, "%02x ", p[i + j]);
+            pos = lh_math_add(
+                pos, snprintf(lh_math_add(line, pos),
+                              lh_math_sub(sizeof line, lh_cast_static(authum_usize_t, pos)),
+                              "%02x ", p[lh_math_add(i, j)]));
         }
         authum_logger_debug(self, "%s", line);
     }

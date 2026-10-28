@@ -1,4 +1,13 @@
 #include <authum/command.h>
+#include <authum/bool.h>
+#include <authum/byte.h>
+#include <authum/char.h>
+#include <authum/size.h>
+#include <authum/unused.h>
+#include <lh/cast/static.h>
+#include <lh/char/map.h>
+#include <lh/math/ops.h>
+#include <lh/memory/std.h>
 
 #include <authum/cstr.h>
 #include <authum/null.h>
@@ -30,7 +39,7 @@ authum_command_argv(const authum_command_t *cmd, authum_usize_t index)
 {
     const authum_char_t *arg;
 
-    if (index >= authum_command_argc(cmd))
+    if (lh_math_ge(index, authum_command_argc(cmd)))
     {
         return "";
     }
@@ -41,7 +50,7 @@ authum_command_argv(const authum_command_t *cmd, authum_usize_t index)
 authum_bool_t
 authum_command_arg_i32(const authum_command_t *cmd, authum_usize_t index, authum_i32_t *out)
 {
-    if (index >= authum_command_argc(cmd))
+    if (lh_math_ge(index, authum_command_argc(cmd)))
     {
         return authum_bool_false;
     }
@@ -51,28 +60,28 @@ authum_command_arg_i32(const authum_command_t *cmd, authum_usize_t index, authum
 void
 authum_command_print(const authum_command_t *cmd, const authum_char_t *line)
 {
-    authum_char_t buf[authum_command_line_max + 2];
-    size_t len;
+    authum_char_t buf[lh_math_add(authum_command_line_max, 2)];
+    authum_usize_t len;
 
-    if (authum_null_eq(cmd) || cmd->print == 0 || authum_null_eq(line))
+    if (authum_null_eq(cmd) || lh_math_eq(cmd->print, 0) || authum_null_eq(line))
     {
         return;
     }
     len = strlen(line);
-    if (len > (size_t)authum_command_line_max)
+    if (lh_math_gt(len, lh_cast_static(authum_usize_t, authum_command_line_max)))
     {
-        len = (size_t)authum_command_line_max;
+        len = lh_cast_static(authum_usize_t, authum_command_line_max);
     }
-    memcpy(buf, line, len);
-    buf[len] = '\n';
-    buf[len + 1u] = '\0';
+    lh_memory_std_copy(buf, line, len);
+    buf[len] = lh_char_map_lf;
+    buf[lh_math_add(len, 1u)] = lh_char_map_nul;
     cmd->print(cmd->out, buf);
 }
 
 void
 authum_command_printf(const authum_command_t *cmd, const authum_char_t *fmt, ...)
 {
-    authum_char_t line[authum_command_line_max + 1];
+    authum_char_t line[lh_math_add(authum_command_line_max, 1)];
     va_list ap;
 
     if (authum_null_eq(fmt))
@@ -80,7 +89,7 @@ authum_command_printf(const authum_command_t *cmd, const authum_char_t *fmt, ...
         return;
     }
     va_start(ap, fmt);
-    (void)vsnprintf(line, sizeof line, fmt, ap);
+    authum_unused(vsnprintf(line, sizeof line, fmt, ap));
     va_end(ap);
     authum_command_print(cmd, line);
 }

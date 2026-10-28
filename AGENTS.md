@@ -1,3 +1,17 @@
+# Authum implementation conventions
+
+- Use Authum types and `authum_null` in Authum code; keep native types at actual ABI boundaries.
+- Allocate explicit-lifetime heap blocks through `<authum/memory.h>`, backed by LH.
+  Keep sandbox ownership on the existing LH ownership tree; never mix the two kinds of blocks.
+- Use LH memory kernels, math operations, cast and pointer helpers, character predicates,
+  ASCII names and numeric/domain limits instead of open-coding equivalent primitives.
+- Use `lh_fs_path_t` for private LH filesystem operations above `lh/os/system`;
+  keep `authum_path_t` on the public Authum ABI. Raw native path text belongs at the kernel boundary. Preserve unresolved placeholder text as an Authum policy.
+- Include project headers with angle brackets and namespace paths. Keep module example
+  contracts in that module's include namespace, not in the Authum host API.
+- Preserve line endings when scripting edits; inspect the diff for accidental blank lines.
+- Run `python tools/check-conventions.py` after foundation or include changes.
+
 # Contributions to LH
 
 Before changing `lib/lh`, read the nearest existing headers and implementations

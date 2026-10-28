@@ -14,6 +14,7 @@
 #define AUTHUM_HOST_LOADER_H
 
 #include <authum/extern.h>
+#include <authum/char.h>
 #include <authum/host/module.h>
 #include <lh/bool.h>
 #include <lh/fs/path.h>
@@ -138,7 +139,7 @@ authum_loader_get(authum_module_t *self, lh_uindex_t index);
  * @brief Child whose `authum_module_info.name` equals @p name (case-insensitive).
  */
 authum_module_t *
-authum_loader_find(authum_module_t *self, const char *name);
+authum_loader_find(authum_module_t *self, const authum_char_t *name);
 
 /**
  * @brief Resolve @p name under `modules/` (package folder or bare `.so`) and load it.
@@ -147,19 +148,19 @@ authum_loader_find(authum_module_t *self, const char *name);
  * be resolved / started. On false, see ::lh_os_last_error.
  */
 lh_bool_t
-authum_loader_load_name(authum_module_t *self, const char *name);
+authum_loader_load_name(authum_module_t *self, const authum_char_t *name);
 
 /**
  * @brief Stop and unload the child named @p name. False if not loaded.
  */
 lh_bool_t
-authum_loader_unload_name(authum_module_t *self, const char *name);
+authum_loader_unload_name(authum_module_t *self, const authum_char_t *name);
 
 /**
  * @brief Unload then load again from the same image path (or `modules/<name>`).
  */
 lh_bool_t
-authum_loader_reload_name(authum_module_t *self, const char *name);
+authum_loader_reload_name(authum_module_t *self, const authum_char_t *name);
 
 AUTHUM_EXTERN_C_END
 

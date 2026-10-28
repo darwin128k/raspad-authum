@@ -1,6 +1,11 @@
 #ifndef AUTHUM_HOST_HTTP_INTERNAL_H
 #define AUTHUM_HOST_HTTP_INTERNAL_H
 #include <authum/host/http.h>
+#include <authum/ptr.h>
+#include <authum/bool.h>
+#include <authum/byte.h>
+#include <authum/char.h>
+#include <authum/size.h>
 #include <lh/os/system/net/socket.h>
 #include <authum/net.h>
 #include <authum/host/clock.h>
@@ -33,8 +38,8 @@ typedef enum authum_http_client_state
 
 typedef struct authum_http_client
 {
-    int fd;
-    int file;
+    authum_i32_t fd;
+    authum_i32_t file;
     authum_i32_t ip_slot;
     authum_http_client_state_t state;
     authum_char_t input[AUTHUM_HTTP_REQUEST_CAPACITY];
@@ -70,8 +75,8 @@ struct authum_http_server
 {
     authum_http_server_t *next;
     authum_http_options_t options;
-    int roots[AUTHUM_HTTP_MAX_SOURCES];
-    int listener;
+    authum_i32_t roots[AUTHUM_HTTP_MAX_SOURCES];
+    authum_i32_t listener;
     lh_os_wake_t wake;
     authum_threads_t threads;
     authum_thread_t *thread;
@@ -91,21 +96,22 @@ authum_i64_t
 authum_http_now_ms(void);
 void
 authum_http_access_record(authum_http_server_t *s, const authum_http_client_t *c,
-                          const char *event);
+                          const authum_char_t *event);
 void
-authum_http_access_token(char *dst, size_t capacity, const char *src, size_t length);
+authum_http_access_token(authum_char_t *dst, authum_usize_t capacity, const authum_char_t *src,
+                         authum_usize_t length);
 void
 authum_http_client_close(authum_http_server_t *s, authum_http_client_t *c);
 authum_i32_t
 authum_http_resource_open(authum_i32_t root, const authum_http_options_t *options,
                           const authum_char_t *url, authum_usize_t length, off_t *size);
 void
-authum_http_response_set(authum_http_client_t *c, int code, const char *reason, off_t size,
-                         int head);
+authum_http_response_set(authum_http_client_t *c, authum_i32_t code, const authum_char_t *reason,
+                         off_t size, authum_i32_t head);
 void
-authum_http_request_read(authum_http_client_t *c, const int *roots,
+authum_http_request_read(authum_http_client_t *c, const authum_i32_t *roots,
                          const authum_http_options_t *options);
-int
+authum_i32_t
 authum_http_peer_acquire(authum_http_server_t *s, authum_u32_t ip, authum_i64_t now,
                          const authum_http_options_t *options);
 authum_bool_t
@@ -115,33 +121,35 @@ void
 authum_http_budget_refill(double *tokens, authum_i64_t *last, authum_i64_t now,
                           const authum_http_options_t *options);
 void
-authum_http_run(void *arg);
+authum_http_run(authum_ptr arg);
 void
-authum_http_wake(void *arg);
+authum_http_wake(authum_ptr arg);
 void
 authum_http_server_release(authum_http_server_t *server);
 authum_http_server_t *
 authum_http_server_create(const authum_http_options_t *options, const authum_threads_t *threads,
-                          char *error, unsigned error_size);
+                          authum_char_t *error, authum_u32_t error_size);
 void
 authum_http_server_shutdown(authum_http_server_t *server);
 void
 authum_http_server_destroy(authum_http_server_t *server);
 authum_usize_t
 authum_http_server_memory(const authum_http_server_t *server);
-unsigned
-authum_http_server_drain(authum_http_server_t *server, authum_http_log_fn sink, void *user,
-                         unsigned limit);
-int
-authum_http_listener_open(const authum_http_options_t *options, char *error, unsigned error_size);
-int
-authum_http_socket_accept(int listener, authum_http_client_t *peer, authum_u32_t *address);
+authum_u32_t
+authum_http_server_drain(authum_http_server_t *server, authum_http_log_fn sink, authum_ptr user,
+                         authum_u32_t limit);
+authum_i32_t
+authum_http_listener_open(const authum_http_options_t *options, authum_char_t *error,
+                          authum_u32_t error_size);
+authum_i32_t
+authum_http_socket_accept(authum_i32_t listener, authum_http_client_t *peer, authum_u32_t *address);
 authum_i64_t
-authum_http_socket_receive(int fd, char *buffer, authum_usize_t size);
+authum_http_socket_receive(authum_i32_t fd, authum_char_t *buffer, authum_usize_t size);
 authum_i64_t
-authum_http_socket_send(int fd, const char *buffer, authum_usize_t size);
+authum_http_socket_send(authum_i32_t fd, const authum_char_t *buffer, authum_usize_t size);
 authum_i64_t
-authum_http_socket_send_file(int socket, int file, off_t *offset, authum_usize_t size);
+authum_http_socket_send_file(authum_i32_t socket, authum_i32_t file, off_t *offset,
+                             authum_usize_t size);
 void
 authum_http_clients_accept(authum_http_server_t *server, authum_i64_t now);
 void

@@ -1,4 +1,11 @@
 #include <authum/host/placeholders.h>
+#include <lh/cast/static.h>
+#include <lh/char/map.h>
+#include <lh/util/ptr.h>
+#include <authum/memory.h>
+#include <lh/char/letter.h>
+#include <lh/char/digit.h>
+#include <lh/memory/std.h>
 
 #include <authum/null.h>
 
@@ -6,7 +13,8 @@
 #include <string.h>
 
 #include <lh/os/system/fs/path.h>
-#include <lh/fs/path.h>
+#include <lh/os/fs/path.h>
+#include <lh/math/ops.h>
 
 /** The standard names, indexed by ::authum_placeholder_standard_t. */
 static const authum_char_t *const
@@ -28,7 +36,8 @@ static authum_placeholder_entry_t *authum_placeholder_entries;
 const authum_char_t *
 authum_placeholder_standard_name(authum_placeholder_standard_t standard)
 {
-    if ((authum_u32_t)standard >= (authum_u32_t)authum_placeholder_standard_count)
+    if (lh_math_ge(lh_cast_static(authum_u32_t, standard),
+                   lh_cast_static(authum_u32_t, authum_placeholder_standard_count)))
     {
         return authum_null;
     }
@@ -42,21 +51,30 @@ authum_placeholder_canonical(const authum_char_t *input, authum_char_t *out, aut
     {
         return authum_bool_false;
     }
-    lh_str_t resolved;
-    lh_str_init(&resolved);
-    const authum_char_t *text =
-        lh_os_system_fs_path_canonical(input, &resolved) ? lh_str_get_data(&resolved) : input;
-    const authum_u64_t length = strlen(text);
-    if (length >= size)
+    lh_fs_path_t path;
+    lh_str_view_t view;
+    lh_fs_path_init(lh_addr_of(path));
+    lh_str_view_init(lh_addr_of(view), input);
+    lh_fs_path_set(lh_addr_of(path), view, lh_os_system_fs_path_style_native());
+    lh_str_t rendered;
+    lh_str_init(lh_addr_of(rendered));
+    const authum_char_t *text = input;
+    if (lh_os_fs_path_canonical(lh_addr_of(path), lh_addr_of(path)))
     {
-        lh_str_deinit(&resolved);
-        return authum_bool_false;
+        lh_fs_path_to_str(lh_addr_of(path), lh_os_system_fs_path_style_native(),
+                          lh_addr_of(rendered));
+        text = lh_str_get_data(lh_addr_of(rendered));
     }
-    /* Authum permits paths that cannot yet be resolved (for example, new data
-     * directories). Keep that policy outside LH's strict filesystem operation. */
-    memmove(out, text, (authum_usize_t)length + 1u);
-    lh_str_deinit(&resolved);
-    return authum_bool_true;
+    const authum_u64_t length = strlen(text);
+    const authum_bool_t fits = lh_math_lt(length, size) ? authum_bool_true : authum_bool_false;
+    if (fits)
+    {
+        /* Authum keeps unresolved input verbatim, including new data directories. */
+        lh_memory_std_move(out, text, lh_math_add_one(lh_cast_static(authum_usize_t, length)));
+    }
+    lh_str_deinit(lh_addr_of(rendered));
+    lh_fs_path_deinit(lh_addr_of(path));
+    return fits;
 }
 
 static authum_bool_t
@@ -64,21 +82,22 @@ authum_placeholder_absolute(const authum_char_t *path)
 {
     lh_fs_path_t parsed;
     lh_str_view_t text;
-    lh_fs_path_init(&parsed);
-    lh_str_view_init(&text, path);
-    lh_fs_path_set(&parsed, text, lh_os_system_fs_path_style_native());
+    lh_fs_path_init(lh_addr_of(parsed));
+    lh_str_view_init(lh_addr_of(text), path);
+    lh_fs_path_set(lh_addr_of(parsed), text, lh_os_system_fs_path_style_native());
     const authum_bool_t absolute =
-        lh_fs_path_is_absolute(&parsed) ? authum_bool_true : authum_bool_false;
-    lh_fs_path_deinit(&parsed);
+        lh_fs_path_is_absolute(lh_addr_of(parsed)) ? authum_bool_true : authum_bool_false;
+    lh_fs_path_deinit(lh_addr_of(parsed));
     return absolute;
 }
 
 authum_bool_t
 authum_placeholder_is_standard(const authum_char_t *name, authum_usize_t length)
 {
-    for (authum_usize_t index = 0; index < authum_placeholder_standard_count; ++index)
+    for (authum_usize_t index = 0; lh_math_lt(index, authum_placeholder_standard_count);
+         index = lh_math_add_one(index))
     {
-        if (strlen(authum_placeholder_standard_names[index]) == length &&
+        if (lh_math_eq(strlen(authum_placeholder_standard_names[index]), length) &&
             !strncmp(authum_placeholder_standard_names[index], name, length))
         {
             return authum_bool_true;
@@ -91,15 +110,14 @@ static authum_bool_t
 authum_placeholder_name_valid(const authum_char_t *name)
 {
     authum_usize_t length = strlen(name);
-    if (!length || length >= authum_placeholder_name_max)
+    if (!length || lh_math_ge(length, authum_placeholder_name_max))
     {
         return authum_bool_false;
     }
-    for (authum_usize_t index = 0; index < length; ++index)
+    for (authum_usize_t index = 0; lh_math_lt(index, length); index = lh_math_add_one(index))
     {
         authum_char_t c = name[index];
-        if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
-              c == '_'))
+        if (!(lh_char_is_letter(c) || lh_char_is_digit(c) || lh_math_eq(c, lh_char_map_underscore)))
         {
             return authum_bool_false;
         }
@@ -129,9 +147,10 @@ static const authum_char_t *
 authum_placeholder_lookup(authum_placeholder_owner_t *owner, const authum_char_t *name,
                           authum_usize_t length)
 {
-    for (authum_usize_t index = 0; index < authum_placeholder_standard_count; ++index)
+    for (authum_usize_t index = 0; lh_math_lt(index, authum_placeholder_standard_count);
+         index = lh_math_add_one(index))
     {
-        if (strlen(authum_placeholder_standard_names[index]) == length &&
+        if (lh_math_eq(strlen(authum_placeholder_standard_names[index]), length) &&
             !strncmp(authum_placeholder_standard_names[index], name, length) &&
             owner->standard[index] && owner->standard[index][0])
         {
@@ -141,7 +160,7 @@ authum_placeholder_lookup(authum_placeholder_owner_t *owner, const authum_char_t
     for (const authum_placeholder_entry_t *entry = authum_placeholder_entries; entry;
          entry = entry->next)
     {
-        if (strlen(entry->name) == length && !strncmp(entry->name, name, length))
+        if (lh_math_eq(strlen(entry->name), length) && !strncmp(entry->name, name, length))
         {
             return entry->value;
         }
@@ -157,46 +176,46 @@ authum_placeholder_expand_impl(authum_ptr owner_ptr, const authum_char_t *templa
     authum_char_t result[authum_placeholder_value_max];
     authum_usize_t used = 0;
 
-    if (authum_null_eq(owner) || !template || !*template || !out || !out_size)
+    if (authum_null_eq(owner) || !template || !lh_ptr_deref(template) || !out || !out_size)
     {
         return authum_bool_false;
     }
-    for (const authum_char_t *cursor = template; *cursor;)
+    for (const authum_char_t *cursor = template; lh_ptr_deref(cursor);)
     {
-        if (*cursor == '{')
+        if (lh_math_eq(lh_ptr_deref(cursor), lh_char_map_lbrace))
         {
-            const authum_char_t *end = strchr(cursor + 1, '}');
+            const authum_char_t *end = strchr(lh_math_add(cursor, 1), lh_char_map_rbrace);
             authum_usize_t length;
             const authum_char_t *value;
             if (!end)
             {
                 return authum_bool_false;
             }
-            length = (authum_usize_t)(end - cursor - 1);
-            value = authum_placeholder_lookup(owner, cursor + 1, length);
+            length = (authum_usize_t)(lh_math_sub(lh_math_sub(end, cursor), 1));
+            value = authum_placeholder_lookup(owner, lh_math_add(cursor, 1), length);
             if (authum_null_eq(value))
             {
                 return authum_bool_false;
             }
             authum_usize_t value_length = strlen(value);
-            if (used + value_length + 1 > sizeof result)
+            if (lh_math_gt(lh_math_add(lh_math_add(used, value_length), 1), sizeof result))
             {
                 return authum_bool_false;
             }
-            memcpy(result + used, value, value_length);
-            used += value_length;
-            cursor = end + 1;
+            lh_memory_std_copy(lh_math_add(result, used), value, value_length);
+            used = lh_math_add(used, value_length);
+            cursor = lh_math_add(end, 1);
             continue;
         }
-        if (*cursor == '}')
+        if (lh_math_eq(lh_ptr_deref(cursor), lh_char_map_rbrace))
         {
             return authum_bool_false;
         }
-        if (used + 2 > sizeof result)
+        if (lh_math_gt(lh_math_add(used, 2), sizeof result))
         {
             return authum_bool_false;
         }
-        result[used++] = *cursor++;
+        result[used++] = lh_ptr_deref(cursor++);
     }
     result[used] = 0;
     if (!used)
@@ -208,20 +227,22 @@ authum_placeholder_expand_impl(authum_ptr owner_ptr, const authum_char_t *templa
     {
         const authum_char_t *base = owner->standard[authum_placeholder_module];
         authum_usize_t base_length = base ? strlen(base) : 0;
-        if (!base_length || used + base_length + 2 > sizeof result)
+        if (!base_length ||
+            lh_math_gt(lh_math_add(lh_math_add(used, base_length), 2), sizeof result))
         {
             return authum_bool_false;
         }
-        memmove(result + base_length + 1, result, used + 1);
-        memcpy(result, base, base_length);
-        result[base_length] = '/';
-        used += base_length + 1;
+        lh_memory_std_move(lh_math_add(lh_math_add(result, base_length), 1), result,
+                           lh_math_add(used, 1));
+        lh_memory_std_copy(result, base, base_length);
+        result[base_length] = lh_char_map_slash;
+        used = lh_math_add(used, lh_math_add(base_length, 1));
     }
-    if (used + 1 > out_size)
+    if (lh_math_gt(lh_math_add(used, 1), out_size))
     {
         return authum_bool_false;
     }
-    memcpy(out, result, used + 1);
+    lh_memory_std_copy(out, result, lh_math_add(used, 1));
     return authum_bool_true;
 }
 
@@ -231,7 +252,7 @@ authum_placeholder_register_impl(authum_ptr owner, const authum_char_t *name,
 {
     authum_placeholder_entry_t *entry;
 
-    if (!name || !value || !*value || !authum_placeholder_name_valid(name))
+    if (!name || !value || !lh_ptr_deref(value) || !authum_placeholder_name_valid(name))
     {
         return authum_bool_false;
     }
@@ -251,16 +272,16 @@ authum_placeholder_register_impl(authum_ptr owner, const authum_char_t *name,
             return authum_bool_false;
         }
     }
-    entry = calloc(1, sizeof *entry);
+    entry = authum_memory_alloc_zero(1, sizeof lh_ptr_deref(entry));
     if (!entry)
     {
         return authum_bool_false;
     }
     entry->owner = owner;
-    strncpy(entry->name, name, sizeof entry->name - 1);
+    strncpy(entry->name, name, lh_math_sub(sizeof entry->name, 1));
     if (!authum_placeholder_canonical(value, entry->value, sizeof entry->value))
     {
-        free(entry);
+        authum_memory_free(entry);
         return authum_bool_false;
     }
     entry->next = authum_placeholder_entries;
@@ -271,22 +292,22 @@ authum_placeholder_register_impl(authum_ptr owner, const authum_char_t *name,
 static authum_bool_t
 authum_placeholder_unregister_impl(authum_ptr owner, const authum_char_t *name)
 {
-    authum_placeholder_entry_t **link = &authum_placeholder_entries;
+    authum_placeholder_entry_t **link = lh_addr_of(authum_placeholder_entries);
 
     if (!name)
     {
         return authum_bool_false;
     }
-    while (*link)
+    while (lh_ptr_deref(link))
     {
-        authum_placeholder_entry_t *entry = *link;
-        if (entry->owner == owner && !strcmp(entry->name, name))
+        authum_placeholder_entry_t *entry = lh_ptr_deref(link);
+        if (lh_math_eq(entry->owner, owner) && !strcmp(entry->name, name))
         {
-            *link = entry->next;
-            free(entry);
+            lh_ptr_deref(link) = entry->next;
+            authum_memory_free(entry);
             return authum_bool_true;
         }
-        link = &entry->next;
+        link = lh_addr_of(entry->next);
     }
     return authum_bool_false;
 }
@@ -304,10 +325,11 @@ authum_placeholder_host_init(authum_placeholder_owner_t *owner,
     {
         return;
     }
-    memset(owner, 0, sizeof *owner);
+    lh_memory_std_set(owner, 0, sizeof lh_ptr_deref(owner));
     if (standard)
     {
-        for (authum_usize_t index = 0; index < authum_placeholder_standard_count; ++index)
+        for (authum_usize_t index = 0; lh_math_lt(index, authum_placeholder_standard_count);
+             index = lh_math_add_one(index))
         {
             if (!standard[index] || !standard[index][0])
             {
@@ -323,7 +345,7 @@ authum_placeholder_host_init(authum_placeholder_owner_t *owner,
             owner->standard[index] = owner->storage[index];
         }
     }
-    service->ops = &authum_placeholder_ops;
+    service->ops = lh_addr_of(authum_placeholder_ops);
     service->owner = owner;
 }
 
@@ -342,7 +364,8 @@ authum_placeholder_host_init_env(authum_placeholder_owner_t *owner, const authum
         const authum_path_t *paths[authum_placeholder_standard_count] = {
             env->game,   env->module, env->module_data, env->module_config, env->module_lang,
             env->addons, env->authum, env->modules,     env->models,        env->sprites};
-        for (authum_usize_t index = 0; index < authum_placeholder_standard_count; ++index)
+        for (authum_usize_t index = 0; lh_math_lt(index, authum_placeholder_standard_count);
+             index = lh_math_add_one(index))
         {
             standard[index] = authum_placeholder_path_text(paths[index]);
         }
@@ -353,21 +376,21 @@ authum_placeholder_host_init_env(authum_placeholder_owner_t *owner, const authum
 void
 authum_placeholder_host_drop_owner(authum_placeholder_owner_t *owner)
 {
-    authum_placeholder_entry_t **link = &authum_placeholder_entries;
+    authum_placeholder_entry_t **link = lh_addr_of(authum_placeholder_entries);
 
     if (authum_null_eq(owner))
     {
         return;
     }
-    while (*link)
+    while (lh_ptr_deref(link))
     {
-        authum_placeholder_entry_t *entry = *link;
-        if (entry->owner == owner)
+        authum_placeholder_entry_t *entry = lh_ptr_deref(link);
+        if (lh_math_eq(entry->owner, owner))
         {
-            *link = entry->next;
-            free(entry);
+            lh_ptr_deref(link) = entry->next;
+            authum_memory_free(entry);
             continue;
         }
-        link = &entry->next;
+        link = lh_addr_of(entry->next);
     }
 }

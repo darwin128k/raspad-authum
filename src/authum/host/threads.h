@@ -2,14 +2,15 @@
 #define AUTHUM_HOST_THREADS_H
 
 #include <authum/thread.h>
+#include <authum/byte.h>
 
 AUTHUM_EXTERN_C_BEGIN
 
 typedef struct authum_thread_owner
 {
     authum_thread_t *head;
-    unsigned count;
-    int closing;
+    authum_u32_t count;
+    authum_i32_t closing;
 } authum_thread_owner_t;
 
 /**

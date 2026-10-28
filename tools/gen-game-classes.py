@@ -94,9 +94,13 @@ def main() -> int:
  * exports has to be exported by us too — each one forwards to the game.
  */
 
-#include "game.h"
+#include <authum/gamedll/game.h>
 
 #include <authum/export.h>
+#include <authum/ptr.h>
+#include <authum/char.h>
+#include <authum/null.h>
+#include <lh/cast/reinterpret.h>
 
 #include <extdll.h>
 
@@ -105,8 +109,8 @@ def main() -> int:
 
 namespace
 {
-void *
-class_symbol(const char *name)
+authum_ptr
+class_symbol(const authum_char_t *name)
 {
     return authum_gamedll::gamedll_symbol(name);
 }
@@ -116,8 +120,8 @@ class_symbol(const char *name)
     for name in names:
         out.write("AUTHUM_CLASS void\n%s(entvars_t *pev)\n{\n"
                   "    typedef void (*fn_t)(entvars_t *);\n"
-                  "    fn_t fn = reinterpret_cast<fn_t>(class_symbol(\"%s\"));\n"
-                  "    if (fn != nullptr)\n"
+                  "    fn_t fn = lh_cast_reinterpret(fn_t, class_symbol(\"%s\"));\n"
+                  "    if (!authum_null_eq(fn))\n"
                   "    {\n"
                   "        fn(pev);\n"
                   "    }\n"

@@ -1,4 +1,11 @@
 #include <authum/cstr.h>
+#include <lh/char/letter.h>
+#include <lh/util/char.h>
+#include <lh/cast/static.h>
+#include <lh/char/map.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
+#include <lh/memory/std.h>
 
 #include <lh/numeric/types.h>
 #include <lh/str/parse/ullong.h>
@@ -8,11 +15,7 @@
 authum_char_t
 authum_char_ascii_lower(authum_char_t c)
 {
-    if (c >= 'A' && c <= 'Z')
-    {
-        return (authum_char_t)(c - 'A' + 'a');
-    }
-    return c;
+    return lh_char_is_upper(c) ? lh_char_fold_case(c) : c;
 }
 
 authum_bool_t
@@ -20,17 +23,17 @@ authum_cstr_copy(authum_char_t *dst, authum_usize_t dst_size, const authum_char_
 {
     authum_usize_t n;
 
-    if (authum_null_eq(dst) || dst_size == 0u || authum_null_eq(src))
+    if (authum_null_eq(dst) || lh_math_eq(dst_size, 0u) || authum_null_eq(src))
     {
         return authum_bool_false;
     }
-    n = (authum_usize_t)strlen(src);
-    if (n >= dst_size)
+    n = lh_cast_static(authum_usize_t, strlen(src));
+    if (lh_math_ge(n, dst_size))
     {
-        n = dst_size - 1u;
+        n = lh_math_sub(dst_size, 1u);
     }
-    memcpy(dst, src, n);
-    dst[n] = '\0';
+    lh_memory_std_copy(dst, src, n);
+    dst[n] = lh_char_map_nul;
     return authum_bool_true;
 }
 
@@ -39,26 +42,26 @@ authum_cstr_eq(const authum_char_t *a, const authum_char_t *b, authum_bool_t ign
 {
     if (authum_null_eq(a) || authum_null_eq(b))
     {
-        return (a == b) ? authum_bool_true : authum_bool_false;
+        return (lh_math_eq(a, b)) ? authum_bool_true : authum_bool_false;
     }
     if (!ignore_case)
     {
-        return (strcmp(a, b) == 0) ? authum_bool_true : authum_bool_false;
+        return (lh_math_eq(strcmp(a, b), 0)) ? authum_bool_true : authum_bool_false;
     }
     for (;;)
     {
-        authum_char_t ca = authum_char_ascii_lower(*a);
-        authum_char_t cb = authum_char_ascii_lower(*b);
-        if (ca != cb)
+        authum_char_t ca = authum_char_ascii_lower(lh_ptr_deref(a));
+        authum_char_t cb = authum_char_ascii_lower(lh_ptr_deref(b));
+        if (lh_math_ne(ca, cb))
         {
             return authum_bool_false;
         }
-        if (ca == '\0')
+        if (lh_math_eq(ca, lh_char_map_nul))
         {
             return authum_bool_true;
         }
-        ++a;
-        ++b;
+        a = lh_math_add_one(a);
+        b = lh_math_add_one(b);
     }
 }
 
@@ -74,24 +77,29 @@ authum_cstr_number_digits(const authum_char_t *text, authum_bool_t allow_minus,
 {
     const authum_char_t *end;
 
-    while (*text == ' ' || *text == '	')
+    while (lh_math_eq(lh_ptr_deref(text), lh_char_map_space) ||
+           lh_math_eq(lh_ptr_deref(text), lh_char_map_ht))
     {
-        ++text;
+        text = lh_math_add_one(text);
     }
-    *negative = authum_bool_false;
-    if (*text == '+' || (allow_minus && *text == '-'))
+    lh_ptr_deref(negative) = authum_bool_false;
+    if (lh_math_eq(lh_ptr_deref(text), lh_char_map_plus) ||
+        (allow_minus && lh_math_eq(lh_ptr_deref(text), lh_char_map_minus)))
     {
-        *negative = (*text == '-') ? authum_bool_true : authum_bool_false;
-        ++text;
+        lh_ptr_deref(negative) = (lh_math_eq(lh_ptr_deref(text), lh_char_map_minus))
+                                     ? authum_bool_true
+                                     : authum_bool_false;
+        text = lh_math_add_one(text);
     }
-    end = text + strlen(text);
-    while (end > text && (end[-1] == ' ' || end[-1] == '	'))
+    end = lh_math_add(text, strlen(text));
+    while (lh_math_gt(end, text) &&
+           (lh_math_eq(end[-1], lh_char_map_space) || lh_math_eq(end[-1], lh_char_map_ht)))
     {
-        --end;
+        end = lh_math_sub_one(end);
     }
-    *digits = text;
-    *size = (authum_usize_t)(end - text);
-    return *size > 0u ? authum_bool_true : authum_bool_false;
+    lh_ptr_deref(digits) = text;
+    lh_ptr_deref(size) = (authum_usize_t)(lh_math_sub(end, text));
+    return lh_math_gt(lh_ptr_deref(size), 0u) ? authum_bool_true : authum_bool_false;
 }
 
 authum_bool_t
@@ -103,13 +111,16 @@ authum_cstr_parse_i32(const authum_char_t *text, authum_i32_t *out)
     lh_ullong_t magnitude;
 
     if (authum_null_eq(text) || authum_null_eq(out) ||
-        !authum_cstr_number_digits(text, authum_bool_true, &negative, &digits, &size) ||
-        !lh_str_ptr_parse_ullong_digits(digits, (lh_usize_t)size,
-                                        negative ? 2147483648ULL : 2147483647ULL, &magnitude))
+        !authum_cstr_number_digits(text, authum_bool_true, lh_addr_of(negative), lh_addr_of(digits),
+                                   lh_addr_of(size)) ||
+        !lh_str_ptr_parse_ullong_digits(digits, lh_cast_static(lh_usize_t, size),
+                                        negative ? 2147483648ULL : 2147483647ULL,
+                                        lh_addr_of(magnitude)))
     {
         return authum_bool_false;
     }
-    *out = negative ? (authum_i32_t)(-(lh_sllong_t)magnitude) : (authum_i32_t)magnitude;
+    lh_ptr_deref(out) = negative ? (authum_i32_t)(-lh_cast_static(lh_sllong_t, magnitude))
+                                 : lh_cast_static(authum_i32_t, magnitude);
     return authum_bool_true;
 }
 
@@ -122,12 +133,14 @@ authum_cstr_parse_u32(const authum_char_t *text, authum_u32_t *out)
     lh_ullong_t value;
 
     if (authum_null_eq(text) || authum_null_eq(out) ||
-        !authum_cstr_number_digits(text, authum_bool_false, &negative, &digits, &size) ||
-        !lh_str_ptr_parse_ullong_digits(digits, (lh_usize_t)size, 0xffffffffULL, &value))
+        !authum_cstr_number_digits(text, authum_bool_false, lh_addr_of(negative),
+                                   lh_addr_of(digits), lh_addr_of(size)) ||
+        !lh_str_ptr_parse_ullong_digits(digits, lh_cast_static(lh_usize_t, size), 0xffffffffULL,
+                                        lh_addr_of(value)))
     {
         return authum_bool_false;
     }
-    *out = (authum_u32_t)value;
+    lh_ptr_deref(out) = lh_cast_static(authum_u32_t, value);
     return authum_bool_true;
 }
 
@@ -144,20 +157,20 @@ authum_cstr_parse_bool(const authum_char_t *text, authum_bool_t *out)
         authum_cstr_eq(text, "yes", authum_bool_true) ||
         authum_cstr_eq(text, "on", authum_bool_true))
     {
-        *out = authum_bool_true;
+        lh_ptr_deref(out) = authum_bool_true;
         return authum_bool_true;
     }
     if (authum_cstr_eq(text, "false", authum_bool_true) ||
         authum_cstr_eq(text, "no", authum_bool_true) ||
         authum_cstr_eq(text, "off", authum_bool_true))
     {
-        *out = authum_bool_false;
+        lh_ptr_deref(out) = authum_bool_false;
         return authum_bool_true;
     }
-    if (!authum_cstr_parse_i32(text, &n))
+    if (!authum_cstr_parse_i32(text, lh_addr_of(n)))
     {
         return authum_bool_false;
     }
-    *out = (n != 0) ? authum_bool_true : authum_bool_false;
+    lh_ptr_deref(out) = (lh_math_ne(n, 0)) ? authum_bool_true : authum_bool_false;
     return authum_bool_true;
 }

@@ -8,6 +8,15 @@
  */
 
 #include <authum/host/events.h>
+#include <authum/memory.h>
+#include <authum/bool.h>
+#include <authum/char.h>
+#include <authum/size.h>
+#include <lh/cast/reinterpret.h>
+#include <lh/cast/static.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
+#include <lh/memory/std.h>
 
 #include <authum/null.h>
 #include <authum/unused.h>
@@ -40,8 +49,8 @@ authum_bool_t
 authum_events_sub_matches(const authum_events_sub_t *sub, authum_ptr owner,
                           const authum_char_t *name, authum_event_handler_fn fn, authum_ptr user)
 {
-    return (!sub->dead && sub->owner == owner && sub->fn == fn && sub->user == user &&
-            strcmp(sub->name, name) == 0)
+    return (!sub->dead && lh_math_eq(sub->owner, owner) && lh_math_eq(sub->fn, fn) &&
+            lh_math_eq(sub->user, user) && lh_math_eq(strcmp(sub->name, name), 0))
                ? authum_bool_true
                : authum_bool_false;
 }
@@ -49,23 +58,23 @@ authum_events_sub_matches(const authum_events_sub_t *sub, authum_ptr owner,
 void
 authum_events_sweep(void)
 {
-    authum_events_sub_t **link = &authum_events_head;
+    authum_events_sub_t **link = lh_addr_of(authum_events_head);
 
-    if (authum_events_depth != 0u)
+    if (lh_math_ne(authum_events_depth, 0u))
     {
         return;
     }
-    while (!authum_null_eq(*link))
+    while (!authum_null_eq(lh_ptr_deref(link)))
     {
-        authum_events_sub_t *sub = *link;
+        authum_events_sub_t *sub = lh_ptr_deref(link);
         if (sub->dead)
         {
-            *link = sub->next;
-            lh_runtime_allocator_free(sub);
+            lh_ptr_deref(link) = sub->next;
+            authum_memory_free(sub);
         }
         else
         {
-            link = &sub->next;
+            link = lh_addr_of(sub->next);
         }
     }
 }
@@ -74,38 +83,39 @@ authum_bool_t
 authum_events_host_subscribe(authum_ptr owner, const authum_char_t *name,
                              authum_event_handler_fn fn, authum_ptr user)
 {
-    authum_events_sub_t **link = &authum_events_head;
+    authum_events_sub_t **link = lh_addr_of(authum_events_head);
     authum_events_sub_t *sub;
     authum_usize_t len;
 
-    if (authum_null_eq(name) || fn == 0)
+    if (authum_null_eq(name) || lh_math_eq(fn, 0))
     {
         return authum_bool_false;
     }
-    len = (authum_usize_t)strlen(name);
-    if (len == 0u || len >= (authum_usize_t)authum_events_name_max)
+    len = lh_cast_static(authum_usize_t, strlen(name));
+    if (lh_math_eq(len, 0u) ||
+        lh_math_ge(len, lh_cast_static(authum_usize_t, authum_events_name_max)))
     {
         return authum_bool_false;
     }
-    while (!authum_null_eq(*link))
+    while (!authum_null_eq(lh_ptr_deref(link)))
     {
-        if (authum_events_sub_matches(*link, owner, name, fn, user))
+        if (authum_events_sub_matches(lh_ptr_deref(link), owner, name, fn, user))
         {
             return authum_bool_true;
         }
-        link = &(*link)->next;
+        link = lh_addr_of((lh_ptr_deref(link))->next);
     }
-    sub = (authum_events_sub_t *)lh_runtime_allocator_alloc(sizeof *sub);
+    sub = lh_cast_reinterpret(authum_events_sub_t *, authum_memory_alloc(sizeof lh_ptr_deref(sub)));
     if (authum_null_eq(sub))
     {
         return authum_bool_false;
     }
-    memset(sub, 0, sizeof *sub);
+    lh_memory_std_set(sub, 0, sizeof lh_ptr_deref(sub));
     sub->owner = owner;
     sub->fn = fn;
     sub->user = user;
-    memcpy(sub->name, name, (size_t)len + 1u);
-    *link = sub;
+    lh_memory_std_copy(sub->name, name, lh_math_add(lh_cast_static(authum_usize_t, len), 1u));
+    lh_ptr_deref(link) = sub;
     return authum_bool_true;
 }
 
@@ -115,7 +125,7 @@ authum_events_host_unsubscribe(authum_ptr owner, const authum_char_t *name,
 {
     authum_events_sub_t *sub;
 
-    if (authum_null_eq(name) || fn == 0)
+    if (authum_null_eq(name) || lh_math_eq(fn, 0))
     {
         return authum_bool_false;
     }
@@ -143,24 +153,24 @@ authum_events_host_publish_as(authum_ptr owner, const authum_char_t *name, authu
     {
         return best;
     }
-    ++authum_events_depth;
+    authum_events_depth = lh_math_add_one(authum_events_depth);
     for (sub = authum_events_head; !authum_null_eq(sub); sub = sub->next)
     {
-        if (sub->dead || strcmp(sub->name, name) != 0)
+        if (sub->dead || lh_math_ne(strcmp(sub->name, name), 0))
         {
             continue;
         }
         r = sub->fn(name, payload, sub->user);
-        if (r > best)
+        if (lh_math_gt(r, best))
         {
             best = r;
         }
-        if (r == authum_event_result_stop)
+        if (lh_math_eq(r, authum_event_result_stop))
         {
             break;
         }
     }
-    --authum_events_depth;
+    authum_events_depth = lh_math_sub_one(authum_events_depth);
     authum_events_sweep();
     return best;
 }
@@ -175,7 +185,7 @@ const authum_events_ops_t authum_events_host_ops_table = {
 const authum_events_ops_t *
 authum_events_host_ops(void)
 {
-    return &authum_events_host_ops_table;
+    return lh_addr_of(authum_events_host_ops_table);
 }
 
 authum_event_result_t
@@ -191,7 +201,7 @@ authum_events_host_drop_owner(authum_ptr owner)
 
     for (sub = authum_events_head; !authum_null_eq(sub); sub = sub->next)
     {
-        if (sub->owner == owner)
+        if (lh_math_eq(sub->owner, owner))
         {
             sub->dead = authum_bool_true;
         }
@@ -210,7 +220,7 @@ authum_events_host_has(const authum_char_t *name)
     }
     for (sub = authum_events_head; !authum_null_eq(sub); sub = sub->next)
     {
-        if (!sub->dead && strcmp(sub->name, name) == 0)
+        if (!sub->dead && lh_math_eq(strcmp(sub->name, name), 0))
         {
             return authum_bool_true;
         }
@@ -228,7 +238,7 @@ authum_events_host_count(void)
     {
         if (!sub->dead)
         {
-            ++n;
+            n = lh_math_add_one(n);
         }
     }
     return n;

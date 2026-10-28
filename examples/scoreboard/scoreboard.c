@@ -4,13 +4,14 @@
  *   - listens to `scores.changed` and announces it in chat;
  *   - `authum scoreboard show <index>` asks through `scores.query`.
  *
- * It only includes scores_event.h (types and names). If `scores` is not
+ * It only includes scores/event.h (types and names). If `scores` is not
  * loaded, nothing is announced and the query comes back unanswered — which
  * the command reports instead of failing.
  */
 
+#include <authum/client.h>
 #include <authum/unused.h>
-#include "scores_event.h"
+#include <scores/event.h>
 
 #include <stdio.h>
 

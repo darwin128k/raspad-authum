@@ -1,6 +1,6 @@
 #ifndef AUTHUM_HOST_LOGS_FILES_H
 #define AUTHUM_HOST_LOGS_FILES_H
-#include "writer.h"
+#include <authum/host/logs/writer.h>
 void
 authum_logs_files_set_root(const authum_path_t *dir);
 void

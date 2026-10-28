@@ -103,3 +103,7 @@ if(NOT WIN32)
     add_test(NAME authum_log_writer COMMAND authum_test_log_writer)
     set_tests_properties(authum_log_writer PROPERTIES TIMEOUT 15)
 endif()
+
+add_executable(authum_test_memory memory.c)
+target_link_libraries(authum_test_memory PRIVATE authum_client authum_test_check)
+add_test(NAME authum_memory COMMAND authum_test_memory)

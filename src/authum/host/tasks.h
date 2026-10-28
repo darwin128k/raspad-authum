@@ -2,14 +2,14 @@
 #define AUTHUM_HOST_TASKS_H
 
 #include <authum/task.h>
+#include <lh/util/ptr.h>
 
 AUTHUM_EXTERN_C_BEGIN
 
 /**
  * @brief Return the immutable host background-task operations table.
  */
-const authum_task_ops_t *
-authum_tasks_host_ops(void);
+const authum_task_ops_t lh_ptr_deref(authum_tasks_host_ops(void));
 
 /**
  * @brief Deliver a bounded batch of completions on the game thread.

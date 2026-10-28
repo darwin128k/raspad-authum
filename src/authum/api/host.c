@@ -1,4 +1,13 @@
 #include <authum/host.h>
+#include <authum/bool.h>
+#include <authum/byte.h>
+#include <authum/char.h>
+#include <authum/float.h>
+#include <authum/size.h>
+#include <lh/cast/reinterpret.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
+#include <lh/memory/std.h>
 #include <authum/logger.h>
 
 #include <stdio.h>
@@ -171,12 +180,14 @@ authum_host_clear(authum_host_t *host)
 {
     authum_usize_t size;
 
-    if (authum_null_eq(host) || host->size < sizeof host->size)
+    if (authum_null_eq(host) || lh_math_lt(host->size, sizeof host->size))
     {
         return;
     }
-    size = host->size < sizeof *host ? host->size : sizeof *host;
-    memset((char *)host + sizeof host->size, 0, size - sizeof host->size);
+    size =
+        lh_math_lt(host->size, sizeof lh_ptr_deref(host)) ? host->size : sizeof lh_ptr_deref(host);
+    lh_memory_std_set(lh_math_add(lh_cast_reinterpret(authum_char_t *, host), sizeof host->size), 0,
+                      lh_math_sub(size, sizeof host->size));
 }
 
 void
@@ -188,13 +199,13 @@ authum_host_copy(authum_host_t *dst, const authum_host_t *src)
     {
         return;
     }
-    memset(dst, 0, sizeof *dst);
-    if (authum_null_eq(src) || src->size < sizeof src->size)
+    lh_memory_std_set(dst, 0, sizeof lh_ptr_deref(dst));
+    if (authum_null_eq(src) || lh_math_lt(src->size, sizeof src->size))
     {
         return;
     }
-    size = src->size < sizeof *dst ? src->size : sizeof *dst;
-    memcpy(dst, src, size);
+    size = lh_math_lt(src->size, sizeof lh_ptr_deref(dst)) ? src->size : sizeof lh_ptr_deref(dst);
+    lh_memory_std_copy(dst, src, size);
     dst->size = size;
 }
 

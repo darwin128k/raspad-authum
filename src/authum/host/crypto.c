@@ -4,6 +4,7 @@
  */
 
 #include <authum/crypto.h>
+#include <lh/util/ptr.h>
 
 authum_bool_t
 authum_crypto_rijndael_init_impl(authum_crypto_rijndael_t *self, authum_ptr key,
@@ -41,5 +42,5 @@ static const authum_crypto_t authum_crypto_ops = {
 const authum_crypto_t *
 authum_crypto(void)
 {
-    return &authum_crypto_ops;
+    return lh_addr_of(authum_crypto_ops);
 }

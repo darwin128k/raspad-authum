@@ -1,4 +1,6 @@
 #include <authum/commands.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
 
 #include <authum/null.h>
 
@@ -23,9 +25,9 @@ authum_commands_add_all(const authum_commands_t *self, const authum_command_def_
     {
         return authum_bool_false;
     }
-    for (i = 0u; i < count; ++i)
+    for (i = 0u; lh_math_lt(i, count); i = lh_math_add_one(i))
     {
-        if (!authum_commands_add(self, &defs[i]))
+        if (!authum_commands_add(self, lh_addr_of(defs[i])))
         {
             return authum_bool_false;
         }

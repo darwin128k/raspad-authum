@@ -1,4 +1,6 @@
 #include <authum/env.h>
+#include <lh/char/map.h>
+#include <lh/math/ops.h>
 
 #include <stdio.h>
 
@@ -76,7 +78,8 @@ authum_env_config_path(const authum_env_t *env, const authum_char_t *leaf, authu
         return authum_bool_false;
     }
     authum_path_clear(out);
-    if (authum_null_eq(authum_env_module_config(env)) || authum_null_eq(leaf) || leaf[0] == '\0' ||
+    if (authum_null_eq(authum_env_module_config(env)) || authum_null_eq(leaf) ||
+        lh_math_eq(leaf[0], lh_char_map_nul) ||
         !authum_path_join(out, authum_env_module_config(env), leaf))
     {
         return authum_bool_false;
@@ -100,7 +103,7 @@ authum_env_data_path(const authum_env_t *env, const authum_char_t *leaf, authum_
         return authum_bool_false;
     }
     authum_path_clear(out);
-    if (authum_null_eq(data) || authum_null_eq(leaf) || leaf[0] == '\0')
+    if (authum_null_eq(data) || authum_null_eq(leaf) || lh_math_eq(leaf[0], lh_char_map_nul))
     {
         return authum_bool_false;
     }

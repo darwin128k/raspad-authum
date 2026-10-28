@@ -4,6 +4,17 @@
  */
 
 #include <authum/cfg.h>
+#include <authum/bool.h>
+#include <authum/byte.h>
+#include <authum/char.h>
+#include <authum/size.h>
+#include <authum/unused.h>
+#include <lh/cast/reinterpret.h>
+#include <lh/cast/static.h>
+#include <lh/char/map.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
+#include <lh/memory/std.h>
 #include <authum/cstr.h>
 
 #include <string.h>
@@ -20,7 +31,7 @@ authum_cfg_close(authum_cfg_t *self)
         fclose(self->file);
         self->file = authum_null;
     }
-    self->line[0] = '\0';
+    self->line[0] = lh_char_map_nul;
 }
 
 authum_bool_t
@@ -31,8 +42,8 @@ authum_cfg_open_cstr(authum_cfg_t *self, const authum_char_t *path)
         return authum_bool_false;
     }
     self->file = authum_null;
-    self->line[0] = '\0';
-    if (authum_null_eq(path) || path[0] == '\0')
+    self->line[0] = lh_char_map_nul;
+    if (authum_null_eq(path) || lh_math_eq(path[0], lh_char_map_nul))
     {
         return authum_bool_false;
     }
@@ -54,16 +65,17 @@ authum_cfg_adopt(authum_cfg_t *self, FILE *file)
         return authum_bool_false;
     }
     self->file = file;
-    self->line[0] = '\0';
+    self->line[0] = lh_char_map_nul;
     return authum_bool_true;
 }
 
 authum_char_t *
 authum_cfg_skip_spaces(authum_char_t *s)
 {
-    while (!authum_null_eq(s) && (*s == ' ' || *s == '\t'))
+    while (!authum_null_eq(s) && (lh_math_eq(lh_ptr_deref(s), lh_char_map_space) ||
+                                  lh_math_eq(lh_ptr_deref(s), lh_char_map_ht)))
     {
-        ++s;
+        s = lh_math_add_one(s);
     }
     return s;
 }
@@ -77,11 +89,13 @@ authum_cfg_rtrim(authum_char_t *s)
     {
         return;
     }
-    n = (authum_usize_t)strlen(s);
-    while (n > 0u &&
-           (s[n - 1u] == '\n' || s[n - 1u] == '\r' || s[n - 1u] == ' ' || s[n - 1u] == '\t'))
+    n = lh_cast_static(authum_usize_t, strlen(s));
+    while (lh_math_gt(n, 0u) && (lh_math_eq(s[lh_math_sub(n, 1u)], lh_char_map_lf) ||
+                                 lh_math_eq(s[lh_math_sub(n, 1u)], lh_char_map_cr) ||
+                                 lh_math_eq(s[lh_math_sub(n, 1u)], lh_char_map_space) ||
+                                 lh_math_eq(s[lh_math_sub(n, 1u)], lh_char_map_ht)))
     {
-        s[--n] = '\0';
+        s[--n] = lh_char_map_nul;
     }
 }
 
@@ -93,43 +107,47 @@ authum_cfg_get_value(authum_cfg_t *self, const authum_char_t *key)
     authum_char_t *key_end;
     authum_char_t *value;
 
-    if (authum_null_eq(self) || authum_null_eq(self->file) || authum_null_eq(key) || key[0] == '\0')
+    if (authum_null_eq(self) || authum_null_eq(self->file) || authum_null_eq(key) ||
+        lh_math_eq(key[0], lh_char_map_nul))
     {
         return authum_null;
     }
 
     rewind(self->file);
-    while (!authum_null_eq(fgets(self->line, (int)sizeof(self->line), self->file)))
+    while (!authum_null_eq(
+        fgets(self->line, lh_cast_static(authum_i32_t, sizeof(self->line)), self->file)))
     {
         p = authum_cfg_skip_spaces(self->line);
         authum_cfg_rtrim(p);
-        if (p[0] == '\0' || p[0] == '#' || p[0] == ';')
+        if (lh_math_eq(p[0], lh_char_map_nul) || lh_math_eq(p[0], lh_char_map_hash) ||
+            lh_math_eq(p[0], lh_char_map_semicolon))
         {
             continue;
         }
 
-        eq = strchr(p, '=');
+        eq = strchr(p, lh_char_map_equals);
         if (authum_null_eq(eq))
         {
             continue;
         }
-        *eq = '\0';
+        lh_ptr_deref(eq) = lh_char_map_nul;
         key_end = eq;
-        while (key_end > p && (key_end[-1] == ' ' || key_end[-1] == '\t'))
+        while (lh_math_gt(key_end, p) && (lh_math_eq(key_end[-1], lh_char_map_space) ||
+                                          lh_math_eq(key_end[-1], lh_char_map_ht)))
         {
-            --key_end;
-            *key_end = '\0';
+            key_end = lh_math_sub_one(key_end);
+            lh_ptr_deref(key_end) = lh_char_map_nul;
         }
-        if (p[0] == '\0' || !authum_cstr_eq(p, key, authum_bool_true))
+        if (lh_math_eq(p[0], lh_char_map_nul) || !authum_cstr_eq(p, key, authum_bool_true))
         {
             continue;
         }
 
-        value = authum_cfg_skip_spaces(eq + 1);
-        if (value != self->line)
+        value = authum_cfg_skip_spaces(lh_math_add(eq, 1));
+        if (lh_math_ne(value, self->line))
         {
-            authum_usize_t n = (authum_usize_t)strlen(value);
-            memmove(self->line, value, n + 1u);
+            authum_usize_t n = lh_cast_static(authum_usize_t, strlen(value));
+            lh_memory_std_move(self->line, value, lh_math_add(n, 1u));
         }
         return self->line;
     }
@@ -143,7 +161,7 @@ authum_cfg_get_bool(authum_cfg_t *self, const authum_char_t *key, authum_bool_t 
     authum_bool_t out;
 
     v = authum_cfg_get_value(self, key);
-    if (authum_null_eq(v) || !authum_cstr_parse_bool(v, &out))
+    if (authum_null_eq(v) || !authum_cstr_parse_bool(v, lh_addr_of(out)))
     {
         return default_value;
     }
@@ -157,7 +175,7 @@ authum_cfg_get_i32(authum_cfg_t *self, const authum_char_t *key, authum_i32_t de
     authum_i32_t out;
 
     v = authum_cfg_get_value(self, key);
-    if (authum_null_eq(v) || !authum_cstr_parse_i32(v, &out))
+    if (authum_null_eq(v) || !authum_cstr_parse_i32(v, lh_addr_of(out)))
     {
         return default_value;
     }
@@ -171,7 +189,7 @@ authum_cfg_get_u32(authum_cfg_t *self, const authum_char_t *key, authum_u32_t de
     authum_u32_t out;
 
     v = authum_cfg_get_value(self, key);
-    if (authum_null_eq(v) || !authum_cstr_parse_u32(v, &out))
+    if (authum_null_eq(v) || !authum_cstr_parse_u32(v, lh_addr_of(out)))
     {
         return default_value;
     }
@@ -187,10 +205,10 @@ authum_cfg_get_cstr(authum_cfg_t *self, const authum_char_t *key, authum_char_t 
     v = authum_cfg_get_value(self, key);
     if (authum_null_eq(v))
     {
-        (void)authum_cstr_copy(buf, buf_size, default_value);
+        authum_unused(authum_cstr_copy(buf, buf_size, default_value));
         return authum_bool_false;
     }
-    (void)authum_cstr_copy(buf, buf_size, v);
+    authum_unused(authum_cstr_copy(buf, buf_size, v));
     return authum_bool_true;
 }
 
@@ -205,11 +223,11 @@ authum_cfg_apply_bool(authum_cfg_t *self, const authum_char_t *key, authum_bool_
         return authum_bool_false;
     }
     v = authum_cfg_get_value(self, key);
-    if (authum_null_eq(v) || !authum_cstr_parse_bool(v, &parsed))
+    if (authum_null_eq(v) || !authum_cstr_parse_bool(v, lh_addr_of(parsed)))
     {
         return authum_bool_false;
     }
-    *out = parsed;
+    lh_ptr_deref(out) = parsed;
     return authum_bool_true;
 }
 
@@ -224,11 +242,11 @@ authum_cfg_apply_i32(authum_cfg_t *self, const authum_char_t *key, authum_i32_t 
         return authum_bool_false;
     }
     v = authum_cfg_get_value(self, key);
-    if (authum_null_eq(v) || !authum_cstr_parse_i32(v, &parsed))
+    if (authum_null_eq(v) || !authum_cstr_parse_i32(v, lh_addr_of(parsed)))
     {
         return authum_bool_false;
     }
-    *out = parsed;
+    lh_ptr_deref(out) = parsed;
     return authum_bool_true;
 }
 
@@ -243,11 +261,11 @@ authum_cfg_apply_u32(authum_cfg_t *self, const authum_char_t *key, authum_u32_t 
         return authum_bool_false;
     }
     v = authum_cfg_get_value(self, key);
-    if (authum_null_eq(v) || !authum_cstr_parse_u32(v, &parsed))
+    if (authum_null_eq(v) || !authum_cstr_parse_u32(v, lh_addr_of(parsed)))
     {
         return authum_bool_false;
     }
-    *out = parsed;
+    lh_ptr_deref(out) = parsed;
     return authum_bool_true;
 }
 
@@ -275,13 +293,17 @@ authum_cfg_apply_item(authum_cfg_t *self, const authum_cfg_item_t *item)
     switch (item->kind)
     {
     case authum_cfg_kind_bool:
-        return authum_cfg_apply_bool(self, item->key, (authum_bool_t *)item->ptr);
+        return authum_cfg_apply_bool(self, item->key,
+                                     lh_cast_reinterpret(authum_bool_t *, item->ptr));
     case authum_cfg_kind_i32:
-        return authum_cfg_apply_i32(self, item->key, (authum_i32_t *)item->ptr);
+        return authum_cfg_apply_i32(self, item->key,
+                                    lh_cast_reinterpret(authum_i32_t *, item->ptr));
     case authum_cfg_kind_u32:
-        return authum_cfg_apply_u32(self, item->key, (authum_u32_t *)item->ptr);
+        return authum_cfg_apply_u32(self, item->key,
+                                    lh_cast_reinterpret(authum_u32_t *, item->ptr));
     case authum_cfg_kind_cstr:
-        return authum_cfg_apply_cstr(self, item->key, (authum_char_t *)item->ptr, item->size);
+        return authum_cfg_apply_cstr(self, item->key,
+                                     lh_cast_reinterpret(authum_char_t *, item->ptr), item->size);
     default:
         return authum_bool_false;
     }
@@ -296,8 +318,8 @@ authum_cfg_apply_items(authum_cfg_t *self, const authum_cfg_item_t *items, authu
     {
         return;
     }
-    for (i = 0u; i < count; ++i)
+    for (i = 0u; lh_math_lt(i, count); i = lh_math_add_one(i))
     {
-        (void)authum_cfg_apply_item(self, &items[i]);
+        authum_unused(authum_cfg_apply_item(self, lh_addr_of(items[i])));
     }
 }

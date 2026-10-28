@@ -4,6 +4,9 @@
  */
 
 #include <authum/bool.h>
+#include <lh/cast/reinterpret.h>
+#include <lh/cast/static.h>
+#include <lh/math/ops.h>
 #include <authum/crypto/rijndael.h>
 #include <authum/null.h>
 #include <authum/ptr.h>
@@ -12,15 +15,16 @@
 #include <lh/crypto/rijndael.h>
 #include <lh/null.h>
 
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-_Static_assert(sizeof(lh_crypto_rijndael_t) <= AUTHUM_CRYPTO_RIJNDAEL_STORAGE,
+#if defined(__STDC_VERSION__) && lh_math_ge(__STDC_VERSION__, 201112L)
+_Static_assert(lh_math_le(sizeof(lh_crypto_rijndael_t), AUTHUM_CRYPTO_RIJNDAEL_STORAGE),
                "AUTHUM_CRYPTO_RIJNDAEL_STORAGE too small for lh_crypto_rijndael_t");
 #endif
 
 lh_crypto_rijndael_t *
 authum_crypto_rijndael_lh(authum_crypto_rijndael_t *self)
 {
-    return (lh_crypto_rijndael_t *)(void *)self->storage;
+    return lh_cast_reinterpret(lh_crypto_rijndael_t *,
+                               lh_cast_reinterpret(authum_ptr, self->storage));
 }
 
 authum_bool_t
@@ -33,9 +37,11 @@ authum_crypto_rijndael_init_impl(authum_crypto_rijndael_t *self, authum_ptr key,
     {
         return authum_bool_false;
     }
-    if (!lh_crypto_rijndael_init(authum_crypto_rijndael_lh(self), (lh_ptr)key, (lh_usize_t)key_size,
-                                 (lh_ptr)chain, (lh_usize_t)chain_size, (lh_usize_t)block_size,
-                                 (lh_crypto_rijndael_mode_t)mode))
+    if (!lh_crypto_rijndael_init(
+            authum_crypto_rijndael_lh(self), lh_cast_static(lh_ptr, key),
+            lh_cast_static(lh_usize_t, key_size), lh_cast_static(lh_ptr, chain),
+            lh_cast_static(lh_usize_t, chain_size), lh_cast_static(lh_usize_t, block_size),
+            lh_cast_static(lh_crypto_rijndael_mode_t, mode)))
     {
         return authum_bool_false;
     }
@@ -50,7 +56,8 @@ authum_crypto_rijndael_encrypt_block_impl(authum_crypto_rijndael_t *self, authum
     {
         return authum_bool_false;
     }
-    if (!lh_crypto_rijndael_encrypt_block(authum_crypto_rijndael_lh(self), (lh_ptr)in, (lh_ptr)out))
+    if (!lh_crypto_rijndael_encrypt_block(authum_crypto_rijndael_lh(self),
+                                          lh_cast_static(lh_ptr, in), lh_cast_static(lh_ptr, out)))
     {
         return authum_bool_false;
     }
@@ -65,7 +72,8 @@ authum_crypto_rijndael_decrypt_block_impl(authum_crypto_rijndael_t *self, authum
     {
         return authum_bool_false;
     }
-    if (!lh_crypto_rijndael_decrypt_block(authum_crypto_rijndael_lh(self), (lh_ptr)in, (lh_ptr)out))
+    if (!lh_crypto_rijndael_decrypt_block(authum_crypto_rijndael_lh(self),
+                                          lh_cast_static(lh_ptr, in), lh_cast_static(lh_ptr, out)))
     {
         return authum_bool_false;
     }

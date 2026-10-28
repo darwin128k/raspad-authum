@@ -1,5 +1,5 @@
 /**
- * @file scores_event.h
+ * @file scores/event.h
  * @brief Public events of the `scores` example module — types only.
  *
  * The owner of an event declares its name and payload in a header like this
@@ -14,7 +14,9 @@
 #ifndef SCORES_EVENT_H
 #define SCORES_EVENT_H
 
-#include <authum/client.h>
+#include <authum/bool.h>
+#include <authum/byte.h>
+#include <authum/size.h>
 
 /** Forward, published by `scores` whenever a player's score changes. */
 #define SCORES_EVENT_CHANGED "scores.changed"

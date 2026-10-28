@@ -1,12 +1,17 @@
 #include <authum/http.h>
+#include <authum/null.h>
+#include <lh/char/map.h>
+#include <lh/math/ops.h>
+#include <lh/util/ptr.h>
+#include <lh/memory/std.h>
 #include <stdio.h>
 #include <string.h>
 
 void
 authum_http_options_init(authum_http_options_t *options)
 {
-    memset(options, 0, sizeof *options);
-    options->size = sizeof *options;
+    lh_memory_std_set(options, 0, sizeof lh_ptr_deref(options));
+    options->size = sizeof lh_ptr_deref(options);
     strcpy(options->bind, "127.0.0.1");
     options->port = 17015;
     options->max_clients = 64;
@@ -15,16 +20,17 @@ authum_http_options_init(authum_http_options_t *options)
     options->timeout_seconds = 15;
     options->cpu = -1;
     options->access_log = authum_bool_true;
-    options->bytes_per_second = 8 * 1024 * 1024;
-    options->max_file_bytes = 128 * 1024 * 1024;
+    options->bytes_per_second = lh_math_mul(lh_math_mul(8, 1024), 1024);
+    options->max_file_bytes = lh_math_mul(lh_math_mul(128, 1024), 1024);
 }
 
 authum_bool_t
 authum_http_source_add(authum_http_options_t *options, const authum_char_t *path)
 {
-    if (!options || options->size < sizeof *options || !path || path[0] != '/' ||
-        options->source_count >= AUTHUM_HTTP_MAX_SOURCES ||
-        strlen(path) >= AUTHUM_HTTP_PATH_CAPACITY)
+    if (!options || lh_math_lt(options->size, sizeof lh_ptr_deref(options)) || !path ||
+        lh_math_ne(path[0], lh_char_map_slash) ||
+        lh_math_ge(options->source_count, AUTHUM_HTTP_MAX_SOURCES) ||
+        lh_math_ge(strlen(path), AUTHUM_HTTP_PATH_CAPACITY))
     {
         return authum_bool_false;
     }
@@ -43,7 +49,7 @@ authum_http_open(const authum_http_service_t *service, const authum_http_options
         {
             snprintf(error, error_size, "host has no HTTP service; update Authum");
         }
-        return NULL;
+        return authum_null;
     }
     return service->ops->open(service->owner, options, error, error_size);
 }

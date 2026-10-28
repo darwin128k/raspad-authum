@@ -13,7 +13,12 @@
  * _Z13DispatchSpawnP7edict_s), the engine looks for the plain ones. Standing
  * in for Metamod, Authum exports the plain names and forwards them.
  */
-#include "game.h"
+#include <authum/gamedll/game.h>
+#include <authum/ptr.h>
+#include <authum/char.h>
+#include <authum/null.h>
+#include <lh/cast/reinterpret.h>
+#include <lh/math/ops.h>
 
 #include <authum/export.h>
 
@@ -26,12 +31,12 @@
 namespace
 {
 /* The plain name first (a game that exports it directly), then the C++ one. */
-void *
-find_game_symbol(const char *plain, const char *mangled)
+authum_ptr
+find_game_symbol(const authum_char_t *plain, const authum_char_t *mangled)
 {
-    void *symbol = authum_gamedll::gamedll_symbol(plain);
+    authum_ptr symbol = authum_gamedll::gamedll_symbol(plain);
 
-    if (symbol == nullptr)
+    if (lh_math_eq(symbol, authum_null))
     {
         symbol = authum_gamedll::gamedll_symbol(mangled);
     }
@@ -43,9 +48,9 @@ AUTHUM_GAME_API void
 GameDLLInit(void)
 {
     typedef void (*fn_t)(void);
-    fn_t fn = reinterpret_cast<fn_t>(find_game_symbol("GameDLLInit", "_Z11GameDLLInitv"));
+    fn_t fn = lh_cast_reinterpret(fn_t, find_game_symbol("GameDLLInit", "_Z11GameDLLInitv"));
 
-    if (fn != nullptr)
+    if (lh_math_ne(fn, authum_null))
     {
         fn();
     }
@@ -56,9 +61,9 @@ DispatchSpawn(edict_t *pent)
 {
     typedef void (*fn_t)(edict_t *);
     fn_t fn =
-        reinterpret_cast<fn_t>(find_game_symbol("DispatchSpawn", "_Z13DispatchSpawnP7edict_s"));
+        lh_cast_reinterpret(fn_t, find_game_symbol("DispatchSpawn", "_Z13DispatchSpawnP7edict_s"));
 
-    if (fn != nullptr)
+    if (lh_math_ne(fn, authum_null))
     {
         fn(pent);
     }
