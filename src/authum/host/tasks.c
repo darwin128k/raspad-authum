@@ -14,13 +14,13 @@ typedef struct authum_task_worker
     lh_os_worker_t *worker;
 } authum_task_worker_t;
 
-/* Both pointers are null when empty; a nonempty tail always has next == null. */
 enum
 {
     authum_task_worker_capacity = 64,
     authum_task_completion_budget = 16
 };
 
+/* Both pointers are null when empty; a nonempty tail always has next == null. */
 static authum_task_worker_t *m_workers;
 static authum_task_worker_t *m_workers_tail;
 static authum_usize_t m_dispatching;
