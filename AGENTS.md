@@ -1,3 +1,22 @@
+# Concept — read first
+
+These are the owner's standing requirements. They are repeated in every
+session; do not make the owner repeat them again.
+
+- **LH is the box of bricks; Authum is the mechanism built from them.**
+  Authum is a transparent facade over LH: gamedll proxy, module loader,
+  module lifecycle and host-owned state (sandbox, events, commands, tasks,
+  shared HTTP service, log channels, placeholders). Nothing generic is
+  implemented in Authum. If a brick is missing, add it to LH first, then
+  wrap it as a thin `authum_*` facade with no logic of its own.
+- **The LH rules apply to Authum code too:** one file — one entity, decompose
+  and delegate, no parallel implementations or detours, `try_` + checked
+  pairs, names that say what they return, a test per brick, full briefs.
+  They are in [lib/lh/AGENTS.md](lib/lh/AGENTS.md) — read it.
+- **Open work** lives in [docs/cleanup.md](docs/cleanup.md). Check it before
+  starting; add debt you find there instead of fixing it silently.
+- Do not commit unless the owner asks. Commits carry no AI attribution.
+
 # Authum implementation conventions
 
 - Use Authum types and `authum_null` in Authum code; keep native types at actual ABI boundaries.
