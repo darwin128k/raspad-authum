@@ -8,6 +8,7 @@
  * and its context must remain compatible while its blocks exist; threads
  * exchanging blocks must use compatible runtime allocators.
  */
+
 #ifndef AUTHUM_MEMORY_H
 #define AUTHUM_MEMORY_H
 
