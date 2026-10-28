@@ -6,11 +6,13 @@
 #if defined(_WIN32)
 #    include <windows.h>
 typedef DWORD thread_id_t;
+
 thread_id_t
 thread_id(void)
 {
     return GetCurrentThreadId();
 }
+
 void
 pause_ms(void)
 {
@@ -20,11 +22,13 @@ pause_ms(void)
 #    include <pthread.h>
 #    include <time.h>
 typedef pthread_t thread_id_t;
+
 thread_id_t
 thread_id(void)
 {
     return pthread_self();
 }
+
 void
 pause_ms(void)
 {
@@ -37,6 +41,7 @@ static atomic_int release_work, worked;
 static int completed, destroyed, worker_is_main;
 static thread_id_t main_thread;
 static const authum_tasks_t *closing_tasks;
+
 void
 work(void *user)
 {
@@ -48,6 +53,7 @@ work(void *user)
     }
     atomic_fetch_add(&worked, 1);
 }
+
 void
 complete(void *user)
 {
@@ -55,6 +61,7 @@ complete(void *user)
     CHECK(thread_id() == main_thread);
     ++completed;
 }
+
 void
 destroy(void *user)
 {
@@ -62,8 +69,11 @@ destroy(void *user)
     CHECK(thread_id() == main_thread);
     ++destroyed;
     if (closing_tasks)
+    {
         CHECK(!authum_tasks_submit(closing_tasks, work, NULL, NULL, NULL));
+    }
 }
+
 void
 pump_until(int count)
 {
@@ -75,10 +85,12 @@ pump_until(int count)
     }
     CHECK(completed == count);
 }
+
 typedef struct sql_case
 {
     int value, wrong_thread, success, connected;
 } sql_case_t;
+
 authum_bool_t
 sql_work(authum_sql_t *db, void *user)
 {
@@ -100,25 +112,31 @@ sql_work(authum_sql_t *db, void *user)
     authum_sql_stmt_finalize(&stmt);
     return authum_bool_true;
 }
+
 authum_bool_t
 sql_bad(authum_sql_t *db, void *user)
 {
     authum_unused(user);
     return authum_sql_exec(db, "SELECT * FROM missing_table");
 }
-authum_bool_t sql_swallowed(authum_sql_t *db, void *user)
+
+authum_bool_t
+sql_swallowed(authum_sql_t *db, void *user)
 {
     authum_unused(user);
     (void)authum_sql_exec(db, "SELECT * FROM missing_table");
     return authum_sql_exec(db, "SELECT 1");
 }
-authum_bool_t sql_handled(authum_sql_t *db, void *user)
+
+authum_bool_t
+sql_handled(authum_sql_t *db, void *user)
 {
     authum_unused(user);
     (void)authum_sql_exec(db, "SELECT * FROM missing_table");
     authum_sql_clear_errors(db);
     return authum_sql_exec(db, "SELECT 1");
 }
+
 void
 sql_complete(const authum_sql_thread_result_t *result, void *user)
 {
@@ -132,6 +150,7 @@ sql_complete(const authum_sql_thread_result_t *result, void *user)
     }
     ++completed;
 }
+
 int
 main(void)
 {
@@ -178,7 +197,13 @@ main(void)
     memset(&connection, 0, sizeof connection);
     connection.driver = authum_sql_driver_sqlite;
     connection.path = path;
+    char optional[] = "copied option";
+    connection.host = optional;
+    connection.user = "";
+    connection.database = optional;
+    connection.password = optional;
     CHECK(authum_sql_thread_query(&host, &connection, sql_work, sql_complete, NULL, &sql));
+    memset(optional, 'x', sizeof optional - 1);
     memset(path, 'x', sizeof path - 1); /* request owns its copy */
     pump_until(65);
     CHECK(sql.value == 42);
@@ -196,6 +221,14 @@ main(void)
     CHECK(authum_sql_thread_query(&host, &connection, sql_handled, sql_complete, NULL, &sql));
     pump_until(68);
     CHECK(sql.success); /* explicit acknowledgement permits an intentional fallback */
+    /* Missing SQLite path fails asynchronously and still releases the payload. */
+    memset(&connection, 0, sizeof connection);
+    connection.driver = authum_sql_driver_sqlite;
+    CHECK(authum_sql_thread_query(&host, &connection, sql_work, sql_complete, destroy, &sql));
+    pump_until(69);
+    CHECK(!sql.connected);
+    CHECK(!sql.success);
+    CHECK(destroyed == 75);
     authum_tasks_host_drop_owner(&owner);
     return authum_check_report("tasks + threaded SQL");
 }

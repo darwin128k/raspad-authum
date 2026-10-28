@@ -1,6 +1,7 @@
 #include <authum/sql/thread.h>
 #include <lh/sql/mysql/api.h>
-#include <lh/os/shared.h>
+#include <authum/crypto/ed25519.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -13,7 +14,8 @@ typedef struct authum_sql_thread_job
     authum_task_fn destroy;
     authum_ptr user;
     authum_sql_thread_result_t result;
-    char *strings[6];
+    size_t strings_size;
+    char strings[];
 } authum_sql_thread_job_t;
 
 authum_bool_t
@@ -41,24 +43,17 @@ authum_sql_thread_run(authum_ptr arg)
 {
     authum_sql_thread_job_t *job = arg;
     authum_sql_t db;
-    void (*thread_end)(void) = NULL;
-    /* mysql_init initializes the client's per-thread state. Release it before
-     * returning to the reusable host worker (library stays loaded by client).
-     */
-    if (job->connection.driver == authum_sql_driver_mysql)
-    {
-        const lh_sql_mysql_api_t *api = lh_sql_mysql_api_get_default();
-        if (api)
-        {
-            thread_end = (void (*)(void))lh_os_shared_get_fn(&api->image, "mysql_thread_end");
-        }
-    }
+    const lh_sql_mysql_api_t *api =
+        job->connection.driver == authum_sql_driver_mysql ? lh_sql_mysql_api_get_default() : NULL;
     authum_sql_init(&db);
     job->result.connected = authum_sql_connect(&db, &job->connection);
     if (job->result.connected)
     {
         job->result.success = job->work(&db, job->user);
-        if (authum_sql_first_error(&db)[0]) job->result.success = authum_bool_false;
+        if (authum_sql_first_error(&db)[0])
+        {
+            job->result.success = authum_bool_false;
+        }
     }
     if (!job->result.connected || !job->result.success)
     {
@@ -66,11 +61,12 @@ authum_sql_thread_run(authum_ptr arg)
                  authum_sql_first_error(&db)[0] ? authum_sql_first_error(&db) : "SQL task failed");
     }
     authum_sql_close(&db);
-    if (thread_end)
+    if (api)
     {
-        thread_end();
+        lh_sql_mysql_api_thread_end(api);
     }
 }
+
 void
 authum_sql_thread_finish(authum_ptr arg)
 {
@@ -80,28 +76,16 @@ authum_sql_thread_finish(authum_ptr arg)
         job->complete(&job->result, job->user);
     }
 }
+
 void
 authum_sql_thread_free(authum_ptr arg)
 {
     authum_sql_thread_job_t *job = arg;
-    unsigned i;
     if (job->destroy)
     {
         job->destroy(job->user);
     }
-    for (i = 0; i < 6; ++i)
-    {
-        if (i == 4 && job->strings[i])
-        {
-            volatile char *p = job->strings[i];
-            size_t n = strlen(job->strings[i]);
-            while (n--)
-            {
-                *p++ = 0;
-            }
-        }
-        free(job->strings[i]);
-    }
+    authum_crypto_wipe(job->strings, job->strings_size);
     free(job);
 }
 
@@ -111,8 +95,8 @@ authum_sql_thread_query(const authum_host_t *host, const authum_sql_connection_t
                         authum_task_fn destroy, authum_ptr user)
 {
     authum_sql_thread_job_t *job;
-    const char *values[6];
-    const char **fields[6];
+    size_t strings_size = 0;
+    char *next;
     unsigned i;
     if (!c || !work || !authum_host_tasks(host))
     {
@@ -125,37 +109,37 @@ authum_sql_thread_query(const authum_host_t *host, const authum_sql_connection_t
     {
         return authum_bool_false;
     }
-    job = calloc(1, sizeof *job);
+    const char *values[] = {c->path, c->host, c->user, c->database, c->password};
+    for (i = 0; i < sizeof values / sizeof values[0]; ++i)
+    {
+        if (values[i])
+        {
+            size_t length = strlen(values[i]);
+            if (length >= SIZE_MAX - sizeof *job - strings_size)
+            {
+                return authum_bool_false;
+            }
+            strings_size += length + 1;
+        }
+    }
+    job = calloc(1, sizeof *job + strings_size);
     if (!job)
     {
         return authum_bool_false;
     }
     job->connection = *c;
-    values[0] = c->path;
-    values[1] = c->host;
-    values[2] = c->user;
-    values[3] = c->database;
-    values[4] = c->password;
-    values[5] = NULL;
-    fields[0] = &job->connection.path;
-    fields[1] = &job->connection.host;
-    fields[2] = &job->connection.user;
-    fields[3] = &job->connection.database;
-    fields[4] = &job->connection.password;
-    fields[5] = NULL;
-    for (i = 0; i < 5; ++i)
+    job->strings_size = strings_size;
+    next = job->strings;
+    const char **fields[] = {&job->connection.path, &job->connection.host, &job->connection.user,
+                             &job->connection.database, &job->connection.password};
+    for (i = 0; i < sizeof values / sizeof values[0]; ++i)
     {
         if (values[i])
         {
-            size_t n = strlen(values[i]) + 1;
-            job->strings[i] = malloc(n);
-            if (!job->strings[i])
-            {
-                authum_sql_thread_free(job);
-                return authum_bool_false;
-            }
-            memcpy(job->strings[i], values[i], n);
-            *fields[i] = job->strings[i];
+            size_t length = strlen(values[i]) + 1;
+            memcpy(next, values[i], length);
+            *fields[i] = next;
+            next += length;
         }
     }
     job->work = work;
