@@ -9,6 +9,11 @@ session; do not make the owner repeat them again.
   shared HTTP service, log channels, placeholders). Nothing generic is
   implemented in Authum. If a brick is missing, add it to LH first, then
   wrap it as a thin `authum_*` facade with no logic of its own.
+- **No raw fields, anywhere.** A struct's fields are touched only by its own
+  level-1 getters / setters; everything else — its own `.c` file included,
+  Authum and LH alike — goes through them, and functions are layered (level 1
+  touches fields, level 2 uses level 1, ...). Full rule: `lib/lh/AGENTS.md`
+  section 0.0.
 - **First rule: use the bricks that exist.** The owner: "Why did we create all
   these wrappers at all, if nobody uses them — not even LH itself?" Code that
   re-implements an existing LH brick (a character literal instead of

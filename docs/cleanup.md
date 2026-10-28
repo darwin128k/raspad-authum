@@ -7,15 +7,20 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 
 ## LH (first)
 
-- [ ] **BUG, found by AddressSanitizer (Linux build `build-lh-concurrency`):**
-  word-at-a-time reads past the end of the buffer.
-  - `lh_memory_find_step` (`src/lh/memory.c:368`) through
-    `lh_memory_bytes_find` (`include/lh/util/memory.h:235`):
-    stack-buffer-overflow, test `memory_scan.finds_first_byte`;
-  - `lh_str_ptr_equals` (`src/lh/util/str/ptr.c:1151`) through
-    `lh_memory_bytes_eq_cstr` (`include/lh/util/memory.h:160`):
-    global-buffer-overflow, test `str_raw_equals.returns_true_only_if_strings_are_identical`.
-  Owner: fix it. `lh_memory_find_step` is also a 156-line monolith.
+- [ ] **Order every module by level** (AGENTS.md 0.0, `tools/order-levels.py`).
+  Done: `memory/view` (10 levels), `memory/bounds`, `memory/typed` (9 levels),
+  `str/view` (4), `wstr/view` (2).
+- [ ] **Raw fields outside accessors** (AGENTS.md 0.0): 1856 uses in 97 LH
+  files (`crypto/sha.c` 128, `os/window.c` 118, `os/system/posix/window.c` 116,
+  `net/modbus/link.c` 91, `ui/canvas.c` 89, `ui/view.c` 85, ...) and 199 in 16
+  Authum files (`api/array.c` 31, `api/path.c` 21, `api/sql.c` 18,
+  `host/child.c` 17, ...). Each struct gets level-1 accessors; everything else
+  goes through them.
+- [ ] **The OS is the whole, the parts sit under it today** (AGENTS.md 0.1.1).
+  The portable filesystem, network, threads, windows live under `lh/os/*`
+  (`lh/os/fs/file.h`, `lh/os/net/...`); by the owner's concept they are parts
+  (`lh/fs/...` beside the pure data already there) and `lh/os` assembles them.
+  A large rename: plan the target tree with the owner first.
 - [ ] **`lh/sql/mysql/api.h`:** 17 function-type typedefs, the table struct and
   its loader in one header (one file — one entity); `options` and
   `thread_end` declared by hand beside `lh_sql_mysql_api_fields`. The name
@@ -31,7 +36,7 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   (decompose, delegate). Done: `lh/memory/allocator`. 64 functions exceed 60
   lines, 13 exceed 100. Worst: `lh_ui_web_page_build` (774, `ui/web/page.c`),
   `lh_os_system_window_open` (211, posix), `lh_os_system_win_window_proc` (207),
-  `lh_ui_canvas_web_put_head` (156), `lh_memory_find_step` (156),
+  `lh_ui_canvas_web_put_head` (156), `lh_memory_rfind_step` (92; `lh_memory_find_step` done),
   `lh_mb_link_poll` (155), `lh_memory_std_copy` (127), `lh_ui_decl_build` (114),
   `lh_str_ptr_format_float` (112), `lh_ui_web_host_ws_ingest` (105).
 - [ ] **One file — one entity.** Done: 16 enums and 17 helper structs moved to
