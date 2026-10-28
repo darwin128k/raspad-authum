@@ -44,4 +44,5 @@ authum_logger_buffer_log_v(authum_logger_t *logger, authum_logger_level_t level,
                            const authum_char_t *fmt, va_list ap);
 
 AUTHUM_EXTERN_C_END
+
 #endif

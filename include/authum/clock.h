@@ -19,4 +19,5 @@ authum_i64_t
 authum_clock_monotonic_ms(const authum_clock_t *clock);
 
 AUTHUM_EXTERN_C_END
+
 #endif

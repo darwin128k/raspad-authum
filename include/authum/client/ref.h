@@ -34,4 +34,5 @@ authum_bool_t
 authum_client_ref_is_current(const authum_clients_t *self, const authum_client_ref_t *ref);
 
 AUTHUM_EXTERN_C_END
+
 #endif

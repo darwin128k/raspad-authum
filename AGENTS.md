@@ -18,6 +18,10 @@ session; do not make the owner repeat them again.
 - **From smaller to larger, no extra includes.** Each brick builds only on
   smaller ones; a file never includes a header that one of its includes
   already brings in. Check with `python tools/check-includes.py` (0 required).
+- **`extern "C"` wraps only what has linkage** (functions, `extern` objects,
+  function-type typedefs); structs, enums, plain typedefs and macros go before
+  it. Check with `python tools/check-extern-c.py` (0 required). `gamedll/` is
+  C++ and keeps C++ linkage.
 - **The LH rules apply to Authum code too:** one file — one entity, decompose
   and delegate, no parallel implementations or detours, `try_` + checked
   pairs, names that say what they return, a test per brick, full briefs.

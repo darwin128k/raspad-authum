@@ -88,6 +88,8 @@ struct authum_http_server
     authum_char_t logs[AUTHUM_HTTP_LOG_CAPACITY][AUTHUM_HTTP_LOG_LINE_CAPACITY];
 };
 
+AUTHUM_EXTERN_C_BEGIN
+
 authum_i64_t
 authum_http_now_ms(void);
 
@@ -166,5 +168,7 @@ authum_http_client_read(authum_http_server_t *server, authum_http_client_t *clie
 void
 authum_http_client_write(authum_http_server_t *server, authum_http_client_t *client,
                          authum_i64_t now, double *tokens);
+
+AUTHUM_EXTERN_C_END
 
 #endif

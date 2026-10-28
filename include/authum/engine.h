@@ -179,9 +179,9 @@ enum
     authum_engine_cvar_unlogged = 256
 };
 
-AUTHUM_EXTERN_C_BEGIN
-
 /* --- server ------------------------------------------------------------ */
+
+AUTHUM_EXTERN_C_BEGIN
 
 void
 authum_engine_get_game_dir(const authum_engine_t *engine, authum_char_t *buf,

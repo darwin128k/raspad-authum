@@ -91,4 +91,5 @@ authum_usize_t
 authum_http_memory_usage(const authum_http_service_t *service, const authum_http_server_t *server);
 
 AUTHUM_EXTERN_C_END
+
 #endif

@@ -1,33 +1,70 @@
 #!/usr/bin/env python3
-"""Find data types declared inside an extern "C" block.
+"""Check that extern "C" wraps the functions of a header and nothing else.
 
-`extern "C"` gives linkage to functions; a struct, an enum or a plain typedef
-has none, so it is declared outside the block. Function declarations and
-function-type typedefs (a C++ function type carries its language linkage)
-stay inside.
+`extern "C"` gives linkage to functions. Function declarations, inline
+function definitions and function-type typedefs (a C++ function type carries
+its language linkage) go inside the block; structs, enums, plain typedefs and
+macros have no linkage and go outside.
 
-    python tools/check-extern-c.py          # report, exit 1 when anything is found
-    python tools/check-extern-c.py --fix    # close the block around the data types
+    python tools/check-extern-c.py          # report, exit 1 when anything is wrong
+    python tools/check-extern-c.py --fix    # rebuild the blocks of every header
 
-The fix keeps every declaration in its place: it ends the block before a run
-of data types and opens it again before the next function, then drops blocks
-left empty. A region with a preprocessor conditional is reported, not fixed.
-Line endings are kept.
+Only headers that already use LH_COMPILER_EXTERN_C_* / AUTHUM_EXTERN_C_* are
+rebuilt. The fix removes the markers and wraps each run of functions in one
+BEGIN / END pair; declarations keep their order. A conditional (#if) that
+mixes types and functions is reported for a hand fix. Line endings are kept.
 """
 
+import importlib.util
 import os
 import re
 import sys
 
 SCAN = ('lib/lh/include', 'lib/lh/src', 'include', 'src')
-SKIP = ('sqlite', 'monocypher', 'hlsdk', '/build')
+SKIP = ('sqlite', 'monocypher', 'hlsdk', '/build', 'src/authum/gamedll')  # gamedll is C++
 PAIRS = (('LH_COMPILER_EXTERN_C_BEGIN', 'LH_COMPILER_EXTERN_C_END'),
          ('AUTHUM_EXTERN_C_BEGIN', 'AUTHUM_EXTERN_C_END'))
 DATA_START = re.compile(r'^(typedef\b|struct \w+\s*(\{.*)?$|enum\b|union \w+)')
+COND_OPEN = re.compile(r'^\s*#\s*(if|ifdef|ifndef)\b')
+COND_CLOSE = re.compile(r'^\s*#\s*endif\b')
+
+
+def code_part(line):
+    """@p line without a trailing comment."""
+    line = re.sub(r'/\*.*?\*/', '', line)
+    return re.sub(r'//.*$', '', line).rstrip()
+
+
+def declaration_end(lines, i, end):
+    """Index of the last line of the declaration or definition starting at @p i."""
+    depth = 0
+    opened = False
+    j = i
+    while j < end:
+        text = code_part(lines[j])
+        opened = opened or '{' in text
+        depth += text.count('{') - text.count('}')
+        if depth <= 0 and (text.endswith(';') or (opened and text.endswith('}'))):
+            return j
+        j += 1
+    return end - 1
+
+
+def classify(text):
+    head = text.lstrip().split('\n', 1)[0]
+    # Forward declarations, constant objects and static assertions have no C linkage to keep.
+    if re.match(r'^(struct|union|enum) \w+;', head) or head.startswith(('static ', 'lh_assert_static')):
+        return 'data'
+    if DATA_START.match(head):
+        # `typedef R (name)(...)` or `typedef R (*name)(...)`; not `__attribute__((...))`.
+        is_function_type = (head.startswith('typedef') and '{' not in text and
+                            re.search(r'\(\s*\*?\s*\w+\s*\)\s*\(', code_part(text)) is not None)
+        return 'code' if is_function_type else 'data'
+    return 'code'
 
 
 def items(lines, begin, end):
-    """Split lines (begin, end) into [(kind, first, last)]; kind is data / code / blank."""
+    """Split lines [begin, end) into [(kind, first, last)]: data, code, blank, mixed."""
     result = []
     i = begin
     while i < end:
@@ -37,120 +74,160 @@ def items(lines, begin, end):
             i += 1
             continue
         first = i
-        # A comment belongs to the declaration after it.
-        if line.lstrip().startswith('/*'):
-            while '*/' not in lines[i]:
+        if line.lstrip().startswith(('/*', '//')):
+            while line.lstrip().startswith('/*') and '*/' not in lines[i]:
                 i += 1
-            if i + 1 < end and lines[i + 1].strip() and not lines[i + 1].lstrip().startswith('/*'):
-                i += 1
+            nxt = lines[i + 1] if i + 1 < end else ''
+            if nxt.strip() and not nxt.lstrip().startswith(('/*', '//')):
+                i += 1  # the comment documents the next declaration
             else:
-                result.append(('code', first, i))
+                result.append(('comment', first, i))
                 i += 1
                 continue
         head = lines[i]
-        j = i
         if head.lstrip().startswith('#'):
-            # A directive with its continuation lines. A macro has no linkage,
-            # like a type; a conditional cannot be split safely.
-            while lines[j].rstrip().endswith('\\') and j + 1 < end:
-                j += 1
-            if re.match(r'^\s*#\s*(if|ifdef|ifndef)\b', head):
-                # A conditional that only chooses macros is data as a whole.
+            if COND_OPEN.match(head):
                 depth = 0
-                only_directives = True
                 k = i
+                inner = []
                 while k < end:
-                    stripped = lines[k].strip()
-                    if re.match(r'#\s*(if|ifdef|ifndef)\b', stripped):
+                    if COND_OPEN.match(lines[k]):
                         depth += 1
-                    elif re.match(r'#\s*endif\b', stripped):
+                    elif COND_CLOSE.match(lines[k]):
                         depth -= 1
-                    elif stripped and not stripped.startswith(('#', '/*', '*', '//')) and \
-                            not lines[k - 1].rstrip().endswith('\\'):
-                        only_directives = False
                     if depth == 0:
                         break
                     k += 1
-                result.append(('data' if only_directives and depth == 0 else 'pre', first, k))
+                kinds = {kind for kind, _, _ in items(lines, i + 1, k)
+                         if kind in ('data', 'code', 'mixed')}
+                kind = 'mixed' if len(kinds) > 1 or 'mixed' in kinds else (kinds.pop() if kinds else 'data')
+                result.append((kind, first, k))
                 i = k + 1
                 continue
-            conditional = re.match(r'^\s*#\s*(elif|else|endif)\b', head)
-            result.append(('pre' if conditional else 'data', first, j))
+            j = i
+            while lines[j].rstrip().endswith('\\') and j + 1 < end:
+                j += 1
+            result.append(('data', first, j))  # a macro or another directive
             i = j + 1
             continue
-        depth = 0
-        while j < end:
-            depth += lines[j].count('{') - lines[j].count('}')
-            if depth <= 0 and lines[j].rstrip().endswith(';'):
-                break
-            j += 1
-        text = '\n'.join(lines[i:j + 1])
-        kind = 'code'
-        if DATA_START.match(head):
-            is_function_type = (head.startswith('typedef') and '{' not in text
-                                and '(' in text)
-            kind = 'code' if is_function_type else 'data'
-        result.append((kind, first, j))
+        j = declaration_end(lines, i, end)
+        result.append((classify('\n'.join(lines[i:j + 1])), first, j))
         i = j + 1
     return result
 
 
-def regions(lines):
-    for begin_mark, end_mark in PAIRS:
-        i = 0
-        while i < len(lines):
-            if lines[i].strip() == begin_mark:
-                j = i + 1
-                while j < len(lines) and lines[j].strip() != end_mark:
-                    j += 1
-                yield begin_mark, end_mark, i, j
-                i = j
-            i += 1
+def body(lines):
+    """[begin, end) of the declarations: after the top includes, before the guard's #endif."""
+    guard_end = max(i for i, line in enumerate(lines) if COND_CLOSE.match(line))
+    begin = 0
+    for i, line in enumerate(lines[:guard_end]):
+        if line.startswith('#include') or re.match(r'#define \w+_H\b', line):
+            begin = i + 1
+        elif line.strip() and not line.startswith('#') and not line.lstrip().startswith(('/*', '*')):
+            break
+    return begin, guard_end
 
 
-def rewrite(lines):
-    """Return (new lines, data types moved, regions skipped)."""
-    for begin_mark, end_mark, begin, end in regions(lines):
-        parts = items(lines, begin + 1, end)
-        if not any(kind == 'data' for kind, _, _ in parts):
-            continue
-        if any(kind == 'pre' for kind, _, _ in parts):
-            return lines, 0, 1
-        out = lines[:begin]
-        inside = False
-        moved = 0
-        for kind, first, last in parts:
-            chunk = lines[first:last + 1]
-            if kind == 'data' and inside:
+def branches(lines, first, last):
+    """Directive lines and [begin, end) branches of the conditional in [first, last]."""
+    marks = [first]
+    depth = 0
+    for k in range(first, last + 1):
+        if COND_OPEN.match(lines[k]):
+            depth += 1
+        elif COND_CLOSE.match(lines[k]):
+            depth -= 1
+        elif depth == 1 and re.match(r'^\s*#\s*(else|elif)\b', lines[k]):
+            marks.append(k)
+    marks.append(last)
+    return marks
+
+
+def emit(plain, begin, end, begin_mark, end_mark):
+    """Lines [begin, end) with each run of functions wrapped; the block is closed at the end."""
+    out = []
+    inside = False
+    for kind, first, last in items(plain, begin, end):
+        if kind == 'mixed':
+            # Close the block, then wrap each branch of the conditional on its own.
+            if inside:
                 while out and not out[-1].strip():
                     out.pop()
                 out += ['', end_mark, '']
                 inside = False
-            if kind == 'code' and not inside:
-                while out and not out[-1].strip():
-                    out.pop()
-                out += ['', begin_mark, '']
-                inside = True
-            if kind == 'data':
-                moved += 1
-            if kind == 'blank' and out and not out[-1].strip():
-                continue
-            out += chunk
-        while out and not out[-1].strip():
-            out.pop()
-        if inside:
-            out += ['', end_mark]
-        rest = lines[end + 1:]
-        new = out + rest
-        again, more, skipped = rewrite(new)
-        return again, moved + more, skipped
-    return lines, 0, 0
+            marks = branches(plain, first, last)
+            for a, b in zip(marks, marks[1:]):
+                out.append(plain[a])
+                inner = emit(plain, a + 1, b, begin_mark, end_mark)
+                if inner and inner[0].strip():
+                    out.append('')
+                out += inner
+                if out and out[-1].strip():
+                    out.append('')
+            out.append(plain[last])
+            continue
+        if kind == 'data' and inside:
+            while out and not out[-1].strip():
+                out.pop()
+            out += ['', end_mark, '']
+            inside = False
+        elif kind == 'code' and not inside:
+            while out and not out[-1].strip():
+                out.pop()
+            out += ['', begin_mark, '']
+            inside = True
+        if kind == 'blank' and out and not out[-1].strip():
+            continue
+        out += plain[first:last + 1]
+    while out and not out[-1].strip():
+        out.pop()
+    if inside:
+        out += ['', end_mark]
+    return out
+
+
+def rebuild(lines, begin_mark, end_mark):
+    """Lines with the extern "C" markers rebuilt around exactly the functions."""
+    plain = [line for line in lines if line.strip() not in (begin_mark, end_mark)]
+    begin, end = body(plain)
+    out = plain[:begin] + emit(plain, begin, end, begin_mark, end_mark) + [''] + plain[end:]
+    return re.sub(r'\n{3,}', '\n\n', '\n'.join(out)).split('\n')
+
+
+def with_marker_header(lines, path):
+    """@p lines with the header that defines the markers, unless an include already brings it."""
+    spec = importlib.util.spec_from_file_location(
+        'check_includes', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'check-includes.py'))
+    includes = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(includes)
+    needed = 'lh/compiler/extern/c.h' if path.startswith('lib/lh/') else 'authum/extern.h'
+    seen = set()
+    for line in lines:
+        match = includes.INCLUDE.match(line)
+        if match:
+            includes.closure(match.group(1), seen)
+    if needed in seen:
+        return lines
+    last = max(i for i, line in enumerate(lines) if line.startswith('#include'))
+    return lines[:last + 1] + [f'#include <{needed}>'] + lines[last + 1:]
+
+
+def declares_function(lines):
+    """Whether the header declares or defines a function (name at column 0, return type above)."""
+    for i, line in enumerate(lines[1:], 1):
+        above = code_part(lines[i - 1]).strip()
+        if line.startswith('lh_assert_static'):
+            continue
+        if (re.match(r'^[a-z_]\w*\s*\(', line) and above and not above.startswith('#')
+                and not above.endswith((';', '{', '}', ',', '\\'))):
+            return True
+    return False
 
 
 def main():
     fix = '--fix' in sys.argv[1:]
-    total = 0
-    skipped = []
+    wrong = []
+    manual = []
     for root in SCAN:
         for directory, _, names in os.walk(root):
             if any(s in directory.replace(os.sep, '/') for s in SKIP):
@@ -162,21 +239,35 @@ def main():
                 raw = open(path, 'rb').read().decode('utf-8')
                 newline = '\r\n' if '\r\n' in raw else '\n'
                 lines = raw.replace('\r\n', '\n').split('\n')
-                new, moved, skip = rewrite(lines)
-                if skip:
-                    skipped.append(path)
-                if not moved:
+                if not any(line.strip() in pair for line in lines for pair in PAIRS) and \
+                        declares_function(lines):
+                    # A header with functions and no block at all: give it one.
+                    pair = PAIRS[0] if path.startswith('lib/lh/') else PAIRS[1]
+                    new = rebuild(lines, *pair)
+                    if new != lines:
+                        wrong.append(path)
+                        if fix:
+                            new = with_marker_header(new, path)
+                            open(path, 'wb').write('\n'.join(new).replace('\n', newline).encode('utf-8'))
                     continue
-                total += moved
-                print(f'{path}: {moved} data type(s) inside extern "C"')
-                if fix:
-                    text = '\n'.join(new)
-                    text = re.sub(r'\n{3,}', '\n\n', text)
-                    open(path, 'wb').write(text.replace('\n', newline).encode('utf-8'))
-    for path in skipped:
-        print(f'{path}: has a conditional inside extern "C"; fix by hand')
-    print(f'{total} data type(s){" moved out" if fix else ""}; {len(skipped)} file(s) to fix by hand.')
-    return 0 if (fix or not total) and not skipped else 1
+                for begin_mark, end_mark in PAIRS:
+                    if not any(line.strip() in (begin_mark, end_mark) for line in lines):
+                        continue
+                    new = rebuild(lines, begin_mark, end_mark)
+                    if new is None:
+                        manual.append(path)
+                        continue
+                    if new != lines:
+                        wrong.append(path)
+                        if fix:
+                            open(path, 'wb').write('\n'.join(new).replace('\n', newline).encode('utf-8'))
+                            lines = new
+    for path in wrong:
+        print(f'{path}: extern "C" does not wrap exactly its functions{" (fixed)" if fix else ""}')
+    for path in manual:
+        print(f'{path}: a conditional mixes types and functions; fix by hand')
+    print(f'{len(wrong)} header(s){" fixed" if fix else " to fix"}; {len(manual)} by hand.')
+    return 0 if (fix or not wrong) and not manual else 1
 
 
 if __name__ == '__main__':

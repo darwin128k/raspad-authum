@@ -19,14 +19,14 @@
 #include <authum/extern.h>
 #include <authum/null.h>
 
-AUTHUM_EXTERN_C_BEGIN
-
 /** File name (no directory) of the HLDS engine library. */
 #if defined(_WIN32)
 #define AUTHUM_SYMBOL_ENGINE_LIBRARY "swds.dll"
 #else
 #define AUTHUM_SYMBOL_ENGINE_LIBRARY "engine_i486.so"
 #endif
+
+AUTHUM_EXTERN_C_BEGIN
 
 /**
  * Address of @p name inside the already-loaded library @p library (file

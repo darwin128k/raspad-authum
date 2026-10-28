@@ -19,4 +19,5 @@ void
 authum_http_host_drop_owner(authum_http_owner_t *owner);
 
 AUTHUM_EXTERN_C_END
+
 #endif

@@ -44,4 +44,5 @@ authum_sql_thread_query(const authum_host_t *host, const authum_sql_connection_t
                         authum_task_fn destroy, authum_ptr user);
 
 AUTHUM_EXTERN_C_END
+
 #endif
