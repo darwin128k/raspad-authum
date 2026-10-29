@@ -10,10 +10,8 @@
 
 enum
 {
-    /** Longest module or command name (letters, digits, `_`, `-`, `.`). */
-    authum_command_word_max = 32,
-    authum_command_usage_max = 64,
-    authum_command_help_max = 128
+    /** Longest module or command name plus one (letters, digits, `_`, `-`, `.`). */
+    authum_command_word_max = 32
 };
 
 /**

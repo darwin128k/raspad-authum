@@ -100,11 +100,15 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 
 ## Authum (after LH)
 
-- [ ] **Console and commands become LH bricks.** The command registry, argument
-  parsing, owner scopes (a module's commands go with it) and the reply sink are not
-  about the game; other projects need them. Move them to LH as bricks (LH is a
-  static library: bricks are enough, no second level). Authum keeps only the binding
-  to the engine console (registering a server command, printing into it).
+- [x] **Console and commands become LH bricks.** `lh/console` (`lh_console_t`,
+  commands, entries, calls, the reply sink) owns the registry; `host/commands.c` is a
+  facade with the word length and the help line, and a module handler is the console
+  handler itself (`authum_command_t` is laid out as `lh_console_call_t`, checked in
+  `api/command.c`).
+- [ ] **`tools/gen-accessors.py` writes LH types** (`lh_void`, `lh_assert_runtime_ref`),
+  so it cannot generate accessors for public Authum structs (`authum_command_def_t` is
+  still read through its fields in `host/commands.c`). Teach it an Authum mode
+  (`void`, an Authum check) before the Authum raw-field pass.
 - [ ] **Audit the rest of Authum for generic mechanisms**: tasks, threads, logs and
   their channels, cfg, placeholders, paths, the sandbox. Each is either generic
   (→ LH, Authum a thin facade) or the game (stays). Bring the list to the owner.

@@ -133,7 +133,8 @@ def main():
             if kind == 'view' and not declared(htext, f'{prefix}set_{field}'):
                 add(set_doc(field, meaning), setter(struct, f'{prefix}set_{field}', ctype, field))
             continue
-        suffix = '_fn' if kind == 'fn' else ''
+        # A field already named for a function (`fn`, `alloc_fn`) is not suffixed again.
+        suffix = '_fn' if kind == 'fn' and field != 'fn' and not field.endswith('_fn') else ''
         verb = 'is' if kind == 'flag' else 'get'
         get, set_ = f'{prefix}{verb}_{field}{suffix}', f'{prefix}set_{field}{suffix}'
         if not declared(htext, get):

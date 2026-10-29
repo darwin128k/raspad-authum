@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Module commands run on the LH console (`lh/console`): the registry no longer cuts
+  usage and help text, and `authum_command_print` / `authum_command_printf` print a line
+  of any length. `authum_command_line_max`, `authum_command_usage_max` and
+  `authum_command_help_max` are gone; `authum_command_word_max` stays.
+
 ### Added
 
 - Module ABI 2.0.0 for Authum 0.4.0, with no backward compatibility: the host tables
