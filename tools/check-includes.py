@@ -21,7 +21,7 @@ import re
 import sys
 
 INCLUDE_DIRS = ('lib/lh/include', 'lib/lh/src', 'include', 'src')
-SCAN = ('lib/lh/include', 'lib/lh/src', 'include', 'src')
+SCAN = ('lib/lh/include', 'lib/lh/src', 'include', 'src', 'tests')
 SKIP = ('lib/sqlite', 'lib/monocypher', 'lib/hlsdk', '/build', 'third_party')
 INCLUDE = re.compile(r'^\s*#\s*include\s*<([^>]+)>')
 OPEN = re.compile(r'^\s*#\s*(if|ifdef|ifndef)\b')

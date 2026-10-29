@@ -56,9 +56,16 @@ other library into *your* `.so` for private code. That is not the host runtime;
 
 ## Tests
 
-`tests/` (CTest, plain C, 32-bit like HLDS): `authum_client` helpers, the host
+`tests/` (CTest, GoogleTest/C++20, 32-bit like HLDS): `authum_client` helpers, the host
 sandbox on `lh_memory_tree`, and the event bus (order, stop, queries,
 re-entrancy, owner cleanup).
+
+Unit tests mirror their headers under `tests/src/authum/`: for example,
+`src/authum/host/logs/writer.h` has `tests/src/authum/host/logs/writer.cpp`.
+Suite and case names use `snake_case`, without a redundant `test` suffix.
+Each case checks one behavior; fixtures prepare and release resources for every
+case. Input variations use parameterized tests. The module examples remain
+integration tests in `tests/examples.cpp`.
 
 ## Example
 

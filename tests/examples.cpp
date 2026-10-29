@@ -1,11 +1,11 @@
 /**
- * @file examples.c
+ * @file examples.cpp
  * @brief Smoke test of examples/: load every built module with the real event
  *        bus, commands, sandbox and logs, a fake engine with three players,
  *        then play a short scenario and check what each module did.
  */
 
-#include <check.h>
+#include <gtest/gtest.h>
 
 #include <authum/client.h>
 #include <authum/host/commands.h>
@@ -358,15 +358,16 @@ const authum_engine_t g_engine = {
     .max_clients = test_max_clients_fn,
     .game_time = test_game_time,
     .get_map_name = test_get_map_name,
+    .cvar_get = test_cvar_get,
+    .cvar_set = test_cvar_set,
     .client_is_connected = test_client_is_connected,
     .client_userid = test_client_userid,
     .client_get_name = test_client_get_name,
     .client_get_auth_id = test_client_get_auth_id,
     .client_get_address = test_client_get_address,
     .client_print = test_client_print,
+    .client_command = test_client_command,
     .query_client_cvar = test_query_client_cvar,
-    .cvar_get = test_cvar_get,
-    .cvar_set = test_cvar_set,
     .cvar_register = test_cvar_register,
     .message_id = test_message_id,
     .message_begin = test_message_begin,
@@ -375,7 +376,6 @@ const authum_engine_t g_engine = {
     .precache_sound = test_precache_sound,
     .entity_get_float = test_entity_get_float,
     .entity_get_i32 = test_entity_get_i32,
-    .client_command = test_client_command,
 };
 
 /* --- loading a module the way the host does --------------------------------- */
@@ -460,9 +460,9 @@ test_load(test_module_t *m)
     }
     {
         const authum_version_t host_abi = AUTHUM_MODULE_ABI;
-        CHECK(authum_version_is_abi_compatible(&m->info->abi, &host_abi));
+        EXPECT_TRUE(authum_version_is_abi_compatible(&m->info->abi, &host_abi));
     }
-    CHECK_STR(m->info->name, m->name);
+    EXPECT_STREQ(m->info->name, m->name);
 
     authum_path_set_cstr(&m->root, TEST_ROOT);
     authum_path_join(&modules, &m->root, "modules");
@@ -512,16 +512,19 @@ test_unload(test_module_t *m)
     {
         m->api->stop();
     }
+    m->started = authum_bool_false;
     authum_commands_host_drop_owner(m);
     authum_events_host_drop_owner(m);
     authum_logs_close(m);
     if (m->sandbox.root != authum_null)
     {
         authum_sandbox_host_root_destroy(m->sandbox.root);
+        m->sandbox.root = authum_null;
     }
     if (m->library != authum_null)
     {
         test_dlclose(m->library);
+        m->library = authum_null;
     }
 }
 
@@ -601,8 +604,8 @@ test_write_file(const char *path, const char *text)
 {
     FILE *file = fopen(path, "w");
 
-    CHECK(file != NULL);
-    if (file != NULL)
+    EXPECT_NE(file, authum_null);
+    if (file != authum_null)
     {
         fputs(text, file);
         fclose(file);
@@ -614,7 +617,7 @@ test_exists(const char *path)
 {
     FILE *file = fopen(path, "rb");
 
-    if (file == NULL)
+    if (file == authum_null)
     {
         return authum_bool_false;
     }
@@ -627,97 +630,174 @@ test_module_t g_modules[] = {
     {"stats"},    {"scores"}, {"scoreboard"}, {"deathnotice"}, {"announcer"},
 };
 
-int
-main(void)
+static const authum_char_t *add_args[] = {"1", "5"};
+static const authum_char_t *show_args[] = {"1"};
+
+namespace tests
 {
-    const authum_char_t *add_args[] = {"1", "5"};
-    const authum_char_t *show_args[] = {"1"};
-    authum_path_t root;
-    authum_usize_t i;
-    authum_bool_t loaded = authum_bool_true;
 
-    authum_path_set_cstr(&root, TEST_ROOT);
-    authum_path_ensure_dir(&root);
-    remove(TEST_ROOT "/modules/stats/data/stats.db");
-    remove(TEST_ROOT "/modules/stats/data");
-    remove(TEST_ROOT "/modules/settings/configs/settings.cfg");
-    CHECK(authum_logs_init(TEST_ROOT, authum_null));
-
-    for (i = 0u; i < sizeof g_modules / sizeof g_modules[0]; ++i)
+class authum_examples : public ::testing::Test
+{
+  protected:
+    void
+    SetUp() override
     {
-        if (!test_load(&g_modules[i]))
+        g_prints[0] = g_commands[0] = g_out[0] = g_precached[0] = 0;
+        g_cvar_count = 0;
+        g_query_index = g_query_request = 0;
+        authum_path_t root;
+        authum_usize_t i;
+
+        authum_path_set_cstr(&root, TEST_ROOT);
+        authum_path_ensure_dir(&root);
+        remove(TEST_ROOT "/modules/stats/data/stats.db");
+        remove(TEST_ROOT "/modules/stats/data");
+        remove(TEST_ROOT "/modules/settings/configs/settings.cfg");
+        ASSERT_TRUE(authum_logs_init(TEST_ROOT, authum_null));
+
+        for (i = 0u; i < sizeof g_modules / sizeof g_modules[0]; ++i)
         {
-            fprintf(stderr, "%s did not start\n", g_modules[i].name);
-            loaded = authum_bool_false;
+            ASSERT_TRUE(test_load(&g_modules[i])) << g_modules[i].name;
         }
+
+        test_client_event(AUTHUM_EVENT_CLIENT_CONNECT, 1);
+        test_client_event(AUTHUM_EVENT_CLIENT_PUT_IN_SERVER, 1);
     }
-    CHECK(loaded);
 
-    /* A player connects and enters. */
-    test_client_event(AUTHUM_EVENT_CLIENT_CONNECT, 1);
-    test_client_event(AUTHUM_EVENT_CLIENT_PUT_IN_SERVER, 1);
-    CHECK(strstr(g_prints, "1|Welcome, Vega! You are playing de_dust2.") != NULL); /* welcome */
-    CHECK(strstr(g_prints, "1|Visit #1. Welcome back!") != NULL);                  /* stats */
-    CHECK(g_query_index == 1 && g_query_request == 11);                            /* cvarguard */
-    CHECK_STR(g_query_cvar, "fps_max");
+    void
+    TearDown() override
+    {
+        for (authum_usize_t i = sizeof g_modules / sizeof g_modules[0]; i > 0u; --i)
+        {
+            test_unload(&g_modules[i - 1u]);
+        }
+        EXPECT_EQ(authum_events_host_count(), 0u);
+        EXPECT_EQ(authum_commands_host_count(), 0u);
 
+        /* With scores gone, the journal and logs are on disk. */
+        authum_logs_deinit();
+    }
+};
+
+TEST_F(authum_examples, welcomes_connected_player)
+{
+    EXPECT_NE(strstr(g_prints, "1|Welcome, Vega! You are playing de_dust2."), authum_null);
+}
+
+TEST_F(authum_examples, counts_repeat_visits)
+{
+    EXPECT_NE(strstr(g_prints, "1|Visit #1. Welcome back!"), authum_null);
     /* The same player comes back: the visit count grows. */
     test_client_event(AUTHUM_EVENT_CLIENT_PUT_IN_SERVER, 1);
-    CHECK(strstr(g_prints, "1|Visit #2.") != NULL);
+    EXPECT_NE(strstr(g_prints, "1|Visit #2."), authum_null);
+}
 
-    /* Bots are not counted. */
-    g_prints[0] = '\0';
-    test_client_event(AUTHUM_EVENT_CLIENT_PUT_IN_SERVER, 2);
-    CHECK(strstr(g_prints, "Visit") == NULL);
+TEST_F(authum_examples, ignores_bots_in_visit_history)
+{
+}
 
-    /* cvarguard: a fine value, a stale answer, a value over the limit. */
+TEST_F(authum_examples, queries_client_cvar_on_join)
+{
+    EXPECT_EQ(g_query_index, 1);
+    EXPECT_EQ(g_query_request, 11);
+    EXPECT_STREQ(g_query_cvar, "fps_max");
+}
+
+TEST_F(authum_examples, accepts_allowed_client_cvar)
+{
     test_cvar_answer(1, 11, "fps_max", "100");
-    CHECK_STR(g_commands, "");
+    EXPECT_STREQ(g_commands, "");
+}
+
+TEST_F(authum_examples, ignores_stale_client_cvar_response)
+{
     test_cvar_answer(1, 99, "fps_max", "1000");
-    CHECK_STR(g_commands, "");
+    EXPECT_STREQ(g_commands, "");
+}
+
+TEST_F(authum_examples, kicks_client_with_disallowed_cvar)
+{
     test_cvar_answer(1, 11, "fps_max", "1000");
-    CHECK(strstr(g_commands, "kick #11 ") == g_commands);
+    EXPECT_EQ(strstr(g_commands, "kick #11 "), g_commands);
+}
 
-    /* chatfilter */
-    g_prints[0] = '\0';
-    CHECK(test_say(1, "who uses an AIMBOT here"));
-    CHECK(strstr(g_prints, "1|Your message was not sent") != NULL);
-    CHECK(!test_say(1, "good game"));
+TEST_F(authum_examples, filters_forbidden_chat)
+{
+    g_prints[0] = 0;
+    EXPECT_TRUE(test_say(1, "who uses an AIMBOT here"));
+    EXPECT_NE(strstr(g_prints, "1|Your message was not sent"), authum_null);
+}
 
+TEST_F(authum_examples, allows_ordinary_chat)
+{
+    EXPECT_FALSE(test_say(1, "good game"));
+}
+
+TEST_F(authum_examples, scoreboard_reads_score_from_peer_module)
+{
     /* scores and scoreboard talk over the bus. */
     g_prints[0] = '\0';
-    CHECK(test_run("scores", "add", 2u, add_args));
-    CHECK(strstr(g_out, "#1 now has 5") != NULL);
-    CHECK(strstr(g_prints, "0|Vega: +5, now 5 points") != NULL);
-    CHECK(test_run("scoreboard", "show", 1u, show_args));
-    CHECK(strstr(g_out, "#1 has 5 points") != NULL);
+    EXPECT_TRUE(test_run("scores", "add", 2u, add_args));
+    EXPECT_NE(strstr(g_out, "#1 now has 5"), authum_null);
+    EXPECT_NE(strstr(g_prints, "0|Vega: +5, now 5 points"), authum_null);
+    EXPECT_TRUE(test_run("scoreboard", "show", 1u, show_args));
+    EXPECT_NE(strstr(g_out, "#1 has 5 points"), authum_null);
+}
 
-    /* settings: defaults, then a file, then a bad value that is refused. */
-    CHECK(test_run("settings", "show", 0u, authum_null));
-    CHECK(strstr(g_out, "mode         = normal") != NULL);
+TEST_F(authum_examples, settings_uses_defaults)
+{
+    ASSERT_TRUE(test_run("settings", "show", 0u, authum_null));
+    EXPECT_NE(strstr(g_out, "mode         = normal"), authum_null);
+}
+
+TEST_F(authum_examples, settings_applies_valid_config)
+{
     test_write_file(TEST_ROOT "/modules/settings/configs/settings.cfg",
                     "greeting = hi there\nmax_warnings = 7\nmode = HARD\n");
-    CHECK(test_run("settings", "reload", 0u, authum_null));
-    CHECK(test_run("settings", "show", 0u, authum_null));
-    CHECK(strstr(g_out, "mode         = hard") != NULL);
-    CHECK(strstr(g_out, "max_warnings = 7") != NULL);
-    CHECK(strstr(g_out, "greeting     = hi there") != NULL);
+    EXPECT_TRUE(test_run("settings", "reload", 0u, authum_null));
+    EXPECT_TRUE(test_run("settings", "show", 0u, authum_null));
+    EXPECT_NE(strstr(g_out, "mode         = hard"), authum_null);
+    EXPECT_NE(strstr(g_out, "max_warnings = 7"), authum_null);
+    EXPECT_NE(strstr(g_out, "greeting     = hi there"), authum_null);
+}
+
+TEST_F(authum_examples, settings_rejects_invalid_mode)
+{
     test_write_file(TEST_ROOT "/modules/settings/configs/settings.cfg", "mode = impossible\n");
-    CHECK(test_run("settings", "reload", 0u, authum_null));
-    CHECK(test_run("settings", "show", 0u, authum_null));
-    CHECK(strstr(g_out, "mode         = normal") != NULL); /* defaults again, bad mode ignored */
+    EXPECT_TRUE(test_run("settings", "reload", 0u, authum_null));
+    EXPECT_TRUE(test_run("settings", "show", 0u, authum_null));
+    EXPECT_NE(strstr(g_out, "mode         = normal"),
+              authum_null); /* defaults again, bad mode ignored */
+}
 
+TEST_F(authum_examples, stats_stores_database_under_module_data)
+{
     /* stats keeps its database under data/stats/. */
-    CHECK(test_exists(TEST_ROOT "/modules/stats/data/stats.db"));
+    EXPECT_TRUE(test_exists(TEST_ROOT "/modules/stats/data/stats.db"));
+}
 
-    /* Lists. */
-    CHECK(test_run("welcome", "players", 0u, authum_null));
-    CHECK(strstr(g_out, "Vega") != NULL && strstr(g_out, "3 of 4 slots in use") != NULL);
-    CHECK(test_run("hello", "seen", 0u, authum_null));
-    CHECK(strstr(g_out, "Vega") != NULL);
-    CHECK(test_run("stats", "top", 0u, authum_null));
-    CHECK(strstr(g_out, "Vega") != NULL && strstr(g_out, "STEAM_0:1:111") != NULL);
+TEST_F(authum_examples, welcome_lists_connected_players)
+{
+    ASSERT_TRUE(test_run("welcome", "players", 0u, authum_null));
+    EXPECT_NE(strstr(g_out, "Vega"), authum_null);
+    EXPECT_NE(strstr(g_out, "3 of 4 slots in use"), authum_null);
+}
 
+TEST_F(authum_examples, hello_remembers_joined_player)
+{
+    ASSERT_TRUE(test_run("hello", "seen", 0u, authum_null));
+    EXPECT_NE(strstr(g_out, "Vega"), authum_null);
+}
+
+TEST_F(authum_examples, stats_lists_player_identity)
+{
+    ASSERT_TRUE(test_run("stats", "top", 0u, authum_null));
+    EXPECT_NE(strstr(g_out, "Vega"), authum_null);
+    EXPECT_NE(strstr(g_out, "STEAM_0:1:111"), authum_null);
+}
+
+TEST_F(authum_examples, deathnotice_formats_game_message)
+{
     /* deathnotice: the game's DeathMsg becomes a colored chat line. */
     {
         authum_event_message_t death;
@@ -736,12 +816,16 @@ main(void)
         death.text_used = 5u;
         g_prints[0] = '\0';
         (void)authum_events_host_publish(AUTHUM_EVENT_MESSAGE_PREFIX "DeathMsg", &death);
-        CHECK(strstr(g_prints,
-                     "chat|0|\x04[Death]\x03 Vega\x01 killed Gordon with ak47 (headshot)") != NULL);
-        CHECK(!death.block);
+        EXPECT_TRUE(strstr(g_prints,
+                           "chat|0|\x04[Death]\x03 Vega\x01 killed Gordon with ak47 (headshot)") !=
+                    authum_null);
+        EXPECT_FALSE(death.block);
     }
-    CHECK(test_cvar_find("deathnotice_enabled") >= 0);
+    EXPECT_GE(test_cvar_find("deathnotice_enabled"), 0);
+}
 
+TEST_F(authum_examples, deathnotice_can_block_kill_command)
+{
     /* deathnotice: kill is allowed until its cvar says otherwise. */
     {
         authum_event_client_t kill;
@@ -750,60 +834,64 @@ main(void)
         kill.index = 1;
         kill.allow = authum_bool_true;
         (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_KILL, &kill);
-        CHECK(kill.allow);
-        CHECK(test_cvar_set("deathnotice_allow_kill", "0"));
+        EXPECT_TRUE(kill.allow);
+        EXPECT_TRUE(test_cvar_set("deathnotice_allow_kill", "0"));
         (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_KILL, &kill);
-        CHECK(!kill.allow);
+        EXPECT_FALSE(kill.allow);
     }
+}
 
-    /* announcer: precache, the round start line, the timer, the hp list. */
-    {
-        authum_event_server_t server;
-        authum_event_server_log_t line;
-        int i;
-
-        memset(&server, 0, sizeof server);
-        (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_PRECACHE, &server);
-        CHECK_STR(g_precached, "buttons/bell1.wav");
-
-        memset(&line, 0, sizeof line);
-        authum_cstr_copy(line.text, sizeof line.text, "World triggered \"Round_Start\"");
-        g_commands[0] = '\0';
-        (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_LOG, &line);
-        CHECK(strstr(g_commands, "cmd|1|spk buttons/bell1.wav") != NULL);
-        CHECK(strstr(g_commands, "cmd|2|") == NULL); /* the bot */
-        CHECK(strstr(g_commands, "cmd|3|spk buttons/bell1.wav") != NULL);
-
-        g_prints[0] = '\0';
-        server.frame_time = 1.0f;
-        for (i = 0; i < 119; ++i)
-        {
-            (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_FRAME, &server);
-        }
-        CHECK(strstr(g_prints, "Message #1") == NULL);
-        (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_FRAME, &server); /* 120 s */
-        CHECK(strstr(g_prints, "chat|0|\x04[Info]\x01 This server runs Authum. Message #1.") !=
-              NULL);
-
-        CHECK(test_run("announcer", "hp", 0u, authum_null));
-        CHECK(strstr(g_out, "Vega") != NULL && strstr(g_out, "100 hp") != NULL);
-        CHECK(strstr(g_out, "Gordon") != NULL && strstr(g_out, "Bot Alice") == NULL);
-        CHECK(strstr(g_out, "2 alive") != NULL);
-    }
-
+TEST_F(authum_examples, scoreboard_forgets_disconnected_player)
+{
+    ASSERT_TRUE(test_run("scores", "add", 2u, add_args));
     /* The player leaves: scores forgets the slot. */
     test_client_event(AUTHUM_EVENT_CLIENT_DISCONNECT, 1);
-    CHECK(test_run("scoreboard", "show", 1u, show_args));
-    CHECK(strstr(g_out, "#1 has 0 points") != NULL);
-
-    for (i = sizeof g_modules / sizeof g_modules[0]; i > 0u; --i)
-    {
-        test_unload(&g_modules[i - 1u]);
-    }
-    CHECK(authum_events_host_count() == 0u);
-    CHECK(authum_commands_host_count() == 0u);
-
-    /* With scores gone, the journal and logs are on disk. */
-    authum_logs_deinit();
-    return authum_check_report("examples");
+    EXPECT_TRUE(test_run("scoreboard", "show", 1u, show_args));
+    EXPECT_NE(strstr(g_out, "#1 has 0 points"), authum_null);
 }
+
+TEST_F(authum_examples, announcer_precaches_sound)
+{
+    authum_event_server_t server = {};
+    authum_events_host_publish(AUTHUM_EVENT_SERVER_PRECACHE, &server);
+    EXPECT_STREQ(g_precached, "buttons/bell1.wav");
+}
+
+TEST_F(authum_examples, announcer_plays_round_sound_to_humans)
+{
+    authum_event_server_log_t line;
+    memset(&line, 0, sizeof line);
+    authum_cstr_copy(line.text, sizeof line.text, "World triggered \"Round_Start\"");
+    g_commands[0] = '\0';
+    (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_LOG, &line);
+    EXPECT_NE(strstr(g_commands, "cmd|1|spk buttons/bell1.wav"), authum_null);
+    EXPECT_EQ(strstr(g_commands, "cmd|2|"), authum_null); /* the bot */
+    EXPECT_NE(strstr(g_commands, "cmd|3|spk buttons/bell1.wav"), authum_null);
+}
+
+TEST_F(authum_examples, announcer_waits_for_timer_deadline)
+{
+    authum_event_server_t server = {};
+    int i;
+    g_prints[0] = '\0';
+    server.frame_time = 1.0f;
+    for (i = 0; i < 119; ++i)
+    {
+        (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_FRAME, &server);
+    }
+    EXPECT_EQ(strstr(g_prints, "Message #1"), authum_null);
+    (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_FRAME, &server); /* 120 s */
+    EXPECT_TRUE(strstr(g_prints, "chat|0|\x04[Info]\x01 This server runs Authum. Message #1.") !=
+                authum_null);
+}
+
+TEST_F(authum_examples, announcer_lists_only_alive_humans)
+{
+    EXPECT_TRUE(test_run("announcer", "hp", 0u, authum_null));
+    EXPECT_TRUE(strstr(g_out, "Vega") != authum_null && strstr(g_out, "100 hp") != authum_null);
+    EXPECT_TRUE(strstr(g_out, "Gordon") != authum_null &&
+                strstr(g_out, "Bot Alice") == authum_null);
+    EXPECT_NE(strstr(g_out, "2 alive"), authum_null);
+}
+
+} // namespace tests

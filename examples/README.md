@@ -17,7 +17,7 @@ what you need, rename it, and build from there. They use only
 | [deathnotice](deathnotice/) | read or change a game message | `authum.message.DeathMsg`, colored chat, the module's own server cvars, refusing `kill` |
 | [announcer](announcer/) | do something every N seconds or on a log line | timers, precache, `authum.server.log`, entity fields (health, armor) |
 
-Every example is loaded and exercised by `tests/examples.c` (CTest
+Every example is loaded and exercised by `tests/examples.cpp` (CTest
 `authum_examples`), so they keep working as the API moves.
 
 ## Build

@@ -109,7 +109,15 @@ def main():
     common = ["gcc", "-m32", "-std=c11", "-O2", "-Wall", "-Wextra", "-Werror"]
     subprocess.run(common + ["-shared", "-fPIC", str(source / "preload.c"),
                              "-ldl", "-pthread", "-o", str(library)], check=True, timeout=60)
-    subprocess.run(common + [str(source / "driver.c"), "-o", str(driver)], check=True, timeout=60)
+    lh_test = source.parents[2] / "lib/lh/test"
+    googletest = lh_test / "lib/googletest/googletest"
+    if not (googletest / "src/gtest-all.cc").is_file():
+        raise RuntimeError("Initialize the pinned GoogleTest submodule before running tests")
+    subprocess.run(["g++", "-m32", "-std=c++20", "-O2", "-Wall", "-Wextra", "-Werror",
+                    "-I" + str(googletest / "include"), "-I" + str(googletest),
+                    str(source / "driver.cpp"), str(lh_test / "src/main.cpp"),
+                    str(googletest / "src/gtest-all.cc"), "-pthread", "-o", str(driver)],
+                   check=True, timeout=120)
     for mode in ("native", "async", "overflow"):
         target = output / mode
         target.mkdir()
@@ -120,7 +128,10 @@ def main():
             env.update(LD_PRELOAD=str(library), AUTHUM_ASYNC_LOG_PROBE_DIR=str(target))
         if mode == "overflow":
             env["AUTHUM_ASYNC_LOG_PROBE_STALL_MS"] = "1000"
-        result = subprocess.run([str(driver), str(target), mode], env=env,
+        env.update(AUTHUM_ASYNC_LOG_TEST_DIR=str(target), AUTHUM_ASYNC_LOG_TEST_MODE=mode)
+        case_filter = ("hlds_async_log.overflow_retains_fifo_prefix_without_blocking_producer"
+                       if mode == "overflow" else "-hlds_async_log.overflow_*")
+        result = subprocess.run([str(driver), "--gtest_filter=" + case_filter], env=env,
                                 text=True, capture_output=True, check=True, timeout=10)
         print(result.stdout + result.stderr, end="", flush=True)
         results.append(result.stdout + result.stderr)
