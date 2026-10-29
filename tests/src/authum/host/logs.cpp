@@ -645,3 +645,69 @@ TEST(authum_logs_environment, disabled)
     setenv("AUTHUM_LOG_LEVEL", "off", 1);
 #endif
 }
+
+namespace tests
+{
+class authum_log_line : public ::testing::Test
+{
+  protected:
+    void
+    SetUp() override
+    {
+        test_reset();
+        struct tm calendar = {};
+        calendar.tm_year = 126;
+        calendar.tm_mon = 9;
+        calendar.tm_mday = 26;
+        calendar.tm_hour = 8;
+        calendar.tm_min = 9;
+        calendar.tm_sec = 18;
+        calendar.tm_isdst = -1;
+        g_test_now = mktime(&calendar);
+        ASSERT_NE(g_test_now, static_cast<time_t>(-1));
+        ASSERT_TRUE(authum_logs_init(TEST_ROOT, authum_null));
+        authum_logs_set_clock(test_clock);
+    }
+
+    void
+    TearDown() override
+    {
+        authum_logs_deinit();
+    }
+};
+
+TEST_F(authum_log_line, module_file_uses_hlds_timestamp_without_repeating_module_name)
+{
+    ASSERT_TRUE(authum_logs_open(&g_test_qproto, "qproto", authum_null));
+    authum_logs_write(&g_test_qproto, authum_logger_level_info, "module line");
+    EXPECT_TRUE(
+        test_file_contains("qproto", g_test_now, "L 10/26/2026 - 08:09:18: [info] module line\n"));
+}
+
+TEST_F(authum_log_line, host_copy_includes_source_module)
+{
+    ASSERT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null));
+    authum_logs_write(&g_test_hello, authum_logger_level_warning, "module warning");
+    EXPECT_TRUE(test_file_contains("authum", g_test_now,
+                                   "L 10/26/2026 - 08:09:18: [warning] [hello] module warning\n"));
+}
+
+TEST_F(authum_log_line, host_own_line_has_no_redundant_module_tag)
+{
+    authum_logs_write(authum_null, authum_logger_level_info, "host line");
+    EXPECT_TRUE(
+        test_file_contains("authum", g_test_now, "L 10/26/2026 - 08:09:18: [info] host line\n"));
+}
+
+TEST_F(authum_log_line, journal_tag_is_only_added_to_host_copy)
+{
+    ASSERT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null));
+    auto *journal = authum_logs_open_journal(&g_test_hello, "audit");
+    ASSERT_NE(journal, authum_null);
+    authum_logs_write(journal, authum_logger_level_warning, "journal line");
+    EXPECT_TRUE(test_file_contains("hello/audit", g_test_now,
+                                   "L 10/26/2026 - 08:09:18: [warning] journal line\n"));
+    EXPECT_TRUE(test_file_contains(
+        "authum", g_test_now, "L 10/26/2026 - 08:09:18: [warning] [hello/audit] journal line\n"));
+}
+} // namespace tests

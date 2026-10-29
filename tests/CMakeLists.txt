@@ -66,7 +66,7 @@ add_test(NAME authum_timers COMMAND authum_test_timers)
 
 add_executable(authum_test_logs src/authum/host/logs.cpp)
 target_link_libraries(authum_test_logs PRIVATE authum_test_host authum_test_main)
-add_test(NAME authum_logs COMMAND authum_test_logs --gtest_filter=authum_logs.*)
+add_test(NAME authum_logs COMMAND authum_test_logs --gtest_filter=authum_logs.*:authum_log_line.*)
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/logs_environment")
 add_test(NAME authum_logs_environment COMMAND authum_test_logs --gtest_filter=authum_logs_environment.*)
 set_tests_properties(authum_logs_environment PROPERTIES

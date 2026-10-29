@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Standard file logs use the HLDS `L MM/DD/YYYY - HH:MM:SS:` timestamp prefix,
+  followed by the level and text. Shared-host copies retain their module/journal
+  tag; a module's own file does not repeat its name.
+
 - Module commands run on the LH console (`lh/console`): the registry no longer cuts
   usage and help text, and `authum_command_print` / `authum_command_printf` print a line
   of any length. `authum_command_line_max`, `authum_command_usage_max` and
