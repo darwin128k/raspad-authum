@@ -47,13 +47,14 @@ authum_commands_host_add(authum_ptr owner, const authum_char_t *scope,
     lh_console_command_t command;
 
     lh_return_if(authum_null_eq(def) || !authum_commands_host_is_word(scope) ||
-                     !authum_commands_host_is_word(def->name),
+                     !authum_commands_host_is_word(authum_command_def_get_name(def)),
                  authum_bool_false);
-    lh_console_command_set_name(lh_addr_of(command), def->name);
-    lh_console_command_set_usage(lh_addr_of(command), def->usage);
-    lh_console_command_set_help(lh_addr_of(command), def->help);
-    lh_console_command_set_fn(lh_addr_of(command), lh_cast_reinterpret(lh_console_cb, def->fn));
-    lh_console_command_set_user(lh_addr_of(command), def->user);
+    lh_console_command_set_name(lh_addr_of(command), authum_command_def_get_name(def));
+    lh_console_command_set_usage(lh_addr_of(command), authum_command_def_get_usage(def));
+    lh_console_command_set_help(lh_addr_of(command), authum_command_def_get_help(def));
+    lh_console_command_set_fn(lh_addr_of(command),
+                              lh_cast_reinterpret(lh_console_cb, authum_command_def_get_fn(def)));
+    lh_console_command_set_user(lh_addr_of(command), authum_command_def_get_user(def));
     return lh_console_add(authum_commands_host_get_console(), owner, scope, lh_addr_of(command));
 }
 

@@ -84,7 +84,7 @@ whether to allow a player on a database error remain module policy.
 
 ## Network address parsing
 
-`authum_net_address_host(address, out, capacity)` extracts a host without doing
+`authum_net_address_copy_host(address, out, capacity)` extracts a host without doing
 DNS: IPv4/hostname with a port, bracketed IPv6 with a port, or a bare host/IPv6.
 It supports in-place extraction. Invalid structure, invalid ports and output
 truncation return false with empty output. It parses address structure; it does

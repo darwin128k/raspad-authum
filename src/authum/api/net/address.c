@@ -1,4 +1,4 @@
-#include <authum/net.h>
+#include <authum/net/address.h>
 #include <authum/null.h>
 #include <lh/net/port.h>
 #include <lh/char/digit.h>
@@ -6,7 +6,8 @@
 #include <string.h>
 
 authum_bool_t
-authum_net_address_host(const authum_char_t *address, authum_char_t *out, authum_usize_t capacity)
+authum_net_address_copy_host(const authum_char_t *address, authum_char_t *out,
+                             authum_usize_t capacity)
 {
     const authum_char_t *begin = address, *end, *port = authum_null, *p;
     authum_u32_t colons = 0, number = 0;

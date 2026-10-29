@@ -243,23 +243,23 @@ void
 test_address(void)
 {
     char out[64], inplace[64] = "[2001:db8::1]:27015";
-    CHECK(authum_net_address_host("192.0.2.10:27015", out, sizeof out));
+    CHECK(authum_net_address_copy_host("192.0.2.10:27015", out, sizeof out));
     CHECK_STR(out, "192.0.2.10");
-    CHECK(authum_net_address_host("example.org", out, sizeof out));
+    CHECK(authum_net_address_copy_host("example.org", out, sizeof out));
     CHECK_STR(out, "example.org");
-    CHECK(authum_net_address_host("2001:db8::1", out, sizeof out));
+    CHECK(authum_net_address_copy_host("2001:db8::1", out, sizeof out));
     CHECK_STR(out, "2001:db8::1");
-    CHECK(authum_net_address_host(inplace, inplace, sizeof inplace));
+    CHECK(authum_net_address_copy_host(inplace, inplace, sizeof inplace));
     CHECK_STR(inplace, "2001:db8::1");
-    CHECK(!authum_net_address_host("[::1", out, sizeof out));
+    CHECK(!authum_net_address_copy_host("[::1", out, sizeof out));
     CHECK_STR(out, "");
-    CHECK(!authum_net_address_host("a:65536", out, sizeof out));
+    CHECK(!authum_net_address_copy_host("a:65536", out, sizeof out));
     CHECK_STR(out, "");
-    CHECK(!authum_net_address_host("a:abc", out, sizeof out));
-    CHECK(!authum_net_address_host("host:1", out, 2));
+    CHECK(!authum_net_address_copy_host("a:abc", out, sizeof out));
+    CHECK(!authum_net_address_copy_host("host:1", out, 2));
     CHECK_STR(out, "");
-    CHECK(!authum_net_address_host("a\r\nb", out, sizeof out));
-    CHECK(!authum_net_address_host(NULL, out, sizeof out));
+    CHECK(!authum_net_address_copy_host("a\r\nb", out, sizeof out));
+    CHECK(!authum_net_address_copy_host(NULL, out, sizeof out));
 }
 
 int
