@@ -133,13 +133,16 @@ source-disable semantics documented above.
 ## Components
 
 - host/logs.c: owner-thread registry, configuration, filtering, console callbacks,
-  timestamp capture and owned record submission.
-- host/logs/writer.c: bounded SPSC queue and worker lifecycle through Authum threads.
-- host/logs/files.c: worker-only LRU cache, directories, daily rotation, retention,
-  stdio buffering, flushing and file close.
+  timestamp capture, the game server's line format and record submission.
+- LH `lh/os/logger/queue`: the bounded SPSC queue and its worker thread, which
+  sleeps on a condition until a record, a sync or its 100 ms flush period.
+- LH `lh/os/logger/daily`: worker-only channels, directories, daily rotation by the
+  local day of each line, retention and appending writes.
 
-The 1024-slot queue owns each record (path, tag, text, event time, level and
-retention setting). It never retains plugin pointers. Closing a journal or
+A channel is opened and closed by records in the same queue as its lines, under a
+numeric id: the worker learns its directory, retention and format before its first
+line, and nothing on the worker needs a lock. The 1024-slot queue owns each record
+(channel id, tag, text, event time, level). It never retains plugin pointers. Closing a journal or
 unloading a module cannot invalidate pending records. Calendar filenames and
 line timestamps derive from event time, even if the writer crosses midnight.
 Text capacity is 1023 bytes, matching the SDK's 1024-byte formatting buffer.

@@ -1,4 +1,6 @@
+#include <lh/assert/static.h>
 #include <lh/char/map.h>
+#include <lh/logger/level.h>
 #include <lh/util/ptr.h>
 #include <lh/memory/std.h>
 #include <authum/logger/buffer.h>
@@ -7,46 +9,24 @@
 #include <stdio.h>
 #include <string.h>
 
-static const struct
-{
-    const authum_char_t *name;
-    authum_logger_level_t level;
-} authum_logger_level_names[] = {
-    {"emergency", authum_logger_level_emergency}, {"alert", authum_logger_level_alert},
-    {"critical", authum_logger_level_critical},   {"error", authum_logger_level_error},
-    {"warning", authum_logger_level_warning},     {"notice", authum_logger_level_notice},
-    {"info", authum_logger_level_info},           {"debug", authum_logger_level_debug},
-    {"crit", authum_logger_level_critical},       {"err", authum_logger_level_error},
-    {"warn", authum_logger_level_warning},
-};
+/* Authum's levels are LH's, value for value: the names come from LH. */
+lh_assert_static(authum_logger_level_emergency == lh_logger_level_emergency &&
+                     authum_logger_level_debug == lh_logger_level_debug &&
+                     authum_logger_level_error == lh_logger_level_error &&
+                     authum_logger_level_warning == lh_logger_level_warning,
+                 "authum and lh logger levels must have the same values");
 
 authum_bool_t
 authum_logger_level_parse(const authum_char_t *name, authum_logger_level_t *out)
 {
-    authum_usize_t i;
-
-    if (authum_null_eq(name) || authum_null_eq(out))
-    {
-        return authum_bool_false;
-    }
-    for (i = 0u; lh_math_lt(
-             i, lh_math_div(sizeof authum_logger_level_names, sizeof authum_logger_level_names[0]));
-         i = lh_math_add_one(i))
-    {
-        if (authum_cstr_is_equal(name, authum_logger_level_names[i].name, authum_bool_true))
-        {
-            lh_ptr_deref(out) = authum_logger_level_names[i].level;
-            return authum_bool_true;
-        }
-    }
-    return authum_bool_false;
+    return !authum_null_eq(out) && lh_logger_level_try_parse(name, out) ? authum_bool_true
+                                                                        : authum_bool_false;
 }
 
 const authum_char_t *
 authum_logger_level_get_name(authum_logger_level_t level)
 {
-    return lh_math_le(level, authum_logger_level_debug) ? authum_logger_level_names[level].name
-                                                        : "?";
+    return lh_logger_level_get_name(level);
 }
 
 void

@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   usage and help text, and `authum_command_print` / `authum_command_printf` print a line
   of any length. `authum_command_line_max`, `authum_command_usage_max` and
   `authum_command_help_max` are gone; `authum_command_word_max` stays.
+- Log files are written by the LH log queue and daily files (`lh/os/logger`): the
+  writer sleeps until a record instead of polling every 10 ms, records carry a
+  channel id instead of a copy of the directory path, open files are no longer
+  capped at 32, and Windows and Linux share one path with no `#if`.
 - `authum_command_def_t` has level-1 accessors (`authum_command_def_get_name`, ...).
 - `authum_net_address_host` is `authum_net_address_copy_host`, declared in its own
   `<authum/net/address.h>` (still brought in by `<authum/client.h>`).

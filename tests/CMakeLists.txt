@@ -119,22 +119,12 @@ if(NOT WIN32)
     set_tests_properties(authum_http PROPERTIES TIMEOUT 10)
 endif()
 
-file(GLOB AUTHUM_LOG_WRITER_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/authum/host/logs/*.c")
-target_sources(authum_test_host PRIVATE ${AUTHUM_LOG_WRITER_SOURCES})
-
 # The placeholder registry the host binds to every module.
 target_sources(authum_test_host PRIVATE "${CMAKE_SOURCE_DIR}/src/authum/host/placeholders.c")
 add_executable(authum_test_placeholders src/authum/host/placeholders.cpp)
 target_link_libraries(authum_test_placeholders PRIVATE authum_test_host authum_test_main)
 add_test(NAME authum_placeholders COMMAND authum_test_placeholders)
 set_tests_properties(authum_placeholders PROPERTIES TIMEOUT 15)
-
-if(NOT WIN32)
-    add_executable(authum_test_log_writer src/authum/host/logs/writer.cpp)
-    target_link_libraries(authum_test_log_writer PRIVATE authum_test_host authum_test_main)
-    add_test(NAME authum_log_writer COMMAND authum_test_log_writer)
-    set_tests_properties(authum_log_writer PROPERTIES TIMEOUT 15)
-endif()
 
 add_executable(authum_test_memory src/authum/memory.cpp)
 target_link_libraries(authum_test_memory PRIVATE authum_client authum_test_main)

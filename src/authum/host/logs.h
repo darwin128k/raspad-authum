@@ -3,9 +3,10 @@
  * @brief Host side of the log channels — implemented in `authum` only.
  *
  * Channel registry and console callbacks belong to the host/game thread.
- * File writes, rotation, flushing and retention run on one managed worker.
- * File queue: 1024 owned records, at most 1023 text bytes per record. On full,
- * drop newest and report loss from the worker. Disk stalls never block submit.
+ * File writes, rotation, flushing and retention run on the worker of an LH log
+ * queue (`lh/os/logger/queue.h`) into LH daily files (`lh/os/logger/daily.h`).
+ * The queue holds 1024 records, at most 1023 text bytes each. On full it drops
+ * the newest and the worker reports the loss. Disk stalls never block a write.
  * Formatting and console mirroring remain on the caller thread. Workers use
  * logger buffers and deliver them through the task completion as before.
  * Errors flush when the worker handles them; process crashes can lose queued lines.
@@ -37,16 +38,14 @@
 
 #include <authum/logger/ops.h>
 
-#include <time.h>
-
 AUTHUM_EXTERN_C_BEGIN
 
 /** Where console-level lines go besides the files (the server console). */
 typedef void (*authum_logs_mirror_fn)(authum_logger_level_t level, const authum_char_t *name,
                                       const authum_char_t *text);
 
-/** Wall clock; replaceable so tests can cross midnight. */
-typedef time_t (*authum_logs_clock_fn)(void);
+/** Wall clock, in Unix seconds (UTC); replaceable so tests can cross midnight. */
+typedef authum_i64_t (*authum_logs_clock_fn)(void);
 
 /**
  * Read `<root>/configs/authum.cfg` and open the host channel. @p root is the
