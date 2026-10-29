@@ -226,19 +226,6 @@ authum_logs_cfg_open(authum_cfg_t *cfg)
                : authum_bool_false;
 }
 
-/** Format into @p out, NUL-terminated: empty when the result does not fit. */
-static void
-authum_logs_format(authum_char_t *out, authum_usize_t out_size, const authum_char_t *fmt, ...)
-{
-    va_list args;
-    lh_usize_t size;
-
-    va_start(args, fmt);
-    size = lh_str_ptr_format_text_v(out, lh_math_sub(out_size, 1u), fmt, args);
-    va_end(args);
-    out[size] = lh_char_map_nul;
-}
-
 /** Apply only present, valid keys. Missing/invalid values preserve inheritance. */
 static void
 authum_logs_apply(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authum_char_t *prefix)
@@ -247,7 +234,8 @@ authum_logs_apply(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authu
     const authum_char_t *value;
     authum_i32_t days;
 #define LOG_VALUE(suffix)                                                                          \
-    (authum_logs_format(key, sizeof key, "%s%s", prefix, suffix), authum_cfg_get_value(cfg, key))
+    (lh_str_ptr_format_cstr(key, sizeof key, "%s%s", prefix, suffix),                              \
+     authum_cfg_get_value(cfg, key))
     channel->level = authum_logs_parse_level(LOG_VALUE("log_level"), channel->level);
     channel->console_level =
         authum_logs_parse_level(LOG_VALUE("log_console"), channel->console_level);
@@ -301,7 +289,7 @@ static void
 authum_logs_admin(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authum_char_t *tag)
 {
     authum_char_t prefix[144];
-    authum_logs_format(prefix, sizeof prefix, "%s.", tag);
+    lh_str_ptr_format_cstr(prefix, sizeof prefix, "%s.", tag);
     for (authum_char_t *p = prefix; lh_ptr_deref(p); p = lh_math_add_one(p))
     {
         if (lh_math_eq(lh_ptr_deref(p), lh_char_map_slash))
@@ -550,7 +538,8 @@ authum_logs_add(authum_ptr owner, authum_logs_channel_t *parent, const authum_ch
     }
     else
     {
-        authum_logs_format(channel->tag, sizeof channel->tag, "%s/%s", parent->name, channel->name);
+        lh_str_ptr_format_cstr(channel->tag, sizeof channel->tag, "%s/%s", parent->name,
+                               channel->name);
     }
     /* journal: <module logs>/<journal>; module: <module_dir>/logs, by default
      * modules/<name>/logs */
@@ -573,7 +562,7 @@ authum_logs_add(authum_ptr owner, authum_logs_channel_t *parent, const authum_ch
     {
         authum_path_t configs;
         authum_char_t leaf[lh_math_add(authum_logs_name_max, 5)];
-        authum_logs_format(leaf, sizeof leaf, "%s.cfg", channel->name);
+        lh_str_ptr_format_cstr(leaf, sizeof leaf, "%s.cfg", channel->name);
         if (!authum_path_join(lh_addr_of(configs), lh_addr_of(base), "configs") ||
             !authum_path_join(lh_addr_of(channel->config), lh_addr_of(configs), leaf))
         {

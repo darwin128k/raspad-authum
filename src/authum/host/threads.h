@@ -1,13 +1,21 @@
+/**
+ * @file threads.h
+ * @brief A module's threads, over the LH thread group (`lh/os/thread/group.h`).
+ *
+ * Authum adds the module ABI and its policy: at most 64 threads a module, and an
+ * error text for a refused start.
+ */
+
 #ifndef AUTHUM_HOST_THREADS_H
 #define AUTHUM_HOST_THREADS_H
 
 #include <authum/thread.h>
+#include <lh/os/thread/group.h>
 
+/** @brief The threads one module owns. */
 typedef struct authum_thread_owner
 {
-    authum_thread_t *head;
-    authum_u32_t count;
-    authum_i32_t closing;
+    lh_os_thread_group_t group; /**< its threads */
 } authum_thread_owner_t;
 
 AUTHUM_EXTERN_C_BEGIN

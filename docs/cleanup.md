@@ -119,9 +119,13 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
      and the engine library name through LH compiler / OS macros, no `_WIN32`.
   A check (`tools/check-native.py`) keeps it at 0.
 - [ ] **`lh/os/loop`: one worker loop under every background thread.** Done: the
-  loop itself and `lh/os/logger/queue` on it. Left: `lh/os/worker`, Authum's
-  `http/loop.c` (needs a waiter on `poll` + `lh/os/wake` beside the condition one)
-  and `threads.c`. A thread that
+  loop itself, `lh/os/logger/queue` and `lh/os/worker` on it; Authum's module
+  threads on the new `lh/os/thread/group` (their body is the module's own code, not
+  a step). Left: Authum's `http/loop.c` (needs a waiter on `poll` + `lh/os/wake`
+  beside the condition one).
+- [ ] `tools/order-levels.py` and `check-levels.py` count a function taken by address
+  (a callback) like a call: `order-levels` then puts it below its user, which C does
+  not compile. Teach both that an address-taken function must come first. A thread that
   sleeps until it is woken, its nearest `lh_timer_group` deadline comes or it is asked
   to stop, then runs one step; it waits on a condition (queues) or on `poll` with
   `lh/os/wake` (sockets). Today the same is written four times: `lh/os/worker`,
