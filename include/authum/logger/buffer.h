@@ -33,11 +33,11 @@ void
 authum_logger_buffer_flush(authum_logger_buffer_t *self);
 
 authum_usize_t
-authum_logger_buffer_dropped(const authum_logger_buffer_t *self);
+authum_logger_buffer_get_dropped(const authum_logger_buffer_t *self);
 
 /** Internal logger interception; exported for the client-library implementation. */
 authum_bool_t
-authum_logger_buffer_active(void);
+authum_logger_buffer_is_active(void);
 
 authum_bool_t
 authum_logger_buffer_log_v(authum_logger_t *logger, authum_logger_level_t level,

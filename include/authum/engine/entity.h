@@ -17,7 +17,7 @@
 
 #include <authum/extern.h>
 
-/** Number fields (`authum_engine_entity_get_float` / `_set_float`). */
+/** Number fields (`authum_engine_entity_try_get_float` / `_set_float`). */
 enum
 {
     authum_entity_float_health = 0,
@@ -38,7 +38,7 @@ enum
     authum_entity_float_damage_taken = 11
 };
 
-/** Integer fields (`authum_engine_entity_get_i32` / `_set_i32`). */
+/** Integer fields (`authum_engine_entity_try_get_i32` / `_set_i32`). */
 enum
 {
     /** `authum_entity_flag_*` bits. */
@@ -64,7 +64,7 @@ enum
     authum_entity_i32_water_level = 14
 };
 
-/** Vector fields, 3 numbers (`authum_engine_entity_get_vector` / `_set_vector`). */
+/** Vector fields, 3 numbers (`authum_engine_entity_copy_vector` / `_set_vector`). */
 enum
 {
     /** Setting it moves the entity properly (SET_ORIGIN). */

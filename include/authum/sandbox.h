@@ -3,7 +3,7 @@
  * @brief Module memory that cannot leak past unload.
  *
  * Every loaded module gets its own sandbox from the host
- * (::authum_host_sandbox). Anything allocated from it is freed by the host
+ * (::authum_host_get_sandbox). Anything allocated from it is freed by the host
  * after the module's `stop`, whether the module freed it or not. Freeing early
  * is still allowed and frees everything the block owns.
  *
@@ -13,7 +13,7 @@
  * forgetting to close one is not a leak either.
  *
  * @code
- * const authum_sandbox_t *sb = authum_host_sandbox(host);
+ * const authum_sandbox_t *sb = authum_host_get_sandbox(host);
  * mymod_state_t *state = authum_sandbox_alloc(sb, sizeof *state);  // zeroed
  * // … no free needed: gone after stop
  * @endcode

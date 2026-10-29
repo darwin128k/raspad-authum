@@ -106,7 +106,8 @@ stats_cmd_top(const authum_command_t *cmd, authum_ptr user)
     authum_i32_t place = 0;
 
     authum_unused(user);
-    if (authum_command_argc(cmd) > 0u && (!authum_command_arg_i32(cmd, 0u, &count) || count < 1))
+    if (authum_command_get_argc(cmd) > 0u &&
+        (!authum_command_try_get_arg_i32(cmd, 0u, &count) || count < 1))
     {
         return authum_bool_false; /* the host prints the usage line */
     }
@@ -151,9 +152,9 @@ stats_start(authum_host_t *host)
 
     authum_sql_init(&g_stats_db);
     /* This module owns its SQLite directory. */
-    if (!authum_host_data_path(&g_stats_host, "stats.db", &path) ||
-        !authum_path_ensure_dir(authum_host_env_module_data(&g_stats_host)) ||
-        !authum_sql_open_sqlite(&g_stats_db, authum_path_as_cstr(&path)) ||
+    if (!authum_host_join_data_path(&g_stats_host, "stats.db", &path) ||
+        !authum_path_ensure_dir(authum_host_get_module_data_path(&g_stats_host)) ||
+        !authum_sql_open_sqlite(&g_stats_db, authum_path_get_cstr(&path)) ||
         !authum_sql_exec(&g_stats_db, "CREATE TABLE IF NOT EXISTS visits ("
                                       "auth_id TEXT PRIMARY KEY, name TEXT NOT NULL, "
                                       "visits INTEGER NOT NULL, last_seen INTEGER NOT NULL)"))

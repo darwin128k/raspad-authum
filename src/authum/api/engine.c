@@ -22,8 +22,8 @@ authum_engine_buf_reset(authum_char_t *buf, authum_usize_t buf_size)
 /* --- server --------------------------------------------------------------- */
 
 void
-authum_engine_get_game_dir(const authum_engine_t *engine, authum_char_t *buf,
-                           authum_usize_t buf_size)
+authum_engine_copy_game_dir(const authum_engine_t *engine, authum_char_t *buf,
+                            authum_usize_t buf_size)
 {
     if (authum_engine_buf_reset(buf, buf_size) && !authum_null_eq(engine) &&
         !authum_null_eq((engine)->get_game_dir))
@@ -52,7 +52,7 @@ authum_engine_server_command(const authum_engine_t *engine, const authum_char_t 
 }
 
 authum_i32_t
-authum_engine_max_clients(const authum_engine_t *engine)
+authum_engine_get_max_clients(const authum_engine_t *engine)
 {
     return (!authum_null_eq(engine) && !authum_null_eq((engine)->max_clients))
                ? engine->max_clients()
@@ -60,15 +60,15 @@ authum_engine_max_clients(const authum_engine_t *engine)
 }
 
 authum_float_t
-authum_engine_game_time(const authum_engine_t *engine)
+authum_engine_get_game_time(const authum_engine_t *engine)
 {
     return (!authum_null_eq(engine) && !authum_null_eq((engine)->game_time)) ? engine->game_time()
                                                                              : 0.0f;
 }
 
 void
-authum_engine_get_map_name(const authum_engine_t *engine, authum_char_t *buf,
-                           authum_usize_t buf_size)
+authum_engine_copy_map_name(const authum_engine_t *engine, authum_char_t *buf,
+                            authum_usize_t buf_size)
 {
     if (authum_engine_buf_reset(buf, buf_size) && !authum_null_eq(engine) &&
         !authum_null_eq((engine)->get_map_name))
@@ -78,8 +78,8 @@ authum_engine_get_map_name(const authum_engine_t *engine, authum_char_t *buf,
 }
 
 authum_bool_t
-authum_engine_cvar_get(const authum_engine_t *engine, const authum_char_t *name, authum_char_t *buf,
-                       authum_usize_t buf_size)
+authum_engine_cvar_copy(const authum_engine_t *engine, const authum_char_t *name,
+                        authum_char_t *buf, authum_usize_t buf_size)
 {
     if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
         authum_null_eq((engine)->cvar_get) || authum_null_eq(name) ||
@@ -145,7 +145,7 @@ authum_engine_client_is_connected(const authum_engine_t *engine, authum_i32_t in
 }
 
 authum_i32_t
-authum_engine_client_userid(const authum_engine_t *engine, authum_i32_t index)
+authum_engine_client_get_userid(const authum_engine_t *engine, authum_i32_t index)
 {
     return (!authum_null_eq(engine) && !authum_null_eq((engine)->client_userid))
                ? engine->client_userid(index)
@@ -153,7 +153,7 @@ authum_engine_client_userid(const authum_engine_t *engine, authum_i32_t index)
 }
 
 authum_i32_t
-authum_engine_client_index_by_userid(const authum_engine_t *engine, authum_i32_t userid)
+authum_engine_client_get_index_by_userid(const authum_engine_t *engine, authum_i32_t userid)
 {
     return (!authum_null_eq(engine) && !authum_null_eq((engine)->client_index_by_userid))
                ? engine->client_index_by_userid(userid)
@@ -161,8 +161,8 @@ authum_engine_client_index_by_userid(const authum_engine_t *engine, authum_i32_t
 }
 
 authum_bool_t
-authum_engine_client_get_name(const authum_engine_t *engine, authum_i32_t index, authum_char_t *buf,
-                              authum_usize_t buf_size)
+authum_engine_client_copy_name(const authum_engine_t *engine, authum_i32_t index,
+                               authum_char_t *buf, authum_usize_t buf_size)
 {
     if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
         authum_null_eq((engine)->client_get_name))
@@ -173,8 +173,8 @@ authum_engine_client_get_name(const authum_engine_t *engine, authum_i32_t index,
 }
 
 authum_bool_t
-authum_engine_client_get_auth_id(const authum_engine_t *engine, authum_i32_t index,
-                                 authum_char_t *buf, authum_usize_t buf_size)
+authum_engine_client_copy_auth_id(const authum_engine_t *engine, authum_i32_t index,
+                                  authum_char_t *buf, authum_usize_t buf_size)
 {
     if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
         authum_null_eq((engine)->client_get_auth_id))
@@ -185,8 +185,8 @@ authum_engine_client_get_auth_id(const authum_engine_t *engine, authum_i32_t ind
 }
 
 authum_bool_t
-authum_engine_client_get_address(const authum_engine_t *engine, authum_i32_t index,
-                                 authum_char_t *buf, authum_usize_t buf_size)
+authum_engine_client_copy_address(const authum_engine_t *engine, authum_i32_t index,
+                                  authum_char_t *buf, authum_usize_t buf_size)
 {
     if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
         authum_null_eq((engine)->client_get_address))
@@ -197,8 +197,9 @@ authum_engine_client_get_address(const authum_engine_t *engine, authum_i32_t ind
 }
 
 authum_bool_t
-authum_engine_client_get_info(const authum_engine_t *engine, authum_i32_t index,
-                              const authum_char_t *key, authum_char_t *buf, authum_usize_t buf_size)
+authum_engine_client_copy_info(const authum_engine_t *engine, authum_i32_t index,
+                               const authum_char_t *key, authum_char_t *buf,
+                               authum_usize_t buf_size)
 {
     if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
         authum_null_eq((engine)->client_get_info) || authum_null_eq(key) ||
@@ -246,8 +247,8 @@ authum_engine_query_cvar(const authum_engine_t *engine, authum_i32_t index,
 }
 
 authum_bool_t
-authum_engine_client_get_stats(const authum_engine_t *engine, authum_i32_t index,
-                               authum_i32_t *ping, authum_i32_t *loss)
+authum_engine_client_try_get_stats(const authum_engine_t *engine, authum_i32_t index,
+                                   authum_i32_t *ping, authum_i32_t *loss)
 {
     authum_i32_t dummy_ping;
     authum_i32_t dummy_loss;
@@ -279,7 +280,7 @@ authum_bool_t
 authum_engine_client_chat(const authum_engine_t *engine, authum_i32_t index, authum_i32_t sender,
                           const authum_char_t *text)
 {
-    authum_i32_t say_text = authum_engine_message_id(engine, "SayText");
+    authum_i32_t say_text = authum_engine_message_get_id(engine, "SayText");
     authum_i32_t dest = lh_math_eq(index, 0) ? authum_message_dest_all : authum_message_dest_one;
 
     if (lh_math_eq(say_text, 0) || authum_null_eq(text))
@@ -318,7 +319,7 @@ authum_engine_cvar_get_i32(const authum_engine_t *engine, const authum_char_t *n
     authum_char_t text[64];
     authum_i32_t value;
 
-    return (authum_engine_cvar_get(engine, name, text, sizeof text) &&
+    return (authum_engine_cvar_copy(engine, name, text, sizeof text) &&
             authum_cstr_parse_i32(text, lh_addr_of(value)))
                ? value
                : fallback;
@@ -332,7 +333,7 @@ authum_engine_cvar_get_float(const authum_engine_t *engine, const authum_char_t 
     authum_char_t *end;
     authum_float_t value;
 
-    if (!authum_engine_cvar_get(engine, name, text, sizeof text))
+    if (!authum_engine_cvar_copy(engine, name, text, sizeof text))
     {
         return fallback;
     }
@@ -343,7 +344,7 @@ authum_engine_cvar_get_float(const authum_engine_t *engine, const authum_char_t 
 /* --- user messages ---------------------------------------------------------- */
 
 authum_i32_t
-authum_engine_message_id(const authum_engine_t *engine, const authum_char_t *name)
+authum_engine_message_get_id(const authum_engine_t *engine, const authum_char_t *name)
 {
     if (authum_null_eq(engine) || authum_null_eq((engine)->message_id) || authum_null_eq(name) ||
         lh_math_eq(name[0], lh_char_map_nul))
@@ -478,7 +479,7 @@ authum_engine_precache_generic(const authum_engine_t *engine, const authum_char_
 /* --- entities ---------------------------------------------------------------- */
 
 authum_i32_t
-authum_engine_entity_max(const authum_engine_t *engine)
+authum_engine_entity_get_max(const authum_engine_t *engine)
 {
     return (!authum_null_eq(engine) && !authum_null_eq((engine)->entity_max)) ? engine->entity_max()
                                                                               : 0;
@@ -493,8 +494,8 @@ authum_engine_entity_is_valid(const authum_engine_t *engine, authum_i32_t index)
 }
 
 authum_bool_t
-authum_engine_entity_get_classname(const authum_engine_t *engine, authum_i32_t index,
-                                   authum_char_t *buf, authum_usize_t buf_size)
+authum_engine_entity_copy_classname(const authum_engine_t *engine, authum_i32_t index,
+                                    authum_char_t *buf, authum_usize_t buf_size)
 {
     if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
         authum_null_eq((engine)->entity_get_classname))
@@ -517,8 +518,8 @@ authum_engine_entity_find_by_classname(const authum_engine_t *engine, authum_i32
 }
 
 authum_bool_t
-authum_engine_entity_get_float(const authum_engine_t *engine, authum_i32_t index,
-                               authum_i32_t field, authum_float_t *out)
+authum_engine_entity_try_get_float(const authum_engine_t *engine, authum_i32_t index,
+                                   authum_i32_t field, authum_float_t *out)
 {
     authum_float_t dummy;
 
@@ -539,8 +540,8 @@ authum_engine_entity_set_float(const authum_engine_t *engine, authum_i32_t index
 }
 
 authum_bool_t
-authum_engine_entity_get_i32(const authum_engine_t *engine, authum_i32_t index, authum_i32_t field,
-                             authum_i32_t *out)
+authum_engine_entity_try_get_i32(const authum_engine_t *engine, authum_i32_t index,
+                                 authum_i32_t field, authum_i32_t *out)
 {
     authum_i32_t dummy;
 
@@ -561,8 +562,8 @@ authum_engine_entity_set_i32(const authum_engine_t *engine, authum_i32_t index, 
 }
 
 authum_bool_t
-authum_engine_entity_get_vector(const authum_engine_t *engine, authum_i32_t index,
-                                authum_i32_t field, authum_float_t out[3])
+authum_engine_entity_copy_vector(const authum_engine_t *engine, authum_i32_t index,
+                                 authum_i32_t field, authum_float_t out[3])
 {
     if (authum_null_eq(out))
     {
@@ -593,10 +594,11 @@ authum_engine_client_is_alive(const authum_engine_t *engine, authum_i32_t index)
     authum_float_t health;
 
     return (authum_engine_client_is_connected(engine, index) &&
-            authum_engine_entity_get_i32(engine, index, authum_entity_i32_dead, lh_addr_of(dead)) &&
+            authum_engine_entity_try_get_i32(engine, index, authum_entity_i32_dead,
+                                             lh_addr_of(dead)) &&
             lh_math_eq(dead, authum_entity_dead_no) &&
-            authum_engine_entity_get_float(engine, index, authum_entity_float_health,
-                                           lh_addr_of(health)) &&
+            authum_engine_entity_try_get_float(engine, index, authum_entity_float_health,
+                                               lh_addr_of(health)) &&
             lh_math_gt(health, 0.0f))
                ? authum_bool_true
                : authum_bool_false;
@@ -608,8 +610,8 @@ authum_engine_client_is_bot(const authum_engine_t *engine, authum_i32_t index)
     authum_i32_t flags;
 
     return (authum_engine_client_is_connected(engine, index) &&
-            authum_engine_entity_get_i32(engine, index, authum_entity_i32_flags,
-                                         lh_addr_of(flags)) &&
+            authum_engine_entity_try_get_i32(engine, index, authum_entity_i32_flags,
+                                             lh_addr_of(flags)) &&
             lh_math_ne((lh_math_bit_and(flags, authum_entity_flag_fake_client)), 0))
                ? authum_bool_true
                : authum_bool_false;

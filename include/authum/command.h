@@ -59,21 +59,22 @@ AUTHUM_EXTERN_C_BEGIN
 typedef authum_bool_t (*authum_command_fn)(const authum_command_t *cmd, authum_ptr user);
 
 const authum_char_t *
-authum_command_scope(const authum_command_t *cmd);
+authum_command_get_scope(const authum_command_t *cmd);
 
 const authum_char_t *
-authum_command_name(const authum_command_t *cmd);
+authum_command_get_name(const authum_command_t *cmd);
 
 authum_usize_t
-authum_command_argc(const authum_command_t *cmd);
+authum_command_get_argc(const authum_command_t *cmd);
 
 /** Argument @p index (0 = first after the name); "" when out of range. */
 const authum_char_t *
-authum_command_argv(const authum_command_t *cmd, authum_usize_t index);
+authum_command_get_argv(const authum_command_t *cmd, authum_usize_t index);
 
 /** Argument @p index as i32; false when missing or not a number. */
 authum_bool_t
-authum_command_arg_i32(const authum_command_t *cmd, authum_usize_t index, authum_i32_t *out);
+authum_command_try_get_arg_i32(const authum_command_t *cmd, authum_usize_t index,
+                               authum_i32_t *out);
 
 /** Print one line (a newline is appended). */
 void

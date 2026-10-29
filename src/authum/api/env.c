@@ -8,67 +8,67 @@
 #define AUTHUM_ENV_GET(env, field) ((!authum_null_eq(env)) ? (env)->field : authum_null)
 
 const authum_path_t *
-authum_env_game(const authum_env_t *env)
+authum_env_get_game_path(const authum_env_t *env)
 {
     return AUTHUM_ENV_GET(env, game);
 }
 
 const authum_path_t *
-authum_env_models(const authum_env_t *env)
+authum_env_get_models_path(const authum_env_t *env)
 {
     return AUTHUM_ENV_GET(env, models);
 }
 
 const authum_path_t *
-authum_env_sprites(const authum_env_t *env)
+authum_env_get_sprites_path(const authum_env_t *env)
 {
     return AUTHUM_ENV_GET(env, sprites);
 }
 
 const authum_path_t *
-authum_env_addons(const authum_env_t *env)
+authum_env_get_addons_path(const authum_env_t *env)
 {
     return AUTHUM_ENV_GET(env, addons);
 }
 
 const authum_path_t *
-authum_env_authum(const authum_env_t *env)
+authum_env_get_authum_path(const authum_env_t *env)
 {
     return AUTHUM_ENV_GET(env, authum);
 }
 
 const authum_path_t *
-authum_env_modules(const authum_env_t *env)
+authum_env_get_modules_path(const authum_env_t *env)
 {
     return AUTHUM_ENV_GET(env, modules);
 }
 
 const authum_path_t *
-authum_env_module(const authum_env_t *env)
+authum_env_get_module_path(const authum_env_t *env)
 {
     return AUTHUM_ENV_GET(env, module);
 }
 
 const authum_path_t *
-authum_env_module_config(const authum_env_t *env)
+authum_env_get_module_config_path(const authum_env_t *env)
 {
     return AUTHUM_ENV_GET(env, module_config);
 }
 
 const authum_path_t *
-authum_env_module_lang(const authum_env_t *env)
+authum_env_get_module_lang_path(const authum_env_t *env)
 {
     return AUTHUM_ENV_GET(env, module_lang);
 }
 
 const authum_path_t *
-authum_env_module_data(const authum_env_t *env)
+authum_env_get_module_data_path(const authum_env_t *env)
 {
     return AUTHUM_ENV_GET(env, module_data);
 }
 
 authum_bool_t
-authum_env_config_path(const authum_env_t *env, const authum_char_t *leaf, authum_path_t *out)
+authum_env_join_config_path(const authum_env_t *env, const authum_char_t *leaf, authum_path_t *out)
 {
     FILE *file;
 
@@ -77,13 +77,13 @@ authum_env_config_path(const authum_env_t *env, const authum_char_t *leaf, authu
         return authum_bool_false;
     }
     authum_path_clear(out);
-    if (authum_null_eq(authum_env_module_config(env)) || authum_null_eq(leaf) ||
+    if (authum_null_eq(authum_env_get_module_config_path(env)) || authum_null_eq(leaf) ||
         lh_math_eq(leaf[0], lh_char_map_nul) ||
-        !authum_path_join(out, authum_env_module_config(env), leaf))
+        !authum_path_join(out, authum_env_get_module_config_path(env), leaf))
     {
         return authum_bool_false;
     }
-    file = fopen(authum_path_as_cstr(out), "rb");
+    file = fopen(authum_path_get_cstr(out), "rb");
     if (authum_null_eq(file))
     {
         return authum_bool_false;
@@ -93,9 +93,9 @@ authum_env_config_path(const authum_env_t *env, const authum_char_t *leaf, authu
 }
 
 authum_bool_t
-authum_env_data_path(const authum_env_t *env, const authum_char_t *leaf, authum_path_t *out)
+authum_env_join_data_path(const authum_env_t *env, const authum_char_t *leaf, authum_path_t *out)
 {
-    const authum_path_t *data = authum_env_module_data(env);
+    const authum_path_t *data = authum_env_get_module_data_path(env);
 
     if (authum_null_eq(out))
     {

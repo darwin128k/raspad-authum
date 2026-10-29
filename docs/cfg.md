@@ -98,7 +98,7 @@ mymod_config_load(authum_host_t *host)
     authum_cfg_t cfg;
 
     /* addons/authum/modules/mymod/configs/mymod.cfg */
-    if (!authum_host_config_path(host, "mymod.cfg", &path) ||
+    if (!authum_host_join_config_path(host, "mymod.cfg", &path) ||
         !authum_cfg_open(&cfg, &path)) {
         /* defaults already on g_mymod_config */
         return;
@@ -135,7 +135,7 @@ long-lived struct:
 authum_bool_t on = authum_cfg_get_bool(&cfg, "enable_foo", authum_bool_true);
 authum_i32_t  n  = authum_cfg_get_i32(&cfg, "max_players", 32);
 authum_char_t buf[64];
-authum_cfg_get_cstr(&cfg, "name", buf, sizeof buf, "default");
+authum_cfg_copy_cstr(&cfg, "name", buf, sizeof buf, "default");
 ```
 
 Prefer `apply_*` / the items table for normal module settings.
@@ -152,7 +152,7 @@ Typical cases:
 
 | Situation | Approach |
 |-----------|----------|
-| Enum / string layout (`auto`, `classic`, …) | `apply_cstr` into a scratch buffer, then map with `authum_cstr_eq(..., ignore_case)` |
+| Enum / string layout (`auto`, `classic`, …) | `apply_cstr` into a scratch buffer, then map with `authum_cstr_is_equal(..., ignore_case)` |
 | Restricted integer set | `apply_i32`, accept only allowed values; ignore illegal |
 | Dependent keys | Read A, then decide whether/how to apply B |
 | Non-scalar / multi-token value | `get_value` / `apply_cstr`, parse yourself |
@@ -192,7 +192,7 @@ keep load logic in one `.c` so it stays debuggable.
 |------|-----|
 | `authum_cfg_open(cfg, path)` | `authum_path_t *` (preferred with host env) |
 | `authum_cfg_open_cstr(cfg, path)` | C string path |
-| `authum_cfg_adopt(cfg, FILE *)` | Already-open stream (module owns close via `authum_cfg_close`) |
+| `authum_cfg_open_file(cfg, FILE *)` | Already-open stream (module owns close via `authum_cfg_close`) |
 | `authum_cfg_close(cfg)` | Always pair with a successful open/adopt |
 
 Each `get_*` / `apply_*` rewinds and scans the file for the key. That is fine
@@ -209,9 +209,9 @@ Prefer host-filled roots, not ad-hoc `char *` or `getcwd`:
 
 ```c
 authum_path_t path;
-authum_host_config_path(host, "mymod.cfg", &path);      /* modules/mymod/configs/mymod.cfg */
-authum_host_config_path(host, "whitelist.ini", &path);  /* modules/mymod/configs/whitelist.ini */
-authum_host_data_path(host, "mymod.db", &path);         /* modules/mymod/data/mymod.db */
+authum_host_join_config_path(host, "mymod.cfg", &path);      /* modules/mymod/configs/mymod.cfg */
+authum_host_join_config_path(host, "whitelist.ini", &path);  /* modules/mymod/configs/whitelist.ini */
+authum_host_join_data_path(host, "mymod.db", &path);         /* modules/mymod/data/mymod.db */
 ```
 
 Never read `host->env` / `host->engine` fields directly — only

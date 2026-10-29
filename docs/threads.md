@@ -1,6 +1,6 @@
 # Managed threads
 
-`authum_host_threads(host)` returns a host-owned threading service. The SDK
+`authum_host_get_threads(host)` returns a host-owned threading service. The SDK
 contains only table-dispatch wrappers; the OS implementation lives in authum.so.
 A host without threads (an unsupported platform) returns NULL; check it before
 relying on the service.

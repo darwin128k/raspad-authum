@@ -33,7 +33,7 @@ authum_logger_level_parse(const authum_char_t *name, authum_logger_level_t *out)
              i, lh_math_div(sizeof authum_logger_level_names, sizeof authum_logger_level_names[0]));
          i = lh_math_add_one(i))
     {
-        if (authum_cstr_eq(name, authum_logger_level_names[i].name, authum_bool_true))
+        if (authum_cstr_is_equal(name, authum_logger_level_names[i].name, authum_bool_true))
         {
             lh_ptr_deref(out) = authum_logger_level_names[i].level;
             return authum_bool_true;
@@ -43,7 +43,7 @@ authum_logger_level_parse(const authum_char_t *name, authum_logger_level_t *out)
 }
 
 const authum_char_t *
-authum_logger_level_name(authum_logger_level_t level)
+authum_logger_level_get_name(authum_logger_level_t level)
 {
     return lh_math_le(level, authum_logger_level_debug) ? authum_logger_level_names[level].name
                                                         : "?";
@@ -92,7 +92,7 @@ authum_logger_init(authum_logger_t *self, const authum_host_t *host)
     if (!authum_null_eq(self))
     {
         lh_memory_std_set(self, 0, sizeof lh_ptr_deref(self));
-        self->channel = authum_host_logger(host);
+        self->channel = authum_host_get_logger(host);
     }
 }
 
@@ -183,7 +183,7 @@ authum_host_log(const authum_host_t *host, authum_logger_level_t level, const au
 authum_bool_t
 authum_logger_is_enabled(const authum_logger_t *self, authum_logger_level_t level)
 {
-    if (authum_logger_buffer_active())
+    if (authum_logger_buffer_is_active())
     {
         return self && lh_math_le(level, authum_logger_level_debug);
     }

@@ -4,12 +4,12 @@
  *
  * Storage is a sandbox block, so an array a module forgets to deinit is still
  * released at unload. Items are copied in by value; pointers returned by
- * ::authum_array_at / ::authum_array_push stay valid until the next call that
+ * ::authum_array_get_at / ::authum_array_push stay valid until the next call that
  * grows or shrinks the array.
  *
  * @code
  * authum_array_t names;
- * authum_array_init(&names, authum_host_sandbox(host), sizeof(mymod_name_t));
+ * authum_array_init(&names, authum_host_get_sandbox(host), sizeof(mymod_name_t));
  * mymod_name_t *slot = authum_array_push(&names, authum_null);  // zeroed item
  * @endcode
  */
@@ -41,7 +41,7 @@ void
 authum_array_deinit(authum_array_t *self);
 
 authum_usize_t
-authum_array_size(const authum_array_t *self);
+authum_array_get_size(const authum_array_t *self);
 
 authum_bool_t
 authum_array_is_empty(const authum_array_t *self);
@@ -59,7 +59,7 @@ authum_array_push(authum_array_t *self, authum_cptr item);
 
 /** Item @p index, or null when out of range. */
 authum_ptr
-authum_array_at(const authum_array_t *self, authum_usize_t index);
+authum_array_get_at(const authum_array_t *self, authum_usize_t index);
 
 /** Remove item @p index, keeping the order of the rest. */
 authum_bool_t

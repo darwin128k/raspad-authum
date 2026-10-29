@@ -182,8 +182,8 @@ enum
 AUTHUM_EXTERN_C_BEGIN
 
 void
-authum_engine_get_game_dir(const authum_engine_t *engine, authum_char_t *buf,
-                           authum_usize_t buf_size);
+authum_engine_copy_game_dir(const authum_engine_t *engine, authum_char_t *buf,
+                            authum_usize_t buf_size);
 
 void
 authum_engine_server_print(const authum_engine_t *engine, const authum_char_t *text);
@@ -192,18 +192,18 @@ void
 authum_engine_server_command(const authum_engine_t *engine, const authum_char_t *cmd);
 
 authum_i32_t
-authum_engine_max_clients(const authum_engine_t *engine);
+authum_engine_get_max_clients(const authum_engine_t *engine);
 
 authum_float_t
-authum_engine_game_time(const authum_engine_t *engine);
+authum_engine_get_game_time(const authum_engine_t *engine);
 
 void
-authum_engine_get_map_name(const authum_engine_t *engine, authum_char_t *buf,
-                           authum_usize_t buf_size);
+authum_engine_copy_map_name(const authum_engine_t *engine, authum_char_t *buf,
+                            authum_usize_t buf_size);
 
 authum_bool_t
-authum_engine_cvar_get(const authum_engine_t *engine, const authum_char_t *name,
-                       authum_char_t *buf, authum_usize_t buf_size);
+authum_engine_cvar_copy(const authum_engine_t *engine, const authum_char_t *name,
+                        authum_char_t *buf, authum_usize_t buf_size);
 
 authum_bool_t
 authum_engine_cvar_set(const authum_engine_t *engine, const authum_char_t *name,
@@ -223,27 +223,27 @@ authum_bool_t
 authum_engine_client_is_connected(const authum_engine_t *engine, authum_i32_t index);
 
 authum_i32_t
-authum_engine_client_userid(const authum_engine_t *engine, authum_i32_t index);
+authum_engine_client_get_userid(const authum_engine_t *engine, authum_i32_t index);
 
 authum_i32_t
-authum_engine_client_index_by_userid(const authum_engine_t *engine, authum_i32_t userid);
+authum_engine_client_get_index_by_userid(const authum_engine_t *engine, authum_i32_t userid);
 
 authum_bool_t
-authum_engine_client_get_name(const authum_engine_t *engine, authum_i32_t index,
-                              authum_char_t *buf, authum_usize_t buf_size);
+authum_engine_client_copy_name(const authum_engine_t *engine, authum_i32_t index,
+                               authum_char_t *buf, authum_usize_t buf_size);
 
 authum_bool_t
-authum_engine_client_get_auth_id(const authum_engine_t *engine, authum_i32_t index,
-                                 authum_char_t *buf, authum_usize_t buf_size);
+authum_engine_client_copy_auth_id(const authum_engine_t *engine, authum_i32_t index,
+                                  authum_char_t *buf, authum_usize_t buf_size);
 
 authum_bool_t
-authum_engine_client_get_address(const authum_engine_t *engine, authum_i32_t index,
-                                 authum_char_t *buf, authum_usize_t buf_size);
+authum_engine_client_copy_address(const authum_engine_t *engine, authum_i32_t index,
+                                  authum_char_t *buf, authum_usize_t buf_size);
 
 authum_bool_t
-authum_engine_client_get_info(const authum_engine_t *engine, authum_i32_t index,
-                              const authum_char_t *key, authum_char_t *buf,
-                              authum_usize_t buf_size);
+authum_engine_client_copy_info(const authum_engine_t *engine, authum_i32_t index,
+                               const authum_char_t *key, authum_char_t *buf,
+                               authum_usize_t buf_size);
 
 authum_bool_t
 authum_engine_client_print(const authum_engine_t *engine, authum_i32_t index, authum_i32_t kind,
@@ -264,8 +264,8 @@ authum_engine_query_cvar(const authum_engine_t *engine, authum_i32_t index,
 
 /** Ping (ms) and loss (%); both 0 and false when the player is not there. */
 authum_bool_t
-authum_engine_client_get_stats(const authum_engine_t *engine, authum_i32_t index,
-                               authum_i32_t *ping, authum_i32_t *loss);
+authum_engine_client_try_get_stats(const authum_engine_t *engine, authum_i32_t index,
+                                   authum_i32_t *ping, authum_i32_t *loss);
 
 authum_bool_t
 authum_engine_client_set_info(const authum_engine_t *engine, authum_i32_t index,
@@ -300,7 +300,7 @@ authum_engine_cvar_get_float(const authum_engine_t *engine, const authum_char_t 
 /* --- user messages (<authum/engine/message.h>) ------------------------- */
 
 authum_i32_t
-authum_engine_message_id(const authum_engine_t *engine, const authum_char_t *name);
+authum_engine_message_get_id(const authum_engine_t *engine, const authum_char_t *name);
 
 /** Every _write_* and _end after a false begin does nothing. */
 authum_bool_t
@@ -337,14 +337,14 @@ authum_engine_message_end(const authum_engine_t *engine);
 /* --- entities (<authum/engine/entity.h>) ------------------------------- */
 
 authum_i32_t
-authum_engine_entity_max(const authum_engine_t *engine);
+authum_engine_entity_get_max(const authum_engine_t *engine);
 
 authum_bool_t
 authum_engine_entity_is_valid(const authum_engine_t *engine, authum_i32_t index);
 
 authum_bool_t
-authum_engine_entity_get_classname(const authum_engine_t *engine, authum_i32_t index,
-                                   authum_char_t *buf, authum_usize_t buf_size);
+authum_engine_entity_copy_classname(const authum_engine_t *engine, authum_i32_t index,
+                                    authum_char_t *buf, authum_usize_t buf_size);
 
 authum_i32_t
 authum_engine_entity_find_by_classname(const authum_engine_t *engine, authum_i32_t start,
@@ -352,24 +352,24 @@ authum_engine_entity_find_by_classname(const authum_engine_t *engine, authum_i32
 
 /** `authum_entity_float_*` @p field; 0 and false when the entity or field is not there. */
 authum_bool_t
-authum_engine_entity_get_float(const authum_engine_t *engine, authum_i32_t index,
-                               authum_i32_t field, authum_float_t *out);
+authum_engine_entity_try_get_float(const authum_engine_t *engine, authum_i32_t index,
+                                   authum_i32_t field, authum_float_t *out);
 
 authum_bool_t
 authum_engine_entity_set_float(const authum_engine_t *engine, authum_i32_t index,
                                authum_i32_t field, authum_float_t value);
 
 authum_bool_t
-authum_engine_entity_get_i32(const authum_engine_t *engine, authum_i32_t index,
-                             authum_i32_t field, authum_i32_t *out);
+authum_engine_entity_try_get_i32(const authum_engine_t *engine, authum_i32_t index,
+                                 authum_i32_t field, authum_i32_t *out);
 
 authum_bool_t
 authum_engine_entity_set_i32(const authum_engine_t *engine, authum_i32_t index,
                              authum_i32_t field, authum_i32_t value);
 
 authum_bool_t
-authum_engine_entity_get_vector(const authum_engine_t *engine, authum_i32_t index,
-                                authum_i32_t field, authum_float_t out[3]);
+authum_engine_entity_copy_vector(const authum_engine_t *engine, authum_i32_t index,
+                                 authum_i32_t field, authum_float_t out[3]);
 
 authum_bool_t
 authum_engine_entity_set_vector(const authum_engine_t *engine, authum_i32_t index,

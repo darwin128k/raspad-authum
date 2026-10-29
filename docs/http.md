@@ -13,11 +13,11 @@ accounting, worker lifecycle or filesystem traversal.
     authum_cstr_copy(options.bind, sizeof options.bind, "0.0.0.0");
     authum_cstr_copy(options.allow_dirs, sizeof options.allow_dirs, "maps models sound");
     authum_cstr_copy(options.allow_extensions, sizeof options.allow_extensions, "bsp mdl wav");
-    authum_http_source_add(&options, authum_path_as_cstr(authum_host_env_game(host)));
+    authum_http_source_add(&options, authum_path_get_cstr(authum_host_get_game_path(host)));
 
     authum_char_t error[512];
     authum_http_server_t *server =
-        authum_http_open(authum_host_http(host), &options, error, sizeof error);
+        authum_http_open(authum_host_get_http(host), &options, error, sizeof error);
     /* Check server before proceeding; error describes startup failure. */
 
 Check the HTTP facade and required environment paths when supporting older
@@ -67,8 +67,8 @@ drain calls are capped at 257 records even if a larger limit is requested.
 
 ## Monotonic clock
 
-    const authum_clock_t *clock = authum_host_clock(host);
-    authum_i64_t now_ms = authum_clock_monotonic_ms(clock);
+    const authum_clock_t *clock = authum_host_get_clock(host);
+    authum_i64_t now_ms = authum_clock_get_monotonic_ms(clock);
 
 Elapsed monotonic time is for deadlines, budgets and durations, not UTC or
 game/map time. Worker reads are supported; keep the facade only while the host

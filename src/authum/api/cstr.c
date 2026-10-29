@@ -8,7 +8,7 @@
 #include <string.h>
 
 authum_char_t
-authum_char_ascii_lower(authum_char_t c)
+authum_char_to_lower(authum_char_t c)
 {
     return lh_char_is_upper(c) ? lh_char_fold_case(c) : c;
 }
@@ -33,7 +33,7 @@ authum_cstr_copy(authum_char_t *dst, authum_usize_t dst_size, const authum_char_
 }
 
 authum_bool_t
-authum_cstr_eq(const authum_char_t *a, const authum_char_t *b, authum_bool_t ignore_case)
+authum_cstr_is_equal(const authum_char_t *a, const authum_char_t *b, authum_bool_t ignore_case)
 {
     if (authum_null_eq(a) || authum_null_eq(b))
     {
@@ -45,8 +45,8 @@ authum_cstr_eq(const authum_char_t *a, const authum_char_t *b, authum_bool_t ign
     }
     for (;;)
     {
-        authum_char_t ca = authum_char_ascii_lower(lh_ptr_deref(a));
-        authum_char_t cb = authum_char_ascii_lower(lh_ptr_deref(b));
+        authum_char_t ca = authum_char_to_lower(lh_ptr_deref(a));
+        authum_char_t cb = authum_char_to_lower(lh_ptr_deref(b));
         if (lh_math_ne(ca, cb))
         {
             return authum_bool_false;
@@ -148,16 +148,16 @@ authum_cstr_parse_bool(const authum_char_t *text, authum_bool_t *out)
     {
         return authum_bool_false;
     }
-    if (authum_cstr_eq(text, "true", authum_bool_true) ||
-        authum_cstr_eq(text, "yes", authum_bool_true) ||
-        authum_cstr_eq(text, "on", authum_bool_true))
+    if (authum_cstr_is_equal(text, "true", authum_bool_true) ||
+        authum_cstr_is_equal(text, "yes", authum_bool_true) ||
+        authum_cstr_is_equal(text, "on", authum_bool_true))
     {
         lh_ptr_deref(out) = authum_bool_true;
         return authum_bool_true;
     }
-    if (authum_cstr_eq(text, "false", authum_bool_true) ||
-        authum_cstr_eq(text, "no", authum_bool_true) ||
-        authum_cstr_eq(text, "off", authum_bool_true))
+    if (authum_cstr_is_equal(text, "false", authum_bool_true) ||
+        authum_cstr_is_equal(text, "no", authum_bool_true) ||
+        authum_cstr_is_equal(text, "off", authum_bool_true))
     {
         lh_ptr_deref(out) = authum_bool_false;
         return authum_bool_true;

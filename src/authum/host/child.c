@@ -194,14 +194,14 @@ authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
 
     authum_child_bind_parent(lh_addr_of(paths->authum), lh_addr_of(env->authum),
                              lh_os_module_get_path(lh_addr_of(authum)));
-    if (!lh_null_eq(env->authum) && authum_path_parent(lh_addr_of(up), env->authum))
+    if (!lh_null_eq(env->authum) && authum_path_assign_parent(lh_addr_of(up), env->authum))
     {
         authum_child_bind_path(lh_addr_of(paths->addons), lh_addr_of(env->addons),
-                               authum_path_as_cstr(lh_addr_of(up)));
-        if (authum_path_parent(lh_addr_of(up), env->addons))
+                               authum_path_get_cstr(lh_addr_of(up)));
+        if (authum_path_assign_parent(lh_addr_of(up), env->addons))
         {
             authum_child_bind_path(lh_addr_of(paths->game), lh_addr_of(env->game),
-                                   authum_path_as_cstr(lh_addr_of(up)));
+                                   authum_path_get_cstr(lh_addr_of(up)));
         }
     }
 
@@ -210,8 +210,8 @@ authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
         authum_char_t buf[authum_path_capacity];
 
         lh_memory_std_set(buf, 0, sizeof(buf));
-        authum_engine_get_game_dir(data->host.engine, buf,
-                                   lh_cast_static(authum_usize_t, sizeof(buf)));
+        authum_engine_copy_game_dir(data->host.engine, buf,
+                                    lh_cast_static(authum_usize_t, sizeof(buf)));
         authum_child_bind_path(lh_addr_of(paths->game), lh_addr_of(env->game), buf);
     }
 
@@ -287,7 +287,7 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
                                      lh_addr_of(data->placeholder_service));
     out->placeholders = lh_addr_of(data->placeholder_service);
     authum_unused(
-        authum_logs_open(data, data->info->name, authum_path_as_cstr_or_null(data->env.module)));
+        authum_logs_open(data, data->info->name, authum_path_get_cstr_or_null(data->env.module)));
 }
 
 /** After `stop` (or a failed `start`): drop the module's subscriptions and

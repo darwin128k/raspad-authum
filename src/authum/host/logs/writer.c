@@ -43,7 +43,7 @@ stop_writer(authum_ptr user)
 static void
 run_writer(authum_ptr user)
 {
-    authum_i64_t last_flush = authum_clock_monotonic_ms(authum_clock_host());
+    authum_i64_t last_flush = authum_clock_get_monotonic_ms(authum_clock_host());
     authum_u32_t reported = 0;
     authum_unused(user);
     for (;;)
@@ -67,7 +67,7 @@ run_writer(authum_ptr user)
             sink.dropped(lh_math_sub(losses, reported));
             reported = losses;
         }
-        authum_i64_t now = authum_clock_monotonic_ms(authum_clock_host());
+        authum_i64_t now = authum_clock_get_monotonic_ms(authum_clock_host());
         if (lh_math_ne(request,
                        atomic_load_explicit(lh_addr_of(completed), memory_order_relaxed)) ||
             lh_math_ge(lh_math_sub(now, last_flush), 100))
@@ -156,10 +156,10 @@ authum_logs_writer_sync(authum_u32_t timeout_ms)
     }
     authum_u32_t request =
         lh_math_add(atomic_fetch_add_explicit(lh_addr_of(requested), 1, memory_order_release), 1);
-    authum_i64_t start = authum_clock_monotonic_ms(authum_clock_host());
+    authum_i64_t start = authum_clock_get_monotonic_ms(authum_clock_host());
     while (lh_math_ne(atomic_load_explicit(lh_addr_of(completed), memory_order_acquire), request))
     {
-        if (lh_math_ge(lh_math_sub(authum_clock_monotonic_ms(authum_clock_host()), start),
+        if (lh_math_ge(lh_math_sub(authum_clock_get_monotonic_ms(authum_clock_host()), start),
                        timeout_ms))
         {
             return authum_bool_false;

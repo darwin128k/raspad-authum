@@ -75,8 +75,8 @@ authum_clients_destroy(authum_clients_t *self)
     for (i = 0; lh_math_lt(i, lh_math_div(sizeof m_client_events, sizeof m_client_events[0]));
          i = lh_math_add_one(i))
     {
-        authum_events_unsubscribe(authum_host_events(lh_addr_of(impl->host)), m_client_events[i],
-                                  authum_clients_event, impl);
+        authum_events_unsubscribe(authum_host_get_events(lh_addr_of(impl->host)),
+                                  m_client_events[i], authum_clients_event, impl);
     }
     authum_memory_free(impl);
     self->impl = authum_null;
@@ -87,7 +87,8 @@ authum_clients_init(authum_clients_t *self, const authum_host_t *host, authum_us
 {
     authum_clients_impl_t *impl;
     authum_u32_t i;
-    if (!self || self->impl || !host || !authum_host_events(host) || !max || lh_math_gt(max, 4096))
+    if (!self || self->impl || !host || !authum_host_get_events(host) || !max ||
+        lh_math_gt(max, 4096))
     {
         return authum_bool_false;
     }
@@ -103,7 +104,8 @@ authum_clients_init(authum_clients_t *self, const authum_host_t *host, authum_us
     impl->id = ++m_next_tracker;
     for (i = 1; lh_math_le(i, max); i = lh_math_add_one(i))
     {
-        impl->slots[i].userid = authum_host_client_userid(host, lh_cast_static(authum_i32_t, i));
+        impl->slots[i].userid =
+            authum_host_client_get_userid(host, lh_cast_static(authum_i32_t, i));
         impl->slots[i].connected = lh_math_gt(impl->slots[i].userid, 0);
         impl->slots[i].generation = 1;
     }
@@ -136,7 +138,7 @@ authum_clients_capture(const authum_clients_t *self, authum_i32_t index, authum_
     }
     slot = lh_addr_of(impl->slots[index]);
     if (!slot->connected || lh_math_le(slot->userid, 0) ||
-        lh_math_ne(authum_host_client_userid(lh_addr_of(impl->host), index), slot->userid))
+        lh_math_ne(authum_host_client_get_userid(lh_addr_of(impl->host), index), slot->userid))
     {
         return authum_bool_false;
     }

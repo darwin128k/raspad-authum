@@ -70,8 +70,8 @@ authum_commands_find(const authum_char_t *scope, const authum_char_t *name)
 
     for (e = authum_commands_head; !authum_null_eq(e); e = e->next)
     {
-        if (!e->dead && authum_cstr_eq(e->scope, scope, authum_bool_true) &&
-            authum_cstr_eq(e->name, name, authum_bool_true))
+        if (!e->dead && authum_cstr_is_equal(e->scope, scope, authum_bool_true) &&
+            authum_cstr_is_equal(e->name, name, authum_bool_true))
         {
             return e;
         }
@@ -222,7 +222,7 @@ authum_commands_host_has_scope(const authum_char_t *scope)
 
     for (e = authum_commands_head; !authum_null_eq(e); e = e->next)
     {
-        if (!e->dead && authum_cstr_eq(e->scope, scope, authum_bool_true))
+        if (!e->dead && authum_cstr_is_equal(e->scope, scope, authum_bool_true))
         {
             return authum_bool_true;
         }
@@ -240,7 +240,7 @@ authum_commands_host_print_help(const authum_char_t *scope, authum_command_print
     for (e = authum_commands_head; !authum_null_eq(e); e = e->next)
     {
         if (e->dead ||
-            (!authum_null_eq(scope) && !authum_cstr_eq(e->scope, scope, authum_bool_true)))
+            (!authum_null_eq(scope) && !authum_cstr_is_equal(e->scope, scope, authum_bool_true)))
         {
             continue;
         }

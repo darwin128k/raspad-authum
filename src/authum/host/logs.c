@@ -92,8 +92,8 @@ authum_logs_parse_level(const authum_char_t *value, authum_i32_t fallback)
     {
         return fallback;
     }
-    if (authum_cstr_eq(value, "off", authum_bool_true) ||
-        authum_cstr_eq(value, "none", authum_bool_true))
+    if (authum_cstr_is_equal(value, "off", authum_bool_true) ||
+        authum_cstr_is_equal(value, "none", authum_bool_true))
     {
         return authum_logs_level_off;
     }
@@ -382,7 +382,7 @@ authum_logs_write(authum_ptr owner, authum_logger_level_t level, const authum_ch
     }
     if (!authum_logs_ready)
     {
-        fprintf(stderr, "[authum] [%s] %s\n", authum_logger_level_name(level), text);
+        fprintf(stderr, "[authum] [%s] %s\n", authum_logger_level_get_name(level), text);
         return;
     }
     channel = authum_logs_find(owner);
@@ -462,7 +462,7 @@ authum_logs_add(authum_ptr owner, authum_logs_channel_t *parent, const authum_ch
             return authum_null;
         }
     }
-    if (!authum_path_as_cstr(lh_addr_of(channel->dir))[0])
+    if (!authum_path_get_cstr(lh_addr_of(channel->dir))[0])
     {
         authum_memory_free(channel);
         return authum_null;

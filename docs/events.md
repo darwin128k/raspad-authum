@@ -200,10 +200,10 @@ of its own but the module ABI table.
 Resolve an event once during module startup, then retain its ID:
 
 ```c
-authum_event_id_t id = authum_events_resolve(authum_host_events(host), "scores.changed");
+authum_event_id_t id = authum_events_get_id(authum_host_get_events(host), "scores.changed");
 /* Check id != 0 before retaining/using it. */
-authum_events_subscribe_id(authum_host_events(host), id, on_changed, user);
-authum_events_publish_id(authum_host_events(host), id, payload);
+authum_events_subscribe_id(authum_host_get_events(host), id, on_changed, user);
+authum_events_publish_id(authum_host_get_events(host), id, payload);
 ```
 
 `authum_events_unsubscribe_id` removes the same subscription as the string

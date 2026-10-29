@@ -8,7 +8,7 @@
 authum_i64_t
 authum_http_now_ms(void)
 {
-    return authum_clock_monotonic_ms(authum_clock_host());
+    return authum_clock_get_monotonic_ms(authum_clock_host());
 }
 
 authum_i32_t

@@ -65,7 +65,7 @@ authum_bool_t
 authum_cfg_open(authum_cfg_t *self, const authum_path_t *path);
 
 authum_bool_t
-authum_cfg_adopt(authum_cfg_t *self, FILE *file);
+authum_cfg_open_file(authum_cfg_t *self, FILE *file);
 
 /**
  * @brief Look up @p key (case-insensitive). Value lives in @p self->line
@@ -88,8 +88,8 @@ authum_cfg_get_u32(authum_cfg_t *self, const authum_char_t *key, authum_u32_t de
  * @return ::authum_bool_true when the key was present (false → default copied).
  */
 authum_bool_t
-authum_cfg_get_cstr(authum_cfg_t *self, const authum_char_t *key, authum_char_t *buf,
-                    authum_usize_t buf_size, const authum_char_t *default_value);
+authum_cfg_copy_cstr(authum_cfg_t *self, const authum_char_t *key, authum_char_t *buf,
+                     authum_usize_t buf_size, const authum_char_t *default_value);
 
 authum_bool_t
 authum_cfg_apply_bool(authum_cfg_t *self, const authum_char_t *key, authum_bool_t *out);

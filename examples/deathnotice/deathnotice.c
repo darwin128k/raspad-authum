@@ -48,12 +48,12 @@ deathnotice_on_death(const authum_char_t *name, authum_ptr payload, authum_ptr u
     /* DeathMsg: byte killer, byte victim, byte headshot, string weapon. */
     killer = authum_event_message_get_i32(ev, 0);
     victim = authum_event_message_get_i32(ev, 1);
-    if (!authum_host_client_get_name(&g_deathnotice_host, victim, victim_name, sizeof victim_name))
+    if (!authum_host_client_copy_name(&g_deathnotice_host, victim, victim_name, sizeof victim_name))
     {
         return authum_event_result_continue;
     }
     if (killer == victim ||
-        !authum_host_client_get_name(&g_deathnotice_host, killer, killer_name, sizeof killer_name))
+        !authum_host_client_copy_name(&g_deathnotice_host, killer, killer_name, sizeof killer_name))
     {
         snprintf(text, sizeof text, "\x04[Death]\x01 %s died", victim_name);
     }

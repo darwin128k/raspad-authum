@@ -43,11 +43,11 @@ authum_net_ipv4_is_loopback(authum_u32_t ip);
  * exist (may be more than @p max). 0 = none (e.g. behind NAT).
  */
 authum_usize_t
-authum_net_ipv4_external(authum_u32_t *out, authum_usize_t max);
+authum_net_ipv4_collect_external(authum_u32_t *out, authum_usize_t max);
 
 /** Same for internal addresses: non-loopback and not external (LAN / NAT side). */
 authum_usize_t
-authum_net_ipv4_internal(authum_u32_t *out, authum_usize_t max);
+authum_net_ipv4_collect_internal(authum_u32_t *out, authum_usize_t max);
 
 /** Dotted text into @p buf (at least ::AUTHUM_NET_IPV4_TEXT_SIZE). */
 authum_bool_t

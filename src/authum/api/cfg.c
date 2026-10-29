@@ -46,11 +46,11 @@ authum_cfg_open_cstr(authum_cfg_t *self, const authum_char_t *path)
 authum_bool_t
 authum_cfg_open(authum_cfg_t *self, const authum_path_t *path)
 {
-    return authum_cfg_open_cstr(self, authum_path_as_cstr_or_null(path));
+    return authum_cfg_open_cstr(self, authum_path_get_cstr_or_null(path));
 }
 
 authum_bool_t
-authum_cfg_adopt(authum_cfg_t *self, FILE *file)
+authum_cfg_open_file(authum_cfg_t *self, FILE *file)
 {
     if (authum_null_eq(self) || authum_null_eq(file))
     {
@@ -130,7 +130,7 @@ authum_cfg_get_value(authum_cfg_t *self, const authum_char_t *key)
             key_end = lh_math_sub_one(key_end);
             lh_ptr_deref(key_end) = lh_char_map_nul;
         }
-        if (lh_math_eq(p[0], lh_char_map_nul) || !authum_cstr_eq(p, key, authum_bool_true))
+        if (lh_math_eq(p[0], lh_char_map_nul) || !authum_cstr_is_equal(p, key, authum_bool_true))
         {
             continue;
         }
@@ -189,8 +189,8 @@ authum_cfg_get_u32(authum_cfg_t *self, const authum_char_t *key, authum_u32_t de
 }
 
 authum_bool_t
-authum_cfg_get_cstr(authum_cfg_t *self, const authum_char_t *key, authum_char_t *buf,
-                    authum_usize_t buf_size, const authum_char_t *default_value)
+authum_cfg_copy_cstr(authum_cfg_t *self, const authum_char_t *key, authum_char_t *buf,
+                     authum_usize_t buf_size, const authum_char_t *default_value)
 {
     const authum_char_t *v;
 

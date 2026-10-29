@@ -79,7 +79,8 @@ authum_http_drain(const authum_http_service_t *service, authum_http_server_t *se
 }
 
 authum_usize_t
-authum_http_memory_usage(const authum_http_service_t *service, const authum_http_server_t *server)
+authum_http_get_memory_usage(const authum_http_service_t *service,
+                             const authum_http_server_t *server)
 {
     return service && service->ops && !authum_null_eq((service->ops)->memory_usage)
                ? service->ops->memory_usage(service->owner, server)

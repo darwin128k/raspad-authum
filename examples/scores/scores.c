@@ -85,7 +85,8 @@ scores_cmd_add(const authum_command_t *cmd, authum_ptr user)
     authum_i32_t points;
 
     authum_unused(user);
-    if (!authum_command_arg_i32(cmd, 0u, &index) || !authum_command_arg_i32(cmd, 1u, &points))
+    if (!authum_command_try_get_arg_i32(cmd, 0u, &index) ||
+        !authum_command_try_get_arg_i32(cmd, 1u, &points))
     {
         return authum_bool_false;
     }

@@ -37,7 +37,7 @@ authum_array_deinit(authum_array_t *self)
 }
 
 authum_usize_t
-authum_array_size(const authum_array_t *self)
+authum_array_get_size(const authum_array_t *self)
 {
     return authum_null_eq(self) ? 0u : self->size;
 }
@@ -45,7 +45,7 @@ authum_array_size(const authum_array_t *self)
 authum_bool_t
 authum_array_is_empty(const authum_array_t *self)
 {
-    return (lh_math_eq(authum_array_size(self), 0u)) ? authum_bool_true : authum_bool_false;
+    return (lh_math_eq(authum_array_get_size(self), 0u)) ? authum_bool_true : authum_bool_false;
 }
 
 authum_bool_t
@@ -109,7 +109,7 @@ authum_array_push(authum_array_t *self, authum_cptr item)
 }
 
 authum_ptr
-authum_array_at(const authum_array_t *self, authum_usize_t index)
+authum_array_get_at(const authum_array_t *self, authum_usize_t index)
 {
     if (authum_null_eq(self) || lh_math_ge(index, self->size))
     {

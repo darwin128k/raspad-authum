@@ -49,7 +49,7 @@ authum_logs_is_open(const authum_path_t *dir, long day)
     for (authum_usize_t i = 0; lh_math_lt(i, authum_logs_file_capacity); i = lh_math_add_one(i))
     {
         if (files[i].file && lh_math_eq(files[i].day, day) &&
-            !strcmp(authum_path_as_cstr(dir), authum_path_as_cstr(lh_addr_of(files[i].dir))))
+            !strcmp(authum_path_get_cstr(dir), authum_path_get_cstr(lh_addr_of(files[i].dir))))
         {
             return authum_bool_true;
         }
@@ -66,7 +66,7 @@ file_error(const authum_path_t *path)
     {
         authum_i32_t saved_error = errno;
         fprintf(stderr, "authum logger: file I/O failed, path='%s': %s\n",
-                authum_path_as_cstr(path), strerror(saved_error));
+                authum_path_get_cstr(path), strerror(saved_error));
         reported_error = authum_bool_true;
     }
 }
@@ -78,8 +78,8 @@ authum_logs_files_slot(const authum_path_t *dir)
     for (authum_usize_t i = 0; lh_math_lt(i, authum_logs_file_capacity); i = lh_math_add_one(i))
     {
         authum_logs_file_t *slot = lh_addr_of(files[i]);
-        if (lh_math_eq(strcmp(authum_path_as_cstr(lh_addr_of(slot->dir)), authum_path_as_cstr(dir)),
-                       0))
+        if (lh_math_eq(
+                strcmp(authum_path_get_cstr(lh_addr_of(slot->dir)), authum_path_get_cstr(dir)), 0))
         {
             slot->used = ++sequence;
             return slot;
@@ -112,7 +112,7 @@ authum_logs_ensure_tree(const authum_path_t *dir, authum_i32_t depth)
     {
         return authum_bool_true;
     }
-    return (lh_math_gt(depth, 0) && authum_path_parent(lh_addr_of(parent), dir) &&
+    return (lh_math_gt(depth, 0) && authum_path_assign_parent(lh_addr_of(parent), dir) &&
             authum_logs_ensure_tree(lh_addr_of(parent), lh_math_sub(depth, 1)) &&
             authum_path_ensure_dir(dir))
                ? authum_bool_true
@@ -201,7 +201,7 @@ authum_logs_prune(const authum_path_t *dir, const struct tm *today, long keep_da
         cutoff_tm.tm_mday);
 
     lh_fs_path_init(lh_addr_of(lh_dir));
-    lh_str_view_init(lh_addr_of(text), authum_path_as_cstr(dir));
+    lh_str_view_init(lh_addr_of(text), authum_path_get_cstr(dir));
     lh_fs_path_set(lh_addr_of(lh_dir), text, lh_fs_path_style_posix);
     lh_os_fs_dir_init(lh_addr_of(listing));
     if (lh_os_fs_dir_open(lh_addr_of(listing), lh_addr_of(lh_dir)))
@@ -223,7 +223,7 @@ authum_logs_prune(const authum_path_t *dir, const struct tm *today, long keep_da
             if (lh_math_ne(day, 0) && lh_math_lt(day, cutoff) && !authum_logs_is_open(dir, day) &&
                 authum_path_join(lh_addr_of(path), dir, leaf))
             {
-                remove(authum_path_as_cstr(lh_addr_of(path)));
+                remove(authum_path_get_cstr(lh_addr_of(path)));
             }
         }
         lh_os_fs_dir_close(lh_addr_of(listing));
@@ -256,8 +256,8 @@ authum_logs_retention_register(const authum_logs_record_t *record)
     authum_logs_retention_t *item;
     for (item = retention; item; item = item->next)
     {
-        if (!strcmp(authum_path_as_cstr(lh_addr_of(item->dir)),
-                    authum_path_as_cstr(lh_addr_of(record->dir))))
+        if (!strcmp(authum_path_get_cstr(lh_addr_of(item->dir)),
+                    authum_path_get_cstr(lh_addr_of(record->dir))))
         {
             break;
         }
@@ -328,7 +328,7 @@ authum_logs_file(authum_logs_file_t *channel, const struct tm *tm)
         return authum_null;
     }
     authum_logs_prune(lh_addr_of(dir), tm, channel->keep_days);
-    channel->file = fopen(authum_path_as_cstr(lh_addr_of(path)), "a");
+    channel->file = fopen(authum_path_get_cstr(lh_addr_of(path)), "a");
     if (authum_null_eq(channel->file))
     {
         file_error(lh_addr_of(path));
@@ -374,7 +374,7 @@ authum_logs_files_emit(const authum_logs_record_t *record)
     if (lh_math_ne(record->format, authum_logger_format_raw))
     {
         fprintf(file, "[%02d:%02d:%02d] [%s] ", tm->tm_hour, tm->tm_min, tm->tm_sec,
-                authum_logger_level_name(level));
+                authum_logger_level_get_name(level));
         if (!authum_null_eq(from))
         {
             fprintf(file, "[%s] ", from);

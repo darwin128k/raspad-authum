@@ -3,14 +3,14 @@
 The host owns the placeholder vocabulary. A module never parses `{name}`
 itself: it asks the host to resolve a template and gets a path back.
 
-    const authum_placeholder_service_t *placeholders = authum_host_placeholders(host);
+    const authum_placeholder_service_t *placeholders = authum_host_get_placeholders(host);
     authum_char_t path[512];
     if (!authum_placeholder_expand(placeholders, "{game}/maps", path, sizeof path))
     {
         /* unknown placeholder, or the result does not fit */
     }
 
-The service is owner-bound like the HTTP one: `authum_host_placeholders()`
+The service is owner-bound like the HTTP one: `authum_host_get_placeholders()`
 returns the scope of the calling module, or null when the host has none — the
 module should say so plainly rather than guess.
 

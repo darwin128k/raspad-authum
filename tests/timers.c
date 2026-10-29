@@ -97,18 +97,18 @@ main(void)
     every = authum_timer_add(&g_host, 0.5f, 0.5f, test_on_every, &g_every);
     CHECK(every != 0u);
     g_self_id = authum_timer_add(&g_host, 0.2f, 0.2f, test_on_self_removing, authum_null);
-    CHECK(authum_timer_count() == 3u);
+    CHECK(authum_timer_get_count() == 3u);
 
     test_run(0.95f);
     CHECK(g_once == 0);
     CHECK(g_every == 1);         /* at 0.5 */
     CHECK(g_self_removing == 2); /* at 0.2, 0.4 — then it removed itself */
-    CHECK(authum_timer_count() == 2u);
+    CHECK(authum_timer_get_count() == 2u);
 
     test_run(0.1f); /* 1.05 */
     CHECK(g_once == 1);
     CHECK(g_every == 2);
-    CHECK(authum_timer_count() == 1u); /* the one-shot is gone */
+    CHECK(authum_timer_get_count() == 1u); /* the one-shot is gone */
 
     /* A 3-second frame (a hitch): one call, not a burst of catch-ups. */
     test_frame(3.0f);
@@ -120,18 +120,18 @@ main(void)
     CHECK(!authum_timer_remove(every));
     test_run(2.0f);
     CHECK(g_every == 4);
-    CHECK(authum_timer_count() == 0u);
+    CHECK(authum_timer_get_count() == 0u);
 
     CHECK(authum_timer_add(&g_host, 0.1f, 0.0f, test_on_spawner, authum_null) != 0u);
     test_run(0.15f);
-    CHECK(authum_timer_count() == 1u); /* the spawned one waits */
+    CHECK(authum_timer_get_count() == 1u); /* the spawned one waits */
     test_run(0.5f);
     CHECK(g_spawned == 1);
 
     authum_timer_add(&g_host, 1.0f, 1.0f, test_on_once, authum_null);
     authum_timer_add(&g_host, 2.0f, 0.0f, test_on_once, authum_null);
     authum_timer_clear();
-    CHECK(authum_timer_count() == 0u);
+    CHECK(authum_timer_get_count() == 0u);
     test_run(3.0f);
     CHECK(g_once == 1);
 
