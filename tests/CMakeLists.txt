@@ -110,14 +110,12 @@ endif()
 
 # Exercise the same HTTP implementation linked into the host image.
 target_sources(authum_test_host PRIVATE "${CMAKE_SOURCE_DIR}/src/authum/host/clock.c")
-if(NOT WIN32)
-    file(GLOB AUTHUM_HTTP_TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/authum/host/http/*.c")
-    target_sources(authum_test_host PRIVATE ${AUTHUM_HTTP_TEST_SOURCES})
-    add_executable(authum_test_http src/authum/host/http.cpp src/authum/host/clock.cpp)
-    target_link_libraries(authum_test_http PRIVATE authum_test_host authum_test_main)
-    add_test(NAME authum_http COMMAND authum_test_http)
-    set_tests_properties(authum_http PROPERTIES TIMEOUT 10)
-endif()
+file(GLOB AUTHUM_HTTP_TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/authum/host/http/*.c")
+target_sources(authum_test_host PRIVATE ${AUTHUM_HTTP_TEST_SOURCES})
+add_executable(authum_test_http src/authum/host/http.cpp src/authum/host/clock.cpp)
+target_link_libraries(authum_test_http PRIVATE authum_test_host authum_test_main)
+add_test(NAME authum_http COMMAND authum_test_http)
+set_tests_properties(authum_http PROPERTIES TIMEOUT 10)
 
 # The placeholder registry the host binds to every module.
 target_sources(authum_test_host PRIVATE "${CMAKE_SOURCE_DIR}/src/authum/host/placeholders.c")

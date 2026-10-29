@@ -13,7 +13,7 @@ prepare_connections(authum_http_server_t *server, lh_os_net_socket_poll_t *event
          index = lh_math_add_one(index))
     {
         authum_http_client_t *client = lh_addr_of(server->clients[index]);
-        if (lh_math_ge(client->fd, 0) &&
+        if (lh_math_ne(client->fd, LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID) &&
             authum_http_client_expired(client, lh_addr_of(server->options), now))
         {
             client->close_reason = "timeout";
@@ -31,7 +31,7 @@ static void
 dispatch_connection(authum_http_server_t *server, authum_http_client_t *client, lh_uint_t events,
                     authum_i64_t now, double *tokens)
 {
-    if (lh_math_lt(client->fd, 0))
+    if (lh_math_eq(client->fd, LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID))
     {
         return;
     }
@@ -49,7 +49,7 @@ dispatch_connection(authum_http_server_t *server, authum_http_client_t *client, 
     {
         authum_http_client_write(server, client, now, tokens);
     }
-    if (lh_math_ge(client->fd, 0) && (lh_math_bit_and(events, lh_os_net_socket_poll_hangup)))
+    if (lh_math_ne(client->fd, LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID) && (lh_math_bit_and(events, lh_os_net_socket_poll_hangup)))
     {
         authum_http_client_close(server, client);
     }

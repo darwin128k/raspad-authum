@@ -4,7 +4,7 @@
 void
 authum_http_client_close(authum_http_server_t *server, authum_http_client_t *client)
 {
-    if (lh_math_ge(client->fd, 0))
+    if (lh_math_ne(client->fd, LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID))
     {
         const authum_char_t *event =
             client->close_reason
@@ -17,12 +17,13 @@ authum_http_client_close(authum_http_server_t *server, authum_http_client_t *cli
         lh_os_system_net_socket_close(client->fd);
         --server->peers[client->ip_slot].active;
     }
-    if (lh_math_ge(client->file, 0))
+    if (lh_math_ne(client->file, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID))
     {
-        close(client->file);
+        lh_os_system_fs_file_close(client->file);
     }
     lh_memory_std_set(client, 0, sizeof lh_ptr_deref(client));
-    client->fd = client->file = -1;
+    client->fd = LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID;
+    client->file = LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
 }
 
 void
@@ -32,9 +33,9 @@ authum_http_clients_accept(authum_http_server_t *server, authum_i64_t now)
     {
         authum_http_client_t peer = {.id = ++server->next_id, .born = now, .progress = now};
         authum_u32_t address;
-        authum_i32_t socket =
+        lh_os_system_net_socket_handle_t socket =
             authum_http_socket_accept(server->listener, lh_addr_of(peer), lh_addr_of(address));
-        if (lh_math_lt(socket, 0))
+        if (lh_math_eq(socket, LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID))
         {
             return;
         }
@@ -43,7 +44,7 @@ authum_http_clients_accept(authum_http_server_t *server, authum_i64_t now)
         for (authum_i32_t index = 0; lh_math_lt(index, server->options.max_clients);
              index = lh_math_add_one(index))
         {
-            if (lh_math_lt(server->clients[index].fd, 0))
+            if (lh_math_eq(server->clients[index].fd, LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID))
             {
                 slot = index;
                 break;
@@ -61,7 +62,7 @@ authum_http_clients_accept(authum_http_server_t *server, authum_i64_t now)
         }
 
         peer.fd = socket;
-        peer.file = -1;
+        peer.file = LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
         peer.ip_slot = ip;
         server->clients[slot] = peer;
         authum_http_access_record(server, lh_addr_of(server->clients[slot]), "connect");
@@ -111,7 +112,7 @@ authum_http_client_write(authum_http_server_t *server, authum_http_client_t *cli
     }
     else if (lh_math_gt(client->remaining, 0))
     {
-        if (lh_math_gt(lh_cast_static(off_t, budget), client->remaining))
+        if (lh_math_gt(lh_cast_static(lh_u64_t, budget), client->remaining))
         {
             budget = lh_cast_static(authum_usize_t, client->remaining);
         }
@@ -119,7 +120,7 @@ authum_http_client_write(authum_http_server_t *server, authum_http_client_t *cli
                                             budget);
         if (lh_math_gt(sent, 0))
         {
-            client->remaining -= sent;
+            client->remaining -= lh_cast_static(lh_u64_t, sent);
             client->body_bytes += lh_cast_static(authum_u64_t, sent);
         }
         else if (!sent)

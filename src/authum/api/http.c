@@ -1,16 +1,16 @@
 #include <authum/http.h>
 #include <authum/null.h>
 #include <lh/char/map.h>
-#include <lh/util/ptr.h>
 #include <lh/memory/std.h>
-#include <stdio.h>
-#include <string.h>
+#include <authum/unused.h>
+#include <lh/fs/path.h>
+#include <lh/os/system/fs/path.h>
 
 void
 authum_http_options_init(authum_http_options_t *options)
 {
     lh_memory_std_set(options, 0, sizeof lh_ptr_deref(options));
-    strcpy(options->bind, "127.0.0.1");
+    authum_unused(lh_str_ptr_format_cstr(options->bind, sizeof options->bind, "%s", "127.0.0.1"));
     options->port = 17015;
     options->max_clients = 64;
     options->per_ip = 4;
@@ -25,13 +25,14 @@ authum_http_options_init(authum_http_options_t *options)
 authum_bool_t
 authum_http_source_add(authum_http_options_t *options, const authum_char_t *path)
 {
-    if (!options || !path || lh_math_ne(path[0], lh_char_map_slash) ||
-        lh_math_ge(options->source_count, AUTHUM_HTTP_MAX_SOURCES) ||
-        lh_math_ge(strlen(path), AUTHUM_HTTP_PATH_CAPACITY))
+    if (!options || !path || lh_math_ge(options->source_count, AUTHUM_HTTP_MAX_SOURCES) ||
+        lh_math_ge(lh_str_ptr_len(path), AUTHUM_HTTP_PATH_CAPACITY) ||
+        !lh_fs_path_is_text_absolute(path, lh_os_system_fs_path_style_native()))
     {
         return authum_bool_false;
     }
-    strcpy(options->sources[options->source_count++], path);
+    authum_unused(lh_str_ptr_format_cstr(options->sources[options->source_count++],
+                                         AUTHUM_HTTP_PATH_CAPACITY, "%s", path));
     return authum_bool_true;
 }
 
@@ -44,7 +45,8 @@ authum_http_open(const authum_http_service_t *service, const authum_http_options
     {
         if (error && error_size)
         {
-            snprintf(error, error_size, "host has no HTTP service on this platform");
+            authum_unused(lh_str_ptr_format_cstr(error, error_size, "%s",
+                                                 "host has no HTTP service on this platform"));
         }
         return authum_null;
     }

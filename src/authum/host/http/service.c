@@ -1,4 +1,6 @@
 #include <authum/host/http/internal.h>
+#include <lh/fs/path.h>
+#include <lh/os/system/fs/path.h>
 #include <authum/null.h>
 #include <lh/char/map.h>
 
@@ -22,7 +24,7 @@ owns_server(const authum_http_owner_t *owner, const authum_http_server_t *server
 static authum_bool_t
 terminated(const authum_char_t *string, authum_usize_t capacity)
 {
-    return lh_math_ne(memchr(string, 0, capacity), authum_null);
+    return lh_math_ne(lh_str_ptr_find_of_null_terminator_by_size(string, capacity), authum_null);
 }
 
 static authum_bool_t
@@ -52,7 +54,9 @@ valid_options(const authum_http_options_t *options)
     for (authum_usize_t index = 0; lh_math_lt(index, options->source_count);
          index = lh_math_add_one(index))
     {
-        if (lh_math_ne(options->sources[index][0], lh_char_map_slash) ||
+        if (!terminated(options->sources[index], sizeof options->sources[index]) ||
+            !lh_fs_path_is_text_absolute(options->sources[index],
+                                         lh_os_system_fs_path_style_native()) ||
             !terminated(options->sources[index], sizeof options->sources[index]))
         {
             return authum_bool_false;
@@ -74,7 +78,7 @@ service_open(authum_ptr context, const authum_http_options_t *options, authum_ch
     {
         if (error && error_size)
         {
-            snprintf(error, error_size, "invalid HTTP options or owner");
+            authum_unused(lh_str_ptr_format_cstr(error, error_size, "invalid HTTP options or owner"));
         }
         return authum_null;
     }
@@ -88,7 +92,7 @@ service_open(authum_ptr context, const authum_http_options_t *options, authum_ch
     {
         if (error && error_size)
         {
-            snprintf(error, error_size, "HTTP server limit reached for owner");
+            authum_unused(lh_str_ptr_format_cstr(error, error_size, "HTTP server limit reached for owner"));
         }
         return authum_null;
     }
