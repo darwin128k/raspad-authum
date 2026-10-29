@@ -88,10 +88,28 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   the lower-layer collisions the tools report: `lh_datetime_get_date` / `_get_time`,
   `lh_io_stream_get_reader` / `_writer`, `lh_io_dgram_*`, `lh_net_*_get_ip`,
   `lh_os_fs_file_set_path` take an out parameter or a pointer under an accessor's name.
+- [ ] **Const containers hand out mutable elements.** `lh_list_get_first` / `_get_next`
+  and `lh_array_get_ptr` take a const container and return a mutable node or slot, so
+  everything built on them inherits the hole: `lh_os_module_event_bus_get_entry` / `_get_first` /
+  `_get_next` / `_find_subscription` take a const bus and return writable records. Fix
+  the bricks (a const getter and a `_mut` one), then their users.
+- [ ] **The event layer sits beside the module stack, not on it.** `lh/os/shared` (an
+  image) → `lh/os/module` + `lh/os/loader` (modules and their children) → events must
+  be the next step, each usable without the ones above it. Today `lh/os/module/event/bus` is a
+  free brick and Authum glues it to modules by hand (`host/events.c`, `binding`: the
+  module as owner, dedup by callback and user, dropping a module's subscriptions at
+  unload). That glue is generic and belongs in LH, over the loader.
+- [ ] **`lh_test_os` is flaky under a parallel `ctest -j8`** (seen on Windows and on
+  Linux): it passes on its own every time. Find the shared resource (a port, a timing).
 - [ ] Pre-existing test failures: `lh_test_math` (`math/view.cpp` 149–153),
   `lh_test_ui` (`web_ws.length_127_roundtrip_over_64k`).
 
 ## Authum (after LH)
+
+- [ ] **Remaining Authum test runners.** Events now use the pinned GoogleTest
+  dependency and common runner; the other tests in `tests/` still use the local
+  CHECK runner or plain assertions. Migrate them rather than adding another
+  assertion framework.
 
 - [ ] Authum has no named-character facade like `lh/char/map.h`; module code
   (`examples/chatfilter/chatfilter.c`) still compares bare literals.

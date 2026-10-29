@@ -91,6 +91,50 @@ server_fill(authum_event_server_t *ev)
     ev->frame_time = gpGlobals->frametime;
 }
 
+/** @brief The game events the hooks publish, as indexes into ::g_hook_event_ids. */
+enum hook_event
+{
+    hook_event_client_command,
+    hook_event_client_connect,
+    hook_event_client_cvar_value,
+    hook_event_client_disconnect,
+    hook_event_client_info_changed,
+    hook_event_client_kill,
+    hook_event_client_put_in_server,
+    hook_event_server_activate,
+    hook_event_server_deactivate,
+    hook_event_server_frame,
+    hook_event_server_precache,
+    hook_event_server_shutdown,
+    hook_event_count
+};
+
+/** @brief The public name of each ::hook_event. */
+const authum_char_t *const g_hook_event_names[hook_event_count] = {
+    AUTHUM_EVENT_CLIENT_COMMAND,       AUTHUM_EVENT_CLIENT_CONNECT,
+    AUTHUM_EVENT_CLIENT_CVAR_VALUE,    AUTHUM_EVENT_CLIENT_DISCONNECT,
+    AUTHUM_EVENT_CLIENT_INFO_CHANGED,  AUTHUM_EVENT_CLIENT_KILL,
+    AUTHUM_EVENT_CLIENT_PUT_IN_SERVER, AUTHUM_EVENT_SERVER_ACTIVATE,
+    AUTHUM_EVENT_SERVER_DEACTIVATE,    AUTHUM_EVENT_SERVER_FRAME,
+    AUTHUM_EVENT_SERVER_PRECACHE,      AUTHUM_EVENT_SERVER_SHUTDOWN,
+};
+
+/** @brief Host-lifetime ID of each ::hook_event; zero until resolved. */
+authum_event_id_t g_hook_event_ids[hook_event_count];
+
+/**
+ * @brief The host-lifetime ID of @p event, resolved on first use.
+ *
+ * A failed resolution leaves zero, so the next publication tries again; a
+ * publication under zero reaches nobody.
+ */
+authum_event_id_t
+hook_event_id(hook_event event)
+{
+    return authum_events_host_get_cached_id(lh_addr_of(g_hook_event_ids[event]),
+                                            g_hook_event_names[event]);
+}
+
 /* -- the wrappers: publish, then call the game (or supersede) -------------- */
 
 qboolean
@@ -101,7 +145,8 @@ h_client_connect(edict_t *entity, const authum_char_t *name, const authum_char_t
     client_fill(lh_addr_of(ev), entity, name);
     copy(ev.address, sizeof ev.address, address);
     authum_engine_host_set_client_address(ev.index, address);
-    authum_unused(authum_events_host_publish(AUTHUM_EVENT_CLIENT_CONNECT, lh_addr_of(ev)));
+    authum_unused(
+        authum_events_host_publish_id(hook_event_id(hook_event_client_connect), lh_addr_of(ev)));
     if (!ev.allow)
     {
         authum_engine_host_set_client_address(ev.index, authum_null);
@@ -120,7 +165,8 @@ h_client_put_in_server(edict_t *entity)
 {
     authum_event_client_t ev;
     client_fill(lh_addr_of(ev), entity, authum_null);
-    authum_unused(authum_events_host_publish(AUTHUM_EVENT_CLIENT_PUT_IN_SERVER, lh_addr_of(ev)));
+    authum_unused(authum_events_host_publish_id(hook_event_id(hook_event_client_put_in_server),
+                                                lh_addr_of(ev)));
     if (lh_math_ne(g_game_dll.pfnClientPutInServer, authum_null))
     {
         g_game_dll.pfnClientPutInServer(entity);
@@ -137,7 +183,8 @@ h_client_user_info_changed(edict_t *entity, authum_char_t *infobuffer)
         name = g_engfuncs.pfnInfoKeyValue(infobuffer, lh_cast_const(authum_char_t *, "name"));
     }
     client_fill(lh_addr_of(ev), entity, name);
-    authum_unused(authum_events_host_publish(AUTHUM_EVENT_CLIENT_INFO_CHANGED, lh_addr_of(ev)));
+    authum_unused(authum_events_host_publish_id(hook_event_id(hook_event_client_info_changed),
+                                                lh_addr_of(ev)));
     if (lh_math_ne(g_game_dll.pfnClientUserInfoChanged, authum_null))
     {
         g_game_dll.pfnClientUserInfoChanged(entity, infobuffer);
@@ -149,7 +196,8 @@ h_client_disconnect(edict_t *entity)
 {
     authum_event_client_t ev;
     client_fill(lh_addr_of(ev), entity, authum_null);
-    authum_unused(authum_events_host_publish(AUTHUM_EVENT_CLIENT_DISCONNECT, lh_addr_of(ev)));
+    authum_unused(
+        authum_events_host_publish_id(hook_event_id(hook_event_client_disconnect), lh_addr_of(ev)));
     authum_engine_host_set_client_address(ev.index, authum_null);
     if (lh_math_ne(g_game_dll.pfnClientDisconnect, authum_null))
     {
@@ -162,7 +210,8 @@ h_client_kill(edict_t *entity)
 {
     authum_event_client_t ev;
     client_fill(lh_addr_of(ev), entity, authum_null);
-    authum_unused(authum_events_host_publish(AUTHUM_EVENT_CLIENT_KILL, lh_addr_of(ev)));
+    authum_unused(
+        authum_events_host_publish_id(hook_event_id(hook_event_client_kill), lh_addr_of(ev)));
     if (!ev.allow)
     {
         return; /* superseded: the player is not killed */
@@ -188,7 +237,8 @@ h_client_command(edict_t *entity)
         copy(ev.argv[i], sizeof ev.argv[i], g_engfuncs.pfnCmd_Argv(i));
     }
     copy(ev.args, sizeof ev.args, g_engfuncs.pfnCmd_Args());
-    authum_unused(authum_events_host_publish(AUTHUM_EVENT_CLIENT_COMMAND, lh_addr_of(ev)));
+    authum_unused(
+        authum_events_host_publish_id(hook_event_id(hook_event_client_command), lh_addr_of(ev)));
     if (ev.block)
     {
         return; /* superseded: the game never sees the command */
@@ -209,7 +259,8 @@ h_spawn(edict_t *entity)
         authum_event_server_t ev;
         authum_engine_host_set_precache(authum_bool_true);
         server_fill(lh_addr_of(ev));
-        authum_unused(authum_events_host_publish(AUTHUM_EVENT_SERVER_PRECACHE, lh_addr_of(ev)));
+        authum_unused(authum_events_host_publish_id(hook_event_id(hook_event_server_precache),
+                                                    lh_addr_of(ev)));
     }
     /* The engine spawns every entity through this slot. The game's own
      * `Spawn` is the old-style entry; the modern one is `DispatchSpawn`
@@ -242,7 +293,8 @@ h_server_activate(edict_t *edicts, authum_i32_t edict_count, authum_i32_t client
     server_fill(lh_addr_of(ev));
     ev.edict_count = edict_count;
     ev.max_clients = client_max;
-    authum_unused(authum_events_host_publish(AUTHUM_EVENT_SERVER_ACTIVATE, lh_addr_of(ev)));
+    authum_unused(
+        authum_events_host_publish_id(hook_event_id(hook_event_server_activate), lh_addr_of(ev)));
 }
 
 void
@@ -250,7 +302,8 @@ h_server_deactivate(void)
 {
     authum_event_server_t ev;
     server_fill(lh_addr_of(ev));
-    authum_unused(authum_events_host_publish(AUTHUM_EVENT_SERVER_DEACTIVATE, lh_addr_of(ev)));
+    authum_unused(
+        authum_events_host_publish_id(hook_event_id(hook_event_server_deactivate), lh_addr_of(ev)));
     if (lh_math_ne(g_game_dll.pfnServerDeactivate, authum_null))
     {
         g_game_dll.pfnServerDeactivate();
@@ -263,7 +316,8 @@ h_start_frame(void)
     authum_tasks_host_pump();
     authum_event_server_t ev;
     server_fill(lh_addr_of(ev));
-    authum_unused(authum_events_host_publish(AUTHUM_EVENT_SERVER_FRAME, lh_addr_of(ev)));
+    authum_unused(
+        authum_events_host_publish_id(hook_event_id(hook_event_server_frame), lh_addr_of(ev)));
     if (lh_math_ne(g_game_dll.pfnStartFrame, authum_null))
     {
         g_game_dll.pfnStartFrame();
@@ -275,7 +329,8 @@ h_game_shutdown(void)
 {
     authum_event_server_t ev;
     server_fill(lh_addr_of(ev));
-    authum_unused(authum_events_host_publish(AUTHUM_EVENT_SERVER_SHUTDOWN, lh_addr_of(ev)));
+    authum_unused(
+        authum_events_host_publish_id(hook_event_id(hook_event_server_shutdown), lh_addr_of(ev)));
     if (g_have_new && lh_math_ne(g_game_new.pfnGameShutdown, authum_null))
     {
         g_game_new.pfnGameShutdown();
@@ -294,7 +349,8 @@ h_cvar_value2(const edict_t *entity, authum_i32_t request_id, const authum_char_
     ev.request_id = request_id;
     copy(ev.cvar, sizeof ev.cvar, cvar);
     copy(ev.value, sizeof ev.value, value);
-    authum_unused(authum_events_host_publish(AUTHUM_EVENT_CLIENT_CVAR_VALUE, lh_addr_of(ev)));
+    authum_unused(
+        authum_events_host_publish_id(hook_event_id(hook_event_client_cvar_value), lh_addr_of(ev)));
     if (g_have_new && lh_math_ne(g_game_new.pfnCvarValue2, authum_null))
     {
         g_game_new.pfnCvarValue2(entity, request_id, cvar, value);

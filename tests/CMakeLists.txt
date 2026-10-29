@@ -1,4 +1,4 @@
-# Authum tests: plain C executables run by CTest. Host pieces (sandbox, events,
+# Authum tests: C executables and GoogleTest events run by CTest. Host pieces (sandbox, events,
 # commands, logs) are compiled from src/authum/host together with lh, exactly as
 # authum uses them.
 
@@ -12,6 +12,8 @@ add_test(NAME authum_client COMMAND authum_test_client)
 add_library(authum_test_host STATIC
         "${CMAKE_SOURCE_DIR}/src/authum/host/sandbox.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/events.c"
+        "${CMAKE_SOURCE_DIR}/src/authum/host/events/binding.c"
+        "${CMAKE_SOURCE_DIR}/src/authum/host/events/ops.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/commands.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/logs.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/tasks.c"
@@ -24,8 +26,20 @@ add_executable(authum_test_sandbox sandbox.c)
 target_link_libraries(authum_test_sandbox PRIVATE authum_test_host authum_test_check)
 add_test(NAME authum_sandbox COMMAND authum_test_sandbox)
 
-add_executable(authum_test_events events.c)
-target_link_libraries(authum_test_events PRIVATE authum_test_host authum_test_check)
+# Events exercise the pinned LH GoogleTest dependency with the common runner.
+if (NOT TARGET gtest)
+    if (NOT EXISTS "${AUTHUM_LH_DIR}/test/lib/googletest/CMakeLists.txt")
+        message(FATAL_ERROR "Initialize LH's pinned test/lib/googletest submodule to build tests")
+    endif ()
+    if (MSVC)
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    endif ()
+    add_subdirectory("${AUTHUM_LH_DIR}/test/lib/googletest" "${CMAKE_BINARY_DIR}/googletest"
+            EXCLUDE_FROM_ALL)
+endif ()
+add_executable(authum_test_events events.cpp "${AUTHUM_LH_DIR}/test/src/main.cpp")
+target_compile_features(authum_test_events PRIVATE cxx_std_17)
+target_link_libraries(authum_test_events PRIVATE authum_test_host gtest)
 add_test(NAME authum_events COMMAND authum_test_events)
 
 add_executable(authum_test_commands commands.c)

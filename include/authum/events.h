@@ -27,6 +27,8 @@
 #define AUTHUM_EVENTS_H
 
 #include <authum/events/ops.h>
+#include <authum/event/name/limits.h>
+#include <authum/events/fields.h>
 
 /**
  * @struct authum_events
@@ -34,32 +36,60 @@
  */
 struct authum_events
 {
-    const authum_events_ops_t *ops;
-    authum_ptr owner;
+    authum_events_fields(const authum_events_ops_t *, authum_ptr);
 };
 typedef struct authum_events authum_events_t;
 
 AUTHUM_EXTERN_C_BEGIN
 
-/**
- * Call @p fn for every event named @p name until unsubscribed or unloaded.
- * The same (@p name, @p fn, @p user) triple is registered once.
+/** @brief Level-1 read of ops; self must be nonnull. */
+const authum_events_ops_t *
+authum_events_get_ops(const authum_events_t *self);
+
+/** @brief Level-1 store of ops; no validation or ownership transfer. */
+void
+authum_events_set_ops(authum_events_t *self, const authum_events_ops_t *value);
+
+/** @brief Level-1 read of owner; self must be nonnull. */
+authum_ptr
+authum_events_get_owner(const authum_events_t *self);
+
+/** @brief Level-1 store of owner; no validation or ownership transfer. */
+void
+authum_events_set_owner(authum_events_t *self, authum_ptr value);
+
+/** @brief Subscribe once per (owner, name, fn, user); false on invalid name or allocation failure.
  */
 authum_bool_t
 authum_events_subscribe(const authum_events_t *self, const authum_char_t *name,
                         authum_event_handler_fn fn, authum_ptr user);
 
+/** @brief Remove an exact subscription; false when absent. Takes effect immediately. */
 authum_bool_t
 authum_events_unsubscribe(const authum_events_t *self, const authum_char_t *name,
                           authum_event_handler_fn fn, authum_ptr user);
 
-/**
- * Deliver @p payload to subscribers of @p name.
- * @return Strongest result any handler returned (continue when none).
- */
+/** @brief Resolve a registered name and synchronously publish; unknown names return continue. */
 authum_event_result_t
-authum_events_publish(const authum_events_t *self, const authum_char_t *name,
-                      authum_ptr payload);
+authum_events_publish(const authum_events_t *self, const authum_char_t *name, authum_ptr payload);
+
+/** @brief Intern a nonempty name of at most 63 characters; zero on failure or an older host. */
+authum_event_id_t
+authum_events_resolve(const authum_events_t *self, const authum_char_t *name);
+
+/** @brief Subscribe by resolved ID, preserving the same deduplication and ownership rules. */
+authum_bool_t
+authum_events_subscribe_id(const authum_events_t *self, authum_event_id_t id,
+                           authum_event_handler_fn fn, authum_ptr user);
+
+/** @brief Remove an exact numeric subscription; false if absent or unsupported. */
+authum_bool_t
+authum_events_unsubscribe_id(const authum_events_t *self, authum_event_id_t id,
+                             authum_event_handler_fn fn, authum_ptr user);
+
+/** @brief Publish by resolved ID with no string lookup; invalid/unsupported returns continue. */
+authum_event_result_t
+authum_events_publish_id(const authum_events_t *self, authum_event_id_t id, authum_ptr payload);
 
 AUTHUM_EXTERN_C_END
 

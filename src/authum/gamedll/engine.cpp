@@ -16,6 +16,7 @@
 #include <lh/cast/const.h>
 #include <lh/char/map.h>
 #include <lh/memory/std.h>
+#include <lh/util/ptr.h>
 
 #include <authum/event/message.h>
 #include <authum/event/server.h>
@@ -51,9 +52,13 @@ enum
 /* Message number → the name the game registered it under ("" = none). */
 authum_char_t g_msg_names[engine_msg_max][authum_event_message_name_max];
 
+/* Message number -> host-lifetime event ID; resolved once after registration. */
+authum_event_id_t g_msg_events[engine_msg_max];
+
 /* The message being held back, between Begin and End. */
 authum_event_message_t g_message;
 authum_bool_t g_message_open = false;
+authum_event_id_t g_message_event = 0u;
 edict_t *g_message_target = authum_null;
 
 /* Inside an authum.server.log handler. */
@@ -145,7 +150,10 @@ engine_reg_user_msg(const authum_char_t *name, authum_i32_t size)
 
     if (lh_math_ne(name, authum_null) && lh_math_gt(id, 0) && lh_math_lt(id, engine_msg_max))
     {
+        authum_char_t event[engine_event_max];
         std::snprintf(g_msg_names[id], sizeof g_msg_names[id], "%s", name);
+        std::snprintf(event, sizeof event, "%s%s", AUTHUM_EVENT_MESSAGE_PREFIX, g_msg_names[id]);
+        g_msg_events[id] = authum_events_host_get_id(event);
     }
     return id;
 }
@@ -164,8 +172,12 @@ engine_message_begin(authum_i32_t dest, authum_i32_t type, const authum_float_t 
         g_engfuncs.pfnMessageBegin(dest, type, origin, target);
         return;
     }
-    std::snprintf(event, sizeof event, "%s%s", AUTHUM_EVENT_MESSAGE_PREFIX, name);
-    if (!authum_events_host_has(event))
+    if (lh_math_eq(g_msg_events[type], 0u))
+    {
+        std::snprintf(event, sizeof event, "%s%s", AUTHUM_EVENT_MESSAGE_PREFIX, name);
+        g_msg_events[type] = authum_events_host_get_id(event);
+    }
+    if (!authum_events_host_has_id(g_msg_events[type]))
     {
         g_engfuncs.pfnMessageBegin(dest, type, origin, target);
         return;
@@ -187,6 +199,7 @@ engine_message_begin(authum_i32_t dest, authum_i32_t type, const authum_float_t 
         g_message.origin[2] = origin[2];
     }
     g_message_target = target;
+    g_message_event = g_msg_events[type];
     g_message_open = true;
 }
 
@@ -224,8 +237,8 @@ engine_message_end(void)
 {
     /* Big (≈3 KB) but on the stack: a handler may send a message of its own. */
     authum_event_message_t ev;
-    authum_char_t event[engine_event_max];
     edict_t *target = g_message_target;
+    authum_event_id_t event = g_message_event;
 
     if (!g_message_open)
     {
@@ -234,8 +247,7 @@ engine_message_end(void)
     }
     g_message_open = false;
     lh_memory_std_copy(lh_addr_of(ev), lh_addr_of(g_message), sizeof ev);
-    std::snprintf(event, sizeof event, "%s%s", AUTHUM_EVENT_MESSAGE_PREFIX, ev.name);
-    authum_unused(authum_events_host_publish(event, lh_addr_of(ev)));
+    authum_unused(authum_events_host_publish_id(event, lh_addr_of(ev)));
     if (!ev.block)
     {
         engine_send(lh_addr_of(ev), target);
@@ -281,7 +293,9 @@ engine_alert_message(ALERT_TYPE type, authum_char_t *fmt, ...)
     ev.game_time = lh_math_ne(gpGlobals, authum_null) ? gpGlobals->time : 0.0f;
     ev.unix_time = lh_cast_static(authum_i64_t, std::time(authum_null));
     g_log_pass = lh_math_add_one(g_log_pass);
-    authum_unused(authum_events_host_publish(AUTHUM_EVENT_SERVER_LOG, lh_addr_of(ev)));
+    static authum_event_id_t log_id = 0u;
+    authum_events_host_get_cached_id(lh_addr_of(log_id), AUTHUM_EVENT_SERVER_LOG);
+    authum_unused(authum_events_host_publish_id(log_id, lh_addr_of(ev)));
     g_log_pass = lh_math_sub_one(g_log_pass);
 }
 } // namespace

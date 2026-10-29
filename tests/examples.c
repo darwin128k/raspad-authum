@@ -402,6 +402,13 @@ typedef struct test_module
     authum_bool_t started;
 } test_module_t;
 
+/** @brief Level-1 event facade member of a loaded test module. */
+authum_events_t *
+test_module_get_events_mut(test_module_t *self)
+{
+    return &self->events;
+}
+
 void *
 test_dlopen(const char *path)
 {
@@ -479,8 +486,8 @@ test_load(test_module_t *m)
 
     m->sandbox.ops = authum_sandbox_host_ops();
     m->sandbox.root = authum_sandbox_host_root_create();
-    m->events.ops = authum_events_host_ops();
-    m->events.owner = m;
+    authum_events_set_ops(test_module_get_events_mut(m), authum_events_host_ops());
+    authum_events_set_owner(test_module_get_events_mut(m), m);
     m->commands.ops = authum_commands_host_ops();
     m->commands.owner = m;
     m->commands.scope = m->info->name;
@@ -494,7 +501,7 @@ test_load(test_module_t *m)
     m->host.env = &m->env;
     m->host.engine = &g_engine;
     m->host.sandbox = &m->sandbox;
-    m->host.events = &m->events;
+    m->host.events = test_module_get_events_mut(m);
     m->host.commands = &m->commands;
 
     m->started = m->api->start(&m->host);
