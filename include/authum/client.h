@@ -21,6 +21,7 @@
 #include <authum/module/api.h>
 #include <authum/module/info.h>
 #include <authum/net.h>
+#include <authum/net/address.h>
 #include <authum/sql/thread.h>
 #include <authum/timer.h>
 #include <authum/unused.h>

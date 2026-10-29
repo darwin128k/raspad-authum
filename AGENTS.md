@@ -42,6 +42,11 @@ session; do not make the owner repeat them again.
   `lh/char/map.h`, a `switch` instead of `lh_str_ptr_contains_char`, a digit
   loop instead of `lh/str/format`) is a defect. Search first; fix the brick if
   it does not fit; never write a local copy.
+- **Sources mirror headers, exactly.** `include/lh/<path>.h` is implemented by
+  `src/lh/<path>.c`, `include/authum/<path>.h` by `src/authum/api/<path>.c`: the same
+  folders, the same names. Nesting is a folder, never a name glued with `_`
+  (`command/def.c`, not `command_def.c`). Check with `python tools/check-mirror.py`
+  (0 required).
 - **From smaller to larger, no extra includes.** Each brick builds only on
   smaller ones; a file never includes a header that one of its includes
   already brings in. Check with `python tools/check-includes.py` (0 required).

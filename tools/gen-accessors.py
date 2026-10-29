@@ -23,6 +23,10 @@ meaning gets a placeholder brief, and the tool says so: rewrite it.
 Declarations go into the header's extern "C" block (created when missing),
 definitions into the source (created when missing). Existing accessors are
 left alone. Line endings are kept. Run `tools/check-includes.py --fix` after.
+
+A header outside lib/lh is an Authum header and never shows LH (AGENTS.md): its
+setters return `void` and its briefs name no LH symbol. The definitions still
+check @p self with ::lh_assert_runtime_ref, since Authum sources use LH.
 """
 
 import os
@@ -60,10 +64,10 @@ CPP_KEYWORDS = {'class', 'new', 'delete', 'template', 'this', 'operator', 'priva
                 'protected', 'virtual', 'friend', 'namespace', 'typename', 'explicit', 'mutable'}
 
 
-def setter(struct, name, ctype, field):
+def setter(struct, name, ctype, field, void='lh_void'):
     param = field + '_value' if field in CPP_KEYWORDS else field
-    decl = f'lh_void\n{name}({struct} *self, {ctype} {param});\n'
-    definition = (f'lh_void\n{name}({struct} *self, {ctype} {param})\n{{\n'
+    decl = f'{void}\n{name}({struct} *self, {ctype} {param});\n'
+    definition = (f'{void}\n{name}({struct} *self, {ctype} {param})\n{{\n'
                   f'    lh_assert_runtime_ref(self);\n    self->{field} = {param};\n}}\n')
     return decl, definition
 
@@ -95,7 +99,9 @@ def main():
                                 else ('AUTHUM_EXTERN_C_BEGIN', 'AUTHUM_EXTERN_C_END'))
     decls, defs = [], []
     placeholders = []
-    self_param = f'@param self The {owner}; checked by ::lh_assert_runtime_ref.'
+    self_param = (f'@param self The {owner}; checked by ::lh_assert_runtime_ref.' if in_lh
+                  else f'@param self The {owner}; must not be ::authum_null (checked).')
+    void, null = ('lh_void', 'lh_null') if in_lh else ('void', 'authum_null')
 
     def add(lines, pair):
         decls.append(doc(lines) + pair[0])
@@ -107,7 +113,7 @@ def main():
             return [f'@brief The @c {field} of @p self{", to change in place" if mutable else ""}.']
         if mutable:
             return [f'@brief {cap(meaning)}, to change in place (level 1).', '', self_param,
-                    '@return The member itself, never ::lh_null.']
+                    f'@return The member itself, never ::{null}.']
         return [f'@brief {cap(meaning)} (level 1).', '', self_param]
 
     def set_doc(field, meaning):
@@ -131,7 +137,7 @@ def main():
                 add(get_doc(field, meaning, True),
                     getter(struct, mut, f'{ctype} *', f'return {at};', True))
             if kind == 'view' and not declared(htext, f'{prefix}set_{field}'):
-                add(set_doc(field, meaning), setter(struct, f'{prefix}set_{field}', ctype, field))
+                add(set_doc(field, meaning), setter(struct, f'{prefix}set_{field}', ctype, field, void))
             continue
         # A field already named for a function (`fn`, `alloc_fn`) is not suffixed again.
         suffix = '_fn' if kind == 'fn' and field != 'fn' and not field.endswith('_fn') else ''
@@ -140,7 +146,7 @@ def main():
         if not declared(htext, get):
             add(get_doc(field, meaning), getter(struct, get, ctype, f'return self->{field};'))
         if not declared(htext, set_):
-            add(set_doc(field, meaning), setter(struct, set_, ctype, field))
+            add(set_doc(field, meaning), setter(struct, set_, ctype, field, void))
     if not decls:
         print('nothing to add')
         return 0
@@ -166,7 +172,7 @@ def main():
 
     if stext is None:
         name = re.sub(r'^(?:.*/)?include/', '', header.replace(os.sep, '/'), count=1)
-        stext, snl = f'#include <{name}>\n#include <lh/assert.h>\n\n', hnl
+        stext, snl = f'#include <{name}>\n#include <lh/assert/runtime.h>\n\n', hnl
     elif '#include <lh/assert.h>' not in stext and '#include <lh/assert/runtime.h>' not in stext:
         stext = stext.replace('\n\n', '\n#include <lh/assert.h>\n\n', 1)
     write(source, stext.rstrip('\n') + '\n\n' + '\n'.join(defs), snl)

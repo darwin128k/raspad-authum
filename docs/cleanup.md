@@ -95,8 +95,14 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   the bricks (a const getter and a `_mut` one), then their users.
 - [ ] **`lh_test_os` is flaky under a parallel `ctest -j8`** (seen on Windows and on
   Linux): it passes on its own every time. Find the shared resource (a port, a timing).
-- [ ] Pre-existing test failures: `lh_test_math` (`math/view.cpp` 149–153),
-  `lh_test_ui` (`web_ws.length_127_roundtrip_over_64k`).
+- [ ] Pre-existing test failure: `lh_test_math` (`math/view.cpp` 149–153).
+- [ ] **LH sources that do not mirror a header** (`tools/check-mirror.py`, 9 left):
+  `os/concurrency.c` implements `os/thread.h`, `os/mutex.h`, ... → split into
+  `os/thread.c`, `os/mutex.c`, ...; `memory/std/words.c` and `memory/std/x86/*.c` are
+  fragments `#include`d into `memory/std.c` → real units with headers;
+  `util/{char,wchar}/case/fold.c` and `util/{str,wstr}/case/map.c` implement functions
+  declared in `util/char.h`, `util/wchar.h`, `util/str/ptr.h`, `util/wstr/ptr.h` → their
+  own `case/fold.h` / `case/map.h` headers.
 
 ## Authum (after LH)
 
@@ -105,10 +111,9 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   facade with the word length and the help line, and a module handler is the console
   handler itself (`authum_command_t` is laid out as `lh_console_call_t`, checked in
   `api/command.c`).
-- [ ] **`tools/gen-accessors.py` writes LH types** (`lh_void`, `lh_assert_runtime_ref`),
-  so it cannot generate accessors for public Authum structs (`authum_command_def_t` is
-  still read through its fields in `host/commands.c`). Teach it an Authum mode
-  (`void`, an Authum check) before the Authum raw-field pass.
+- [x] **`tools/gen-accessors.py` has an Authum mode.** A header outside `lib/lh` gets
+  `void` setters and briefs with no LH symbol; `authum_command_def_t` has its accessors
+  (`api/command/def.c`) and `host/commands.c` reads it through them.
 - [ ] **Audit the rest of Authum for generic mechanisms**: tasks, threads, logs and
   their channels, cfg, placeholders, paths, the sandbox. Each is either generic
   (→ LH, Authum a thin facade) or the game (stays). Bring the list to the owner.
@@ -129,7 +134,7 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   generic brick (cfg, array, timer, logger, cstr, path, net address, json,
   sql, crypto) becomes a thin `authum_*` facade over the LH brick, with no
   logic of its own. Missing pieces are added to LH first.
-- [ ] `net_address.c` parses host:port by hand → LH brick in `lh/net`.
+- [ ] `api/net/address.c` parses host:port by hand → LH brick in `lh/net`.
 - [ ] `cfg.c` → `lh/ini`; `array.c` → `lh_array_t`; `timer.c` → `lh/timer`;
   `logger.c` → `lh_logger_t`.
 - [ ] `src/authum/api/memory.c` → delegate to `lh_runtime_allocator_try_alloc`,
