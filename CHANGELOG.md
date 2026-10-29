@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   usage and help text, and `authum_command_print` / `authum_command_printf` print a line
   of any length. `authum_command_line_max`, `authum_command_usage_max` and
   `authum_command_help_max` are gone; `authum_command_word_max` stays.
+- HTTP serves on Windows as on Linux: one transport on LH sockets, file handles and
+  formatting; a source path may be absolute in either OS's form. The server starts and
+  stops Winsock itself.
+- A module's threads are an LH thread group (`lh/os/thread/group`).
 - Log files are written by the LH log queue and daily files (`lh/os/logger`): the
   writer sleeps until a record instead of polling every 10 ms, records carry a
   channel id instead of a copy of the directory path, open files are no longer
