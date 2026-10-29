@@ -96,10 +96,7 @@ authum_tasks_host_pump(void)
             m_workers_tail = w;
         }
         m_dispatching = lh_math_add_one(m_dispatching);
-        if (job->complete)
-        {
-            job->complete(job->user);
-        }
+        lh_os_worker_job_complete(job);
         lh_os_worker_dispose(job);
         m_dispatching = lh_math_sub_one(m_dispatching);
     }
