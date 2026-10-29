@@ -111,8 +111,10 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
      `host/logs/writer.c` and `files.c` are gone, `host/logs.c` sends records.
      `host/logs.c` has no libc call left (`lh/str/format`, `lh/os/env`, the runtime
      logger).
-  3. [ ] HTTP on `lh/os/net/socket` + `lh/http`: one transport for every OS,
-     `host/http_windows.c` (a "Linux only" stub) goes.
+  3. [x] HTTP on LH handles and bricks: one transport for every OS, the "Linux only"
+     `host/http_windows.c` stub is gone, its tests run on Windows too. Static files are
+     looked up below each root by `lh_os_system_fs_file_open_read_at`, now also on
+     Windows (`NtCreateFile` relative to each directory, reparse points refused).
   4. [ ] The remaining libc calls in `api/` and `host/` (157 in 31 files at the start)
      → LH bricks; a missing brick is added to LH first.
   5. [ ] `gamedll/` and `include/authum/{export,symbol}.h`: calling convention, export

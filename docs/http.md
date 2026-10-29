@@ -34,8 +34,8 @@ apply equally to every plugin.
 
 GET/HEAD static representations are supported. This is not a REST router and
 does not run arbitrary module callbacks in the HTTP worker. No TLS, compression,
-directory listing or request bodies. Linux transport is implemented; other
-platforms report an explicit unsupported error.
+directory listing or request bodies. One transport serves on Windows and Linux,
+over LH sockets, file handles and handle-relative file lookup.
 
 URL names use ASCII letters, digits, underscores, hyphens, dots, slashes and
 dollar signs. Escapes, query strings, hidden components and symlink traversal
@@ -82,7 +82,7 @@ The host/http directory contains:
 - service.c: constructor validation, ownership and cleanup.
 - server.c: resources and managed-thread lifecycle.
 - loop.c: event dispatch and fair scheduling.
-- transport.c: Linux socket/sendfile boundary.
+- transport.c: the socket and file-sending boundary, on LH sockets.
 - request.c and response.c: parsing and response headers.
 - resources.c: file policy and safe descriptor-relative opening.
 - limits.c: peer limits, deadlines and transfer budgets.
