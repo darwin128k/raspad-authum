@@ -10,13 +10,11 @@
 #else
 #    include <stdatomic.h>
 #endif
-#include <sys/types.h>
 #include <lh/os/wake.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <errno.h>
+#include <lh/os/system/fs/file.h>
+#include <lh/str/format/text.h>
+#include <lh/util/str/ptr.h>
+#include <authum/unused.h>
 
 enum
 {
@@ -38,8 +36,8 @@ typedef enum authum_http_client_state
 
 typedef struct authum_http_client
 {
-    authum_i32_t fd;
-    authum_i32_t file;
+    lh_os_system_net_socket_handle_t fd;
+    lh_os_system_fs_file_handle_t file;
     authum_i32_t ip_slot;
     authum_http_client_state_t state;
     authum_char_t input[AUTHUM_HTTP_REQUEST_CAPACITY];
@@ -47,8 +45,8 @@ typedef struct authum_http_client
     authum_usize_t used;
     authum_usize_t sent;
     authum_usize_t output_size;
-    off_t offset;
-    off_t remaining;
+    lh_u64_t offset;
+    lh_u64_t remaining;
     authum_i64_t born;
     authum_i64_t progress;
     authum_u32_t id;
@@ -75,8 +73,8 @@ struct authum_http_server
 {
     authum_http_server_t *next;
     authum_http_options_t options;
-    authum_i32_t roots[AUTHUM_HTTP_MAX_SOURCES];
-    authum_i32_t listener;
+    lh_os_system_fs_file_handle_t roots[AUTHUM_HTTP_MAX_SOURCES];
+    lh_os_system_net_socket_handle_t listener;
     lh_os_wake_t wake;
     authum_threads_t threads;
     authum_thread_t *thread;
@@ -112,14 +110,14 @@ authum_http_access_token(authum_char_t *dst, authum_usize_t capacity, const auth
 void
 authum_http_client_close(authum_http_server_t *s, authum_http_client_t *c);
 
-authum_i32_t
-authum_http_resource_open(authum_i32_t root, const authum_http_options_t *options,
-                          const authum_char_t *url, authum_usize_t length, off_t *size);
+lh_os_system_fs_file_handle_t
+authum_http_resource_open(lh_os_system_fs_file_handle_t root, const authum_http_options_t *options,
+                          const authum_char_t *url, authum_usize_t length, lh_u64_t *size);
 void
 authum_http_response_set(authum_http_client_t *c, authum_i32_t code, const authum_char_t *reason,
-                         off_t size, authum_i32_t head);
+                         lh_u64_t size, authum_i32_t head);
 void
-authum_http_request_read(authum_http_client_t *c, const authum_i32_t *roots,
+authum_http_request_read(authum_http_client_t *c, const lh_os_system_fs_file_handle_t *roots,
                          const authum_http_options_t *options);
 authum_i32_t
 authum_http_peer_acquire(authum_http_server_t *s, authum_u32_t ip, authum_i64_t now,
@@ -154,21 +152,25 @@ authum_http_server_memory(const authum_http_server_t *server);
 authum_u32_t
 authum_http_server_drain(authum_http_server_t *server, authum_http_log_fn sink, authum_ptr user,
                          authum_u32_t limit);
-authum_i32_t
+lh_os_system_net_socket_handle_t
 authum_http_listener_open(const authum_http_options_t *options, authum_char_t *error,
                           authum_u32_t error_size);
-authum_i32_t
-authum_http_socket_accept(authum_i32_t listener, authum_http_client_t *peer, authum_u32_t *address);
+lh_os_system_net_socket_handle_t
+authum_http_socket_accept(lh_os_system_net_socket_handle_t listener, authum_http_client_t *peer, authum_u32_t *address);
 
 authum_i64_t
-authum_http_socket_receive(authum_i32_t fd, authum_char_t *buffer, authum_usize_t size);
+authum_http_socket_receive(lh_os_system_net_socket_handle_t fd, authum_char_t *buffer, authum_usize_t size);
 
 authum_i64_t
-authum_http_socket_send(authum_i32_t fd, const authum_char_t *buffer, authum_usize_t size);
+authum_http_socket_send(lh_os_system_net_socket_handle_t fd, const authum_char_t *buffer, authum_usize_t size);
 
 authum_i64_t
-authum_http_socket_send_file(authum_i32_t socket, authum_i32_t file, off_t *offset,
+authum_http_socket_send_file(lh_os_system_net_socket_handle_t socket, lh_os_system_fs_file_handle_t file, lh_u64_t *offset,
                              authum_usize_t size);
+/** The last OS error as text, for an error message. */
+const authum_char_t *
+authum_http_get_error_text(void);
+
 void
 authum_http_clients_accept(authum_http_server_t *server, authum_i64_t now);
 

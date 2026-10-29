@@ -2,7 +2,7 @@
 #include <lh/http/parser.h>
 
 void
-authum_http_request_read(authum_http_client_t *client, const authum_i32_t *roots,
+authum_http_request_read(authum_http_client_t *client, const lh_os_system_fs_file_handle_t *roots,
                          const authum_http_options_t *options)
 {
     lh_http_parser_t parser;
@@ -54,18 +54,18 @@ authum_http_request_read(authum_http_client_t *client, const authum_i32_t *roots
             return;
         }
     }
-    off_t length = 0;
+    lh_u64_t length = 0;
     for (authum_usize_t i = 0; lh_math_lt(i, options->source_count); i = lh_math_add_one(i))
     {
         client->file =
             authum_http_resource_open(roots[i], options, path, path_length, lh_addr_of(length));
-        if (lh_math_ge(client->file, 0))
+        if (lh_math_ne(client->file, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID))
         {
             client->source = lh_math_add(i, 1);
             break;
         }
     }
-    if (lh_math_lt(client->file, 0))
+    if (lh_math_eq(client->file, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID))
     {
         authum_http_response_set(client, 404, "Not Found", 0, 1);
     }

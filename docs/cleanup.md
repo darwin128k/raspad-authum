@@ -123,6 +123,11 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   threads on the new `lh/os/thread/group` (their body is the module's own code, not
   a step). Left: Authum's `http/loop.c` (needs a waiter on `poll` + `lh/os/wake`
   beside the condition one).
+- [ ] **Runtime output.** `lh_runtime_logger` writes to stderr with `fwrite` itself,
+  past `lh_runtime_writer`: give it a writer of its own that a host can rebind (stderr
+  by default). A Windows debugger writer (`OutputDebugStringW`, Visual Studio's Output)
+  in the win backend. Authum binds the runtime writer and logger to the engine console
+  (`ServerPrint`) and its log files, so what LH reports reaches the server.
 - [ ] `tools/order-levels.py` and `check-levels.py` count a function taken by address
   (a callback) like a call: `order-levels` then puts it below its user, which C does
   not compile. Teach both that an address-taken function must come first. A thread that

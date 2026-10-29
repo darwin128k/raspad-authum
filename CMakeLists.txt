@@ -153,12 +153,7 @@ file(GLOB_RECURSE AUTHUM_HOST_SOURCES CONFIGURE_DEPENDS
         "${CMAKE_SOURCE_DIR}/src/authum/host/*.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/*.cpp"
 )
-# HTTP is host-owned. SDK clients contain only table dispatchers.
-if(WIN32)
-    list(FILTER AUTHUM_HOST_SOURCES EXCLUDE REGEX "/host/http/")
-else()
-    list(FILTER AUTHUM_HOST_SOURCES EXCLUDE REGEX "/host/http_windows.c$")
-endif()
+# HTTP is host-owned, one transport for every OS. SDK clients contain only table dispatchers.
 # The entry layer: Authum as the HLDS game library (src/authum/gamedll/).
 file(GLOB AUTHUM_GAMEDLL_SOURCES CONFIGURE_DEPENDS
         "${CMAKE_SOURCE_DIR}/src/authum/gamedll/*.cpp"

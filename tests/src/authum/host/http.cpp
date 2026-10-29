@@ -1,40 +1,57 @@
-#ifndef _GNU_SOURCE
-#    define _GNU_SOURCE
-#endif
 #include <authum/null.h>
 #include <authum/host/http.h>
 #include <authum/host/threads.h>
 #include <authum/host/http/internal.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <sys/time.h>
 #include <gtest/gtest.h>
+#include <lh/os/net.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#if defined(_WIN32)
+#    include <direct.h>
+#    define test_mkdir(path) _mkdir(path)
+#    define test_rmdir(path) _rmdir(path)
+#else
+#    include <sys/stat.h>
+#    include <unistd.h>
+#    define test_mkdir(path) mkdir(path, 0700)
+#    define test_rmdir(path) rmdir(path)
+#endif
+
+/* A size no resource has: what a refused open must leave untouched. */
+static const lh_u64_t k_unset = ~0ULL;
+
+/* 127.0.0.1:port. */
+static lh_net_ip4_socket_addr_t
+loopback(lh_net_port_t port)
+{
+    lh_net_ip4_t ip;
+    lh_net_ip4_socket_addr_t address;
+
+    EXPECT_TRUE(lh_net_ip4_parse("127.0.0.1", 9, &ip));
+    lh_net_ip4_socket_addr_init(&address, &ip, port);
+    return address;
+}
 
 authum_i32_t
 available_port(void)
 {
-    int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (socket_fd < 0)
+    lh_net_ip4_socket_addr_t address = loopback(0);
+    const lh_os_system_net_socket_handle_t socket =
+        lh_os_system_net_socket_open(lh_os_system_net_socket_type_tcp);
+
+    if (socket == LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID)
     {
         return -1;
     }
-    struct sockaddr_in address = {.sin_family = AF_INET,
-                                  .sin_addr = {.s_addr = htonl(INADDR_LOOPBACK)}};
-    socklen_t size = sizeof address;
-    if (bind(socket_fd, (struct sockaddr *)&address, sizeof address) ||
-        getsockname(socket_fd, (struct sockaddr *)&address, &size))
+    if (!lh_os_system_net_socket_bind(socket, &address) ||
+        !lh_os_system_net_socket_get_local_addr(socket, &address))
     {
-        close(socket_fd);
+        lh_os_system_net_socket_close(socket);
         return -1;
     }
-    close(socket_fd);
-    return ntohs(address.sin_port);
+    lh_os_system_net_socket_close(socket);
+    return lh_net_ip4_socket_addr_get_port(&address);
 }
 
 typedef struct close_during_log
@@ -58,8 +75,9 @@ static authum_threads_t threads;
 static authum_http_owner_t owner, foreign_owner;
 static authum_http_service_t service, foreign_service;
 static authum_http_options_t options;
-static char directory[64], filename[256], error[512];
-static int root_fd, client_fd;
+static char directory[200], filename[256], error[512];
+static lh_os_system_fs_file_handle_t root_fd;
+static lh_os_system_net_socket_handle_t client_fd;
 static authum_http_server_t *server;
 
 void
@@ -85,16 +103,30 @@ class authum_http : public ::testing::Test
         authum_threads_host_init(&thread_owner, &threads);
         authum_http_host_init(&owner, &threads, &service);
         authum_http_host_init(&foreign_owner, &threads, &foreign_service);
+        ASSERT_TRUE(lh_os_net_init());
         server = authum_null;
-        root_fd = client_fd = -1;
+        root_fd = LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
+        client_fd = LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID;
+#if defined(_WIN32)
+        /* An absolute directory of this run: sources must be absolute. */
+        test_mkdir("authum-http-test");
+        ASSERT_NE(_fullpath(directory, "authum-http-test", sizeof directory), authum_null);
+        for (char *p = directory; *p; ++p)
+        {
+            *p = *p == '\\' ? '/' : *p;
+        }
+#else
         strcpy(directory, "/tmp/authum-http-XXXXXX");
         ASSERT_NE(mkdtemp(directory), authum_null);
+#endif
         snprintf(filename, sizeof filename, "%s/shared.bsp", directory);
         ASSERT_NO_FATAL_FAILURE(write_resource("shared.bsp", "shared-http"));
         char path[256];
         snprintf(path, sizeof path, "%s/maps", directory);
-        ASSERT_EQ(mkdir(path, 0700), 0);
+        ASSERT_EQ(test_mkdir(path), 0);
         ASSERT_NO_FATAL_FAILURE(write_resource("maps/nested.bsp", "nested"));
+#if !defined(_WIN32)
+        /* Links and FIFOs need privileges on Windows: the refusals hold there unseen. */
         snprintf(path, sizeof path, "%s/link.bsp", directory);
         ASSERT_EQ(symlink("shared.bsp", path), 0);
         snprintf(path, sizeof path, "%s/alias", directory);
@@ -103,8 +135,9 @@ class authum_http : public ::testing::Test
         ASSERT_EQ(link(filename, path), 0);
         snprintf(path, sizeof path, "%s/fifo.bsp", directory);
         ASSERT_EQ(mkfifo(path, 0600), 0);
-        root_fd = open(directory, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
-        ASSERT_GE(root_fd, 0);
+#endif
+        root_fd = lh_os_system_fs_file_open_root(directory);
+        ASSERT_NE(root_fd, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
         authum_http_options_init(&options);
         ASSERT_TRUE(authum_http_source_add(&options, directory));
         strcpy(options.allow_extensions, "bsp");
@@ -116,17 +149,17 @@ class authum_http : public ::testing::Test
     void
     TearDown() override
     {
-        if (client_fd >= 0)
+        if (client_fd != LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID)
         {
-            close(client_fd);
+            lh_os_system_net_socket_close(client_fd);
         }
         authum_threads_host_stop_owner(&thread_owner);
         authum_http_host_drop_owner(&owner);
         authum_http_host_drop_owner(&foreign_owner);
         authum_threads_host_drop_owner(&thread_owner);
-        if (root_fd >= 0)
+        if (root_fd != LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID)
         {
-            close(root_fd);
+            lh_os_system_fs_file_close(root_fd);
         }
         const char *files[] = {"maps/nested.bsp", "link.bsp", "alias",
                                ".hidden.bsp",     "fifo.bsp", "shared.bsp"};
@@ -134,11 +167,12 @@ class authum_http : public ::testing::Test
         for (const char *file : files)
         {
             snprintf(path, sizeof path, "%s/%s", directory, file);
-            unlink(path);
+            remove(path);
         }
         snprintf(path, sizeof path, "%s/maps", directory);
-        rmdir(path);
-        rmdir(directory);
+        test_rmdir(path);
+        test_rmdir(directory);
+        lh_os_net_deinit();
     }
 };
 
@@ -154,21 +188,21 @@ open_server(void)
 void
 request_resource(char *response, size_t capacity)
 {
-    client_fd = socket(AF_INET, SOCK_STREAM, 0);
-    ASSERT_GE(client_fd, 0);
-    struct timeval timeout = {.tv_sec = 2};
-    ASSERT_EQ(setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout), 0);
-    struct sockaddr_in address = {.sin_family = AF_INET,
-                                  .sin_port = htons(options.port),
-                                  .sin_addr = {.s_addr = htonl(INADDR_LOOPBACK)}};
-    ASSERT_EQ(connect(client_fd, reinterpret_cast<struct sockaddr *>(&address), sizeof address), 0);
+    const lh_net_ip4_socket_addr_t address =
+        loopback(static_cast<lh_net_port_t>(options.port));
+    client_fd = lh_os_system_net_socket_open(lh_os_system_net_socket_type_tcp);
+    ASSERT_NE(client_fd, LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID);
+    ASSERT_TRUE(lh_os_system_net_socket_connect(client_fd, &address));
     const char *request = "GET /shared.bsp HTTP/1.1\r\nHost: localhost\r\n\r\n";
-    ASSERT_GT(send(client_fd, request, strlen(request), MSG_NOSIGNAL), 0);
+    ASSERT_GT(lh_os_system_net_socket_send(client_fd, request, strlen(request)), 0);
     size_t received = 0;
     for (;;)
     {
         ASSERT_LT(received, capacity - 1);
-        ssize_t size = recv(client_fd, response + received, capacity - 1 - received, 0);
+        /* Two seconds for each piece of the answer. */
+        ASSERT_GT(lh_os_system_net_socket_wait(&client_fd, 1U, nullptr, 0U, 2000U), 0);
+        lh_ssize_t size =
+            lh_os_system_net_socket_recv(client_fd, response + received, capacity - 1 - received);
         ASSERT_GE(size, 0);
         if (!size)
         {
@@ -177,8 +211,8 @@ request_resource(char *response, size_t capacity)
         received += static_cast<size_t>(size);
     }
     response[received] = 0;
-    close(client_fd);
-    client_fd = -1;
+    lh_os_system_net_socket_close(client_fd);
+    client_fd = LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID;
 }
 
 TEST_F(authum_http, rejects_relative_and_null_sources)
@@ -260,11 +294,11 @@ TEST_F(authum_http, owner_cleanup_reclaims_forgotten_server)
 TEST_F(authum_http, opens_allowed_nested_resource)
 {
     const char *url = "/maps/nested.bsp";
-    off_t size = -1;
-    int fd = authum_http_resource_open(root_fd, &options, url, strlen(url), &size);
-    ASSERT_GE(fd, 0);
-    EXPECT_EQ(size, 6);
-    EXPECT_EQ(close(fd), 0);
+    lh_u64_t size = k_unset;
+    lh_os_system_fs_file_handle_t fd = authum_http_resource_open(root_fd, &options, url, strlen(url), &size);
+    ASSERT_NE(fd, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
+    EXPECT_EQ(size, 6U);
+    lh_os_system_fs_file_close(fd);
 }
 
 class authum_http_denied_path : public authum_http,
@@ -274,14 +308,14 @@ class authum_http_denied_path : public authum_http,
 
 TEST_P(authum_http_denied_path, refuses_unsafe_path_without_changing_size)
 {
-    off_t size = -1;
+    lh_u64_t size = k_unset;
     const char *url = GetParam();
-    int fd = authum_http_resource_open(root_fd, &options, url, strlen(url), &size);
-    EXPECT_LT(fd, 0);
-    EXPECT_EQ(size, -1);
-    if (fd >= 0)
+    lh_os_system_fs_file_handle_t fd = authum_http_resource_open(root_fd, &options, url, strlen(url), &size);
+    EXPECT_EQ(fd, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
+    EXPECT_EQ(size, k_unset);
+    if (fd != LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID)
     {
-        close(fd);
+        lh_os_system_fs_file_close(fd);
     }
 }
 
@@ -294,38 +328,38 @@ INSTANTIATE_TEST_SUITE_P(unsafe_paths, authum_http_denied_path,
 TEST_F(authum_http, file_size_limit_accepts_exact_boundary)
 {
     const char *url = "/maps/nested.bsp";
-    off_t size = -1;
+    lh_u64_t size = k_unset;
     options.max_file_bytes = 5;
-    EXPECT_LT(authum_http_resource_open(root_fd, &options, url, strlen(url), &size), 0);
+    EXPECT_EQ(authum_http_resource_open(root_fd, &options, url, strlen(url), &size), LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
     options.max_file_bytes = 6;
-    int fd = authum_http_resource_open(root_fd, &options, url, strlen(url), &size);
-    ASSERT_GE(fd, 0);
-    EXPECT_EQ(size, 6);
-    close(fd);
+    lh_os_system_fs_file_handle_t fd = authum_http_resource_open(root_fd, &options, url, strlen(url), &size);
+    ASSERT_NE(fd, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
+    EXPECT_EQ(size, 6U);
+    lh_os_system_fs_file_close(fd);
 }
 
 TEST_F(authum_http, deny_prefix_overrides_allowed_directory)
 {
     strcpy(options.deny_prefixes, "maps");
     const char *url = "/maps/nested.bsp";
-    off_t size = -1;
-    EXPECT_LT(authum_http_resource_open(root_fd, &options, url, strlen(url), &size), 0);
+    lh_u64_t size = k_unset;
+    EXPECT_EQ(authum_http_resource_open(root_fd, &options, url, strlen(url), &size), LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
 }
 
 TEST_F(authum_http, empty_directory_allow_list_refuses_nested_file)
 {
     options.allow_dirs[0] = 0;
     const char *url = "/maps/nested.bsp";
-    off_t size = -1;
-    EXPECT_LT(authum_http_resource_open(root_fd, &options, url, strlen(url), &size), 0);
+    lh_u64_t size = k_unset;
+    EXPECT_EQ(authum_http_resource_open(root_fd, &options, url, strlen(url), &size), LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
 }
 
 TEST_F(authum_http, root_file_requires_root_extension_permission)
 {
     options.root_extensions[0] = 0;
     const char *url = "/shared.bsp";
-    off_t size = -1;
-    EXPECT_LT(authum_http_resource_open(root_fd, &options, url, strlen(url), &size), 0);
+    lh_u64_t size = k_unset;
+    EXPECT_EQ(authum_http_resource_open(root_fd, &options, url, strlen(url), &size), LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
 }
 
 } // namespace tests
