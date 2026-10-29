@@ -39,8 +39,8 @@
 
 typedef struct authum_placeholder_ops
 {
-    /** Expand @p template into @p out (absolute path). */
-    authum_bool_t (*expand)(authum_ptr owner, const authum_char_t *template, authum_char_t *out,
+    /** Expand @p text into @p out (absolute path). */
+    authum_bool_t (*expand)(authum_ptr owner, const authum_char_t *text, authum_char_t *out,
                             authum_usize_t out_size);
     /** Register @p name for @p owner. Names are unique host-wide. */
     authum_bool_t (*register_placeholder)(authum_ptr owner, const authum_char_t *name,
@@ -58,7 +58,7 @@ typedef struct authum_placeholder_service
 AUTHUM_EXTERN_C_BEGIN
 
 /**
- * Expand @p template into @p out.
+ * Expand @p text into @p out.
  *
  * @p out receives an absolute path: every `{name}` is replaced by the value
  * registered for it, and a result that is still relative is taken against
@@ -66,9 +66,8 @@ AUTHUM_EXTERN_C_BEGIN
  * not pair, the value does not fit in @p out_size, or the template is empty.
  */
 authum_bool_t
-authum_placeholder_expand(const authum_placeholder_service_t *service,
-                          const authum_char_t *template, authum_char_t *out,
-                          authum_usize_t out_size);
+authum_placeholder_expand(const authum_placeholder_service_t *service, const authum_char_t *text,
+                          authum_char_t *out, authum_usize_t out_size);
 
 /**
  * Register @p name (letters, digits and `_`) with @p value (an absolute path).

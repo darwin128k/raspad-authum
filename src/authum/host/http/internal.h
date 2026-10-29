@@ -5,7 +5,11 @@
 #include <lh/os/system/net/socket.h>
 #include <authum/net.h>
 #include <authum/host/clock.h>
-#include <stdatomic.h>
+#ifdef __cplusplus
+#    include <atomic>
+#else
+#    include <stdatomic.h>
+#endif
 #include <sys/types.h>
 #include <lh/os/wake.h>
 #include <stdio.h>
@@ -82,9 +86,15 @@ struct authum_http_server
     authum_bool_t joined;
     authum_usize_t drain_depth;
     authum_bool_t close_pending;
+#ifdef __cplusplus
+    std::atomic_uint log_read;
+    std::atomic_uint log_write;
+    std::atomic_uint log_dropped;
+#else
     atomic_uint log_read;
     atomic_uint log_write;
     atomic_uint log_dropped;
+#endif
     authum_char_t logs[AUTHUM_HTTP_LOG_CAPACITY][AUTHUM_HTTP_LOG_LINE_CAPACITY];
 };
 

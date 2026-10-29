@@ -117,11 +117,6 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 - [ ] **Rename the sandbox** (item 3 of the next task). It is hierarchical memory
   ownership with destructors on the LH ownership tree, not isolation, and the name
   misleads. Candidates: `arena`, `region`, `scope`; the owner decides.
-- [ ] **Remaining Authum test runners.** Events now use the pinned GoogleTest
-  dependency and common runner; the other tests in `tests/` still use the local
-  CHECK runner or plain assertions. Migrate them rather than adding another
-  assertion framework.
-
 - [ ] Authum has no named-character facade like `lh/char/map.h`; module code
   (`examples/chatfilter/chatfilter.c`) still compares bare literals.
 
