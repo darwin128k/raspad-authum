@@ -61,7 +61,7 @@ sandbox on `lh_memory_tree`, and the event bus (order, stop, queries,
 re-entrancy, owner cleanup).
 
 Unit tests mirror their headers under `tests/src/authum/`: for example,
-`src/authum/host/logs/writer.h` has `tests/src/authum/host/logs/writer.cpp`.
+`src/authum/host/logs.h` has `tests/src/authum/host/logs.cpp`.
 Suite and case names use `snake_case`, without a redundant `test` suffix.
 Each case checks one behavior; fixtures prepare and release resources for every
 case. Input variations use parameterized tests. The module examples remain

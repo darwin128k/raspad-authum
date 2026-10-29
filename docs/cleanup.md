@@ -107,8 +107,10 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   no native or libc call outside LH (owner, 2026-10-29). In order:
   1. [ ] LH local time: the zone offset of a UTC moment (DST included) in the OS
      backends, UTC ↔ local on top; `lh_os_timestamp_now` → `_try_get_now`.
-  2. [ ] Logs (`host/logs.c`, `host/logs/files.c`, `writer.c`) on LH time, files and
-     `lh/str/format`: no `time`/`localtime`/`strftime`/`fopen`/`snprintf`.
+  2. [x] Log files and queue on LH: `lh/os/logger/{record,sink,queue,daily}`; Authum's
+     `host/logs/writer.c` and `files.c` are gone, `host/logs.c` sends records.
+     [ ] Left in `host/logs.c`: config parsing with `snprintf`/`strtol`, `getenv`, the
+     stderr fallback with `fprintf` → LH bricks.
   3. [ ] HTTP on `lh/os/net/socket` + `lh/http`: one transport for every OS,
      `host/http_windows.c` (a "Linux only" stub) goes.
   4. [ ] The remaining libc calls in `api/` and `host/` (157 in 31 files at the start)
@@ -116,6 +118,11 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   5. [ ] `gamedll/` and `include/authum/{export,symbol}.h`: calling convention, export
      and the engine library name through LH compiler / OS macros, no `_WIN32`.
   A check (`tools/check-native.py`) keeps it at 0.
+- [ ] **`lh/os/loop`: one worker loop under every background thread.** A thread that
+  sleeps until it is woken, its nearest `lh_timer_group` deadline comes or it is asked
+  to stop, then runs one step; it waits on a condition (queues) or on `poll` with
+  `lh/os/wake` (sockets). Today the same is written four times: `lh/os/worker`,
+  `lh/os/logger/queue`, Authum's `http/loop.c` and `threads.c`. Move them onto it.
 
 - [x] **Console and commands become LH bricks.** `lh/console` (`lh_console_t`,
   commands, entries, calls, the reply sink) owns the registry; `host/commands.c` is a

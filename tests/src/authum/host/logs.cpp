@@ -37,10 +37,10 @@ int g_test_qproto;
 int g_test_quiet;
 int g_test_hello;
 
-time_t
+authum_i64_t
 test_clock(void)
 {
-    return g_test_now;
+    return static_cast<authum_i64_t>(g_test_now);
 }
 
 void

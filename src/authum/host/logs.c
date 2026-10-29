@@ -10,7 +10,9 @@
 #include <lh/char/letter.h>
 #include <lh/char/digit.h>
 #include <lh/memory/std.h>
-#include <authum/host/logs/files.h>
+#include <lh/os/logger/daily.h>
+#include <lh/os/logger/queue.h>
+#include <lh/os/timestamp.h>
 
 #include <authum/cfg.h>
 #include <authum/logger.h>
@@ -33,6 +35,8 @@ typedef struct authum_logs_channel authum_logs_channel_t;
 struct authum_logs_channel
 {
     authum_logs_channel_t *next;
+    /** The id its records carry in the queue; 0 is the host. */
+    lh_u32_t id;
     authum_ptr owner;
     /** The module channel this journal belongs to; null for a module or the host. */
     authum_logs_channel_t *parent;
@@ -64,20 +68,130 @@ static authum_bool_t authum_logs_environment_override;
 authum_logs_channel_t authum_logs_host;
 authum_logs_channel_t *authum_logs_head;
 authum_bool_t authum_logs_ready;
+static lh_os_logger_queue_t *authum_logs_queue;
+static lh_os_logger_daily_t *authum_logs_daily;
+/** The daily files' own callbacks, which ::authum_logs_sink forwards to. */
+static lh_os_logger_sink_t authum_logs_files;
+static lh_u32_t authum_logs_next_id;
 
-static void
-authum_logs_schedule_cleanup(const authum_logs_channel_t *channel)
+enum
 {
+    authum_logs_queue_capacity = 1024,
+    authum_logs_flush_ms = 100
+};
+
+/* --- the queue ------------------------------------------------------------ */
+
+/** Now, in Unix seconds: the test clock when one is set. */
+static lh_timestamp_t
+authum_logs_now(void)
+{
+    lh_timestamp_t now = 0;
+
+    if (authum_logs_clock)
+    {
+        return authum_logs_clock();
+    }
+    authum_unused(lh_os_timestamp_try_get_now(lh_addr_of(now)));
+    return now;
+}
+
+/** The daily files' clock: the same one lines are stamped with. */
+static lh_bool_t
+authum_logs_files_clock(lh_ptr user, lh_timestamp_t *out)
+{
+    authum_unused(user);
+    lh_ptr_deref(out) = authum_logs_now();
+    return lh_bool_true;
+}
+
+/** The game server's own line: `L MM/DD/YYYY - HH:MM:SS: [level] [tag] text`. */
+static lh_void
+authum_logs_files_format(lh_ptr user, const lh_os_logger_record_t *record, lh_timestamp_t local,
+                         lh_str_t *out)
+{
+    const authum_char_t *tag = lh_os_logger_record_get_tag(record);
+    lh_str_t head;
+
+    authum_unused(user);
+    lh_str_init(lh_addr_of(head));
+    authum_unused(
+        lh_str_format(lh_addr_of(head), "L %02d/%02d/%04d - %02d:%02d:%02d: [%s] ",
+                      lh_cast_static(lh_int_t, lh_timestamp_get_month(local)),
+                      lh_cast_static(lh_int_t, lh_timestamp_get_day(local)),
+                      lh_cast_static(lh_int_t, lh_timestamp_get_year(local)),
+                      lh_cast_static(lh_int_t, lh_timestamp_get_hour(local)),
+                      lh_cast_static(lh_int_t, lh_timestamp_get_minute(local)),
+                      lh_cast_static(lh_int_t, lh_timestamp_get_second(local)),
+                      authum_logger_level_get_name(lh_os_logger_record_get_level(record))));
+    lh_str_append_str(out, lh_addr_of(head));
+    if (lh_math_ne(tag[0], lh_char_map_nul))
+    {
+        authum_unused(lh_str_format(lh_addr_of(head), "[%s] ", tag));
+        lh_str_append_str(out, lh_addr_of(head));
+    }
+    lh_str_deinit(lh_addr_of(head));
+    lh_os_logger_daily_append_text(out, lh_os_logger_record_get_text(record));
+}
+
+static lh_void
+authum_logs_sink_emit(lh_ptr user, const lh_os_logger_record_t *record)
+{
+    authum_unused(user);
+    lh_os_logger_sink_get_emit_fn(lh_addr_of(authum_logs_files))(
+        lh_os_logger_sink_get_user(lh_addr_of(authum_logs_files)), record);
+}
+
+static lh_void
+authum_logs_sink_flush(lh_ptr user)
+{
+    authum_unused(user);
+    lh_os_logger_sink_get_flush_fn(lh_addr_of(authum_logs_files))(
+        lh_os_logger_sink_get_user(lh_addr_of(authum_logs_files)));
+}
+
+static lh_void
+authum_logs_sink_close(lh_ptr user)
+{
+    authum_unused(user);
+    lh_os_logger_sink_get_close_fn(lh_addr_of(authum_logs_files))(
+        lh_os_logger_sink_get_user(lh_addr_of(authum_logs_files)));
+}
+
+/** A full queue is told in the host's own file, from the worker, so it is not lost too. */
+static lh_void
+authum_logs_sink_dropped(lh_ptr user, lh_u32_t count)
+{
+    lh_os_logger_record_t record;
+    lh_str_t text;
+
+    lh_str_init(lh_addr_of(text));
+    authum_unused(lh_str_format(lh_addr_of(text),
+                                "queue full: dropped %u file records; game thread did not wait",
+                                lh_cast_static(lh_uint_t, count)));
+    lh_os_logger_record_init_line(lh_addr_of(record), authum_logs_host.id,
+                                  authum_logger_level_warning, authum_logs_now(), "logger",
+                                  lh_str_get_data(lh_addr_of(text)));
+    lh_str_deinit(lh_addr_of(text));
+    authum_logs_sink_emit(user, lh_addr_of(record));
+}
+
+/** Tell the files where @p channel writes, how long it keeps and how its lines read. */
+static void
+authum_logs_send_channel(const authum_logs_channel_t *channel)
+{
+    lh_os_logger_record_t record;
+
     if (!authum_logs_ready)
     {
         return;
     }
-    authum_logs_record_t record = {0};
-    record.dir = channel->dir;
-    record.keep_days = channel->keep_days;
-    record.time = authum_logs_clock ? authum_logs_clock() : time(authum_null);
-    record.maintenance = authum_bool_true;
-    authum_unused(authum_logs_writer_submit(lh_addr_of(record)));
+    lh_os_logger_record_init_open(
+        lh_addr_of(record), channel->id, authum_path_get_cstr(lh_addr_of(channel->dir)),
+        lh_cast_static(lh_s32_t, channel->keep_days),
+        lh_math_eq(channel->format, authum_logger_format_raw) ? lh_bool_true : lh_bool_false,
+        authum_logs_now());
+    authum_unused(lh_os_logger_queue_push(authum_logs_queue, lh_addr_of(record)));
 }
 
 /* --- config --------------------------------------------------------------- */
@@ -255,10 +369,10 @@ authum_logs_read_cfg(void)
     {
         authum_cfg_close(open);
     }
-    authum_logs_schedule_cleanup(lh_addr_of(authum_logs_host));
+    authum_logs_send_channel(lh_addr_of(authum_logs_host));
     for (channel = authum_logs_head; channel; channel = channel->next)
     {
-        authum_logs_schedule_cleanup(channel);
+        authum_logs_send_channel(channel);
     }
 }
 
@@ -292,18 +406,11 @@ static void
 authum_logs_emit(authum_logs_channel_t *channel, authum_logger_level_t level,
                  const authum_char_t *text, const authum_char_t *from)
 {
-    authum_logs_record_t record = {0};
-    record.dir = channel->dir;
-    record.level = level;
-    record.time = authum_logs_clock ? authum_logs_clock() : time(authum_null);
-    record.keep_days = channel->keep_days;
-    record.format = channel->format;
-    authum_cstr_copy(record.text, sizeof record.text, text);
-    if (from)
-    {
-        authum_cstr_copy(record.tag, sizeof record.tag, from);
-    }
-    authum_unused(authum_logs_writer_submit(lh_addr_of(record)));
+    lh_os_logger_record_t record;
+
+    lh_os_logger_record_init_line(lh_addr_of(record), channel->id, level, authum_logs_now(), from,
+                                  text);
+    authum_unused(lh_os_logger_queue_push(authum_logs_queue, lh_addr_of(record)));
 }
 
 /* --- channels ------------------------------------------------------------- */
@@ -422,6 +529,8 @@ authum_logs_add(authum_ptr owner, authum_logs_channel_t *parent, const authum_ch
     }
     lh_memory_std_set(channel, 0, sizeof lh_ptr_deref(channel));
     channel->owner = authum_null_eq(owner) ? lh_cast_static(authum_ptr, channel) : owner;
+    authum_logs_next_id = lh_math_add_one(authum_logs_next_id);
+    channel->id = authum_logs_next_id;
     channel->parent = parent;
     channel->refs = 1u;
     authum_logs_set_name(channel->name, sizeof channel->name, name);
@@ -478,7 +587,7 @@ authum_logs_add(authum_ptr owner, authum_logs_channel_t *parent, const authum_ch
     }
     channel->next = authum_logs_head;
     authum_logs_head = channel;
-    authum_logs_schedule_cleanup(channel);
+    authum_logs_send_channel(channel);
     return channel;
 }
 
@@ -492,7 +601,14 @@ authum_logs_free(authum_logs_channel_t *channel)
     {
         if (lh_math_eq(lh_ptr_deref(link), channel))
         {
+            lh_os_logger_record_t record;
+
             lh_ptr_deref(link) = channel->next;
+            if (authum_logs_ready)
+            {
+                lh_os_logger_record_init_close(lh_addr_of(record), channel->id);
+                authum_unused(lh_os_logger_queue_push(authum_logs_queue, lh_addr_of(record)));
+            }
             authum_memory_free(channel);
             return;
         }
@@ -609,6 +725,8 @@ authum_logs_construct(authum_ptr owner, const authum_logger_options_t *options)
     {
         authum_logs_read_channel_level(channel, authum_null);
     }
+    /* The format may have changed: the files hear of it before the first line. */
+    authum_logs_send_channel(channel);
     return journal;
 }
 
@@ -635,15 +753,32 @@ authum_logs_init(const authum_char_t *root, authum_logs_mirror_fn mirror)
         return authum_bool_false;
     }
     authum_logs_read_cfg();
-    const authum_logs_sink_t sink = {authum_logs_files_emit, authum_logs_files_flush,
-                                     authum_logs_files_close, authum_logs_files_dropped};
-    authum_logs_files_set_root(lh_addr_of(authum_logs_host.dir));
-    if (!authum_logs_writer_start(lh_addr_of(sink)))
+    authum_logs_daily = lh_os_logger_daily_try_create(authum_logs_files_format,
+                                                      authum_logs_files_clock, authum_null);
+    if (authum_null_eq(authum_logs_daily))
     {
         return authum_bool_false;
     }
+    lh_os_logger_daily_copy_sink(authum_logs_daily, lh_addr_of(authum_logs_files));
+    {
+        lh_os_logger_sink_t sink;
+
+        lh_os_logger_sink_set_emit_fn(lh_addr_of(sink), authum_logs_sink_emit);
+        lh_os_logger_sink_set_flush_fn(lh_addr_of(sink), authum_logs_sink_flush);
+        lh_os_logger_sink_set_close_fn(lh_addr_of(sink), authum_logs_sink_close);
+        lh_os_logger_sink_set_dropped_fn(lh_addr_of(sink), authum_logs_sink_dropped);
+        lh_os_logger_sink_set_user(lh_addr_of(sink), authum_null);
+        authum_logs_queue = lh_os_logger_queue_try_create(authum_logs_queue_capacity,
+                                                          authum_logs_flush_ms, lh_addr_of(sink));
+    }
+    if (authum_null_eq(authum_logs_queue))
+    {
+        lh_os_logger_daily_destroy(authum_logs_daily);
+        authum_logs_daily = authum_null;
+        return authum_bool_false;
+    }
     authum_logs_ready = authum_bool_true;
-    authum_logs_schedule_cleanup(lh_addr_of(authum_logs_host));
+    authum_logs_send_channel(lh_addr_of(authum_logs_host));
     return authum_bool_true;
 }
 
@@ -659,7 +794,8 @@ authum_logs_reload(void)
 authum_bool_t
 authum_logs_sync(authum_u32_t timeout_ms)
 {
-    return authum_logs_writer_sync(timeout_ms);
+    return authum_logs_ready ? lh_os_logger_queue_sync(authum_logs_queue, timeout_ms)
+                             : authum_bool_false;
 }
 
 void
@@ -669,7 +805,10 @@ authum_logs_deinit(void)
     {
         authum_logs_free(authum_logs_head);
     }
-    authum_logs_writer_stop();
+    lh_os_logger_queue_destroy(authum_logs_queue);
+    authum_logs_queue = authum_null;
+    lh_os_logger_daily_destroy(authum_logs_daily);
+    authum_logs_daily = authum_null;
     authum_logs_mirror = 0;
     authum_logs_ready = authum_bool_false;
 }
