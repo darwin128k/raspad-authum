@@ -373,7 +373,8 @@ authum_logs_files_emit(const authum_logs_record_t *record)
     }
     if (lh_math_ne(record->format, authum_logger_format_raw))
     {
-        fprintf(file, "[%02d:%02d:%02d] [%s] ", tm->tm_hour, tm->tm_min, tm->tm_sec,
+        fprintf(file, "L %02d/%02d/%04d - %02d:%02d:%02d: [%s] ", lh_math_add(tm->tm_mon, 1),
+                tm->tm_mday, lh_math_add(tm->tm_year, 1900), tm->tm_hour, tm->tm_min, tm->tm_sec,
                 authum_logger_level_get_name(level));
         if (!authum_null_eq(from))
         {

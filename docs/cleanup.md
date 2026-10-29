@@ -103,6 +103,20 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 
 ## Authum (after LH)
 
+- [ ] **Authum on LH rails: it does not know which OS it runs on.** No `#if _WIN32`,
+  no native or libc call outside LH (owner, 2026-10-29). In order:
+  1. [ ] LH local time: the zone offset of a UTC moment (DST included) in the OS
+     backends, UTC ↔ local on top; `lh_os_timestamp_now` → `_try_get_now`.
+  2. [ ] Logs (`host/logs.c`, `host/logs/files.c`, `writer.c`) on LH time, files and
+     `lh/str/format`: no `time`/`localtime`/`strftime`/`fopen`/`snprintf`.
+  3. [ ] HTTP on `lh/os/net/socket` + `lh/http`: one transport for every OS,
+     `host/http_windows.c` (a "Linux only" stub) goes.
+  4. [ ] The remaining libc calls in `api/` and `host/` (157 in 31 files at the start)
+     → LH bricks; a missing brick is added to LH first.
+  5. [ ] `gamedll/` and `include/authum/{export,symbol}.h`: calling convention, export
+     and the engine library name through LH compiler / OS macros, no `_WIN32`.
+  A check (`tools/check-native.py`) keeps it at 0.
+
 - [x] **Console and commands become LH bricks.** `lh/console` (`lh_console_t`,
   commands, entries, calls, the reply sink) owns the registry; `host/commands.c` is a
   facade with the word length and the help line, and a module handler is the console

@@ -61,6 +61,26 @@ bans.log_format = raw
 An administrator can still disable it in `configs/authum.cfg` with
 `qproto.log_level = off`.
 
+## Standard line format
+
+Standard file records use the HLDS timestamp prefix, followed by the level and text:
+
+```text
+L 10/26/2026 - 08:09:18: [info] loaded 3 bans
+```
+
+The timestamp is local time captured when the message is submitted. A module's
+own file already identifies the module by its directory, so its name is omitted.
+A copy in Authum's shared log includes the originating module or module/journal:
+
+```text
+L 10/26/2026 - 08:09:18: [warning] [qproto] ticket rejected
+L 10/26/2026 - 08:09:18: [warning] [qproto/audit] ticket rejected
+```
+
+Authum's own records omit a redundant `authum` tag. Raw journals retain their
+text-only format. Daily filenames remain `YYYY-MM-DD.log`.
+
 ## Special loggers
 
 Open a named journal with `authum_logger_open`, or use the constructor
