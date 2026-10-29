@@ -174,8 +174,14 @@ bans_on_authorized(const authum_char_t *name, authum_ptr payload, authum_ptr use
 
 - Subscribe in `start`. Unsubscribing in `stop` is optional — the host drops
   every subscription a module made after its `stop`.
+- Delivery is synchronous on the publishing thread. The bus does not copy or
+  retain the payload; handlers must not retain it without a separate agreement.
 - Handlers may subscribe, unsubscribe and publish from inside a handler.
-  Removal during a publish takes effect for the next publish.
+  Removal skips a not-yet-called handler immediately, including in nested
+  publications. Unlinking and freeing wait for the outermost publish to return.
+  New subscriptions may run in the ongoing publication.
+- All bus calls must be serialized on the server thread; worker threads must
+  hand work back to that thread before publishing.
 - The same `(name, fn, user)` is registered once; subscribing again is a no-op.
 
 ---
@@ -186,3 +192,35 @@ bans_on_authorized(const authum_char_t *name, authum_ptr payload, authum_ptr use
 - [ ] `size` first; check it in every handler
 - [ ] Queries: in-fields, out-fields, `found`; answer with `handled`
 - [ ] No `dlsym` / function tables between modules
+
+## 7. Numeric dispatch
+
+The host uses the generic `<lh/os/module/event/bus.h>` registry and per-event subscriber
+lists. Authum retains module ownership, callback ABI adaptation and cleanup.
+The original string operations remain at their original ABI table offsets.
+Numeric operations are appended in module ABI 1.5.0; on an older host they
+report unavailable (`resolve` returns zero).
+
+Resolve an event once during module startup, then retain its ID:
+
+```c
+authum_event_id_t id = authum_events_resolve(authum_host_events(host), "scores.changed");
+/* Check id != 0 before retaining/using it. */
+authum_events_subscribe_id(authum_host_events(host), id, on_changed, user);
+authum_events_publish_id(authum_host_events(host), id, payload);
+```
+
+`authum_events_unsubscribe_id` removes the same subscription as the string
+operation. Mixed string/numeric registration still deduplicates by module,
+event, callback and user. The callback continues to receive the canonical name.
+
+IDs are bus-local, one-based and never recycled during the host lifetime.
+Zero is invalid/unavailable. IDs survive module unload and clearing subscribers;
+do not save them to disk or exchange them between independent host instances.
+The host registry retains names for its lifetime. In standalone LH usage,
+`lh_os_module_event_bus_deinit` frees names, entries and subscriptions and invalidates IDs.
+
+Registration and string lookup scan registered event names, without scanning
+subscriptions. Numeric publication performs direct array lookup, followed only
+by that event's subscribers; no hashing or name comparison occurs in dispatch.
+Fixed game hooks and registered game-message events cache these IDs.

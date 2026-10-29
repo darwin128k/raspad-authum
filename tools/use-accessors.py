@@ -153,7 +153,8 @@ def rewrite(model, part, left, path):
             nxt = re.match(r'\s*\[[^\]]*\]\s*(?:(?<![=!<>])=(?!=)|(?:\+|-|\*|/|\||&|\^|<<|>>|%)=|\+\+|--)',
                            part[m.end():])
             before = part[:m.start()]
-            stepped = re.search(r'(\+\+|--|&)\s*$', before) and not re.search(r'&&\s*$', before)
+            stepped = (re.search(r'(\+\+|--|&|lh_addr_of\()\s*$', before)
+                       and not re.search(r'&&\s*$', before))
             mutable = bool(nxt or stepped) and not const
         expr = var if pointer else f'lh_addr_of({var})'
         cur_t = tname

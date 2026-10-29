@@ -54,6 +54,13 @@ typedef struct authum_child_data
     authum_logger_channel_t logger;
 } authum_child_data_t;
 
+/** @brief Level-1 mutable event facade member; data must be nonnull. */
+authum_events_t *
+authum_child_data_get_events_mut(authum_child_data_t *data)
+{
+    return lh_addr_of(data->events);
+}
+
 const authum_module_info_t *
 authum_child_peek_info(authum_cptr data)
 {
@@ -246,9 +253,9 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     data->sandbox.root = authum_sandbox_host_root_create();
     out->sandbox = lh_addr_of(data->sandbox);
 
-    data->events.ops = authum_events_host_ops();
-    data->events.owner = data;
-    out->events = lh_addr_of(data->events);
+    authum_events_set_ops(authum_child_data_get_events_mut(data), authum_events_host_ops());
+    authum_events_set_owner(authum_child_data_get_events_mut(data), data);
+    out->events = authum_child_data_get_events_mut(data);
 
     data->logger.ops = authum_logs_ops();
     data->logger.owner = data;

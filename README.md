@@ -131,6 +131,13 @@ git submodule update --init --recursive
 any other `lib/lh/VERSION`. To build against another lh tree (one being
 worked on next to Authum), pass `-DAUTHUM_LH_DIR=/path/to/lh`.
 
+Event tests use C++17 and GoogleTest pinned by LH. Recursive submodule initialization
+above includes it. To initialize only this test dependency in an existing checkout:
+
+```sh
+git -C lib/lh submodule update --init --recursive test/lib/googletest
+```
+
 The HLSDK headers live in `lib/hlsdk` (vendored). Point the build at another
 tree with `-DAUTHUM_HLSDK_DIR=/path/to/hlsdk`.
 

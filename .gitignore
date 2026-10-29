@@ -91,3 +91,7 @@ $RECYCLE.BIN/
 docs/api/html/
 docs/api/xml/
 docs/api/latex/
+
+# Python bytecode
+__pycache__/
+*.pyc

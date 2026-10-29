@@ -86,8 +86,8 @@ main(void)
 
     g_sandbox.ops = authum_sandbox_host_ops();
     g_sandbox.root = authum_sandbox_host_root_create();
-    g_events.ops = authum_events_host_ops();
-    g_events.owner = &g_owner;
+    authum_events_set_ops(&g_events, authum_events_host_ops());
+    authum_events_set_owner(&g_events, &g_owner);
     memset(&g_host, 0, sizeof g_host);
     g_host.size = sizeof g_host;
     g_host.sandbox = &g_sandbox;

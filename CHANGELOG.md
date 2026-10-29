@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Indexed event dispatch through LH and numeric event operations in module ABI 1.5.0.
+  String operations retain their ABI layout; game hooks and messages cache event IDs.
 - Automatic-channel `authum_host_log_*` conveniences and ABI 1.4
   `authum_logger_create` for named sandbox journals with host-owned standard
   or raw formatting. Existing logger handles and older host tables remain supported.

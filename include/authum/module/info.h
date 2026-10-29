@@ -30,7 +30,7 @@
  * functions, a major bump removes or changes one. Checked with
  * ::authum_version_is_abi_compatible.
  */
-#define AUTHUM_MODULE_ABI AUTHUM_VERSION(1, 4, 0)
+#define AUTHUM_MODULE_ABI AUTHUM_VERSION(1, 5, 0)
 
 struct authum_module_info
 {
