@@ -65,7 +65,7 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   - The split headers copy every include of their parent; trim to what each
     one needs.
 - [ ] **`static` functions: 61 in 11 files** (`ui/renderer3d.c`, `http/parser.c` done).
-  `memory/std/x86/sse2.c` 12, `memory/std/words.c` 10, `memory/std/x86/avx2.c` 9,
+  `memory/std/x86/sse2.h` 12, `memory/std/words.h` 10, `memory/std/x86/avx2.h` 9,
   `crypto/rijndael.c` 8, `memory/std.c` 7, `os/worker.c` 5,
   posix/win concurrency, x11, cpuid. SIMD tiers may need target attributes —
   check before making them public bricks.
@@ -95,14 +95,11 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   the bricks (a const getter and a `_mut` one), then their users.
 - [ ] **`lh_test_os` is flaky under a parallel `ctest -j8`** (seen on Windows and on
   Linux): it passes on its own every time. Find the shared resource (a port, a timing).
-- [ ] Pre-existing test failure: `lh_test_math` (`math/view.cpp` 149–153).
-- [ ] **LH sources that do not mirror a header** (`tools/check-mirror.py`, 9 left):
-  `os/concurrency.c` implements `os/thread.h`, `os/mutex.h`, ... → split into
-  `os/thread.c`, `os/mutex.c`, ...; `memory/std/words.c` and `memory/std/x86/*.c` are
-  fragments `#include`d into `memory/std.c` → real units with headers;
-  `util/{char,wchar}/case/fold.c` and `util/{str,wstr}/case/map.c` implement functions
-  declared in `util/char.h`, `util/wchar.h`, `util/str/ptr.h`, `util/wstr/ptr.h` → their
-  own `case/fold.h` / `case/map.h` headers.
+- [x] **Every LH source mirrors a header** (`tools/check-mirror.py`, 0): `os/concurrency.c`
+  split into `os/thread.c`, `os/mutex.c`, `os/condition.c`; the case tables declare in
+  `util/{char,wchar}/case/fold.h` and `util/{str,wstr}/case/map.h`; the `memory/std`
+  pieces are private headers beside `std.c` (`std/words.h`, `std/x86/*.h`), one
+  translation unit as before.
 
 ## Authum (after LH)
 
