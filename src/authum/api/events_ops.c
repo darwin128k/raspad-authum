@@ -1,19 +1,6 @@
 #include <authum/events/ops.h>
 #include <authum/null.h>
 #include <lh/math/ops.h>
-#include <stddef.h>
-
-authum_usize_t
-authum_events_ops_get_size(const authum_events_ops_t *self)
-{
-    return self->size;
-}
-
-void
-authum_events_ops_set_size(authum_events_ops_t *self, authum_usize_t size)
-{
-    self->size = size;
-}
 
 authum_events_subscribe_cb
 authum_events_ops_get_subscribe(const authum_events_ops_t *self)
@@ -58,19 +45,9 @@ authum_events_ops_get_publish_id(const authum_events_ops_t *self)
 }
 
 authum_bool_t
-authum_events_ops_reaches(const authum_events_ops_t *self, authum_usize_t end)
-{
-    return !authum_null_eq(self) && lh_math_le(end, authum_events_ops_get_size(self))
-               ? authum_bool_true
-               : authum_bool_false;
-}
-
-authum_bool_t
 authum_events_ops_has_subscribe(const authum_events_ops_t *self)
 {
-    return authum_events_ops_reaches(self, offsetof(authum_events_ops_t, subscribe) +
-                                               sizeof(authum_events_subscribe_cb)) &&
-                   !authum_null_eq(authum_events_ops_get_subscribe(self))
+    return !authum_null_eq(self) && !authum_null_eq(authum_events_ops_get_subscribe(self))
                ? authum_bool_true
                : authum_bool_false;
 }
@@ -78,9 +55,7 @@ authum_events_ops_has_subscribe(const authum_events_ops_t *self)
 authum_bool_t
 authum_events_ops_has_unsubscribe(const authum_events_ops_t *self)
 {
-    return authum_events_ops_reaches(self, offsetof(authum_events_ops_t, unsubscribe) +
-                                               sizeof(authum_events_unsubscribe_cb)) &&
-                   !authum_null_eq(authum_events_ops_get_unsubscribe(self))
+    return !authum_null_eq(self) && !authum_null_eq(authum_events_ops_get_unsubscribe(self))
                ? authum_bool_true
                : authum_bool_false;
 }
@@ -88,9 +63,7 @@ authum_events_ops_has_unsubscribe(const authum_events_ops_t *self)
 authum_bool_t
 authum_events_ops_has_publish(const authum_events_ops_t *self)
 {
-    return authum_events_ops_reaches(self, offsetof(authum_events_ops_t, publish) +
-                                               sizeof(authum_events_publish_cb)) &&
-                   !authum_null_eq(authum_events_ops_get_publish(self))
+    return !authum_null_eq(self) && !authum_null_eq(authum_events_ops_get_publish(self))
                ? authum_bool_true
                : authum_bool_false;
 }
@@ -98,9 +71,7 @@ authum_events_ops_has_publish(const authum_events_ops_t *self)
 authum_bool_t
 authum_events_ops_has_resolve(const authum_events_ops_t *self)
 {
-    return authum_events_ops_reaches(self, offsetof(authum_events_ops_t, resolve) +
-                                               sizeof(authum_events_resolve_cb)) &&
-                   !authum_null_eq(authum_events_ops_get_resolve(self))
+    return !authum_null_eq(self) && !authum_null_eq(authum_events_ops_get_resolve(self))
                ? authum_bool_true
                : authum_bool_false;
 }
@@ -108,9 +79,7 @@ authum_events_ops_has_resolve(const authum_events_ops_t *self)
 authum_bool_t
 authum_events_ops_has_subscribe_id(const authum_events_ops_t *self)
 {
-    return authum_events_ops_reaches(self, offsetof(authum_events_ops_t, subscribe_id) +
-                                               sizeof(authum_events_subscribe_id_cb)) &&
-                   !authum_null_eq(authum_events_ops_get_subscribe_id(self))
+    return !authum_null_eq(self) && !authum_null_eq(authum_events_ops_get_subscribe_id(self))
                ? authum_bool_true
                : authum_bool_false;
 }
@@ -118,9 +87,7 @@ authum_events_ops_has_subscribe_id(const authum_events_ops_t *self)
 authum_bool_t
 authum_events_ops_has_unsubscribe_id(const authum_events_ops_t *self)
 {
-    return authum_events_ops_reaches(self, offsetof(authum_events_ops_t, unsubscribe_id) +
-                                               sizeof(authum_events_unsubscribe_id_cb)) &&
-                   !authum_null_eq(authum_events_ops_get_unsubscribe_id(self))
+    return !authum_null_eq(self) && !authum_null_eq(authum_events_ops_get_unsubscribe_id(self))
                ? authum_bool_true
                : authum_bool_false;
 }
@@ -128,9 +95,7 @@ authum_events_ops_has_unsubscribe_id(const authum_events_ops_t *self)
 authum_bool_t
 authum_events_ops_has_publish_id(const authum_events_ops_t *self)
 {
-    return authum_events_ops_reaches(self, offsetof(authum_events_ops_t, publish_id) +
-                                               sizeof(authum_events_publish_id_cb)) &&
-                   !authum_null_eq(authum_events_ops_get_publish_id(self))
+    return !authum_null_eq(self) && !authum_null_eq(authum_events_ops_get_publish_id(self))
                ? authum_bool_true
                : authum_bool_false;
 }

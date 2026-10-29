@@ -17,7 +17,6 @@ authum_console_reply(authum_command_print_fn print, authum_ptr out, const authum
     authum_command_t cmd;
 
     lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
-    cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
     authum_command_print(lh_addr_of(cmd), line);
@@ -31,7 +30,6 @@ authum_console_fail(authum_command_print_fn print, authum_ptr out, const authum_
     const lh_os_error_desc_ptr desc = lh_os_get_last_error_desc();
 
     lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
-    cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
     authum_command_printf(lh_addr_of(cmd), "authum %s %s: FAILED (%s)", what, name,
@@ -49,7 +47,6 @@ authum_console_list(authum_command_print_fn print, authum_ptr out)
     authum_u32_t i = 0u;
 
     lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
-    cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
     authum_command_printf(
@@ -99,7 +96,6 @@ authum_console_version(authum_command_print_fn print, authum_ptr out)
     const authum_version_t abi = AUTHUM_MODULE_ABI;
 
     lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
-    cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
     authum_command_printf(lh_addr_of(cmd), "Authum %u.%u.%u (module ABI %u.%u.%u)",
@@ -118,7 +114,6 @@ authum_console_info(authum_command_print_fn print, authum_ptr out, const authum_
     const lh_str_ptr path_text;
 
     lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
-    cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
 
@@ -180,7 +175,6 @@ authum_console_load(authum_command_print_fn print, authum_ptr out, const authum_
     authum_command_t cmd;
 
     lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
-    cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
     if (authum_null_eq(name) || lh_math_eq(name[0], lh_char_map_nul))
@@ -204,7 +198,6 @@ authum_console_unload(authum_command_print_fn print, authum_ptr out, const authu
     authum_command_t cmd;
 
     lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
-    cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
     if (authum_null_eq(name) || lh_math_eq(name[0], lh_char_map_nul))
@@ -228,7 +221,6 @@ authum_console_reload(authum_command_print_fn print, authum_ptr out, const authu
     authum_command_t cmd;
 
     lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
-    cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
     if (authum_null_eq(name) || lh_math_eq(name[0], lh_char_map_nul))

@@ -24,8 +24,8 @@ Build and drop-in layout: see the repo [README](../README.md).
 
 SQL handles, worker queries, callbacks and connection recovery: [sql.md](sql.md).
 
-Managed long-lived workers: [threads.md](threads.md) (module ABI 1.1).
+Managed long-lived workers: [threads.md](threads.md).
 
-Shared HTTP service and monotonic clocks: [http.md](http.md) (module ABI 1.2).
+Shared HTTP service and monotonic clocks: [http.md](http.md).
 
-Path placeholders: standard names and per-module registrations: [placeholders.md](placeholders.md) (module ABI 1.3).
+Path placeholders: standard names and per-module registrations: [placeholders.md](placeholders.md).

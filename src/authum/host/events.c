@@ -9,8 +9,8 @@
 #include <authum/host/events.h>
 #include <authum/event/name/limits.h>
 #include <authum/host/events/internal.h>
-#include <authum/host/events/binding.h>
-#include <authum/memory.h>
+#include <lh/assert/static.h>
+#include <lh/util/return.h>
 #include <authum/null.h>
 #include <authum/unused.h>
 #include <lh/util/str/ptr.h>
@@ -27,6 +27,22 @@ authum_events_host_get_bus(void)
         authum_events_initialized = authum_bool_true;
     }
     return lh_addr_of(authum_events_bus);
+}
+
+/* A module's handler is the bus callback itself, with the module's user value as the
+   subscription context: the two function types take the same arguments and return an
+   enum with the same values, so the module ABI meets the bus here, in one cast. */
+lh_assert_static(authum_event_result_continue == lh_os_module_event_result_continue &&
+                     authum_event_result_handled == lh_os_module_event_result_handled &&
+                     authum_event_result_stop == lh_os_module_event_result_stop,
+                 "authum and lh event results must have the same values");
+lh_assert_static(sizeof(authum_event_result_t) == sizeof(lh_os_module_event_result_t),
+                 "authum and lh event results must have the same size");
+
+lh_os_module_event_cb
+authum_events_host_callback(authum_event_handler_fn fn)
+{
+    return lh_cast_reinterpret(lh_os_module_event_cb, fn);
 }
 
 authum_event_id_t
@@ -50,11 +66,8 @@ lh_os_module_event_subscription_t *
 authum_events_host_find(authum_ptr owner, authum_event_id_t id, authum_event_handler_fn fn,
                         authum_ptr user)
 {
-    authum_events_binding_t key;
-    authum_events_binding_set_fn(lh_addr_of(key), fn);
-    authum_events_binding_set_user(lh_addr_of(key), user);
-    return lh_os_module_event_bus_find_subscription(authum_events_host_get_bus(), id, owner,
-                                                    authum_events_binding_matches, lh_addr_of(key));
+    return lh_os_module_event_bus_find_exact(authum_events_host_get_bus(), id, owner,
+                                             authum_events_host_callback(fn), user);
 }
 
 authum_event_result_t
@@ -107,44 +120,22 @@ authum_bool_t
 authum_events_host_subscribe_id(authum_ptr owner, authum_event_id_t id, authum_event_handler_fn fn,
                                 authum_ptr user)
 {
-    authum_events_binding_t *binding;
-    lh_os_module_event_bus_t *bus = authum_events_host_get_bus();
-    if (authum_null_eq(fn) || authum_null_eq(lh_os_module_event_bus_get_entry(bus, id)))
-    {
-        return authum_bool_false;
-    }
-    if (!authum_null_eq(authum_events_host_find(owner, id, fn, user)))
-    {
-        return authum_bool_true;
-    }
-    binding = lh_cast_static(authum_events_binding_t *,
-                             authum_memory_alloc(sizeof lh_ptr_deref(binding)));
-    if (authum_null_eq(binding))
-    {
-        return authum_bool_false;
-    }
-    authum_events_binding_set_fn(binding, fn);
-    authum_events_binding_set_user(binding, user);
-    if (authum_null_eq(lh_os_module_event_bus_try_subscribe(
-            bus, id, owner, authum_events_binding_call, binding, authum_events_binding_destroy)))
-    {
-        authum_memory_free(binding);
-        return authum_bool_false;
-    }
-    return authum_bool_true;
+    lh_return_if(authum_null_eq(fn), authum_bool_false);
+    return lh_ptr_is_set(lh_os_module_event_bus_try_subscribe_once(
+               authum_events_host_get_bus(), id, owner, authum_events_host_callback(fn), user))
+               ? authum_bool_true
+               : authum_bool_false;
 }
 
 authum_bool_t
 authum_events_host_unsubscribe_id(authum_ptr owner, authum_event_id_t id,
                                   authum_event_handler_fn fn, authum_ptr user)
 {
-    lh_os_module_event_subscription_t *sub = authum_events_host_find(owner, id, fn, user);
-    if (authum_null_eq(sub))
-    {
-        return authum_bool_false;
-    }
-    lh_os_module_event_bus_remove(authum_events_host_get_bus(), sub);
-    return authum_bool_true;
+    lh_return_if(authum_null_eq(fn), authum_bool_false);
+    return lh_os_module_event_bus_remove_exact(authum_events_host_get_bus(), id, owner,
+                                               authum_events_host_callback(fn), user)
+               ? authum_bool_true
+               : authum_bool_false;
 }
 
 authum_event_result_t

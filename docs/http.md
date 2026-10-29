@@ -1,4 +1,4 @@
-# HTTP service and monotonic clock (ABI 1.2)
+# HTTP service and monotonic clock
 
 The host provides reusable, owner-bound HTTP servers. Modules describe resource
 trees and policy; they do not implement sockets, request parsing, transfer

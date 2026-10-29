@@ -40,7 +40,7 @@ deathnotice_on_death(const authum_char_t *name, authum_ptr payload, authum_ptr u
 
     authum_unused(name);
     authum_unused(user);
-    if (authum_null_eq(ev) || ev->size < sizeof *ev ||
+    if (authum_null_eq(ev) ||
         authum_host_cvar_get_i32(&g_deathnotice_host, "deathnotice_enabled", 1) == 0)
     {
         return authum_event_result_continue;
@@ -75,7 +75,7 @@ deathnotice_on_kill(const authum_char_t *name, authum_ptr payload, authum_ptr us
 
     authum_unused(name);
     authum_unused(user);
-    if (authum_null_eq(ev) || ev->size < sizeof *ev ||
+    if (authum_null_eq(ev) ||
         authum_host_cvar_get_i32(&g_deathnotice_host, "deathnotice_allow_kill", 1) != 0)
     {
         return authum_event_result_continue;

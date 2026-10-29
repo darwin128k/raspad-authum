@@ -65,7 +65,7 @@ authum_timer_on_frame(const authum_char_t *name, authum_ptr payload, authum_ptr 
 
     authum_unused(name);
     authum_unused(user);
-    if (authum_null_eq(ev) || lh_math_lt(ev->size, sizeof lh_ptr_deref(ev)))
+    if (authum_null_eq(ev))
     {
         return authum_event_result_continue;
     }

@@ -1,13 +1,12 @@
 #ifndef AUTHUM_CLOCK_H
 #define AUTHUM_CLOCK_H
 
-#include <authum/abi.h>
+#include <authum/size.h>
 #include <authum/char.h>
 #include <authum/extern.h>
 
 typedef struct authum_clock
 {
-    authum_usize_t size;
     authum_i64_t (*monotonic_ms)(void);
 } authum_clock_t;
 

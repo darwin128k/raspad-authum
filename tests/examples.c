@@ -352,7 +352,6 @@ test_client_command(authum_i32_t index, const authum_char_t *cmd)
 }
 
 const authum_engine_t g_engine = {
-    .size = sizeof(authum_engine_t),
     .get_game_dir = test_get_game_dir,
     .server_print = test_server_print,
     .server_command = test_server_command,
@@ -469,7 +468,6 @@ test_load(test_module_t *m)
     authum_path_join(&modules, &m->root, "modules");
     authum_path_ensure_dir(&modules);
     memset(&m->env, 0, sizeof m->env);
-    m->env.size = sizeof m->env;
     m->env.authum = &m->root;
     authum_path_assign(&m->modules, &modules);
     m->env.modules = &m->modules;
@@ -496,7 +494,6 @@ test_load(test_module_t *m)
     authum_logs_open(m, m->info->name, authum_path_as_cstr(&m->module));
 
     memset(&m->host, 0, sizeof m->host);
-    m->host.size = sizeof m->host;
     m->host.logger = &m->logger;
     m->host.env = &m->env;
     m->host.engine = &g_engine;
@@ -553,7 +550,6 @@ test_client_event(const char *event, authum_i32_t index)
     test_player_t *player = test_player(index);
 
     memset(&ev, 0, sizeof ev);
-    ev.size = sizeof ev;
     ev.allow = authum_bool_true;
     ev.index = index;
     ev.userid = player->userid;
@@ -573,8 +569,6 @@ test_say(authum_i32_t index, const char *text)
     test_player_t *player = test_player(index);
 
     memset(&ev, 0, sizeof ev);
-    ev.size = sizeof ev;
-    ev.client.size = sizeof ev.client;
     ev.client.index = index;
     ev.client.userid = player->userid;
     authum_cstr_copy(ev.client.name, sizeof ev.client.name, player->name);
@@ -593,8 +587,6 @@ test_cvar_answer(authum_i32_t index, authum_i32_t request, const char *cvar, con
     authum_event_client_cvar_t ev;
 
     memset(&ev, 0, sizeof ev);
-    ev.size = sizeof ev;
-    ev.client.size = sizeof ev.client;
     ev.client.index = index;
     ev.client.userid = test_player(index)->userid;
     authum_cstr_copy(ev.client.name, sizeof ev.client.name, test_player(index)->name);
@@ -731,7 +723,6 @@ main(void)
         authum_event_message_t death;
 
         memset(&death, 0, sizeof death);
-        death.size = sizeof death;
         authum_cstr_copy(death.name, sizeof death.name, "DeathMsg");
         death.argc = 4;
         death.args[0].kind = authum_message_arg_byte;
@@ -756,7 +747,6 @@ main(void)
         authum_event_client_t kill;
 
         memset(&kill, 0, sizeof kill);
-        kill.size = sizeof kill;
         kill.index = 1;
         kill.allow = authum_bool_true;
         (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_KILL, &kill);
@@ -773,12 +763,10 @@ main(void)
         int i;
 
         memset(&server, 0, sizeof server);
-        server.size = sizeof server;
         (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_PRECACHE, &server);
         CHECK_STR(g_precached, "buttons/bell1.wav");
 
         memset(&line, 0, sizeof line);
-        line.size = sizeof line;
         authum_cstr_copy(line.text, sizeof line.text, "World triggered \"Round_Start\"");
         g_commands[0] = '\0';
         (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_LOG, &line);

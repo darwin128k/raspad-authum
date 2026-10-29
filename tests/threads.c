@@ -59,7 +59,7 @@ main(void)
     authum_threads_host_init(&other, &others);
     char error[256];
     CHECK(!authum_thread_start(NULL, run_job, wake_job, NULL, -1, 0, error, sizeof error));
-    CHECK(strstr(error, "update Authum"));
+    CHECK(strstr(error, "on this platform"));
     CHECK(!authum_thread_start(&threads, run_job, wake_job, NULL, 1024, 0, error, sizeof error));
     CHECK(owner.count == 0);
     atomic_int wakes = ATOMIC_VAR_INIT(0);

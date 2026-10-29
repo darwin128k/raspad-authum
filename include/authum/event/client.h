@@ -48,8 +48,6 @@ enum
 
 struct authum_event_client
 {
-    /** sizeof(authum_event_client_t) as built by the host. */
-    authum_usize_t size;
     /** Entity index, 1 … maxClients. */
     authum_i32_t index;
     /** Engine userid (`kick #userid`). */
@@ -81,8 +79,6 @@ enum
 
 struct authum_event_client_command
 {
-    /** sizeof(authum_event_client_command_t) as built by the host. */
-    authum_usize_t size;
     /** Who sent it — same fields as the other `authum.client.*` events. */
     authum_event_client_t client;
     /** Arguments the engine parsed, `argv[0]` is the command (`say`). */
@@ -99,8 +95,6 @@ typedef struct authum_event_client_command authum_event_client_command_t;
 
 struct authum_event_client_cvar
 {
-    /** sizeof(authum_event_client_cvar_t) as built by the host. */
-    authum_usize_t size;
     /** Who answered. */
     authum_event_client_t client;
     /** The `requestID` passed to `QueryClientCvarValue2`. */

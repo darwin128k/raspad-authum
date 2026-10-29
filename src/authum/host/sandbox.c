@@ -81,7 +81,6 @@ authum_sandbox_host_set_destructor(authum_ptr ptr, authum_sandbox_destructor_fn 
 }
 
 const authum_sandbox_ops_t authum_sandbox_host_ops_table = {
-    .size = sizeof(authum_sandbox_ops_t),
     .alloc = authum_sandbox_host_alloc,
     .realloc = authum_sandbox_host_realloc,
     .free = authum_sandbox_host_free,

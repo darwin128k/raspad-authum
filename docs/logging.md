@@ -1,6 +1,6 @@
 # Host disk logger
 
-## Module policy and configuration (ABI 1.4)
+## Module policy and configuration
 
 Each loaded module automatically receives its own log channel. The sandbox
 layout stays `configs/`, `data/`, `logs/`; daily files live in the actual
@@ -63,7 +63,7 @@ An administrator can still disable it in `configs/authum.cfg` with
 
 ## Special loggers
 
-Open a named journal with `authum_logger_open`, or use the ABI 1.4 constructor
+Open a named journal with `authum_logger_open`, or use the constructor
 to specify a built-in formatter as a default:
 
 ```c
@@ -81,8 +81,7 @@ This writes under the same sandbox's `logs/audit/`. `raw` omits host
 prefixes and preserves a terminating newline, adding one if absent.
 Local and explicit administrator format settings override construction defaults;
 global format defaults apply when construction uses `inherit`. Opening an already-shared
-name with conflicting construction defaults fails. Unsupported older hosts
-return false rather than silently substituting a different formatter.
+name with conflicting construction defaults fails.
 Arbitrary plugin callbacks/custom output paths are deliberately not part
 of this constructor: a queued record must stay valid after module unload.
 
@@ -108,8 +107,7 @@ the engine's native file open/close or console APIs are now asynchronous.
 
 The public logger ABI, channel filtering, daily filenames, line format,
 module journals and console routing described below use a dedicated
-Authum-managed disk thread. ABI 1.4 appends the constructor operation without
-reordering existing fields; it adds configuration precedence and the complete
+Authum-managed disk thread, with the configuration precedence and the complete
 source-disable semantics documented above.
 
 ## Components

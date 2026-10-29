@@ -32,7 +32,7 @@ hello_on_connect(const authum_char_t *name, authum_ptr payload, authum_ptr user)
     authum_unused(name);
     authum_unused(user);
     /* An older host may send a shorter payload: read only what is there. */
-    if (authum_null_eq(ev) || ev->size < sizeof *ev)
+    if (authum_null_eq(ev))
     {
         return authum_event_result_continue;
     }

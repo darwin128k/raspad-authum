@@ -801,7 +801,6 @@ authum_engine_entity_set_vector_impl(authum_i32_t index, authum_i32_t field,
 }
 
 const authum_engine_t authum_engine_ops = {
-    sizeof(authum_engine_t),
     authum_engine_get_game_dir_impl,
     authum_engine_server_print_impl,
     authum_engine_server_command_impl,

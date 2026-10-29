@@ -9,8 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Indexed event dispatch through LH and numeric event operations in module ABI 1.5.0.
-  String operations retain their ABI layout; game hooks and messages cache event IDs.
+- Module ABI 2.0.0 for Authum 0.4.0, with no backward compatibility: the host tables
+  and the event payloads lose their `size` member, `<authum/abi.h>` (`AUTHUM_ABI_FITS` /
+  `AUTHUM_ABI_HAS`) is gone, and no 1.x module loads. From here the ABI is frozen:
+  nothing that exists changes, new API is only appended, and a module needs a host of
+  the same major and the same or a later minor (`authum_version_is_abi_compatible`).
+  Host tables are built with designated initializers.
+- Indexed event dispatch through the LH module event bus (`lh/os/module/event`) and
+  numeric event operations. A module handler is the bus callback itself, with its user
+  value as the context: no per-subscription allocation. Game hooks and messages cache
+  event IDs.
 - Automatic-channel `authum_host_log_*` conveniences and ABI 1.4
   `authum_logger_create` for named sandbox journals with host-owned standard
   or raw formatting. Existing logger handles and older host tables remain supported.

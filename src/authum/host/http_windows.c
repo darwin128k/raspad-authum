@@ -22,7 +22,7 @@ void
 authum_http_host_init(authum_http_owner_t *owner, const authum_threads_t *threads,
                       authum_http_service_t *service)
 {
-    static const authum_http_ops_t ops = {.size = sizeof ops, .open = unsupported};
+    static const authum_http_ops_t ops = {.open = unsupported};
     owner->head = authum_null;
     owner->threads = threads;
     service->owner = owner;

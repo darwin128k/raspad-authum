@@ -159,7 +159,6 @@ authum_commands_host_remove(authum_ptr owner, const authum_char_t *scope, const 
 }
 
 const authum_commands_ops_t authum_commands_host_ops_table = {
-    .size = sizeof(authum_commands_ops_t),
     .add = authum_commands_host_add,
     .remove = authum_commands_host_remove,
 };
@@ -177,7 +176,6 @@ authum_commands_host_print_entry(const authum_commands_entry_t *e, authum_comman
     authum_command_t cmd;
 
     lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
-    cmd.size = sizeof cmd;
     cmd.print = print;
     cmd.out = out;
     authum_command_printf(lh_addr_of(cmd), "%sauthum %s %s%s%s%s%s", prefix, e->scope, e->name,
@@ -199,7 +197,6 @@ authum_commands_host_run(const authum_char_t *scope, const authum_char_t *name, 
         return authum_bool_false;
     }
     lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
-    cmd.size = sizeof cmd;
     cmd.scope = e->scope;
     cmd.name = e->name;
     cmd.argc = authum_null_eq(argv) ? 0u : argc;

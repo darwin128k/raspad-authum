@@ -38,7 +38,7 @@ cvarguard_on_put_in_server(const authum_char_t *name, authum_ptr payload, authum
 
     authum_unused(name);
     authum_unused(user);
-    if (authum_null_eq(ev) || ev->size < sizeof *ev)
+    if (authum_null_eq(ev))
     {
         return authum_event_result_continue;
     }
@@ -60,7 +60,7 @@ cvarguard_on_cvar_value(const authum_char_t *name, authum_ptr payload, authum_pt
 
     authum_unused(name);
     authum_unused(user);
-    if (authum_null_eq(ev) || ev->size < sizeof *ev || strcmp(ev->cvar, CVARGUARD_CVAR) != 0)
+    if (authum_null_eq(ev) || strcmp(ev->cvar, CVARGUARD_CVAR) != 0)
     {
         return authum_event_result_continue;
     }

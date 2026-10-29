@@ -31,7 +31,7 @@
 #ifndef AUTHUM_PLACEHOLDERS_H
 #define AUTHUM_PLACEHOLDERS_H
 
-#include <authum/abi.h>
+#include <authum/size.h>
 #include <authum/bool.h>
 #include <authum/char.h>
 #include <authum/extern.h>
@@ -39,7 +39,6 @@
 
 typedef struct authum_placeholder_ops
 {
-    authum_usize_t size;
     /** Expand @p template into @p out (absolute path). */
     authum_bool_t (*expand)(authum_ptr owner, const authum_char_t *template, authum_char_t *out,
                             authum_usize_t out_size);

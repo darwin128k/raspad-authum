@@ -12,14 +12,14 @@
  * `authum.client.*` event carries. A function given an index that is not a
  * connected player does nothing and returns false / 0.
  *
- * Wrappers check the table with ::AUTHUM_ABI_HAS: on a host that predates a
- * function they return false / 0 / an empty string instead of calling it.
+ * A wrapper whose function the host left unset returns false / 0 / an empty
+ * string instead of calling it.
  */
 
 #ifndef AUTHUM_ENGINE_H
 #define AUTHUM_ENGINE_H
 
-#include <authum/abi.h>
+#include <authum/size.h>
 #include <authum/bool.h>
 #include <authum/char.h>
 #include <authum/engine/entity.h>
@@ -44,8 +44,6 @@ enum
  */
 typedef struct authum_engine
 {
-    /** sizeof this table as built by the host — see <authum/abi.h>. */
-    authum_usize_t size;
 
     /* --- server ------------------------------------------------------ */
 

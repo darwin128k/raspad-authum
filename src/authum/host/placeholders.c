@@ -308,8 +308,10 @@ authum_placeholder_unregister_impl(authum_ptr owner, const authum_char_t *name)
 }
 
 static const authum_placeholder_ops_t authum_placeholder_ops = {
-    sizeof authum_placeholder_ops, authum_placeholder_expand_impl, authum_placeholder_register_impl,
-    authum_placeholder_unregister_impl};
+    .expand = authum_placeholder_expand_impl,
+    .register_placeholder = authum_placeholder_register_impl,
+    .unregister_placeholder = authum_placeholder_unregister_impl,
+};
 
 void
 authum_placeholder_host_init(authum_placeholder_owner_t *owner,

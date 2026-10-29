@@ -25,7 +25,7 @@ In short — type-as-namespace like lh (`qproto_log_mode_console`, not
 
 ---
 
-## 1. What you export (ABI 1.0)
+## 1. What you export (ABI 2.0)
 
 Include **`#include <authum/client.h>`** only. Do **not** include lh or link
 `liblh` unless you opt into the escape hatch.

@@ -118,8 +118,7 @@ stop_thread(authum_ptr context, authum_thread_t *thread)
     return authum_bool_true;
 }
 
-static const authum_thread_ops_t ops = {
-    .size = sizeof ops, .start = start_thread, .stop = stop_thread};
+static const authum_thread_ops_t ops = {.start = start_thread, .stop = stop_thread};
 
 /**
  * @brief Initialize an owner and bind its public thread facade.

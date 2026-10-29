@@ -44,7 +44,7 @@ authum_clients_event(const authum_char_t *name, authum_ptr payload, authum_ptr u
         }
         return authum_event_result_continue;
     }
-    if (!ev || lh_math_lt(ev->size, sizeof lh_ptr_deref(ev)) || lh_math_lt(ev->index, 1) ||
+    if (!ev || lh_math_lt(ev->index, 1) ||
         lh_math_gt(lh_cast_static(authum_usize_t, ev->index), impl->max))
     {
         return authum_event_result_continue;

@@ -153,6 +153,6 @@ authum_tasks_host_drop_owner(authum_ptr owner)
 const authum_task_ops_t *
 authum_tasks_host_ops(void)
 {
-    static const authum_task_ops_t ops = {sizeof ops, authum_tasks_host_submit};
+    static const authum_task_ops_t ops = {.submit = authum_tasks_host_submit};
     return lh_addr_of(ops);
 }

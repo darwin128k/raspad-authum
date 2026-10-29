@@ -16,6 +16,6 @@ monotonic_ms(void)
 const authum_clock_t *
 authum_clock_host(void)
 {
-    static const authum_clock_t clock = {sizeof clock, monotonic_ms};
+    static const authum_clock_t clock = {.monotonic_ms = monotonic_ms};
     return lh_addr_of(clock);
 }

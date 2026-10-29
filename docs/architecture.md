@@ -36,7 +36,7 @@ event bus, command registry, error codes — live beside their code in
 `src/authum/host/` and are included as `<authum/host/…>`; only `authum` and
 its tests see them.
 
-## Client module contract (ABI 1.0)
+## Client module contract (ABI 2.0)
 
 Include **`authum/client.h`**, link **`authum_client`** — no `<lh/…>`, no link
 to `liblh`.

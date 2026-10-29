@@ -1,7 +1,7 @@
 #ifndef AUTHUM_THREAD_H
 #define AUTHUM_THREAD_H
 
-#include <authum/abi.h>
+#include <authum/size.h>
 #include <authum/bool.h>
 #include <authum/char.h>
 #include <authum/extern.h>
@@ -22,7 +22,6 @@ enum
 
 typedef struct authum_thread_ops
 {
-    authum_usize_t size;
     authum_thread_t *(*start)(authum_ptr owner, authum_thread_fn run, authum_thread_fn wake,
                               authum_ptr user, int cpu, unsigned flags, authum_char_t *error,
                               authum_usize_t error_size);

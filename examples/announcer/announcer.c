@@ -66,8 +66,7 @@ announcer_on_log(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 
     authum_unused(name);
     authum_unused(user);
-    if (authum_null_eq(ev) || ev->size < sizeof *ev ||
-        strstr(ev->text, "World triggered \"Round_Start\"") == authum_null)
+    if (authum_null_eq(ev) || strstr(ev->text, "World triggered \"Round_Start\"") == authum_null)
     {
         return authum_event_result_continue;
     }

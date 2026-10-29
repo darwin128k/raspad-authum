@@ -5,8 +5,7 @@
 #include <stdio.h>
 
 /** @p field of @p env when the host's table reaches it, else null. */
-#define AUTHUM_ENV_GET(env, field)                                                                 \
-    ((!authum_null_eq(env) && AUTHUM_ABI_FITS(env, field)) ? (env)->field : authum_null)
+#define AUTHUM_ENV_GET(env, field) ((!authum_null_eq(env)) ? (env)->field : authum_null)
 
 const authum_path_t *
 authum_env_game(const authum_env_t *env)

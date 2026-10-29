@@ -1,7 +1,7 @@
 #ifndef AUTHUM_TASK_H
 #define AUTHUM_TASK_H
 
-#include <authum/abi.h>
+#include <authum/size.h>
 #include <authum/bool.h>
 #include <authum/extern.h>
 #include <authum/ptr.h>
@@ -14,7 +14,6 @@ AUTHUM_EXTERN_C_END
 
 struct authum_task_ops
 {
-    authum_usize_t size;
     authum_bool_t (*submit)(authum_ptr owner, authum_task_fn work, authum_task_fn complete,
                             authum_task_fn destroy, authum_ptr user);
 };
