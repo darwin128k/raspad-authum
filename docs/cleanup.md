@@ -18,8 +18,12 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   are not counted); `tools/gen-accessors.py` generates level-1 accessors.
   Done: the whole lower layer — `memory/*`, `str/*`, `array`, `str/list`,
   `wstr/list`, `http/*`, `spsc`, `logger`, `timer`, `math/*`, `numeric/big`,
-  `fs/stat`, `real/*`, `sql/*`, `net/*`, `crypto/*` (Authum `host/http/request.c` reads requests
-  through them). Left: about 2800 in LH — `ui` ~1950, `os` ~860
+  `fs/stat`, `real/*`, `sql/*`, `net/*`, `crypto/*`, the portable `os/*` but windows (Authum `host/http/request.c` reads requests
+  through them). Left: about 2600 in LH — `ui` ~1950; in `os` the windows (`os/window.c` 164,
+  `system/posix/window.c` 175, `system/win/window.c` 74), `render/backend/gdi.c` 53,
+  the surfaces, and the private structs of the native backends (thread state,
+  `win/fs/dir` state) — native structs (`fd_set`, `XImage`, `BITMAPV5HEADER`, ...)
+  are not ours and stay
   — and about 1400 in Authum (`host` ~770, `api` ~550,
   `gamedll` ~100 of our own structs).
 - [ ] **The OS is the whole, the parts sit under it today** (AGENTS.md 0.1.1).
@@ -67,8 +71,11 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 - [ ] **`lh_fs_path_t`.** It is awkward to use. Decide: simplify it, or split
   into two entities — a dynamic (owning) path and a static/fixed one usable
   directly with `lh_str_ptr`. Owner: "later", after the general cleanup.
-- [ ] **Lines past 100 columns** (`.clang-format` ColumnLimit) in tests, among them
-  `test/src/lh/net/modbus_link.cpp` after the accessors; clang-format is not installed here.
+- [ ] **Lines past 100 columns** (`.clang-format` ColumnLimit) in code nobody has touched
+  since. Changed lines are formatted with clang-format 22 from MSYS2 clang64, changed lines
+  only: `git-clang-format --binary <clang64>/clang-format.exe --style file --diff HEAD`.
+- [ ] **`tools/gen-accessors.py` briefs** are placeholders; the scratchpad helper that
+  rewrote them (field → meaning) belongs in the tool as an option.
 - [ ] Pre-existing test failures: `lh_test_math` (`math/view.cpp` 149–153),
   `lh_test_ui` (`web_ws.length_127_roundtrip_over_64k`).
 
