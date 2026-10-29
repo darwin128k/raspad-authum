@@ -18,12 +18,17 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   are not counted); `tools/gen-accessors.py` generates level-1 accessors.
   Done: the whole lower layer — `memory/*`, `str/*`, `array`, `str/list`,
   `wstr/list`, `http/*`, `spsc`, `logger`, `timer`, `math/*`, `numeric/big`,
-  `fs/stat`, `real/*`, `sql/*`, `net/*`, `crypto/*`, the portable `os/*` but windows (Authum `host/http/request.c` reads requests
-  through them). Left: about 2600 in LH — `ui` ~1950; in `os` the windows (`os/window.c` 164,
-  `system/posix/window.c` 175, `system/win/window.c` 74), `render/backend/gdi.c` 53,
-  the surfaces, and the private structs of the native backends (thread state,
-  `win/fs/dir` state) — native structs (`fd_set`, `XImage`, `BITMAPV5HEADER`, ...)
-  are not ours and stay
+  `fs/stat`, `real/*`, `sql/*`, `net/*`, `crypto/*`, `os/*`, most of `ui/*` (Authum `host/http/request.c` reads requests
+  through them). Left in `ui` (~166): the tagged unions — `lh_ui_decl_t` (`row->as.label.text`),
+  `lh_ui_web_x_t` (`x->u.dot.obj`), `lh_ui_web_html_t` — want accessors per variant,
+  which the tools do not generate yet; the private run state of `ui/radius.c`;
+  a few out-parameter addresses of value fields (`&out->y0`, `&run->spread`).
+  In `os` only native structs (`fd_set`, `XImage`, `XEvent`, the `user32.h` mirrors, ...),
+  which are not ours and stay. Open: the Xlib and `user32` import tables are called
+  through raw members (`paint->x11->XPutImage`) — function tables like the MySQL client
+  one, which got accessors; decide with the owner whether import tables get them too.
+  `win/concurrency.c` includes `<windows.h>` where the rest of the Win32 backend uses
+  its own mirrors.
   — and about 1400 in Authum (`host` ~770, `api` ~550,
   `gamedll` ~100 of our own structs).
 - [ ] **The OS is the whole, the parts sit under it today** (AGENTS.md 0.1.1).
@@ -74,8 +79,15 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 - [ ] **Lines past 100 columns** (`.clang-format` ColumnLimit) in code nobody has touched
   since. Changed lines are formatted with clang-format 22 from MSYS2 clang64, changed lines
   only: `git-clang-format --binary <clang64>/clang-format.exe --style file --diff HEAD`.
-- [ ] **`tools/gen-accessors.py` briefs** are placeholders; the scratchpad helper that
-  rewrote them (field → meaning) belongs in the tool as an option.
+- [ ] **Window tests are not in the LH test builds:** `build-lh-concurrency*` have
+  `LH_LIBRARY_OPTION_OS_WINDOW=OFF`, so `os/window.c`, the backends and their tests only
+  build in Authum's builds. `build-lh-window-windows` / `build-lh-window-linux` (ON) were
+  added for this pass; make one of them the standard.
+- [ ] **`_v` for the safe forms** of ui setters and getters (a check or a side effect) was
+  chosen by the rule 'no suffix is the fast form'. Review with the owner, together with
+  the lower-layer collisions the tools report: `lh_datetime_get_date` / `_get_time`,
+  `lh_io_stream_get_reader` / `_writer`, `lh_io_dgram_*`, `lh_net_*_get_ip`,
+  `lh_os_fs_file_set_path` take an out parameter or a pointer under an accessor's name.
 - [ ] Pre-existing test failures: `lh_test_math` (`math/view.cpp` 149–153),
   `lh_test_ui` (`web_ws.length_127_roundtrip_over_64k`).
 

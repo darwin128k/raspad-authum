@@ -7,10 +7,12 @@
 Kinds:
   (none)  a value: `<prefix>get_<field>` returns it, `<prefix>set_<field>` stores it;
   flag    a boolean: `<prefix>is_<field>` / `<prefix>set_<field>`;
-  view    a small struct held by value: the getter returns a const pointer, the
-          setter takes it by value;
-  owned   a member that owns memory (a string, an array): `get_<field>` returns a
-          const pointer, `get_<field>_mut` a mutable one; no setter;
+  view    a struct held by value: `get_<field>` returns a const pointer,
+          `get_<field>_mut` a mutable one, `set_<field>` takes it by value;
+  owned   a member that owns memory (a string, a list): `get_<field>` and
+          `get_<field>_mut` as for view, no setter;
+  array   an array member: `get_<field>` / `get_<field>_mut` return its first
+          element;
   fn      a function pointer whose plain names are taken by call wrappers:
           `get_<field>_fn` / `set_<field>_fn`.
 
@@ -53,10 +55,16 @@ def getter(struct, name, ret, body, mutable=False):
     return decl, definition
 
 
+# A parameter named like its field must not be a C++ keyword: the tests include the headers.
+CPP_KEYWORDS = {'class', 'new', 'delete', 'template', 'this', 'operator', 'private', 'public',
+                'protected', 'virtual', 'friend', 'namespace', 'typename', 'explicit', 'mutable'}
+
+
 def setter(struct, name, ctype, field):
-    decl = f'lh_void\n{name}({struct} *self, {ctype} {field});\n'
-    definition = (f'lh_void\n{name}({struct} *self, {ctype} {field})\n{{\n'
-                  f'    lh_assert_runtime_ref(self);\n    self->{field} = {field};\n}}\n')
+    param = field + '_value' if field in CPP_KEYWORDS else field
+    decl = f'lh_void\n{name}({struct} *self, {ctype} {param});\n'
+    definition = (f'lh_void\n{name}({struct} *self, {ctype} {param})\n{{\n'
+                  f'    lh_assert_runtime_ref(self);\n    self->{field} = {param};\n}}\n')
     return decl, definition
 
 
@@ -113,24 +121,23 @@ def main():
     for spec, meaning in fields:
         field, ctype = spec[0], spec[1].replace('*', ' *').replace('  ', ' ').strip()
         kind = spec[2] if len(spec) > 2 else ''
-        if kind == 'owned':
+        if kind in ('owned', 'array', 'view'):
+            # An array decays to its first element; any other member is taken by address.
+            at = f'self->{field}' if kind == 'array' else f'lh_addr_of(self->{field})'
             get, mut = f'{prefix}get_{field}', f'{prefix}get_{field}_mut'
             if not declared(htext, get):
-                add(get_doc(field, meaning),
-                    getter(struct, get, f'const {ctype} *', f'return lh_addr_of(self->{field});'))
+                add(get_doc(field, meaning), getter(struct, get, f'const {ctype} *', f'return {at};'))
             if not declared(htext, mut):
                 add(get_doc(field, meaning, True),
-                    getter(struct, mut, f'{ctype} *', f'return lh_addr_of(self->{field});', True))
+                    getter(struct, mut, f'{ctype} *', f'return {at};', True))
+            if kind == 'view' and not declared(htext, f'{prefix}set_{field}'):
+                add(set_doc(field, meaning), setter(struct, f'{prefix}set_{field}', ctype, field))
             continue
         suffix = '_fn' if kind == 'fn' else ''
         verb = 'is' if kind == 'flag' else 'get'
         get, set_ = f'{prefix}{verb}_{field}{suffix}', f'{prefix}set_{field}{suffix}'
         if not declared(htext, get):
-            if kind == 'view':
-                add(get_doc(field, meaning),
-                    getter(struct, get, f'const {ctype} *', f'return lh_addr_of(self->{field});'))
-            else:
-                add(get_doc(field, meaning), getter(struct, get, ctype, f'return self->{field};'))
+            add(get_doc(field, meaning), getter(struct, get, ctype, f'return self->{field};'))
         if not declared(htext, set_):
             add(set_doc(field, meaning), setter(struct, set_, ctype, field))
     if not decls:
