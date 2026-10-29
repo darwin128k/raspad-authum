@@ -99,7 +99,7 @@ name fails.
 | `authum_command_try_get_arg_i32(cmd, i, &out)` | Argument `i` as a number |
 | `authum_command_get_scope(cmd)` / `_name(cmd)` | `qproto` / `info` |
 | `authum_command_print(cmd, line)` | One line (newline added) |
-| `authum_command_printf(cmd, fmt, ...)` | Formatted line, up to 512 chars |
+| `authum_command_printf(cmd, fmt, ...)` | Formatted line, of any length |
 
 The engine has already split the line: quoted arguments (`"Some Player"`)
 arrive as one argument.

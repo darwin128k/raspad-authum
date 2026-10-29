@@ -20,12 +20,6 @@
 #include <authum/ptr.h>
 #include <authum/size.h>
 
-enum
-{
-    /** Longest line ::authum_command_printf builds (longer output is cut). */
-    authum_command_line_max = 512
-};
-
 AUTHUM_EXTERN_C_BEGIN
 
 typedef void (*authum_command_print_fn)(authum_ptr out, const authum_char_t *text);
@@ -80,7 +74,7 @@ authum_command_try_get_arg_i32(const authum_command_t *cmd, authum_usize_t index
 void
 authum_command_print(const authum_command_t *cmd, const authum_char_t *line);
 
-/** printf-style ::authum_command_print (one line, up to ::authum_command_line_max). */
+/** printf-style ::authum_command_print: one line, of any length. */
 void
 authum_command_printf(const authum_command_t *cmd, const authum_char_t *fmt, ...)
 #if defined(__GNUC__)
