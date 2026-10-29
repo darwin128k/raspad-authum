@@ -26,7 +26,7 @@ authum_engine_get_game_dir(const authum_engine_t *engine, authum_char_t *buf,
                            authum_usize_t buf_size)
 {
     if (authum_engine_buf_reset(buf, buf_size) && !authum_null_eq(engine) &&
-        AUTHUM_ABI_HAS(engine, get_game_dir))
+        !authum_null_eq((engine)->get_game_dir))
     {
         engine->get_game_dir(buf, buf_size);
     }
@@ -35,7 +35,7 @@ authum_engine_get_game_dir(const authum_engine_t *engine, authum_char_t *buf,
 void
 authum_engine_server_print(const authum_engine_t *engine, const authum_char_t *text)
 {
-    if (!authum_null_eq(engine) && AUTHUM_ABI_HAS(engine, server_print) && !authum_null_eq(text))
+    if (!authum_null_eq(engine) && !authum_null_eq((engine)->server_print) && !authum_null_eq(text))
     {
         engine->server_print(text);
     }
@@ -44,7 +44,8 @@ authum_engine_server_print(const authum_engine_t *engine, const authum_char_t *t
 void
 authum_engine_server_command(const authum_engine_t *engine, const authum_char_t *cmd)
 {
-    if (!authum_null_eq(engine) && AUTHUM_ABI_HAS(engine, server_command) && !authum_null_eq(cmd))
+    if (!authum_null_eq(engine) && !authum_null_eq((engine)->server_command) &&
+        !authum_null_eq(cmd))
     {
         engine->server_command(cmd);
     }
@@ -53,15 +54,16 @@ authum_engine_server_command(const authum_engine_t *engine, const authum_char_t 
 authum_i32_t
 authum_engine_max_clients(const authum_engine_t *engine)
 {
-    return (!authum_null_eq(engine) && AUTHUM_ABI_HAS(engine, max_clients)) ? engine->max_clients()
-                                                                            : 0;
+    return (!authum_null_eq(engine) && !authum_null_eq((engine)->max_clients))
+               ? engine->max_clients()
+               : 0;
 }
 
 authum_float_t
 authum_engine_game_time(const authum_engine_t *engine)
 {
-    return (!authum_null_eq(engine) && AUTHUM_ABI_HAS(engine, game_time)) ? engine->game_time()
-                                                                          : 0.0f;
+    return (!authum_null_eq(engine) && !authum_null_eq((engine)->game_time)) ? engine->game_time()
+                                                                             : 0.0f;
 }
 
 void
@@ -69,7 +71,7 @@ authum_engine_get_map_name(const authum_engine_t *engine, authum_char_t *buf,
                            authum_usize_t buf_size)
 {
     if (authum_engine_buf_reset(buf, buf_size) && !authum_null_eq(engine) &&
-        AUTHUM_ABI_HAS(engine, get_map_name))
+        !authum_null_eq((engine)->get_map_name))
     {
         engine->get_map_name(buf, buf_size);
     }
@@ -80,7 +82,7 @@ authum_engine_cvar_get(const authum_engine_t *engine, const authum_char_t *name,
                        authum_usize_t buf_size)
 {
     if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
-        !AUTHUM_ABI_HAS(engine, cvar_get) || authum_null_eq(name) ||
+        authum_null_eq((engine)->cvar_get) || authum_null_eq(name) ||
         lh_math_eq(name[0], lh_char_map_nul))
     {
         return authum_bool_false;
@@ -92,7 +94,7 @@ authum_bool_t
 authum_engine_cvar_set(const authum_engine_t *engine, const authum_char_t *name,
                        const authum_char_t *value)
 {
-    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, cvar_set) || authum_null_eq(name) ||
+    if (authum_null_eq(engine) || authum_null_eq((engine)->cvar_set) || authum_null_eq(name) ||
         lh_math_eq(name[0], lh_char_map_nul) || authum_null_eq(value))
     {
         return authum_bool_false;
@@ -137,7 +139,7 @@ authum_engine_kick(const authum_engine_t *engine, authum_i32_t userid, const aut
 authum_bool_t
 authum_engine_client_is_connected(const authum_engine_t *engine, authum_i32_t index)
 {
-    return (!authum_null_eq(engine) && AUTHUM_ABI_HAS(engine, client_is_connected))
+    return (!authum_null_eq(engine) && !authum_null_eq((engine)->client_is_connected))
                ? engine->client_is_connected(index)
                : authum_bool_false;
 }
@@ -145,7 +147,7 @@ authum_engine_client_is_connected(const authum_engine_t *engine, authum_i32_t in
 authum_i32_t
 authum_engine_client_userid(const authum_engine_t *engine, authum_i32_t index)
 {
-    return (!authum_null_eq(engine) && AUTHUM_ABI_HAS(engine, client_userid))
+    return (!authum_null_eq(engine) && !authum_null_eq((engine)->client_userid))
                ? engine->client_userid(index)
                : 0;
 }
@@ -153,7 +155,7 @@ authum_engine_client_userid(const authum_engine_t *engine, authum_i32_t index)
 authum_i32_t
 authum_engine_client_index_by_userid(const authum_engine_t *engine, authum_i32_t userid)
 {
-    return (!authum_null_eq(engine) && AUTHUM_ABI_HAS(engine, client_index_by_userid))
+    return (!authum_null_eq(engine) && !authum_null_eq((engine)->client_index_by_userid))
                ? engine->client_index_by_userid(userid)
                : 0;
 }
@@ -163,7 +165,7 @@ authum_engine_client_get_name(const authum_engine_t *engine, authum_i32_t index,
                               authum_usize_t buf_size)
 {
     if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
-        !AUTHUM_ABI_HAS(engine, client_get_name))
+        authum_null_eq((engine)->client_get_name))
     {
         return authum_bool_false;
     }
@@ -175,7 +177,7 @@ authum_engine_client_get_auth_id(const authum_engine_t *engine, authum_i32_t ind
                                  authum_char_t *buf, authum_usize_t buf_size)
 {
     if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
-        !AUTHUM_ABI_HAS(engine, client_get_auth_id))
+        authum_null_eq((engine)->client_get_auth_id))
     {
         return authum_bool_false;
     }
@@ -187,7 +189,7 @@ authum_engine_client_get_address(const authum_engine_t *engine, authum_i32_t ind
                                  authum_char_t *buf, authum_usize_t buf_size)
 {
     if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
-        !AUTHUM_ABI_HAS(engine, client_get_address))
+        authum_null_eq((engine)->client_get_address))
     {
         return authum_bool_false;
     }
@@ -199,7 +201,7 @@ authum_engine_client_get_info(const authum_engine_t *engine, authum_i32_t index,
                               const authum_char_t *key, authum_char_t *buf, authum_usize_t buf_size)
 {
     if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
-        !AUTHUM_ABI_HAS(engine, client_get_info) || authum_null_eq(key) ||
+        authum_null_eq((engine)->client_get_info) || authum_null_eq(key) ||
         lh_math_eq(key[0], lh_char_map_nul))
     {
         return authum_bool_false;
@@ -211,7 +213,7 @@ authum_bool_t
 authum_engine_client_print(const authum_engine_t *engine, authum_i32_t index, authum_i32_t kind,
                            const authum_char_t *text)
 {
-    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, client_print) || authum_null_eq(text) ||
+    if (authum_null_eq(engine) || authum_null_eq((engine)->client_print) || authum_null_eq(text) ||
         lh_math_lt(kind, authum_engine_print_console) || lh_math_gt(kind, authum_engine_print_chat))
     {
         return authum_bool_false;
@@ -223,7 +225,7 @@ authum_bool_t
 authum_engine_client_command(const authum_engine_t *engine, authum_i32_t index,
                              const authum_char_t *cmd)
 {
-    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, client_command) || authum_null_eq(cmd) ||
+    if (authum_null_eq(engine) || authum_null_eq((engine)->client_command) || authum_null_eq(cmd) ||
         lh_math_eq(cmd[0], lh_char_map_nul))
     {
         return authum_bool_false;
@@ -235,7 +237,7 @@ authum_bool_t
 authum_engine_query_cvar(const authum_engine_t *engine, authum_i32_t index,
                          const authum_char_t *cvar, authum_i32_t request_id)
 {
-    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, query_client_cvar) ||
+    if (authum_null_eq(engine) || authum_null_eq((engine)->query_client_cvar) ||
         authum_null_eq(cvar) || lh_math_eq(cvar[0], lh_char_map_nul))
     {
         return authum_bool_false;
@@ -254,7 +256,7 @@ authum_engine_client_get_stats(const authum_engine_t *engine, authum_i32_t index
     loss = authum_null_eq(loss) ? lh_addr_of(dummy_loss) : loss;
     lh_ptr_deref(ping) = 0;
     lh_ptr_deref(loss) = 0;
-    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, client_get_stats))
+    if (authum_null_eq(engine) || authum_null_eq((engine)->client_get_stats))
     {
         return authum_bool_false;
     }
@@ -265,8 +267,8 @@ authum_bool_t
 authum_engine_client_set_info(const authum_engine_t *engine, authum_i32_t index,
                               const authum_char_t *key, const authum_char_t *value)
 {
-    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, client_set_info) || authum_null_eq(key) ||
-        lh_math_eq(key[0], lh_char_map_nul) || authum_null_eq(value))
+    if (authum_null_eq(engine) || authum_null_eq((engine)->client_set_info) ||
+        authum_null_eq(key) || lh_math_eq(key[0], lh_char_map_nul) || authum_null_eq(value))
     {
         return authum_bool_false;
     }
@@ -301,7 +303,7 @@ authum_bool_t
 authum_engine_cvar_register(const authum_engine_t *engine, const authum_char_t *name,
                             const authum_char_t *value, authum_i32_t flags)
 {
-    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, cvar_register) || authum_null_eq(name) ||
+    if (authum_null_eq(engine) || authum_null_eq((engine)->cvar_register) || authum_null_eq(name) ||
         lh_math_eq(name[0], lh_char_map_nul))
     {
         return authum_bool_false;
@@ -343,7 +345,7 @@ authum_engine_cvar_get_float(const authum_engine_t *engine, const authum_char_t 
 authum_i32_t
 authum_engine_message_id(const authum_engine_t *engine, const authum_char_t *name)
 {
-    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, message_id) || authum_null_eq(name) ||
+    if (authum_null_eq(engine) || authum_null_eq((engine)->message_id) || authum_null_eq(name) ||
         lh_math_eq(name[0], lh_char_map_nul))
     {
         return 0;
@@ -359,8 +361,8 @@ authum_engine_message_begin(const authum_engine_t *engine, authum_i32_t dest, au
                             authum_i32_t index)
 {
     authum_engine_message_open = authum_bool_false;
-    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, message_begin) ||
-        !AUTHUM_ABI_HAS(engine, message_write) || !AUTHUM_ABI_HAS(engine, message_end) ||
+    if (authum_null_eq(engine) || authum_null_eq((engine)->message_begin) ||
+        authum_null_eq((engine)->message_write) || authum_null_eq((engine)->message_end) ||
         lh_math_le(msg_id, 0))
     {
         return authum_bool_false;
@@ -443,8 +445,8 @@ authum_engine_message_end(const authum_engine_t *engine)
 authum_i32_t
 authum_engine_precache_model(const authum_engine_t *engine, const authum_char_t *path)
 {
-    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, precache_model) || authum_null_eq(path) ||
-        lh_math_eq(path[0], 0))
+    if (authum_null_eq(engine) || authum_null_eq((engine)->precache_model) ||
+        authum_null_eq(path) || lh_math_eq(path[0], 0))
     {
         return 0;
     }
@@ -454,8 +456,8 @@ authum_engine_precache_model(const authum_engine_t *engine, const authum_char_t 
 authum_i32_t
 authum_engine_precache_sound(const authum_engine_t *engine, const authum_char_t *path)
 {
-    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, precache_sound) || authum_null_eq(path) ||
-        lh_math_eq(path[0], 0))
+    if (authum_null_eq(engine) || authum_null_eq((engine)->precache_sound) ||
+        authum_null_eq(path) || lh_math_eq(path[0], 0))
     {
         return 0;
     }
@@ -465,7 +467,7 @@ authum_engine_precache_sound(const authum_engine_t *engine, const authum_char_t 
 authum_i32_t
 authum_engine_precache_generic(const authum_engine_t *engine, const authum_char_t *path)
 {
-    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, precache_generic) ||
+    if (authum_null_eq(engine) || authum_null_eq((engine)->precache_generic) ||
         authum_null_eq(path) || lh_math_eq(path[0], 0))
     {
         return 0;
@@ -478,14 +480,14 @@ authum_engine_precache_generic(const authum_engine_t *engine, const authum_char_
 authum_i32_t
 authum_engine_entity_max(const authum_engine_t *engine)
 {
-    return (!authum_null_eq(engine) && AUTHUM_ABI_HAS(engine, entity_max)) ? engine->entity_max()
-                                                                           : 0;
+    return (!authum_null_eq(engine) && !authum_null_eq((engine)->entity_max)) ? engine->entity_max()
+                                                                              : 0;
 }
 
 authum_bool_t
 authum_engine_entity_is_valid(const authum_engine_t *engine, authum_i32_t index)
 {
-    return (!authum_null_eq(engine) && AUTHUM_ABI_HAS(engine, entity_is_valid))
+    return (!authum_null_eq(engine) && !authum_null_eq((engine)->entity_is_valid))
                ? engine->entity_is_valid(index)
                : authum_bool_false;
 }
@@ -495,7 +497,7 @@ authum_engine_entity_get_classname(const authum_engine_t *engine, authum_i32_t i
                                    authum_char_t *buf, authum_usize_t buf_size)
 {
     if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
-        !AUTHUM_ABI_HAS(engine, entity_get_classname))
+        authum_null_eq((engine)->entity_get_classname))
     {
         return authum_bool_false;
     }
@@ -506,7 +508,7 @@ authum_i32_t
 authum_engine_entity_find_by_classname(const authum_engine_t *engine, authum_i32_t start,
                                        const authum_char_t *classname)
 {
-    if (authum_null_eq(engine) || !AUTHUM_ABI_HAS(engine, entity_find_by_classname) ||
+    if (authum_null_eq(engine) || authum_null_eq((engine)->entity_find_by_classname) ||
         authum_null_eq(classname) || lh_math_eq(classname[0], 0))
     {
         return 0;
@@ -522,7 +524,7 @@ authum_engine_entity_get_float(const authum_engine_t *engine, authum_i32_t index
 
     out = authum_null_eq(out) ? lh_addr_of(dummy) : out;
     lh_ptr_deref(out) = 0.0f;
-    return (!authum_null_eq(engine) && AUTHUM_ABI_HAS(engine, entity_get_float))
+    return (!authum_null_eq(engine) && !authum_null_eq((engine)->entity_get_float))
                ? engine->entity_get_float(index, field, out)
                : authum_bool_false;
 }
@@ -531,7 +533,7 @@ authum_bool_t
 authum_engine_entity_set_float(const authum_engine_t *engine, authum_i32_t index,
                                authum_i32_t field, authum_float_t value)
 {
-    return (!authum_null_eq(engine) && AUTHUM_ABI_HAS(engine, entity_set_float))
+    return (!authum_null_eq(engine) && !authum_null_eq((engine)->entity_set_float))
                ? engine->entity_set_float(index, field, value)
                : authum_bool_false;
 }
@@ -544,7 +546,7 @@ authum_engine_entity_get_i32(const authum_engine_t *engine, authum_i32_t index, 
 
     out = authum_null_eq(out) ? lh_addr_of(dummy) : out;
     lh_ptr_deref(out) = 0;
-    return (!authum_null_eq(engine) && AUTHUM_ABI_HAS(engine, entity_get_i32))
+    return (!authum_null_eq(engine) && !authum_null_eq((engine)->entity_get_i32))
                ? engine->entity_get_i32(index, field, out)
                : authum_bool_false;
 }
@@ -553,7 +555,7 @@ authum_bool_t
 authum_engine_entity_set_i32(const authum_engine_t *engine, authum_i32_t index, authum_i32_t field,
                              authum_i32_t value)
 {
-    return (!authum_null_eq(engine) && AUTHUM_ABI_HAS(engine, entity_set_i32))
+    return (!authum_null_eq(engine) && !authum_null_eq((engine)->entity_set_i32))
                ? engine->entity_set_i32(index, field, value)
                : authum_bool_false;
 }
@@ -569,7 +571,7 @@ authum_engine_entity_get_vector(const authum_engine_t *engine, authum_i32_t inde
     out[0] = 0.0f;
     out[1] = 0.0f;
     out[2] = 0.0f;
-    return (!authum_null_eq(engine) && AUTHUM_ABI_HAS(engine, entity_get_vector))
+    return (!authum_null_eq(engine) && !authum_null_eq((engine)->entity_get_vector))
                ? engine->entity_get_vector(index, field, out)
                : authum_bool_false;
 }
@@ -579,7 +581,7 @@ authum_engine_entity_set_vector(const authum_engine_t *engine, authum_i32_t inde
                                 authum_i32_t field, const authum_float_t value[3])
 {
     return (!authum_null_eq(engine) && !authum_null_eq(value) &&
-            AUTHUM_ABI_HAS(engine, entity_set_vector))
+            !authum_null_eq((engine)->entity_set_vector))
                ? engine->entity_set_vector(index, field, value)
                : authum_bool_false;
 }

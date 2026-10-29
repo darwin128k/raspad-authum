@@ -1,8 +1,9 @@
-# Managed threads (module ABI 1.1)
+# Managed threads
 
 `authum_host_threads(host)` returns a host-owned threading service. The SDK
 contains only table-dispatch wrappers; the OS implementation lives in authum.so.
-An older host returns NULL; check it before relying on the service.
+A host without threads (an unsupported platform) returns NULL; check it before
+relying on the service.
 
 Use `authum_thread_start(service, run, wake, user, cpu, flags, error, size)` for
 a long-lived worker. `cpu = -1` inherits affinity. A configured CPU applies to

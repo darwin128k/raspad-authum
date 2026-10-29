@@ -57,7 +57,7 @@ chatfilter_on_command(const authum_char_t *name, authum_ptr payload, authum_ptr 
 
     authum_unused(name);
     authum_unused(user);
-    if (authum_null_eq(ev) || ev->size < sizeof *ev || ev->argc < 1)
+    if (authum_null_eq(ev) || ev->argc < 1)
     {
         return authum_event_result_continue;
     }

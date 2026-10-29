@@ -54,7 +54,6 @@ void
 client_fill(authum_event_client_t *ev, edict_t *entity, const authum_char_t *name)
 {
     lh_memory_std_set(ev, 0, sizeof lh_ptr_deref(ev));
-    ev->size = lh_cast_static(authum_usize_t, sizeof lh_ptr_deref(ev));
     ev->allow = authum_bool_true;
     ev->unix_time = lh_cast_static(authum_i64_t, std::time(authum_null));
     if (lh_math_ne(gpGlobals, authum_null))
@@ -79,7 +78,6 @@ void
 server_fill(authum_event_server_t *ev)
 {
     lh_memory_std_set(ev, 0, sizeof lh_ptr_deref(ev));
-    ev->size = lh_cast_static(authum_usize_t, sizeof lh_ptr_deref(ev));
     ev->unix_time = lh_cast_static(authum_i64_t, std::time(authum_null));
     if (lh_math_eq(gpGlobals, authum_null))
     {
@@ -228,7 +226,6 @@ h_client_command(edict_t *entity)
     authum_event_client_command_t ev;
     authum_i32_t i;
     lh_memory_std_set(lh_addr_of(ev), 0, sizeof ev);
-    ev.size = lh_cast_static(authum_usize_t, sizeof ev);
     client_fill(lh_addr_of(ev.client), entity, authum_null);
     ev.argc = g_engfuncs.pfnCmd_Argc();
     for (i = 0; lh_math_lt(i, ev.argc) && lh_math_lt(i, authum_event_client_command_argv_max);
@@ -344,7 +341,6 @@ h_cvar_value2(const edict_t *entity, authum_i32_t request_id, const authum_char_
 {
     authum_event_client_cvar_t ev;
     lh_memory_std_set(lh_addr_of(ev), 0, sizeof ev);
-    ev.size = lh_cast_static(authum_usize_t, sizeof ev);
     client_fill(lh_addr_of(ev.client), lh_cast_const(edict_t *, entity), authum_null);
     ev.request_id = request_id;
     copy(ev.cvar, sizeof ev.cvar, cvar);

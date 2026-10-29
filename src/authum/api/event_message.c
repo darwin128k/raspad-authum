@@ -9,8 +9,8 @@
 const authum_event_message_arg_t *
 authum_event_message_arg(const authum_event_message_t *ev, authum_i32_t i)
 {
-    if (authum_null_eq(ev) || lh_math_lt(ev->size, sizeof lh_ptr_deref(ev)) || lh_math_lt(i, 0) ||
-        lh_math_ge(i, ev->argc) || lh_math_ge(i, authum_event_message_args_max))
+    if (authum_null_eq(ev) || lh_math_lt(i, 0) || lh_math_ge(i, ev->argc) ||
+        lh_math_ge(i, authum_event_message_args_max))
     {
         return authum_null;
     }

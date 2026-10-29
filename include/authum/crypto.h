@@ -13,7 +13,6 @@
 #ifndef AUTHUM_CRYPTO_H
 #define AUTHUM_CRYPTO_H
 
-#include <authum/abi.h>
 #include <authum/bool.h>
 #include <authum/crypto/rijndael.h>
 #include <authum/crypto/sha.h>
@@ -25,8 +24,6 @@
  */
 typedef struct authum_crypto
 {
-    /** sizeof this table as built by the host — see <authum/abi.h>. */
-    authum_usize_t size;
     authum_bool_t (*rijndael_init)(authum_crypto_rijndael_t *self, authum_ptr key,
                                    authum_usize_t key_size, authum_ptr chain,
                                    authum_usize_t chain_size, authum_usize_t block_size,

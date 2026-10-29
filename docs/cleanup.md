@@ -93,12 +93,6 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   everything built on them inherits the hole: `lh_os_module_event_bus_get_entry` / `_get_first` /
   `_get_next` / `_find_subscription` take a const bus and return writable records. Fix
   the bricks (a const getter and a `_mut` one), then their users.
-- [ ] **The event layer sits beside the module stack, not on it.** `lh/os/shared` (an
-  image) → `lh/os/module` + `lh/os/loader` (modules and their children) → events must
-  be the next step, each usable without the ones above it. Today `lh/os/module/event/bus` is a
-  free brick and Authum glues it to modules by hand (`host/events.c`, `binding`: the
-  module as owner, dedup by callback and user, dropping a module's subscriptions at
-  unload). That glue is generic and belongs in LH, over the loader.
 - [ ] **`lh_test_os` is flaky under a parallel `ctest -j8`** (seen on Windows and on
   Linux): it passes on its own every time. Find the shared resource (a port, a timing).
 - [ ] Pre-existing test failures: `lh_test_math` (`math/view.cpp` 149–153),

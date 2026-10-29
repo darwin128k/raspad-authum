@@ -18,7 +18,6 @@
 
 /** @brief ABI member order; append operations only. */
 #define authum_events_ops_fields()                                                                 \
-    authum_usize_t size;                                                                           \
     authum_events_subscribe_cb subscribe;                                                          \
     authum_events_unsubscribe_cb unsubscribe;                                                      \
     authum_events_publish_cb publish;                                                              \

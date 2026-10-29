@@ -54,10 +54,10 @@ authum_http_server_create(const authum_http_options_t *options, const authum_thr
         snprintf(error, error_size, "invalid HTTP configuration bounds");
         goto failed;
     }
-    if (!threads || !threads->ops || !AUTHUM_ABI_HAS(threads->ops, start) ||
-        !AUTHUM_ABI_HAS(threads->ops, stop))
+    if (!threads || !threads->ops || authum_null_eq((threads->ops)->start) ||
+        authum_null_eq((threads->ops)->stop))
     {
-        snprintf(error, error_size, "host has no managed-thread API; update Authum");
+        snprintf(error, error_size, "host has no managed-thread API on this platform");
         goto failed;
     }
     server->threads = lh_ptr_deref(threads);

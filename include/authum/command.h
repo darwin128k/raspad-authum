@@ -38,7 +38,6 @@ AUTHUM_EXTERN_C_END
  */
 struct authum_command
 {
-    authum_usize_t size;
     /** Module part of the line (`qproto`). */
     const authum_char_t *scope;
     /** Command part of the line (`info`). */

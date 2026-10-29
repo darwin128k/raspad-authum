@@ -140,8 +140,8 @@ main(void)
     usleep(2000);
     REQUIRE(authum_clock_monotonic_ms(clock) >= before);
     REQUIRE(authum_clock_monotonic_ms(NULL) == 0);
-    authum_clock_t short_clock = {.size = sizeof(authum_usize_t)};
-    REQUIRE(authum_clock_monotonic_ms(&short_clock) == 0);
+    authum_clock_t unset_clock = {.monotonic_ms = NULL};
+    REQUIRE(authum_clock_monotonic_ms(&unset_clock) == 0);
 
     authum_thread_owner_t thread_owner;
     authum_threads_t threads;
@@ -153,7 +153,6 @@ main(void)
 
     authum_http_options_t options;
     authum_http_options_init(&options);
-    REQUIRE(options.size == sizeof options);
     REQUIRE(!authum_http_source_add(&options, "relative/tree"));
     REQUIRE(!authum_http_source_add(&options, NULL));
     char directory[] = "/tmp/authum-http-XXXXXX";
@@ -178,11 +177,8 @@ main(void)
     options.max_clients = 1;
     char error[512];
     REQUIRE(!authum_http_open(NULL, &options, error, sizeof error));
-    REQUIRE(strstr(error, "update Authum"));
+    REQUIRE(strstr(error, "on this platform"));
 
-    options.size = 0;
-    REQUIRE(!authum_http_open(&service, &options, error, sizeof error));
-    options.size = sizeof options;
     memset(options.bind, 'x', sizeof options.bind);
     REQUIRE(!authum_http_open(&service, &options, error, sizeof error));
     strcpy(options.bind, "127.0.0.1");

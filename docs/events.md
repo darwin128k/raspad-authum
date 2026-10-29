@@ -25,8 +25,6 @@ authum_event_result_t
 mymod_on_connect(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 {
     const authum_event_client_t *ev = payload;
-    if (ev->size < sizeof *ev)
-        return authum_event_result_continue;   /* older host, unknown layout */
     /* … */
     return authum_event_result_continue;
 }
@@ -39,7 +37,7 @@ publishes; the module that owns the answer fills the out-fields and returns
 `authum_event_result_handled`.
 
 ```c
-qproto_client_query_t q = { .size = sizeof q, .index = 1 };
+qproto_client_query_t q = { .index = 1 };
 if (authum_host_publish(host, QPROTO_EVENT_CLIENT_QUERY, &q) != authum_event_result_continue
     && q.found) {
     /* q.info.auth_kind — protocol the player connected with */
@@ -70,10 +68,10 @@ is not loaded, or nothing matched).
 - The owner of an event declares its payload struct and name in a **public
   header with types only** (e.g. qproto's `<qproto/event.h>`). Consumers
   include that header; they never link the owner.
-- Every payload starts with `authum_usize_t size` = `sizeof` the struct the
-  publisher built. Subscribers check `size >= sizeof(their struct)` before
-  reading; new fields are only ever appended. That is how a payload grows
-  without breaking older modules.
+- A payload, like the rest of the ABI (::AUTHUM_MODULE_ABI), never changes what it
+  has: new fields are only appended, so a module built against an older header
+  reads the part it knows. There is no size to check — a module never runs
+  against a publisher older than the header it was built with.
 - Publish a **copy** of your state, not a pointer into it, if subscribers must
   not change it.
 
@@ -136,8 +134,6 @@ authum_event_result_t
 mymod_on_death(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 {
     const authum_event_message_t *ev = payload;
-    if (ev->size < sizeof *ev)
-        return authum_event_result_continue;
     int killer = authum_event_message_get_i32(ev, 0);
     int victim = authum_event_message_get_i32(ev, 1);
     const authum_char_t *weapon = authum_event_message_get_string(ev, 3);
@@ -162,7 +158,7 @@ authum_event_result_t
 bans_on_authorized(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 {
     const qproto_client_info_t *info = payload;
-    if (info->size >= sizeof *info && bans_contains(info->long_authid))
+    if (bans_contains(info->long_authid))
         authum_host_kick(&g_bans_host, info->userid, "You are banned.");
     return authum_event_result_continue;
 }
@@ -189,17 +185,17 @@ bans_on_authorized(const authum_char_t *name, authum_ptr payload, authum_ptr use
 ## 6. Checklist
 
 - [ ] Payload struct + event name in a public types-only header of the owner
-- [ ] `size` first; check it in every handler
+- [ ] New payload fields only at the end
 - [ ] Queries: in-fields, out-fields, `found`; answer with `handled`
 - [ ] No `dlsym` / function tables between modules
 
 ## 7. Numeric dispatch
 
-The host uses the generic `<lh/os/module/event/bus.h>` registry and per-event subscriber
-lists. Authum retains module ownership, callback ABI adaptation and cleanup.
-The original string operations remain at their original ABI table offsets.
-Numeric operations are appended in module ABI 1.5.0; on an older host they
-report unavailable (`resolve` returns zero).
+The host uses the LH module event bus, `<lh/os/module/event/bus.h>`: the registry,
+the per-event subscriber lists, subscribing once per module, handler and user, and
+dropping a module's subscriptions when it unloads. A module handler is the bus
+callback itself and its user value the subscription context, so Authum adds nothing
+of its own but the module ABI table.
 
 Resolve an event once during module startup, then retain its ID:
 

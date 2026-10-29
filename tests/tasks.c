@@ -358,7 +358,6 @@ main(void)
     CHECK(completed == 64);
 
     memset(&host, 0, sizeof host);
-    host.size = sizeof host;
     host.tasks = &tasks;
     memset(&connection, 0, sizeof connection);
     connection.driver = authum_sql_driver_sqlite;

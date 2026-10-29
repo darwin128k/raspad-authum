@@ -17,7 +17,6 @@ typedef enum authum_logger_format
  * A named logger always stays under the module's logs/<name>/ sandbox. */
 typedef struct authum_logger_options
 {
-    authum_usize_t size;
     const authum_char_t *name;
     authum_logger_format_t format;
 } authum_logger_options_t;

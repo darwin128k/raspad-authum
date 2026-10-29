@@ -457,7 +457,6 @@ test_module_logger(void)
     channel.ops = authum_logs_ops();
     channel.owner = &g_test_hello;
     memset(&host, 0, sizeof host);
-    host.size = sizeof host;
     host.logger = &channel;
 
     authum_logger_init(&log, &host);
@@ -562,12 +561,11 @@ test_constructor(void)
     CHECK(authum_logs_open(&g_test_hello, "hello", authum_null));
     authum_logger_channel_t channel = {authum_logs_ops(), &g_test_hello};
     authum_host_t host = {0};
-    host.size = sizeof host;
     host.logger = &channel;
     authum_host_log_info(&host, "automatic channel %d", 42);
     CHECK(test_file_contains("hello", TEST_DAY_ONE, "automatic channel 42"));
     authum_logger_t raw, conflict;
-    authum_logger_options_t options = {sizeof options, "custom", authum_logger_format_raw};
+    authum_logger_options_t options = {"custom", authum_logger_format_raw};
     CHECK(authum_logger_create(&raw, &host, &options));
     authum_logger_info(&raw, "original message");
     char path[256];
@@ -587,11 +585,6 @@ test_constructor(void)
     authum_logger_info(&raw, "admin format");
     CHECK(test_file_contains("hello/custom", TEST_DAY_ONE, "[info] admin format"));
     authum_logger_close(&raw);
-    authum_logger_ops_t legacy = *authum_logs_ops();
-    legacy.size = (authum_usize_t)((char *)&legacy.construct - (char *)&legacy);
-    channel.ops = &legacy;
-    CHECK(!authum_logger_create(&raw, &host, &options));
-    CHECK(!authum_logger_is_enabled(&raw, authum_logger_level_error));
     authum_logs_deinit();
     remove(path);
     test_write_cfg(g_test_cfg);

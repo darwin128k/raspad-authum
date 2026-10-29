@@ -32,9 +32,5 @@ authum_version_is_abi_compatible(const authum_version_t *module, const authum_ve
     {
         return authum_bool_false;
     }
-    if (lh_math_eq(host->major, 0u))
-    {
-        return (lh_math_eq(module->minor, host->minor)) ? authum_bool_true : authum_bool_false;
-    }
-    return authum_bool_true;
+    return lh_math_ge(host->minor, module->minor) ? authum_bool_true : authum_bool_false;
 }

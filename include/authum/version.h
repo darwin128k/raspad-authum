@@ -32,9 +32,9 @@ authum_version_is_compatible(const authum_version_t *have, const authum_version_
  * @brief Loader gate for ::AUTHUM_MODULE_ABI: may a module built for
  *        @p module run on a host built for @p host?
  *
- * Same major is enough from 1.0 on: the size-checked tables
- * (<authum/abi.h>) cover a minor difference either way. 0.y.z needs the
- * same minor.
+ * The major must match. The host's minor must be the module's or later: a
+ * later minor only appends API, and a module built against it may call what
+ * an older host does not have. The patch does not matter.
  */
 authum_bool_t
 authum_version_is_abi_compatible(const authum_version_t *module, const authum_version_t *host);

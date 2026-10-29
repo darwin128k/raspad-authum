@@ -77,7 +77,7 @@ stats_on_put_in_server(const authum_char_t *name, authum_ptr payload, authum_ptr
 
     authum_unused(name);
     authum_unused(user);
-    if (authum_null_eq(ev) || ev->size < sizeof *ev)
+    if (authum_null_eq(ev))
     {
         return authum_event_result_continue;
     }

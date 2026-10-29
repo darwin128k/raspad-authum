@@ -1,7 +1,7 @@
 #ifndef AUTHUM_HTTP_H
 #define AUTHUM_HTTP_H
 
-#include <authum/abi.h>
+#include <authum/size.h>
 #include <authum/bool.h>
 #include <authum/char.h>
 #include <authum/extern.h>
@@ -15,7 +15,6 @@ enum
 
 typedef struct authum_http_options
 {
-    authum_usize_t size;
     authum_char_t bind[64];
     authum_i32_t port;
     authum_char_t sources[AUTHUM_HTTP_MAX_SOURCES][AUTHUM_HTTP_PATH_CAPACITY];
@@ -44,7 +43,6 @@ AUTHUM_EXTERN_C_END
 
 typedef struct authum_http_ops
 {
-    authum_usize_t size;
     authum_http_server_t *(*open)(authum_ptr owner, const authum_http_options_t *options,
                                   authum_char_t *error, authum_usize_t error_size);
     void (*shutdown)(authum_ptr owner, authum_http_server_t *server);

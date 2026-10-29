@@ -32,7 +32,6 @@
 #ifndef AUTHUM_ENV_H
 #define AUTHUM_ENV_H
 
-#include <authum/abi.h>
 #include <authum/path.h>
 
 /**
@@ -40,12 +39,10 @@
  * @brief Well-known directories for one loaded module.
  *
  * Each path is null when unknown; otherwise points at a host-owned
- * ::authum_path_t valid until `stop`. Append only (see <authum/abi.h>).
+ * ::authum_path_t valid until `stop`. Append only (see ::AUTHUM_MODULE_ABI).
  */
 struct authum_env
 {
-    /** sizeof this table as built by the host — see <authum/abi.h>. */
-    authum_usize_t size;
     const authum_path_t *game;          /**< Game dir (`cstrike`, …). */
     const authum_path_t *models;        /**< `game/models`. */
     const authum_path_t *sprites;       /**< `game/sprites`. */

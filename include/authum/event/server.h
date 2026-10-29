@@ -38,8 +38,6 @@ enum
 
 struct authum_event_server
 {
-    /** sizeof(authum_event_server_t) as built by the host. */
-    authum_usize_t size;
     /** Current map (`de_dust2`). */
     authum_char_t map[authum_event_server_map_max];
     /** `maxplayers` for this map. */
@@ -63,8 +61,6 @@ typedef struct authum_event_server authum_event_server_t;
  */
 struct authum_event_server_log
 {
-    /** sizeof(authum_event_server_log_t) as built by the host. */
-    authum_usize_t size;
     /** The line without its date prefix and trailing newline. */
     authum_char_t text[authum_event_server_log_max];
     /** Seconds since map start. */

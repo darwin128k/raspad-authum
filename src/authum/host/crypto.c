@@ -32,7 +32,6 @@ authum_crypto_sha_hash_impl(authum_crypto_sha_kind_t kind, authum_ptr data, auth
                             authum_ptr out, authum_usize_t out_size);
 
 static const authum_crypto_t authum_crypto_ops = {
-    .size = sizeof(authum_crypto_t),
     .rijndael_init = authum_crypto_rijndael_init_impl,
     .rijndael_encrypt_block = authum_crypto_rijndael_encrypt_block_impl,
     .rijndael_decrypt_block = authum_crypto_rijndael_decrypt_block_impl,

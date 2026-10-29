@@ -232,18 +232,6 @@ TEST(authum_events, reentrancy)
     authum_events_host_clear();
 }
 
-authum_usize_t
-test_client_get_size(const authum_event_client_t *self)
-{
-    return self->size;
-}
-
-void
-test_client_set_size(authum_event_client_t *self, authum_usize_t size)
-{
-    self->size = size;
-}
-
 authum_bool_t
 test_client_get_allow(const authum_event_client_t *self)
 {
@@ -275,7 +263,7 @@ test_on_connect_refuse(const authum_char_t *name, authum_ptr payload, authum_ptr
 
     authum_unused(name);
     authum_unused(user);
-    if (test_client_get_size(ev) < sizeof *ev || strcmp(test_client_get_name_mut(ev), "bad") != 0)
+    if (strcmp(test_client_get_name_mut(ev), "bad") != 0)
     {
         return authum_event_result_continue;
     }
@@ -293,7 +281,6 @@ TEST(authum_events, client_connect_refusal)
     EXPECT_TRUE(authum_events_subscribe(&ev, AUTHUM_EVENT_CLIENT_CONNECT, test_on_connect_refuse,
                                         authum_null));
     memset(&client, 0, sizeof client);
-    test_client_set_size(&client, sizeof client);
     test_client_set_allow(&client, authum_bool_true);
     strcpy(test_client_get_name_mut(&client), "bad");
     authum_events_host_publish(AUTHUM_EVENT_CLIENT_CONNECT, &client);
@@ -338,52 +325,6 @@ TEST(authum_events, numeric_api_shares_registry_and_deduplicates_string_subscrip
     EXPECT_EQ(authum_events_publish_id(&events, 0, authum_null), authum_event_result_continue);
     EXPECT_EQ(authum_events_resolve(&events, ""), 0u);
     EXPECT_EQ(authum_events_resolve(authum_null, "test.numeric"), 0u);
-}
-
-TEST(authum_events, older_table_keeps_strings_and_reports_numeric_api_unavailable)
-{
-    auto old_ops = *authum_events_host_ops();
-    // Emulate the exact prefix supplied by a host predating numeric dispatch.
-    authum_events_ops_set_size(&old_ops, offsetof(authum_events_ops_t, resolve));
-    auto events = test_events_for(authum_null);
-    authum_events_set_ops(&events, &old_ops);
-    EXPECT_TRUE(authum_events_subscribe(&events, "test.old", test_on_a, authum_null));
-    EXPECT_EQ(authum_events_resolve(&events, "test.old"), 0u);
-    EXPECT_FALSE(authum_events_subscribe_id(&events, 1, test_on_a, authum_null));
-    EXPECT_FALSE(authum_events_unsubscribe_id(&events, 1, test_on_a, authum_null));
-    EXPECT_EQ(authum_events_publish_id(&events, 1, authum_null), authum_event_result_continue);
-    g_trace[0] = '\0';
-    EXPECT_EQ(authum_events_publish(&events, "test.old", authum_null),
-              authum_event_result_continue);
-    EXPECT_STREQ(g_trace, "a");
-    authum_events_host_clear();
-}
-
-TEST(authum_events, exact_legacy_table_prefix_does_not_require_numeric_fields)
-{
-    struct legacy_ops
-    {
-        authum_usize_t size;
-        authum_events_subscribe_cb subscribe;
-        authum_events_unsubscribe_cb unsubscribe;
-        authum_events_publish_cb publish;
-    };
-
-    static_assert(sizeof(legacy_ops) == offsetof(authum_events_ops_t, resolve));
-    const auto *current = authum_events_host_ops();
-    const legacy_ops old = {sizeof(legacy_ops), authum_events_ops_get_subscribe(current),
-                            authum_events_ops_get_unsubscribe(current),
-                            authum_events_ops_get_publish(current)};
-    auto events = test_events_for(authum_null);
-    authum_events_set_ops(&events, reinterpret_cast<const authum_events_ops_t *>(&old));
-    EXPECT_TRUE(authum_events_subscribe(&events, "test.legacy", test_on_b, authum_null));
-    EXPECT_EQ(authum_events_resolve(&events, "test.legacy"), 0u);
-    EXPECT_EQ(authum_events_publish_id(&events, 1, authum_null), authum_event_result_continue);
-    EXPECT_FALSE(authum_events_subscribe_id(&events, 1, test_on_b, authum_null));
-    EXPECT_FALSE(authum_events_unsubscribe_id(&events, 1, test_on_b, authum_null));
-    EXPECT_EQ(authum_events_publish(&events, "test.legacy", authum_null),
-              authum_event_result_handled);
-    authum_events_host_clear();
 }
 
 TEST(authum_events, host_cache_converts_id_values_without_aliasing_module_storage)

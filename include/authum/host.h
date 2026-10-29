@@ -34,8 +34,6 @@ AUTHUM_EXTERN_C_END
 
 typedef struct authum_host
 {
-    /** sizeof this table as built by the host — see <authum/abi.h>. */
-    authum_usize_t size;
     /**
      * This module's log channel: the host files each line under
      * `modules/<module>/logs/` per `authum.cfg`. Use <authum/logger.h>.
@@ -185,9 +183,8 @@ void
 authum_host_clear(authum_host_t *host);
 
 /**
- * Keep the host passed to `start`: copies what both sides know (the
- * smaller `size`), zeroes the rest. Use it instead of `*dst = *src` — a
- * module built against newer headers would read past an older host's table.
+ * Keep the host passed to `start`: copies the whole table; a null @p src
+ * leaves @p dst zeroed.
  */
 void
 authum_host_copy(authum_host_t *dst, const authum_host_t *src);

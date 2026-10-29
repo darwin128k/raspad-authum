@@ -1,4 +1,5 @@
 #include <authum/thread.h>
+#include <authum/null.h>
 #include <stdio.h>
 
 authum_thread_t *
@@ -10,11 +11,11 @@ authum_thread_start(const authum_threads_t *threads, authum_thread_fn run, authu
     {
         error[0] = 0;
     }
-    if (!threads || !threads->ops || !AUTHUM_ABI_HAS(threads->ops, start))
+    if (!threads || !threads->ops || authum_null_eq((threads->ops)->start))
     {
         if (error && error_size)
         {
-            snprintf(error, error_size, "host has no managed-thread API; update Authum");
+            snprintf(error, error_size, "host has no managed-thread API on this platform");
         }
         return 0;
     }
@@ -24,7 +25,7 @@ authum_thread_start(const authum_threads_t *threads, authum_thread_fn run, authu
 authum_bool_t
 authum_thread_stop(const authum_threads_t *threads, authum_thread_t *thread)
 {
-    return threads && threads->ops && AUTHUM_ABI_HAS(threads->ops, stop)
+    return threads && threads->ops && !authum_null_eq((threads->ops)->stop)
                ? threads->ops->stop(threads->owner, thread)
                : authum_bool_false;
 }

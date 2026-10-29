@@ -29,7 +29,6 @@ test_frame(authum_float_t seconds)
     authum_event_server_t ev;
 
     memset(&ev, 0, sizeof ev);
-    ev.size = sizeof ev;
     ev.frame_time = seconds;
     (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_FRAME, &ev);
 }
@@ -89,7 +88,6 @@ main(void)
     authum_events_set_ops(&g_events, authum_events_host_ops());
     authum_events_set_owner(&g_events, &g_owner);
     memset(&g_host, 0, sizeof g_host);
-    g_host.size = sizeof g_host;
     g_host.sandbox = &g_sandbox;
     g_host.events = &g_events;
 

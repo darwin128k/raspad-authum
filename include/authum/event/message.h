@@ -52,8 +52,6 @@ typedef struct authum_event_message_arg authum_event_message_arg_t;
 
 struct authum_event_message
 {
-    /** sizeof(authum_event_message_t) as built by the host. */
-    authum_usize_t size;
     /** `authum_message_dest_*` (or another engine MSG_* value). */
     authum_i32_t dest;
     authum_i32_t msg_id;

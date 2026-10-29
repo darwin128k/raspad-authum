@@ -28,8 +28,8 @@ terminated(const authum_char_t *string, authum_usize_t capacity)
 static authum_bool_t
 valid_options(const authum_http_options_t *options)
 {
-    if (!options || lh_math_lt(options->size, sizeof lh_ptr_deref(options)) ||
-        !options->source_count || lh_math_gt(options->source_count, AUTHUM_HTTP_MAX_SOURCES) ||
+    if (!options || !options->source_count ||
+        lh_math_gt(options->source_count, AUTHUM_HTTP_MAX_SOURCES) ||
         lh_math_lt(options->port, 1) || lh_math_gt(options->port, LH_NET_PORT_MAX) ||
         lh_math_lt(options->max_clients, 1) ||
         lh_math_gt(options->max_clients, AUTHUM_HTTP_MAX_CLIENTS) ||
@@ -161,8 +161,11 @@ void
 authum_http_host_init(authum_http_owner_t *owner, const authum_threads_t *threads,
                       authum_http_service_t *service)
 {
-    static const authum_http_ops_t ops = {sizeof ops,    service_open,  service_shutdown,
-                                          service_close, service_drain, service_memory};
+    static const authum_http_ops_t ops = {.open = service_open,
+                                          .shutdown = service_shutdown,
+                                          .close = service_close,
+                                          .drain = service_drain,
+                                          .memory_usage = service_memory};
     owner->head = authum_null;
     owner->threads = threads;
     service->ops = lh_addr_of(ops);

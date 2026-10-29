@@ -18,6 +18,17 @@ AUTHUM_EXTERN_C_BEGIN
 lh_os_module_event_bus_t *
 authum_events_host_get_bus(void);
 
+/**
+ * @brief The bus callback a module handler is called through: the handler itself.
+ *
+ * The module ABI and the bus share the handler shape; see the static checks in
+ * `host/events.c`.
+ *
+ * @param fn The module handler.
+ */
+lh_os_module_event_cb
+authum_events_host_callback(authum_event_handler_fn fn);
+
 /** @brief Find a live exact subscription within one event; null when absent. */
 lh_os_module_event_subscription_t *
 authum_events_host_find(authum_ptr owner, authum_event_id_t id, authum_event_handler_fn fn,

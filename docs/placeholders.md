@@ -1,4 +1,4 @@
-# Placeholder service (ABI 1.3)
+# Placeholder service
 
 The host owns the placeholder vocabulary. A module never parses `{name}`
 itself: it asks the host to resolve a template and gets a path back.
@@ -11,9 +11,8 @@ itself: it asks the host to resolve a template and gets a path back.
     }
 
 The service is owner-bound like the HTTP one: `authum_host_placeholders()`
-returns the scope of the calling module, and a host older than ABI 1.3 has no
-such table — `authum_host_placeholders()` then returns null and the module
-should say so plainly rather than guess.
+returns the scope of the calling module, or null when the host has none — the
+module should say so plainly rather than guess.
 
 ## Standard names
 

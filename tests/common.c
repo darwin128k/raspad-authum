@@ -110,12 +110,11 @@ test_buffer(void)
     int owner;
     unsigned i;
     log_job_t job = {0};
-    authum_logger_ops_t ops = {sizeof ops, write_log, log_enabled, 0, 0};
+    authum_logger_ops_t ops = {write_log, log_enabled, 0, 0};
     authum_logger_channel_t channel = {&ops, NULL};
     authum_tasks_t tasks = {authum_tasks_host_ops(), &owner};
     authum_logger_buffer_t nested = {0}, *previous;
     job.logger.channel = &channel;
-    job.host.size = sizeof job.host;
     job.host.logger = &channel;
     CHECK(!authum_logger_buffer_init(&job.buffer, &job.logger, 0));
     CHECK(authum_logger_buffer_init(&job.buffer, &job.logger, 2));
@@ -166,7 +165,6 @@ void
 publish_client(const authum_host_t *host, const char *event)
 {
     authum_event_client_t ev = {0};
-    ev.size = sizeof ev;
     ev.index = 1;
     ev.userid = current_user;
     authum_host_publish(host, event, &ev);
@@ -180,10 +178,8 @@ test_refs(void)
     authum_host_t host = {0};
     authum_engine_t engine = {0};
     authum_events_t events = {authum_events_host_ops(), &host};
-    host.size = sizeof host;
     host.events = &events;
     host.engine = &engine;
-    engine.size = sizeof engine;
     engine.client_userid = userid;
     CHECK(authum_clients_init(&clients, &host, 32));
     CHECK(authum_clients_capture(&clients, 1, &ref)); /* already connected at module load */

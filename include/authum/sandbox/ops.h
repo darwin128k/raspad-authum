@@ -11,7 +11,7 @@
 #ifndef AUTHUM_SANDBOX_OPS_H
 #define AUTHUM_SANDBOX_OPS_H
 
-#include <authum/abi.h>
+#include <authum/size.h>
 #include <authum/extern.h>
 #include <authum/ptr.h>
 
@@ -24,8 +24,6 @@ AUTHUM_EXTERN_C_END
 
 struct authum_sandbox_ops
 {
-    /** sizeof this table as built by the host — see <authum/abi.h>. */
-    authum_usize_t size;
     /** Zeroed block of @p size bytes owned by @p parent (never null on success). */
     authum_ptr (*alloc)(authum_ptr parent, authum_usize_t size);
     /** Resize keeping ownership; tail beyond the old size is not zeroed. */

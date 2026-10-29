@@ -1,10 +1,10 @@
 /**
  * @file ops.h
- * @brief Sized host event dispatch table, preserving the original three operations.
+ * @brief The host's event dispatch table behind ::authum_events_t.
  *
- * Old modules retain the string operations at their original offsets. New
- * modules check table size before numeric operations, reporting unavailable
- * on older hosts. Names and IDs are resolved by the host registry.
+ * Modules call the `authum_events_*` functions in <authum/events.h>, never these
+ * pointers. Names and IDs are resolved by the host registry; the table is append-only
+ * (see ::AUTHUM_MODULE_ABI).
  */
 
 #ifndef AUTHUM_EVENTS_OPS_H
@@ -20,10 +20,6 @@ struct authum_events_ops
 typedef struct authum_events_ops authum_events_ops_t;
 
 AUTHUM_EXTERN_C_BEGIN
-
-/** @brief Level-1 read of size; self must be nonnull and reach this field. */
-authum_usize_t
-authum_events_ops_get_size(const authum_events_ops_t *self);
 
 /** @brief Level-1 read of subscribe; self must be nonnull and reach this field. */
 authum_events_subscribe_cb
@@ -53,47 +49,31 @@ authum_events_ops_get_unsubscribe_id(const authum_events_ops_t *self);
 authum_events_publish_id_cb
 authum_events_ops_get_publish_id(const authum_events_ops_t *self);
 
-/** @brief Level-1 size store, for constructing a sized ABI table; no validation. */
-void
-authum_events_ops_set_size(authum_events_ops_t *self, authum_usize_t size);
-
-/**
- * @brief Whether the host's table is long enough to hold the bytes up to @p end (level 2).
- *
- * A table built by an older host stops after the members it knew. @p end is the
- * offset just past a member: its offset plus its size.
- *
- * @param self The table, or ::authum_null (which reaches nothing).
- * @param end  Offset just past the member asked about.
- */
-authum_bool_t
-authum_events_ops_reaches(const authum_events_ops_t *self, authum_usize_t end);
-
-/** @brief Whether the sized ABI table provides subscribe; null is unavailable. */
+/** @brief Whether the table provides subscribe; null is unavailable. */
 authum_bool_t
 authum_events_ops_has_subscribe(const authum_events_ops_t *self);
 
-/** @brief Whether the sized ABI table provides unsubscribe; null is unavailable. */
+/** @brief Whether the table provides unsubscribe; null is unavailable. */
 authum_bool_t
 authum_events_ops_has_unsubscribe(const authum_events_ops_t *self);
 
-/** @brief Whether the sized ABI table provides publish; null is unavailable. */
+/** @brief Whether the table provides publish; null is unavailable. */
 authum_bool_t
 authum_events_ops_has_publish(const authum_events_ops_t *self);
 
-/** @brief Whether the sized ABI table provides resolve; null is unavailable. */
+/** @brief Whether the table provides resolve; null is unavailable. */
 authum_bool_t
 authum_events_ops_has_resolve(const authum_events_ops_t *self);
 
-/** @brief Whether the sized ABI table provides subscribe_id; null is unavailable. */
+/** @brief Whether the table provides subscribe_id; null is unavailable. */
 authum_bool_t
 authum_events_ops_has_subscribe_id(const authum_events_ops_t *self);
 
-/** @brief Whether the sized ABI table provides unsubscribe_id; null is unavailable. */
+/** @brief Whether the table provides unsubscribe_id; null is unavailable. */
 authum_bool_t
 authum_events_ops_has_unsubscribe_id(const authum_events_ops_t *self);
 
-/** @brief Whether the sized ABI table provides publish_id; null is unavailable. */
+/** @brief Whether the table provides publish_id; null is unavailable. */
 authum_bool_t
 authum_events_ops_has_publish_id(const authum_events_ops_t *self);
 

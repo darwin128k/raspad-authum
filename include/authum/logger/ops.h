@@ -18,8 +18,6 @@
 
 struct authum_logger_ops
 {
-    /** sizeof this table as built by the host — see <authum/abi.h>. */
-    authum_usize_t size;
     /** Record one line (no trailing newline) at @p level for @p owner. */
     void (*write)(authum_ptr owner, authum_logger_level_t level, const authum_char_t *text);
     /** Whether a line at @p level would go anywhere — skip formatting otherwise. */

@@ -12,7 +12,6 @@ add_test(NAME authum_client COMMAND authum_test_client)
 add_library(authum_test_host STATIC
         "${CMAKE_SOURCE_DIR}/src/authum/host/sandbox.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/events.c"
-        "${CMAKE_SOURCE_DIR}/src/authum/host/events/binding.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/events/ops.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/commands.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/logs.c"

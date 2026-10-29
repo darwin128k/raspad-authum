@@ -40,7 +40,6 @@ scores_add(authum_i32_t index, authum_i32_t delta)
 
     g_scores[index] += delta;
     /* Publish a copy: subscribers cannot touch g_scores through it. */
-    ev.size = sizeof ev;
     ev.index = index;
     ev.score = g_scores[index];
     ev.delta = delta;
@@ -71,7 +70,7 @@ scores_on_disconnect(const authum_char_t *name, authum_ptr payload, authum_ptr u
 
     authum_unused(name);
     authum_unused(user);
-    if (!authum_null_eq(ev) && ev->size >= sizeof *ev && ev->index >= 1 && ev->index < scores_slots)
+    if (!authum_null_eq(ev) && ev->index >= 1 && ev->index < scores_slots)
     {
         g_scores[ev->index] = 0;
     }

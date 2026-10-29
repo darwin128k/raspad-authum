@@ -54,7 +54,7 @@ authum_logger_channel_write(const authum_logger_channel_t *channel, authum_logge
                             const authum_char_t *text)
 {
     if (!authum_null_eq(channel) && !authum_null_eq(channel->ops) &&
-        AUTHUM_ABI_HAS(channel->ops, write) && !authum_null_eq(text))
+        !authum_null_eq((channel->ops)->write) && !authum_null_eq(text))
     {
         channel->ops->write(channel->owner, level, text);
     }
@@ -65,12 +65,12 @@ authum_logger_channel_is_enabled(const authum_logger_channel_t *channel,
                                  authum_logger_level_t level)
 {
     if (authum_null_eq(channel) || authum_null_eq(channel->ops) ||
-        !AUTHUM_ABI_HAS(channel->ops, write))
+        authum_null_eq((channel->ops)->write))
     {
         return authum_bool_false;
     }
     /* A host without the filter takes every line. */
-    return AUTHUM_ABI_HAS(channel->ops, is_enabled)
+    return !authum_null_eq((channel->ops)->is_enabled)
                ? channel->ops->is_enabled(channel->owner, level)
                : authum_bool_true;
 }
@@ -109,7 +109,7 @@ authum_logger_open(authum_logger_t *self, const authum_host_t *host, const authu
     authum_logger_init(self, host);
     module = self->channel;
     if (authum_null_eq(module) || authum_null_eq(module->ops) ||
-        !AUTHUM_ABI_HAS(module->ops, open) || !AUTHUM_ABI_HAS(module->ops, close) ||
+        authum_null_eq((module->ops)->open) || authum_null_eq((module->ops)->close) ||
         authum_null_eq(name) || lh_math_eq(name[0], lh_char_map_nul))
     {
         self->channel = authum_null;
@@ -152,9 +152,8 @@ authum_logger_create(authum_logger_t *self, const authum_host_t *host,
     authum_logger_init(self, host);
     const authum_logger_channel_t *module = self->channel;
     self->channel = authum_null;
-    if (!module || !module->ops || !AUTHUM_ABI_HAS(module->ops, construct) ||
-        !AUTHUM_ABI_HAS(module->ops, close) || !options ||
-        lh_math_lt(options->size, sizeof lh_ptr_deref(options)))
+    if (!module || !module->ops || authum_null_eq((module->ops)->construct) ||
+        authum_null_eq((module->ops)->close) || !options)
     {
         return authum_bool_false;
     }

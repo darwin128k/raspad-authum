@@ -582,8 +582,7 @@ authum_logs_close_journal(authum_ptr journal)
 static authum_ptr
 authum_logs_construct(authum_ptr owner, const authum_logger_options_t *options)
 {
-    if (!options || lh_math_lt(options->size, sizeof lh_ptr_deref(options)) ||
-        lh_math_lt(options->format, authum_logger_format_inherit) ||
+    if (!options || lh_math_lt(options->format, authum_logger_format_inherit) ||
         lh_math_gt(options->format, authum_logger_format_raw))
     {
         return authum_null;
@@ -682,7 +681,6 @@ authum_logs_set_clock(authum_logs_clock_fn clock)
 }
 
 const authum_logger_ops_t authum_logs_ops_table = {
-    .size = sizeof(authum_logger_ops_t),
     .write = authum_logs_write,
     .is_enabled = authum_logs_is_enabled,
     .open = authum_logs_open_journal,

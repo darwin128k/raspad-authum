@@ -45,7 +45,7 @@ welcome_on_put_in_server(const authum_char_t *name, authum_ptr payload, authum_p
 
     authum_unused(name);
     authum_unused(user);
-    if (authum_null_eq(ev) || ev->size < sizeof *ev || ev->index < 1 || ev->index >= welcome_slots)
+    if (authum_null_eq(ev) || ev->index < 1 || ev->index >= welcome_slots)
     {
         return authum_event_result_continue;
     }
@@ -69,7 +69,7 @@ welcome_on_disconnect(const authum_char_t *name, authum_ptr payload, authum_ptr 
 
     authum_unused(name);
     authum_unused(user);
-    if (authum_null_eq(ev) || ev->size < sizeof *ev || ev->index < 1 || ev->index >= welcome_slots)
+    if (authum_null_eq(ev) || ev->index < 1 || ev->index >= welcome_slots)
     {
         return authum_event_result_continue;
     }
@@ -86,7 +86,7 @@ welcome_on_activate(const authum_char_t *name, authum_ptr payload, authum_ptr us
 
     authum_unused(name);
     authum_unused(user);
-    if (authum_null_eq(ev) || ev->size < sizeof *ev)
+    if (authum_null_eq(ev))
     {
         return authum_event_result_continue;
     }

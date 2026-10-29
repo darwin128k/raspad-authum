@@ -183,7 +183,6 @@ engine_message_begin(authum_i32_t dest, authum_i32_t type, const authum_float_t 
         return;
     }
     lh_memory_std_set(lh_addr_of(g_message), 0, sizeof g_message);
-    g_message.size = sizeof g_message;
     g_message.dest = dest;
     g_message.msg_id = type;
     std::snprintf(g_message.name, sizeof g_message.name, "%s", name);
@@ -278,7 +277,6 @@ engine_alert_message(ALERT_TYPE type, authum_char_t *fmt, ...)
         return;
     }
     lh_memory_std_set(lh_addr_of(ev), 0, sizeof ev);
-    ev.size = sizeof ev;
     std::snprintf(ev.text, sizeof ev.text, "%s", line);
     n = std::strlen(ev.text);
     while (lh_math_gt(n, 0u) && (lh_math_eq(ev.text[lh_math_sub(n, 1u)], lh_char_map_lf) ||

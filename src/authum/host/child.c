@@ -190,7 +190,6 @@ authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
 
     lh_memory_std_set(env, 0, sizeof(lh_ptr_deref(env)));
     lh_memory_std_set(paths, 0, sizeof(lh_ptr_deref(paths)));
-    env->size = sizeof(lh_ptr_deref(env));
     data->host.env = env;
 
     authum_child_bind_parent(lh_addr_of(paths->authum), lh_addr_of(env->authum),
@@ -242,7 +241,6 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     authum_module_t *parent;
     authum_host_t *out = lh_addr_of(data->host);
 
-    out->size = sizeof(lh_ptr_deref(out));
     out->engine_funcs = lh_null;
     out->globals = lh_null;
     out->env = lh_null;

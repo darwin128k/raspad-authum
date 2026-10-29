@@ -19,18 +19,17 @@
 
 /**
  * @def AUTHUM_MODULE_ABI
- * @brief Loader ABI (`1.4.0`) — lh-free module API (`authum_module_api`).
+ * @brief Loader ABI (`2.0.0`) — lh-free module API (`authum_module_api`).
  *
- * 1.0: every host table starts with `size` and only grows at the end
- * (<authum/abi.h>), so a module loads on any 1.x host; the engine facade
- * covers players, cvars and client queries. 1.2 added the shared HTTP
- * service and the monotonic clock. 1.3 added the placeholder service
- * (standard names plus per-module registrations). 1.4 adds the named logger
- * constructor with host-owned formatters. A minor bump adds
- * functions, a major bump removes or changes one. Checked with
- * ::authum_version_is_abi_compatible.
+ * 2.0 (Authum 0.4.0) starts over: no 1.x module loads, and the host tables
+ * carry no size to check. From here the ABI is frozen: nothing that exists
+ * changes or moves. New API is added at the end of a table, or as a new
+ * table or a new structure, and bumps the minor; an input structure a module
+ * fills in never grows (a new field is a new structure). A module therefore
+ * runs on a host of the same major and the same or a later minor, which
+ * ::authum_version_is_abi_compatible checks at load.
  */
-#define AUTHUM_MODULE_ABI AUTHUM_VERSION(1, 5, 0)
+#define AUTHUM_MODULE_ABI AUTHUM_VERSION(2, 0, 0)
 
 struct authum_module_info
 {
