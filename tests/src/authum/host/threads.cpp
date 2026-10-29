@@ -121,23 +121,23 @@ TEST_F(authum_threads, invalid_affinity_does_not_register_handle)
     EXPECT_EQ(
         authum_thread_start(&threads, run_job, wake_job, authum_null, 1024, 0, error, sizeof error),
         authum_null);
-    EXPECT_EQ(owner.count, 0u);
+    EXPECT_EQ(lh_os_thread_group_get_count(&owner.group), 0u);
 }
 
 TEST_F(authum_threads, refuses_foreign_owner_handle)
 {
     ASSERT_NO_FATAL_FAILURE(start_two_jobs());
     EXPECT_FALSE(authum_thread_stop(&others, handles[0]));
-    EXPECT_EQ(owner.count, 2u);
+    EXPECT_EQ(lh_os_thread_group_get_count(&owner.group), 2u);
 }
 
 TEST_F(authum_threads, refuses_submission_at_owner_limit)
 {
-    owner.count = 64;
+    lh_os_thread_group_set_count(&owner.group, 64U);
     EXPECT_EQ(
         authum_thread_start(&threads, run_job, wake_job, authum_null, -1, 0, error, sizeof error),
         authum_null);
-    owner.count = 0;
+    lh_os_thread_group_set_count(&owner.group, 0U);
 }
 
 TEST_F(authum_threads, wakes_every_worker_before_joining)
@@ -168,7 +168,7 @@ TEST_F(authum_threads, joined_handles_can_be_released_explicitly)
     {
         EXPECT_TRUE(authum_thread_stop(&threads, handles[index]));
     }
-    EXPECT_EQ(owner.count, 0u);
+    EXPECT_EQ(lh_os_thread_group_get_count(&owner.group), 0u);
     EXPECT_EQ(wakes.load(), 2);
 }
 

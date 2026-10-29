@@ -1,6 +1,7 @@
 #include <authum/thread.h>
 #include <authum/null.h>
-#include <stdio.h>
+#include <authum/unused.h>
+#include <lh/str/format/text.h>
 
 authum_thread_t *
 authum_thread_start(const authum_threads_t *threads, authum_thread_fn run, authum_thread_fn wake,
@@ -15,7 +16,8 @@ authum_thread_start(const authum_threads_t *threads, authum_thread_fn run, authu
     {
         if (error && error_size)
         {
-            snprintf(error, error_size, "host has no managed-thread API on this platform");
+            authum_unused(lh_str_ptr_format_cstr(
+                error, error_size, "%s", "host has no managed-thread API on this platform"));
         }
         return 0;
     }

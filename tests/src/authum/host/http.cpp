@@ -245,7 +245,7 @@ TEST_F(authum_http, callback_may_close_server_during_log_drain)
     EXPECT_EQ(authum_http_drain(&service, server, close_in_log, &callback, 1000), 1u);
     EXPECT_EQ(callback.calls, 1u);
     EXPECT_EQ(owner.head, authum_null);
-    EXPECT_EQ(thread_owner.count, 0u);
+    EXPECT_EQ(lh_os_thread_group_get_count(&thread_owner.group), 0u);
 }
 
 TEST_F(authum_http, owner_cleanup_reclaims_forgotten_server)
@@ -254,7 +254,7 @@ TEST_F(authum_http, owner_cleanup_reclaims_forgotten_server)
     authum_threads_host_stop_owner(&thread_owner);
     authum_http_host_drop_owner(&owner);
     EXPECT_EQ(owner.head, authum_null);
-    EXPECT_EQ(thread_owner.count, 0u);
+    EXPECT_EQ(lh_os_thread_group_get_count(&thread_owner.group), 0u);
 }
 
 TEST_F(authum_http, opens_allowed_nested_resource)
