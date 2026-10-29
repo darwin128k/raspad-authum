@@ -19,9 +19,8 @@
 
 #include <lh/runtime/allocator.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <lh/os/env.h>
+#include <lh/runtime/logger.h>
 
 enum
 {
@@ -227,38 +226,47 @@ authum_logs_cfg_open(authum_cfg_t *cfg)
                : authum_bool_false;
 }
 
+/** Format into @p out, NUL-terminated: empty when the result does not fit. */
+static void
+authum_logs_format(authum_char_t *out, authum_usize_t out_size, const authum_char_t *fmt, ...)
+{
+    va_list args;
+    lh_usize_t size;
+
+    va_start(args, fmt);
+    size = lh_str_ptr_format_text_v(out, lh_math_sub(out_size, 1u), fmt, args);
+    va_end(args);
+    out[size] = lh_char_map_nul;
+}
+
 /** Apply only present, valid keys. Missing/invalid values preserve inheritance. */
 static void
 authum_logs_apply(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authum_char_t *prefix)
 {
     authum_char_t key[160];
     const authum_char_t *value;
+    authum_i32_t days;
 #define LOG_VALUE(suffix)                                                                          \
-    (snprintf(key, sizeof key, "%s%s", prefix, suffix), authum_cfg_get_value(cfg, key))
+    (authum_logs_format(key, sizeof key, "%s%s", prefix, suffix), authum_cfg_get_value(cfg, key))
     channel->level = authum_logs_parse_level(LOG_VALUE("log_level"), channel->level);
     channel->console_level =
         authum_logs_parse_level(LOG_VALUE("log_console"), channel->console_level);
     channel->host_level = authum_logs_parse_level(LOG_VALUE("log_host"), channel->host_level);
     value = LOG_VALUE("log_keep_days");
-    if (value)
+    /* Bound calendar arithmetic; reject overflow, negatives and trailing garbage. */
+    if (value && authum_cstr_parse_i32(value, lh_addr_of(days)) && lh_math_ge(days, 0) &&
+        lh_math_le(days, 36500))
     {
-        authum_char_t *end;
-        long days = strtol(value, lh_addr_of(end), 10);
-        /* Bound calendar arithmetic; reject overflow, negatives and trailing garbage. */
-        if (lh_math_ne(end, value) && lh_math_eq(lh_ptr_deref(end), lh_char_map_nul) &&
-            lh_math_ge(days, 0) && lh_math_le(days, 36500))
-        {
-            channel->keep_days = days;
-        }
+        channel->keep_days = days;
     }
     value = LOG_VALUE("log_file");
     if (value)
     {
-        if (!strcmp(value, "on"))
+        if (authum_cstr_is_equal(value, "on", authum_bool_false))
         {
             channel->file_enabled = authum_bool_true;
         }
-        else if (!strcmp(value, "off"))
+        else if (authum_cstr_is_equal(value, "off", authum_bool_false))
         {
             channel->file_enabled = authum_bool_false;
         }
@@ -266,11 +274,11 @@ authum_logs_apply(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authu
     value = LOG_VALUE("log_format");
     if (value)
     {
-        if (!strcmp(value, "standard"))
+        if (authum_cstr_is_equal(value, "standard", authum_bool_false))
         {
             channel->format = authum_logger_format_standard;
         }
-        else if (!strcmp(value, "raw"))
+        else if (authum_cstr_is_equal(value, "raw", authum_bool_false))
         {
             channel->format = authum_logger_format_raw;
         }
@@ -293,7 +301,7 @@ static void
 authum_logs_admin(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authum_char_t *tag)
 {
     authum_char_t prefix[144];
-    snprintf(prefix, sizeof prefix, "%s.", tag);
+    authum_logs_format(prefix, sizeof prefix, "%s.", tag);
     for (authum_char_t *p = prefix; lh_ptr_deref(p); p = lh_math_add_one(p))
     {
         if (lh_math_eq(lh_ptr_deref(p), lh_char_map_slash))
@@ -395,7 +403,8 @@ authum_logs_set_name(authum_char_t *out, authum_usize_t out_size, const authum_c
                 : lh_char_map_underscore;
     }
     out[i] = lh_char_map_nul;
-    if (lh_math_eq(i, 0u) || lh_math_eq(strcmp(out, "."), 0) || lh_math_eq(strcmp(out, ".."), 0))
+    if (lh_math_eq(i, 0u) || authum_cstr_is_equal(out, ".", authum_bool_false) ||
+        authum_cstr_is_equal(out, "..", authum_bool_false))
     {
         authum_cstr_copy(out, out_size, "module");
     }
@@ -489,7 +498,8 @@ authum_logs_write(authum_ptr owner, authum_logger_level_t level, const authum_ch
     }
     if (!authum_logs_ready)
     {
-        fprintf(stderr, "[authum] [%s] %s\n", authum_logger_level_get_name(level), text);
+        lh_logger_log(lh_runtime_logger(), level, "[authum] [%s] %s",
+                      authum_logger_level_get_name(level), text);
         return;
     }
     channel = authum_logs_find(owner);
@@ -540,7 +550,7 @@ authum_logs_add(authum_ptr owner, authum_logs_channel_t *parent, const authum_ch
     }
     else
     {
-        snprintf(channel->tag, sizeof channel->tag, "%s/%s", parent->name, channel->name);
+        authum_logs_format(channel->tag, sizeof channel->tag, "%s/%s", parent->name, channel->name);
     }
     /* journal: <module logs>/<journal>; module: <module_dir>/logs, by default
      * modules/<name>/logs */
@@ -563,7 +573,7 @@ authum_logs_add(authum_ptr owner, authum_logs_channel_t *parent, const authum_ch
     {
         authum_path_t configs;
         authum_char_t leaf[lh_math_add(authum_logs_name_max, 5)];
-        snprintf(leaf, sizeof leaf, "%s.cfg", channel->name);
+        authum_logs_format(leaf, sizeof leaf, "%s.cfg", channel->name);
         if (!authum_path_join(lh_addr_of(configs), lh_addr_of(base), "configs") ||
             !authum_path_join(lh_addr_of(channel->config), lh_addr_of(configs), leaf))
         {
@@ -669,7 +679,8 @@ authum_logs_open_journal(authum_ptr owner, const authum_char_t *name)
     authum_logs_set_name(clean, sizeof clean, name);
     for (channel = authum_logs_head; !authum_null_eq(channel); channel = channel->next)
     {
-        if (lh_math_eq(channel->parent, module) && lh_math_eq(strcmp(channel->name, clean), 0))
+        if (lh_math_eq(channel->parent, module) &&
+            authum_cstr_is_equal(channel->name, clean, authum_bool_false))
         {
             channel->refs = lh_math_add_one(channel->refs);
             return channel->owner;
@@ -742,7 +753,7 @@ authum_logs_init(const authum_char_t *root, authum_logs_mirror_fn mirror)
     }
     authum_logs_mirror = mirror;
     /* Environment is sampled once at startup, never on the write path. */
-    const authum_char_t *environment = getenv("AUTHUM_LOG_LEVEL");
+    const authum_char_t *environment = lh_os_env_get("AUTHUM_LOG_LEVEL");
     authum_logs_environment_level = authum_logs_parse_level(environment, -2);
     authum_logs_environment_override = lh_math_ne(authum_logs_environment_level, -2);
     lh_memory_std_set(lh_addr_of(authum_logs_host), 0, sizeof authum_logs_host);
