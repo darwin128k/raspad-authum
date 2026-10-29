@@ -8,7 +8,7 @@
  * about each other: a name is either standard or was registered through this
  * API, and a module may use any name another module registered.
  *
- *     authum_placeholder_service_t *service = authum_host_placeholders(host);
+ *     authum_placeholder_service_t *service = authum_host_get_placeholders(host);
  *     authum_char_t path[512];
  *     if (!authum_placeholder_expand(service, "{game}/maps", path, sizeof path))
  *     {

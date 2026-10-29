@@ -37,8 +37,8 @@ test_cstr(void)
 
     CHECK(authum_cstr_copy(buf, sizeof buf, "abcdef"));
     CHECK_STR(buf, "abc");
-    CHECK(authum_cstr_eq("Foo", "foo", authum_bool_true));
-    CHECK(!authum_cstr_eq("Foo", "foo", authum_bool_false));
+    CHECK(authum_cstr_is_equal("Foo", "foo", authum_bool_true));
+    CHECK(!authum_cstr_is_equal("Foo", "foo", authum_bool_false));
     CHECK(authum_cstr_parse_i32(" -42 ", &i) && i == -42);
     CHECK(authum_cstr_parse_i32("-2147483648", &i) && i == (-2147483647 - 1));
     CHECK(!authum_cstr_parse_i32("2147483648", &i));
@@ -68,22 +68,22 @@ test_path(void)
 
     CHECK(authum_path_set_cstr(&dir, "/srv/hlds/cstrike/addons"));
     CHECK(authum_path_join(&out, &dir, "authum"));
-    CHECK_STR(authum_path_as_cstr(&out), "/srv/hlds/cstrike/addons/authum");
+    CHECK_STR(authum_path_get_cstr(&out), "/srv/hlds/cstrike/addons/authum");
     CHECK(authum_path_set_cstr(&dir, "C:\\hlds\\"));
     CHECK(authum_path_join(&out, &dir, "x.cfg"));
-    CHECK_STR(authum_path_as_cstr(&out), "C:\\hlds\\x.cfg");
+    CHECK_STR(authum_path_get_cstr(&out), "C:\\hlds\\x.cfg");
     CHECK(authum_path_set_cstr(&dir, "a/b/c"));
-    CHECK(authum_path_parent(&out, &dir));
-    CHECK_STR(authum_path_as_cstr(&out), "a/b");
+    CHECK(authum_path_assign_parent(&out, &dir));
+    CHECK_STR(authum_path_get_cstr(&out), "a/b");
     CHECK(authum_path_set_cstr(&dir, "/a"));
-    CHECK(authum_path_parent(&out, &dir));
-    CHECK_STR(authum_path_as_cstr(&out), "/");
+    CHECK(authum_path_assign_parent(&out, &dir));
+    CHECK_STR(authum_path_get_cstr(&out), "/");
     CHECK(authum_path_set_cstr(&dir, "C:/a"));
-    CHECK(authum_path_parent(&out, &dir));
-    CHECK_STR(authum_path_as_cstr(&out), "C:/");
+    CHECK(authum_path_assign_parent(&out, &dir));
+    CHECK_STR(authum_path_get_cstr(&out), "C:/");
     authum_path_clear(&out);
     CHECK(authum_path_is_empty(&out));
-    CHECK(authum_path_as_cstr_or_null(&out) == authum_null);
+    CHECK(authum_path_get_cstr_or_null(&out) == authum_null);
 }
 
 struct test_cfg
@@ -117,7 +117,7 @@ test_cfg(void)
           "text = a=b=c\nextra = 12\n",
           f);
     rewind(f);
-    CHECK(authum_cfg_adopt(&cfg, f));
+    CHECK(authum_cfg_open_file(&cfg, f));
     authum_cfg_apply_items(&cfg, items, sizeof items / sizeof items[0]);
     CHECK(c.enable);
     CHECK(c.level == 5);
@@ -125,9 +125,9 @@ test_cfg(void)
     CHECK_STR(c.text, "a=b=c");
     CHECK(authum_cfg_get_i32(&cfg, "extra", -1) == 12);
     CHECK(authum_cfg_get_i32(&cfg, "missing", -1) == -1);
-    CHECK(!authum_cfg_get_cstr(&cfg, "missing", buf, sizeof buf, "dflt"));
+    CHECK(!authum_cfg_copy_cstr(&cfg, "missing", buf, sizeof buf, "dflt"));
     CHECK_STR(buf, "dflt");
-    CHECK(authum_cfg_get_cstr(&cfg, "text", buf, sizeof buf, "dflt"));
+    CHECK(authum_cfg_copy_cstr(&cfg, "text", buf, sizeof buf, "dflt"));
     CHECK_STR(buf, "a=b=c");
     authum_cfg_close(&cfg);
 }
@@ -285,7 +285,7 @@ test_engine_messages(void)
     authum_engine_message_end(&engine);
     CHECK_STR(g_msg_log, "begin 2 76 0;w5 0 1.50 -;w6 0 0.00 ;end;");
 
-    CHECK(authum_engine_message_id(&engine, "DeathMsg") == 0);
+    CHECK(authum_engine_message_get_id(&engine, "DeathMsg") == 0);
     CHECK(!authum_engine_message_begin(&engine, authum_message_dest_all, 0, 0)); /* no id */
     engine.message_id = 0;
     CHECK(!authum_engine_client_chat(&engine, 1, 1, "no SayText")); /* host without it */
@@ -363,21 +363,21 @@ test_engine_entities(void)
     CHECK(!authum_engine_client_is_bot(&engine, 1));
     CHECK(authum_engine_client_is_bot(&engine, 3));
 
-    CHECK(authum_engine_entity_get_float(&engine, 3, authum_entity_float_health, &health));
+    CHECK(authum_engine_entity_try_get_float(&engine, 3, authum_entity_float_health, &health));
     CHECK(health == 35.0f);
-    CHECK(!authum_engine_entity_get_float(&engine, 3, authum_entity_float_armor, &health));
+    CHECK(!authum_engine_entity_try_get_float(&engine, 3, authum_entity_float_armor, &health));
     CHECK(health == 0.0f); /* a refused read leaves 0, not the old value */
-    CHECK(authum_engine_entity_get_i32(&engine, 3, authum_entity_i32_flags, &flags));
+    CHECK(authum_engine_entity_try_get_i32(&engine, 3, authum_entity_i32_flags, &flags));
     CHECK((flags & authum_entity_flag_fake_client) != 0);
 
     /* Functions this fake engine does not have: false, and outputs zeroed. */
-    CHECK(!authum_engine_entity_get_vector(&engine, 1, authum_entity_vector_origin, vector));
+    CHECK(!authum_engine_entity_copy_vector(&engine, 1, authum_entity_vector_origin, vector));
     CHECK(vector[0] == 0.0f && vector[1] == 0.0f && vector[2] == 0.0f);
     CHECK(!authum_engine_entity_set_float(&engine, 1, authum_entity_float_health, 1.0f));
-    CHECK(!authum_engine_entity_get_classname(&engine, 1, classname, sizeof classname));
+    CHECK(!authum_engine_entity_copy_classname(&engine, 1, classname, sizeof classname));
     CHECK_STR(classname, "");
     CHECK(authum_engine_entity_find_by_classname(&engine, 0, "player") == 0);
-    CHECK(authum_engine_entity_max(authum_null) == 0);
+    CHECK(authum_engine_entity_get_max(authum_null) == 0);
     CHECK(!authum_engine_client_is_alive(authum_null, 1));
 }
 
@@ -466,10 +466,10 @@ test_env_paths(void)
     env.module_data = &module_data;
 
     /* configs/<leaf>: the path either way, true once the file is there. */
-    CHECK(!authum_env_config_path(&env, "foo.cfg", &out));
-    CHECK_STR(authum_path_as_cstr(&out), TEST_ENV_ROOT "/foo/configs/foo.cfg");
+    CHECK(!authum_env_join_config_path(&env, "foo.cfg", &out));
+    CHECK_STR(authum_path_get_cstr(&out), TEST_ENV_ROOT "/foo/configs/foo.cfg");
     test_env_touch(TEST_ENV_ROOT "/foo/configs/foo.cfg", "x\n");
-    CHECK(authum_env_config_path(&env, "foo.cfg", &out));
+    CHECK(authum_env_join_config_path(&env, "foo.cfg", &out));
 
     remove(TEST_ENV_ROOT "/foo/data/foo.db");
 #if defined(_WIN32)
@@ -479,17 +479,17 @@ test_env_paths(void)
 #endif
     CHECK(stat(TEST_ENV_ROOT "/foo/data", &info) != 0);
     /* Constructing a path for a read must not create the directory. */
-    CHECK(authum_env_data_path(&env, "foo.db", &out));
-    CHECK_STR(authum_path_as_cstr(&out), TEST_ENV_ROOT "/foo/data/foo.db");
+    CHECK(authum_env_join_data_path(&env, "foo.db", &out));
+    CHECK_STR(authum_path_get_cstr(&out), TEST_ENV_ROOT "/foo/data/foo.db");
     CHECK(stat(TEST_ENV_ROOT "/foo/data", &info) != 0);
     CHECK(authum_path_ensure_dir(&module_data));
     test_env_touch(TEST_ENV_ROOT "/foo/data/foo.db", "db\n");
     CHECK(test_env_exists(TEST_ENV_ROOT "/foo/data/foo.db"));
 
     /* Bad input: no paths, no crash. */
-    CHECK(!authum_env_config_path(&env, "", &out));
-    CHECK(!authum_env_data_path(&env, authum_null, &out));
-    CHECK(!authum_env_config_path(authum_null, "foo.cfg", &out));
+    CHECK(!authum_env_join_config_path(&env, "", &out));
+    CHECK(!authum_env_join_data_path(&env, authum_null, &out));
+    CHECK(!authum_env_join_config_path(authum_null, "foo.cfg", &out));
 }
 
 void
@@ -505,16 +505,16 @@ test_host_copy(void)
     src.commands = (const authum_commands_t *)&engine; /* any non-null marker */
 
     authum_host_copy(&dst, &src);
-    CHECK(authum_host_engine(&dst) == &engine);
-    CHECK(authum_host_commands(&dst) == src.commands);
+    CHECK(authum_host_get_engine(&dst) == &engine);
+    CHECK(authum_host_get_commands(&dst) == src.commands);
 
     authum_host_clear(&dst);
-    CHECK(authum_host_engine(&dst) == authum_null);
-    CHECK(authum_host_commands(&dst) == authum_null);
+    CHECK(authum_host_get_engine(&dst) == authum_null);
+    CHECK(authum_host_get_commands(&dst) == authum_null);
 
     memset(&dst, 0xff, sizeof dst);
     authum_host_copy(&dst, authum_null);
-    CHECK(authum_host_engine(&dst) == authum_null); /* zeroed, not garbage */
+    CHECK(authum_host_get_engine(&dst) == authum_null); /* zeroed, not garbage */
 }
 
 void
@@ -564,35 +564,35 @@ test_ed25519(void)
     test_hex(expected_key, "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a");
     test_hex(expected_sig, "e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e06522490155"
                            "5fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b");
-    authum_crypto_ed25519_key_pair(secret_key, public_key, seed);
+    authum_crypto_ed25519_create_key_pair(secret_key, public_key, seed);
     memset(zeros, 0, sizeof zeros);
     CHECK(memcmp(seed, zeros, sizeof zeros) == 0);
     CHECK(memcmp(public_key, expected_key, sizeof expected_key) == 0);
     authum_crypto_ed25519_sign(signature, secret_key, authum_null, 0u);
     CHECK(memcmp(signature, expected_sig, sizeof expected_sig) == 0);
-    CHECK(authum_crypto_ed25519_check(signature, public_key, authum_null, 0u));
+    CHECK(authum_crypto_ed25519_is_valid(signature, public_key, authum_null, 0u));
 
     test_hex(seed, "4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb");
     test_hex(expected_key, "3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c");
     test_hex(expected_sig, "92a009a9f0d4cab8720e820b5f642540a2b27b5416503f8fb3762223ebdb69da"
                            "085ac1e43e15996e458f3613d0f11d8c387b2eaeb4302aeeb00d291612bb0c00");
-    authum_crypto_ed25519_key_pair(secret_key, public_key, seed);
+    authum_crypto_ed25519_create_key_pair(secret_key, public_key, seed);
     CHECK(memcmp(public_key, expected_key, sizeof expected_key) == 0);
     authum_crypto_ed25519_sign(signature, secret_key, message, sizeof message);
     CHECK(memcmp(signature, expected_sig, sizeof expected_sig) == 0);
-    CHECK(authum_crypto_ed25519_check(signature, public_key, message, sizeof message));
+    CHECK(authum_crypto_ed25519_is_valid(signature, public_key, message, sizeof message));
 
     /* Any flipped bit in message, signature or key must fail. */
     message[0] ^= 1u;
-    CHECK(!authum_crypto_ed25519_check(signature, public_key, message, sizeof message));
+    CHECK(!authum_crypto_ed25519_is_valid(signature, public_key, message, sizeof message));
     message[0] ^= 1u;
     signature[0] ^= 1u;
-    CHECK(!authum_crypto_ed25519_check(signature, public_key, message, sizeof message));
+    CHECK(!authum_crypto_ed25519_is_valid(signature, public_key, message, sizeof message));
     signature[0] ^= 1u;
     public_key[0] ^= 1u;
-    CHECK(!authum_crypto_ed25519_check(signature, public_key, message, sizeof message));
+    CHECK(!authum_crypto_ed25519_is_valid(signature, public_key, message, sizeof message));
     public_key[0] ^= 1u;
-    CHECK(!authum_crypto_ed25519_check(authum_null, public_key, message, sizeof message));
+    CHECK(!authum_crypto_ed25519_is_valid(authum_null, public_key, message, sizeof message));
 
     authum_crypto_wipe(secret_key, sizeof secret_key);
     CHECK(memcmp(secret_key, zeros, sizeof zeros) == 0);
@@ -696,17 +696,17 @@ test_net(void)
     CHECK(!authum_net_ipv4_format(0x25e6d2dau, text, 8u));
 
     /* Real interfaces: whatever this machine has, the lists must be clean. */
-    n = authum_net_ipv4_external(ips, 8u);
+    n = authum_net_ipv4_collect_external(ips, 8u);
     for (i = 0u; i < n && i < 8u; i++)
     {
         CHECK(authum_net_ipv4_is_external(ips[i]));
     }
-    n = authum_net_ipv4_internal(ips, 8u);
+    n = authum_net_ipv4_collect_internal(ips, 8u);
     for (i = 0u; i < n && i < 8u; i++)
     {
         CHECK(!authum_net_ipv4_is_external(ips[i]) && !authum_net_ipv4_is_loopback(ips[i]));
     }
-    CHECK(authum_net_ipv4_internal(authum_null, 0u) == n); /* count without a buffer */
+    CHECK(authum_net_ipv4_collect_internal(authum_null, 0u) == n); /* count without a buffer */
 }
 
 void
@@ -719,27 +719,27 @@ test_json(void)
     authum_char_t small[4];
     authum_i32_t n = 0;
 
-    CHECK(authum_json_object_get_cstr(reply, "countryCode", text, sizeof text));
+    CHECK(authum_json_object_copy_cstr(reply, "countryCode", text, sizeof text));
     CHECK_STR(text, "US");
     /* Escapes are decoded, é to UTF-8 included. */
-    CHECK(authum_json_object_get_cstr(reply, "isp", text, sizeof text));
+    CHECK(authum_json_object_copy_cstr(reply, "isp", text, sizeof text));
     CHECK_STR(text, "Caf\xC3\xA9 \"Net\"");
     /* Truncated to the buffer. */
-    CHECK(authum_json_object_get_cstr(reply, "ip", small, sizeof small));
+    CHECK(authum_json_object_copy_cstr(reply, "ip", small, sizeof small));
     CHECK_STR(small, "8.8");
-    CHECK(!authum_json_object_get_cstr(reply, "asn", text, sizeof text)); /* not a string */
-    CHECK(!authum_json_object_get_cstr(reply, "missing", text, sizeof text));
+    CHECK(!authum_json_object_copy_cstr(reply, "asn", text, sizeof text)); /* not a string */
+    CHECK(!authum_json_object_copy_cstr(reply, "missing", text, sizeof text));
     CHECK_STR(text, "");
 
-    CHECK(authum_json_object_get_i32(reply, "asn", &n) && n == 15169);
-    CHECK(!authum_json_object_get_i32(reply, "big", &n)); /* past i32 */
-    CHECK(!authum_json_object_get_i32(reply, "ip", &n));
+    CHECK(authum_json_object_try_get_i32(reply, "asn", &n) && n == 15169);
+    CHECK(!authum_json_object_try_get_i32(reply, "big", &n)); /* past i32 */
+    CHECK(!authum_json_object_try_get_i32(reply, "ip", &n));
     /* "asn: 1" inside a string value is text, not a field. */
-    CHECK(authum_json_object_get_i32_or("{\"note\":\"asn: 1\"}", "asn", -1) == -1);
-    CHECK(authum_json_object_get_i32_or("{\"asn\": 7}", "asn", -1) == 7);
-    CHECK(authum_json_object_get_i32_or("{\"asn\": 7", "asn", -1) == -1); /* broken JSON */
-    CHECK(authum_json_object_get_i32_or("[1,2]", "asn", -1) == -1);
-    CHECK(authum_json_object_get_i32_or(authum_null, "asn", -1) == -1);
+    CHECK(authum_json_object_get_i32("{\"note\":\"asn: 1\"}", "asn", -1) == -1);
+    CHECK(authum_json_object_get_i32("{\"asn\": 7}", "asn", -1) == 7);
+    CHECK(authum_json_object_get_i32("{\"asn\": 7", "asn", -1) == -1); /* broken JSON */
+    CHECK(authum_json_object_get_i32("[1,2]", "asn", -1) == -1);
+    CHECK(authum_json_object_get_i32(authum_null, "asn", -1) == -1);
 }
 
 void

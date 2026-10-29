@@ -3,12 +3,34 @@
 These are the owner's standing requirements. They are repeated in every
 session; do not make the owner repeat them again.
 
-- **LH is the box of bricks; Authum is the mechanism built from them.**
-  Authum is a transparent facade over LH: gamedll proxy, module loader,
-  module lifecycle and host-owned state (sandbox, events, commands, tasks,
-  shared HTTP service, log channels, placeholders). Nothing generic is
-  implemented in Authum. If a brick is missing, add it to LH first, then
-  wrap it as a thin `authum_*` facade with no logic of its own.
+- **LH is the box of bricks; Authum is a thin game facade over them.**
+  Every mechanism that is not about the game — the module stack
+  (`lh/os/shared` → `lh/os/module` + `lh/os/loader` → `lh/os/module/event`),
+  console commands, tasks, threads, logging, configuration, paths, memory
+  ownership — lives in LH, so other projects (a 3D editor with DLL modules, ...)
+  take the same bricks. Each level is usable without the ones above it.
+  Authum keeps only the game: the gamedll proxy, the engine, players, game
+  events and messages, and the module ABI. If a brick is missing, add it to LH
+  first, then wrap it as a thin `authum_*` facade with no logic of its own.
+- **Authum has a facade of its own; LH never shows through it.** Authum's
+  sources use LH freely, but no public `include/authum/` header includes an LH
+  header or names an LH type: modules see only `authum_*` types and functions,
+  and are built without LH.
+- **The module ABI is frozen at 2.0 (Authum 0.4.0).** 0.4.0 has no backward
+  compatibility; from 2.0 on nothing that exists changes or moves. New API is
+  only appended — to the end of a host table, or as a new table or a new
+  structure — and bumps the minor. A structure a module fills in never grows: a
+  new field is a new structure. Host tables carry no size; a module needs a host
+  of the same major and the same or a later minor
+  (`authum_version_is_abi_compatible`). Host tables are built with designated
+  initializers.
+- **Names say what they return** — in Authum's public API as in LH: a value is
+  `get_x` / `is_x` / `has_x`; a result written into the caller's buffer or
+  structure is `copy_x`; a scalar written through a pointer with a success flag
+  is `try_get_x`; an action is a verb (`kick`, `print`, `precache_model`). A
+  reader must know what comes back without opening the header.
+- **Same style as LH**: the same layout, briefs and `.clang-format`; format the
+  changed lines with it (`git-clang-format`, see `docs/cleanup.md`).
 - **No raw fields, anywhere.** A struct's fields are touched only by its own
   level-1 getters / setters; everything else — its own `.c` file included,
   Authum and LH alike — goes through them, and functions are layered (level 1

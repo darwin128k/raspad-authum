@@ -71,7 +71,7 @@ authum_logger_buffer_end(authum_logger_buffer_t *previous)
 }
 
 authum_bool_t
-authum_logger_buffer_active(void)
+authum_logger_buffer_is_active(void)
 {
     return lh_math_ne(m_capture, authum_null);
 }
@@ -138,7 +138,7 @@ authum_logger_buffer_flush(authum_logger_buffer_t *self)
 }
 
 authum_usize_t
-authum_logger_buffer_dropped(const authum_logger_buffer_t *self)
+authum_logger_buffer_get_dropped(const authum_logger_buffer_t *self)
 {
     const authum_logger_buffer_impl_t *impl = self ? self->impl : authum_null;
     return impl ? impl->dropped : 0;

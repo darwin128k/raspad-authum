@@ -296,9 +296,9 @@ test_periodic_flush(void)
     test_log_path(previous, sizeof previous, "qproto", TEST_DAY_ONE);
     remove(previous);
     authum_logs_write(&g_test_qproto, authum_logger_level_info, "automatic flush line");
-    authum_i64_t start = authum_clock_monotonic_ms(authum_clock_host());
+    authum_i64_t start = authum_clock_get_monotonic_ms(authum_clock_host());
     while (!test_on_disk("qproto", TEST_DAY_ONE, "automatic flush line") &&
-           authum_clock_monotonic_ms(authum_clock_host()) - start < 5000)
+           authum_clock_get_monotonic_ms(authum_clock_host()) - start < 5000)
     {
 #if defined(_WIN32)
         Sleep(10);
@@ -491,8 +491,8 @@ test_level_names(void)
     CHECK(authum_logger_level_parse("debug", &level) && level == authum_logger_level_debug);
     CHECK(authum_logger_level_parse("WARN", &level) && level == authum_logger_level_warning);
     CHECK(!authum_logger_level_parse("loud", &level));
-    CHECK_STR(authum_logger_level_name(authum_logger_level_critical), "critical");
-    CHECK_STR(authum_logger_level_name(42), "?");
+    CHECK_STR(authum_logger_level_get_name(authum_logger_level_critical), "critical");
+    CHECK_STR(authum_logger_level_get_name(42), "?");
 }
 
 static void

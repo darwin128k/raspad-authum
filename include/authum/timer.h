@@ -43,7 +43,7 @@ authum_timer_clear(void);
 
 /** Timers waiting to run. */
 authum_usize_t
-authum_timer_count(void);
+authum_timer_get_count(void);
 
 AUTHUM_EXTERN_C_END
 

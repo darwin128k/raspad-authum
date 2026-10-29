@@ -2,7 +2,7 @@
  * settings — a module's own config file.
  *
  * addons/authum/modules/settings/configs/settings.cfg, flat `key = value` (found with
- * authum_host_config_path, which also reads an old modules/settings/ copy):
+ * authum_host_join_config_path, which also reads an old modules/settings/ copy):
  *   - defaults live in the C struct, so a missing file or key is fine;
  *   - plain keys come from one table (authum_cfg_apply_items);
  *   - a key with its own rules (`mode`, one of three words) is read after the
@@ -68,7 +68,7 @@ settings_apply_mode(authum_cfg_t *cfg)
     }
     for (i = 0u; i < sizeof g_settings_modes / sizeof g_settings_modes[0]; ++i)
     {
-        if (authum_cstr_eq(value, g_settings_modes[i], authum_bool_true))
+        if (authum_cstr_is_equal(value, g_settings_modes[i], authum_bool_true))
         {
             authum_cstr_copy(g_settings.mode, sizeof g_settings.mode, g_settings_modes[i]);
             return;
@@ -87,7 +87,7 @@ settings_load(void)
 
     g_settings = g_settings_defaults;
     /* modules/settings/configs/settings.cfg */
-    if (!authum_host_config_path(&g_settings_host, "settings.cfg", &path) ||
+    if (!authum_host_join_config_path(&g_settings_host, "settings.cfg", &path) ||
         !authum_cfg_open(&cfg, &path))
     {
         authum_logger_notice(&g_settings_log, "no settings.cfg, using defaults");
@@ -97,7 +97,7 @@ settings_load(void)
                            sizeof g_settings_items / sizeof g_settings_items[0]);
     settings_apply_mode(&cfg);
     authum_cfg_close(&cfg);
-    authum_logger_info(&g_settings_log, "loaded %s", authum_path_as_cstr(&path));
+    authum_logger_info(&g_settings_log, "loaded %s", authum_path_get_cstr(&path));
     return authum_bool_true;
 }
 

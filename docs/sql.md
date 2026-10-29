@@ -81,5 +81,5 @@ blindly retry non-idempotent writes. Threaded tasks use new connections, so an
 idle or failed previous task does not poison later tasks. No background task is
 silently replayed.
 
-General non-SQL jobs can use `authum_tasks_submit(authum_host_tasks(host), ...)`
+General non-SQL jobs can use `authum_tasks_submit(authum_host_get_tasks(host), ...)`
 under the same ownership and callback rules.

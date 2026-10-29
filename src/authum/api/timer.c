@@ -44,12 +44,13 @@ authum_timer_us(authum_float_t seconds)
 void
 authum_timer_sweep(void)
 {
-    authum_usize_t i = authum_array_size(lh_addr_of(authum_timers));
+    authum_usize_t i = authum_array_get_size(lh_addr_of(authum_timers));
 
     while (lh_math_gt(i, 0u))
     {
         i = lh_math_sub_one(i);
-        if ((lh_cast_reinterpret(authum_timer_t *, authum_array_at(lh_addr_of(authum_timers), i)))
+        if ((lh_cast_reinterpret(authum_timer_t *,
+                                 authum_array_get_at(lh_addr_of(authum_timers), i)))
                 ->dead)
         {
             authum_array_remove_at(lh_addr_of(authum_timers), i);
@@ -72,11 +73,11 @@ authum_timer_on_frame(const authum_char_t *name, authum_ptr payload, authum_ptr 
     authum_timers_clock = lh_math_add(authum_timers_clock, authum_timer_us(ev->frame_time));
     authum_timers_running = authum_bool_true;
     /* By index: a callback may add timers and the array may move. */
-    for (i = 0u; lh_math_lt(i, authum_array_size(lh_addr_of(authum_timers)));
+    for (i = 0u; lh_math_lt(i, authum_array_get_size(lh_addr_of(authum_timers)));
          i = lh_math_add_one(i))
     {
-        authum_timer_t *timer =
-            lh_cast_reinterpret(authum_timer_t *, authum_array_at(lh_addr_of(authum_timers), i));
+        authum_timer_t *timer = lh_cast_reinterpret(
+            authum_timer_t *, authum_array_get_at(lh_addr_of(authum_timers), i));
         authum_timer_fn fn;
         authum_ptr fn_user;
 
@@ -119,7 +120,7 @@ authum_timer_add(const authum_host_t *host, authum_float_t delay, authum_float_t
     if (!authum_timers_ready)
     {
         if (authum_null_eq(host) ||
-            !authum_array_init(lh_addr_of(authum_timers), authum_host_sandbox(host),
+            !authum_array_init(lh_addr_of(authum_timers), authum_host_get_sandbox(host),
                                sizeof(authum_timer_t)) ||
             !authum_host_subscribe(host, AUTHUM_EVENT_SERVER_FRAME, authum_timer_on_frame,
                                    authum_null))
@@ -148,11 +149,11 @@ authum_timer_remove(authum_u32_t id)
 {
     authum_usize_t i;
 
-    for (i = 0u; lh_math_lt(i, authum_array_size(lh_addr_of(authum_timers)));
+    for (i = 0u; lh_math_lt(i, authum_array_get_size(lh_addr_of(authum_timers)));
          i = lh_math_add_one(i))
     {
-        authum_timer_t *timer =
-            lh_cast_reinterpret(authum_timer_t *, authum_array_at(lh_addr_of(authum_timers), i));
+        authum_timer_t *timer = lh_cast_reinterpret(
+            authum_timer_t *, authum_array_get_at(lh_addr_of(authum_timers), i));
 
         if (lh_math_eq(timer->id, id) && !timer->dead)
         {
@@ -172,10 +173,10 @@ authum_timer_clear(void)
 {
     authum_usize_t i;
 
-    for (i = 0u; lh_math_lt(i, authum_array_size(lh_addr_of(authum_timers)));
+    for (i = 0u; lh_math_lt(i, authum_array_get_size(lh_addr_of(authum_timers)));
          i = lh_math_add_one(i))
     {
-        (lh_cast_reinterpret(authum_timer_t *, authum_array_at(lh_addr_of(authum_timers), i)))
+        (lh_cast_reinterpret(authum_timer_t *, authum_array_get_at(lh_addr_of(authum_timers), i)))
             ->dead = authum_bool_true;
     }
     if (!authum_timers_running)
@@ -185,20 +186,20 @@ authum_timer_clear(void)
 }
 
 authum_usize_t
-authum_timer_count(void)
+authum_timer_get_count(void)
 {
     authum_usize_t i;
     authum_usize_t count = 0u;
 
-    for (i = 0u; lh_math_lt(i, authum_array_size(lh_addr_of(authum_timers)));
+    for (i = 0u; lh_math_lt(i, authum_array_get_size(lh_addr_of(authum_timers)));
          i = lh_math_add_one(i))
     {
-        count = lh_math_add(
-            count,
-            (lh_cast_reinterpret(authum_timer_t *, authum_array_at(lh_addr_of(authum_timers), i)))
-                    ->dead
-                ? 0u
-                : 1u);
+        count = lh_math_add(count,
+                            (lh_cast_reinterpret(authum_timer_t *,
+                                                 authum_array_get_at(lh_addr_of(authum_timers), i)))
+                                    ->dead
+                                ? 0u
+                                : 1u);
     }
     return count;
 }

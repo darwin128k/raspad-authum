@@ -20,7 +20,7 @@
 AUTHUM_EXTERN_C_BEGIN
 
 authum_char_t
-authum_char_ascii_lower(authum_char_t c);
+authum_char_to_lower(authum_char_t c);
 
 /**
  * @brief Copy @p src into @p dst (NUL-terminated). Truncates if needed.
@@ -34,7 +34,7 @@ authum_cstr_copy(authum_char_t *dst, authum_usize_t dst_size, const authum_char_
  * @param ignore_case ::authum_bool_true → ASCII case-fold; false → exact.
  */
 authum_bool_t
-authum_cstr_eq(const authum_char_t *a, const authum_char_t *b, authum_bool_t ignore_case);
+authum_cstr_is_equal(const authum_char_t *a, const authum_char_t *b, authum_bool_t ignore_case);
 
 /**
  * @brief Parse a signed 32-bit decimal integer (optional leading `+`/`-`).

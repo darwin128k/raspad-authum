@@ -101,7 +101,7 @@ authum_sql_thread_query(const authum_host_t *host, const authum_sql_connection_t
     authum_usize_t strings_size = 0;
     authum_char_t *next;
     authum_usize_t i;
-    if (!c || !work || !authum_host_tasks(host))
+    if (!c || !work || !authum_host_get_tasks(host))
     {
         return authum_bool_false;
     }
@@ -152,7 +152,7 @@ authum_sql_thread_query(const authum_host_t *host, const authum_sql_connection_t
     job->work = work;
     job->complete = complete;
     job->user = user;
-    if (!authum_tasks_submit(authum_host_tasks(host), authum_sql_thread_run,
+    if (!authum_tasks_submit(authum_host_get_tasks(host), authum_sql_thread_run,
                              authum_sql_thread_finish, authum_sql_thread_free, job))
     {
         authum_sql_thread_free(job);

@@ -65,7 +65,7 @@ cvarguard_on_cvar_value(const authum_char_t *name, authum_ptr payload, authum_pt
         return authum_event_result_continue;
     }
     /* Someone else's question, or the player has left since. */
-    if (ev->request_id != authum_host_client_userid(&g_cvarguard_host, ev->client.index))
+    if (ev->request_id != authum_host_client_get_userid(&g_cvarguard_host, ev->client.index))
     {
         return authum_event_result_continue;
     }

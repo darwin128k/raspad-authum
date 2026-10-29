@@ -155,15 +155,15 @@ test_array(void)
         item.id = i;
         CHECK(authum_array_push(&arr, &item) != authum_null);
     }
-    CHECK(authum_array_size(&arr) == 100u);
-    at = authum_array_at(&arr, 42u);
+    CHECK(authum_array_get_size(&arr) == 100u);
+    at = authum_array_get_at(&arr, 42u);
     CHECK(at != authum_null && at->id == 42);
-    CHECK(authum_array_at(&arr, 100u) == authum_null);
+    CHECK(authum_array_get_at(&arr, 100u) == authum_null);
 
     CHECK(authum_array_remove_at(&arr, 0u));
-    at = authum_array_at(&arr, 0u);
+    at = authum_array_get_at(&arr, 0u);
     CHECK(at != authum_null && at->id == 1);
-    CHECK(authum_array_size(&arr) == 99u);
+    CHECK(authum_array_get_size(&arr) == 99u);
     CHECK(!authum_array_remove_at(&arr, 99u));
 
     at = authum_array_push(&arr, authum_null);

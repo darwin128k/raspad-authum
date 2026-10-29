@@ -57,10 +57,10 @@ main(void)
     assert(authum_logs_writer_start(&sink));
     strcpy(record.text, "owned text");
     assert(authum_logs_writer_submit(&record));
-    authum_i64_t start = authum_clock_monotonic_ms(authum_clock_host());
+    authum_i64_t start = authum_clock_get_monotonic_ms(authum_clock_host());
     while (!atomic_load(&entered))
     {
-        assert(authum_clock_monotonic_ms(authum_clock_host()) - start < 5000);
+        assert(authum_clock_get_monotonic_ms(authum_clock_host()) - start < 5000);
         pause_test();
     }
     /* Sink is blocked until THIS thread releases it. A waiting submit deadlocks. */

@@ -135,13 +135,13 @@ int
 main(void)
 {
     const authum_clock_t *clock = authum_clock_host();
-    authum_i64_t before = authum_clock_monotonic_ms(clock);
+    authum_i64_t before = authum_clock_get_monotonic_ms(clock);
     REQUIRE(before > 0);
     usleep(2000);
-    REQUIRE(authum_clock_monotonic_ms(clock) >= before);
-    REQUIRE(authum_clock_monotonic_ms(NULL) == 0);
+    REQUIRE(authum_clock_get_monotonic_ms(clock) >= before);
+    REQUIRE(authum_clock_get_monotonic_ms(NULL) == 0);
     authum_clock_t unset_clock = {.monotonic_ms = NULL};
-    REQUIRE(authum_clock_monotonic_ms(&unset_clock) == 0);
+    REQUIRE(authum_clock_get_monotonic_ms(&unset_clock) == 0);
 
     authum_thread_owner_t thread_owner;
     authum_threads_t threads;
@@ -184,14 +184,14 @@ main(void)
     strcpy(options.bind, "127.0.0.1");
     authum_http_server_t *server = authum_http_open(&service, &options, error, sizeof error);
     REQUIRE(server);
-    authum_usize_t memory = authum_http_memory_usage(&service, server);
+    authum_usize_t memory = authum_http_get_memory_usage(&service, server);
     REQUIRE(memory > 8192);
-    REQUIRE(authum_http_memory_usage(&foreign_service, server) == 0);
+    REQUIRE(authum_http_get_memory_usage(&foreign_service, server) == 0);
     authum_http_shutdown(&foreign_service, server);
     authum_http_close(&foreign_service, server);
-    REQUIRE(authum_http_memory_usage(&service, server) == memory);
+    REQUIRE(authum_http_get_memory_usage(&service, server) == memory);
     options.max_clients = 256;
-    REQUIRE(authum_http_memory_usage(&service, server) == memory);
+    REQUIRE(authum_http_get_memory_usage(&service, server) == memory);
 
     int client = socket(AF_INET, SOCK_STREAM, 0);
     REQUIRE(client >= 0);

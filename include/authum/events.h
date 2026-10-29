@@ -75,7 +75,7 @@ authum_events_publish(const authum_events_t *self, const authum_char_t *name, au
 
 /** @brief Intern a nonempty name of at most 63 characters; zero on failure. */
 authum_event_id_t
-authum_events_resolve(const authum_events_t *self, const authum_char_t *name);
+authum_events_get_id(const authum_events_t *self, const authum_char_t *name);
 
 /** @brief Subscribe by resolved ID, preserving the same deduplication and ownership rules. */
 authum_bool_t

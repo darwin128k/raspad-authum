@@ -52,11 +52,11 @@ welcome_on_put_in_server(const authum_char_t *name, authum_ptr payload, authum_p
     g_welcome_since[ev->index] = ev->game_time;
 
     /* The payload has name and auth id; the address comes from the engine facade. */
-    authum_host_client_get_address(&g_welcome_host, ev->index, address, sizeof address);
+    authum_host_client_copy_address(&g_welcome_host, ev->index, address, sizeof address);
     authum_logger_info(&g_welcome_log, "#%d %s <%s> from %s", ev->index, ev->name, ev->auth_id,
                        address);
 
-    authum_host_get_map_name(&g_welcome_host, map, sizeof map);
+    authum_host_copy_map_name(&g_welcome_host, map, sizeof map);
     snprintf(text, sizeof text, "Welcome, %s! You are playing %s.\n", ev->name, map);
     authum_host_client_print(&g_welcome_host, ev->index, authum_engine_print_chat, text);
     return authum_event_result_continue;
@@ -100,7 +100,7 @@ welcome_cmd_players(const authum_command_t *cmd, authum_ptr user)
 {
     authum_char_t player[64];
     authum_char_t auth_id[64];
-    authum_i32_t max = authum_host_max_clients(&g_welcome_host);
+    authum_i32_t max = authum_host_get_max_clients(&g_welcome_host);
     authum_i32_t index;
     authum_usize_t count = 0u;
 
@@ -111,10 +111,10 @@ welcome_cmd_players(const authum_command_t *cmd, authum_ptr user)
         {
             continue;
         }
-        authum_host_client_get_name(&g_welcome_host, index, player, sizeof player);
-        authum_host_client_get_auth_id(&g_welcome_host, index, auth_id, sizeof auth_id);
+        authum_host_client_copy_name(&g_welcome_host, index, player, sizeof player);
+        authum_host_client_copy_auth_id(&g_welcome_host, index, auth_id, sizeof auth_id);
         authum_command_printf(cmd, "  #%-2d userid %-4d %-24s %s", index,
-                              authum_host_client_userid(&g_welcome_host, index), player,
+                              authum_host_client_get_userid(&g_welcome_host, index), player,
                               auth_id);
         ++count;
     }

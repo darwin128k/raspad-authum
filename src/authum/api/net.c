@@ -122,13 +122,13 @@ authum_net_ipv4_collect(authum_bool_t external, authum_u32_t *out, authum_usize_
 }
 
 authum_usize_t
-authum_net_ipv4_external(authum_u32_t *out, authum_usize_t max)
+authum_net_ipv4_collect_external(authum_u32_t *out, authum_usize_t max)
 {
     return authum_net_ipv4_collect(authum_bool_true, out, max);
 }
 
 authum_usize_t
-authum_net_ipv4_internal(authum_u32_t *out, authum_usize_t max)
+authum_net_ipv4_collect_internal(authum_u32_t *out, authum_usize_t max)
 {
     return authum_net_ipv4_collect(authum_bool_false, out, max);
 }

@@ -64,7 +64,7 @@ authum_events_publish(const authum_events_t *self, const authum_char_t *name, au
 }
 
 authum_event_id_t
-authum_events_resolve(const authum_events_t *self, const authum_char_t *name)
+authum_events_get_id(const authum_events_t *self, const authum_char_t *name)
 {
     if (authum_null_eq(self) || !authum_events_ops_has_resolve(authum_events_get_ops(self)) ||
         authum_null_eq(name))

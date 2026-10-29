@@ -30,9 +30,10 @@ test_cmd_echo(const authum_command_t *cmd, authum_ptr user)
     authum_usize_t i;
 
     authum_unused(user);
-    for (i = 0u; i < authum_command_argc(cmd); ++i) {
-        authum_command_printf(cmd, "%s/%s:%s", authum_command_scope(cmd), authum_command_name(cmd),
-                              authum_command_argv(cmd, i));
+    for (i = 0u; i < authum_command_get_argc(cmd); ++i)
+    {
+        authum_command_printf(cmd, "%s/%s:%s", authum_command_get_scope(cmd),
+                              authum_command_get_name(cmd), authum_command_get_argv(cmd, i));
     }
     return authum_bool_true;
 }
@@ -41,7 +42,9 @@ authum_bool_t
 test_cmd_number(const authum_command_t *cmd, authum_ptr user)
 {
     authum_unused(user);
-    if (authum_command_argc(cmd) != 1u || !authum_command_arg_i32(cmd, 0u, &g_last_number)) {
+    if (authum_command_get_argc(cmd) != 1u ||
+        !authum_command_try_get_arg_i32(cmd, 0u, &g_last_number))
+    {
         return authum_bool_false;
     }
     authum_command_printf(cmd, "n=%d", (int)g_last_number);
@@ -62,7 +65,7 @@ test_commands_for(authum_ptr owner, const authum_char_t *scope)
 authum_bool_t
 test_cmd_self_remove(const authum_command_t *cmd, authum_ptr user)
 {
-    authum_commands_remove((const authum_commands_t *)user, authum_command_name(cmd));
+    authum_commands_remove((const authum_commands_t *)user, authum_command_get_name(cmd));
     authum_command_print(cmd, "bye");
     return authum_bool_true;
 }
@@ -201,14 +204,14 @@ test_command_accessors(void)
     cmd.argc = 2u;
     cmd.argv = args;
     cmd.print = test_print;
-    CHECK_STR(authum_command_argv(&cmd, 1u), "abc");
-    CHECK_STR(authum_command_argv(&cmd, 5u), "");
-    CHECK_STR(authum_command_scope(&cmd), "");
-    CHECK(authum_command_arg_i32(&cmd, 0u, &n) && n == 12);
-    CHECK(!authum_command_arg_i32(&cmd, 1u, &n));
-    CHECK(!authum_command_arg_i32(&cmd, 2u, &n));
-    CHECK(authum_command_argc(authum_null) == 0u);
-    CHECK_STR(authum_command_argv(authum_null, 0u), "");
+    CHECK_STR(authum_command_get_argv(&cmd, 1u), "abc");
+    CHECK_STR(authum_command_get_argv(&cmd, 5u), "");
+    CHECK_STR(authum_command_get_scope(&cmd), "");
+    CHECK(authum_command_try_get_arg_i32(&cmd, 0u, &n) && n == 12);
+    CHECK(!authum_command_try_get_arg_i32(&cmd, 1u, &n));
+    CHECK(!authum_command_try_get_arg_i32(&cmd, 2u, &n));
+    CHECK(authum_command_get_argc(authum_null) == 0u);
+    CHECK_STR(authum_command_get_argv(authum_null, 0u), "");
     authum_command_print(authum_null, "ignored");
 }
 

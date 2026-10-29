@@ -25,7 +25,7 @@
  * A package or an update replaces the image and `lang/`; it never touches
  * `configs/`, `data/` or `logs/`.
  *
- * Build file paths with ::authum_env_config_path and ::authum_env_data_path
+ * Build file paths with ::authum_env_join_config_path and ::authum_env_join_data_path
  * (or their `authum_host_*` shortcuts).
  */
 
@@ -59,48 +59,48 @@ typedef struct authum_env authum_env_t;
 AUTHUM_EXTERN_C_BEGIN
 
 const authum_path_t *
-authum_env_game(const authum_env_t *env);
+authum_env_get_game_path(const authum_env_t *env);
 
 const authum_path_t *
-authum_env_models(const authum_env_t *env);
+authum_env_get_models_path(const authum_env_t *env);
 
 const authum_path_t *
-authum_env_sprites(const authum_env_t *env);
+authum_env_get_sprites_path(const authum_env_t *env);
 
 const authum_path_t *
-authum_env_addons(const authum_env_t *env);
+authum_env_get_addons_path(const authum_env_t *env);
 
 const authum_path_t *
-authum_env_authum(const authum_env_t *env);
+authum_env_get_authum_path(const authum_env_t *env);
 
 const authum_path_t *
-authum_env_modules(const authum_env_t *env);
+authum_env_get_modules_path(const authum_env_t *env);
 
 const authum_path_t *
-authum_env_module(const authum_env_t *env);
+authum_env_get_module_path(const authum_env_t *env);
 
 const authum_path_t *
-authum_env_module_config(const authum_env_t *env);
+authum_env_get_module_config_path(const authum_env_t *env);
 
 const authum_path_t *
-authum_env_module_lang(const authum_env_t *env);
+authum_env_get_module_lang_path(const authum_env_t *env);
 
 const authum_path_t *
-authum_env_module_data(const authum_env_t *env);
+authum_env_get_module_data_path(const authum_env_t *env);
 
 /**
  * `modules/<module>/configs/<leaf>` into @p out — a config file
  * (`qproto.cfg`, `whitelist.ini`). True when the file exists.
  */
 authum_bool_t
-authum_env_config_path(const authum_env_t *env, const authum_char_t *leaf, authum_path_t *out);
+authum_env_join_config_path(const authum_env_t *env, const authum_char_t *leaf, authum_path_t *out);
 
 /**
  * `modules/<module>/data/<leaf>` into @p out without filesystem changes.
  * True when the path could be built; directories and files may not exist.
  */
 authum_bool_t
-authum_env_data_path(const authum_env_t *env, const authum_char_t *leaf, authum_path_t *out);
+authum_env_join_data_path(const authum_env_t *env, const authum_char_t *leaf, authum_path_t *out);
 
 AUTHUM_EXTERN_C_END
 

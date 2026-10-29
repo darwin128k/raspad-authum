@@ -247,38 +247,38 @@ authum_console_run(authum_usize_t argc, const authum_char_t *const *argv,
     const authum_char_t *arg;
 
     if (lh_math_eq(argc, 0u) || authum_null_eq(argv) ||
-        authum_cstr_eq(argv[0], "list", authum_bool_true) ||
-        authum_cstr_eq(argv[0], "status", authum_bool_true))
+        authum_cstr_is_equal(argv[0], "list", authum_bool_true) ||
+        authum_cstr_is_equal(argv[0], "status", authum_bool_true))
     {
         authum_console_list(print, out);
         return;
     }
-    if (authum_cstr_eq(argv[0], "help", authum_bool_true))
+    if (authum_cstr_is_equal(argv[0], "help", authum_bool_true))
     {
         authum_console_help(print, out);
         return;
     }
-    if (authum_cstr_eq(argv[0], "version", authum_bool_true))
+    if (authum_cstr_is_equal(argv[0], "version", authum_bool_true))
     {
         authum_console_version(print, out);
         return;
     }
-    if (authum_cstr_eq(argv[0], "info", authum_bool_true))
+    if (authum_cstr_is_equal(argv[0], "info", authum_bool_true))
     {
         authum_console_info(print, out, lh_math_gt(argc, 1u) ? argv[1] : authum_null);
         return;
     }
-    if (authum_cstr_eq(argv[0], "load", authum_bool_true))
+    if (authum_cstr_is_equal(argv[0], "load", authum_bool_true))
     {
         authum_console_load(print, out, lh_math_gt(argc, 1u) ? argv[1] : authum_null);
         return;
     }
-    if (authum_cstr_eq(argv[0], "unload", authum_bool_true))
+    if (authum_cstr_is_equal(argv[0], "unload", authum_bool_true))
     {
         authum_console_unload(print, out, lh_math_gt(argc, 1u) ? argv[1] : authum_null);
         return;
     }
-    if (authum_cstr_eq(argv[0], "reload", authum_bool_true))
+    if (authum_cstr_is_equal(argv[0], "reload", authum_bool_true))
     {
         authum_console_reload(print, out, lh_math_gt(argc, 1u) ? argv[1] : authum_null);
         return;
@@ -294,7 +294,7 @@ authum_console_run(authum_usize_t argc, const authum_char_t *const *argv,
     {
         return;
     }
-    if (authum_cstr_eq(name, "help", authum_bool_true) &&
+    if (authum_cstr_is_equal(name, "help", authum_bool_true) &&
         lh_math_ne(authum_commands_host_print_help(scope, print, out), 0u))
     {
         return;

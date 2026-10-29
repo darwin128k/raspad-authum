@@ -22,7 +22,7 @@ i386, glibc). Nothing else: engine calls do not go through the sandbox.
 ## 1. Allocate from the module sandbox
 
 ```c
-const authum_sandbox_t *sb = authum_host_sandbox(host);
+const authum_sandbox_t *sb = authum_host_get_sandbox(host);
 
 mymod_state_t *state = authum_sandbox_alloc(sb, sizeof *state); /* zeroed */
 mymod_conn_t *conn = authum_sandbox_alloc_under(sb, state, sizeof *conn);
@@ -53,7 +53,7 @@ sandbox and drop it in one call:
 ```c
 authum_sandbox_t map_sb;
 
-authum_sandbox_open(&map_sb, authum_host_sandbox(host));  /* on map start */
+authum_sandbox_open(&map_sb, authum_host_get_sandbox(host));  /* on map start */
 /* … allocate map data from &map_sb … */
 authum_sandbox_close(&map_sb);                            /* on map end */
 ```
@@ -74,9 +74,9 @@ a sandbox:
 ```c
 authum_array_t names;
 
-authum_array_init(&names, authum_host_sandbox(host), sizeof(mymod_name_t));
+authum_array_init(&names, authum_host_get_sandbox(host), sizeof(mymod_name_t));
 mymod_name_t *n = authum_array_push(&names, authum_null);   /* zeroed item */
-mymod_name_t *first = authum_array_at(&names, 0u);
+mymod_name_t *first = authum_array_get_at(&names, 0u);
 authum_array_remove_at(&names, 0u);                         /* keeps order */
 ```
 

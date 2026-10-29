@@ -12,14 +12,14 @@ Headers: `<authum/path.h>`, `<authum/env.h>`, `<authum/host.h>`.
 
 | Getter | Typical use |
 |--------|-------------|
-| `authum_host_env_game` | Game directory (e.g. `cstrike`) |
+| `authum_host_get_game_path` | Game directory (e.g. `cstrike`) |
 | `authum_host_env_addons` | `…/addons` |
 | `authum_host_env_authum` | `…/addons/authum` |
 | `authum_host_env_modules` | `…/addons/authum/modules` |
-| `authum_host_env_module` | `…/modules/<module>` — the module's own folder |
-| `authum_host_env_module_config` | `…/modules/<module>/configs` — the admin's |
-| `authum_host_env_module_lang` | `…/modules/<module>/lang` — translations |
-| `authum_host_env_module_data` | `…/modules/<module>/data` — what the module writes |
+| `authum_host_get_module_path` | `…/modules/<module>` — the module's own folder |
+| `authum_host_get_module_config_path` | `…/modules/<module>/configs` — the admin's |
+| `authum_host_get_module_lang_path` | `…/modules/<module>/lang` — translations |
+| `authum_host_get_module_data_path` | `…/modules/<module>/data` — what the module writes |
 | `authum_host_env_models` / `_sprites` | Content trees when needed |
 
 Always via `authum_host_*` — never `host->env->…`.
@@ -39,20 +39,20 @@ separators). If that fails, engine game-dir fallback may still fill `game`.
 
 ```c
 authum_path_t path;
-authum_path_join(&path, authum_host_env_module_data(host), "cache.bin");
-/* fopen(authum_path_as_cstr(&path), "rb") */
+authum_path_join(&path, authum_host_get_module_data_path(host), "cache.bin");
+/* fopen(authum_path_get_cstr(&path), "rb") */
 ```
 
 - Capacity: `authum_path_capacity` (see `<authum/path/capacity.h>`).
 - Module joins insert `/` (`authum_path_sep`); that still works with `fopen` on
   Windows HLDS.
-- `authum_path_as_cstr` never returns null (empty → `""`);
-  `authum_path_as_cstr_or_null` returns null when empty.
+- `authum_path_get_cstr` never returns null (empty → `""`);
+  `authum_path_get_cstr_or_null` returns null when empty.
 
 ---
 
 ## With config / logging
 
-For files use `authum_host_config_path(host, "qproto.cfg", &path)`
+For files use `authum_host_join_config_path(host, "qproto.cfg", &path)`
 (`modules/qproto/configs/qproto.cfg`; `whitelist.ini` the same way) and
-`authum_host_data_path(host, "bans.db", &path)` (`modules/<module>/data/bans.db`). Full cfg workflow: [cfg.md](cfg.md). Logger sinks: [logging.md](logging.md).
+`authum_host_join_data_path(host, "bans.db", &path)` (`modules/<module>/data/bans.db`). Full cfg workflow: [cfg.md](cfg.md). Logger sinks: [logging.md](logging.md).

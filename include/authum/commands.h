@@ -48,7 +48,7 @@ authum_commands_remove(const authum_commands_t *self, const authum_char_t *name)
 
 /** The module word commands are added under (`qproto`), or null. */
 const authum_char_t *
-authum_commands_scope(const authum_commands_t *self);
+authum_commands_get_scope(const authum_commands_t *self);
 
 AUTHUM_EXTERN_C_END
 

@@ -40,7 +40,7 @@ scoreboard_on_changed(const authum_char_t *name, authum_ptr payload, authum_ptr 
     {
         return authum_event_result_continue;
     }
-    authum_host_client_get_name(&g_scoreboard_host, ev->index, player, sizeof player);
+    authum_host_client_copy_name(&g_scoreboard_host, ev->index, player, sizeof player);
     snprintf(text, sizeof text, "%s: %+d, now %d points\n", player, ev->delta, ev->score);
     authum_host_client_print(&g_scoreboard_host, 0, authum_engine_print_chat, text); /* 0 = all */
     return authum_event_result_continue;
@@ -56,7 +56,7 @@ scoreboard_cmd_show(const authum_command_t *cmd, authum_ptr user)
     q.size = sizeof q;
     q.found = authum_bool_false;
     q.score = 0;
-    if (!authum_command_arg_i32(cmd, 0u, &q.index))
+    if (!authum_command_try_get_arg_i32(cmd, 0u, &q.index))
     {
         return authum_bool_false;
     }

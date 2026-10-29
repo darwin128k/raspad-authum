@@ -98,10 +98,10 @@ cstrike/addons/authum/
 `addons/authum/modules/<module>/logs/YYYY-MM-DD.log`, levels in
 `addons/authum/configs/authum.cfg` ([logging.md](logging.md)).
 
-Paths: `authum_host_config_path(host, "example.cfg", &path)` →
-`modules/example/configs/example.cfg`; `authum_host_data_path(host,
+Paths: `authum_host_join_config_path(host, "example.cfg", &path)` →
+`modules/example/configs/example.cfg`; `authum_host_join_data_path(host,
 "example.db", &path)` → `modules/example/data/example.db` (path only);
-translations in `authum_host_env_module_lang(host)`.
+translations in `authum_host_get_module_lang_path(host)`.
 
 ---
 
@@ -116,34 +116,34 @@ survives Authum's internal changes.
 | Accessor | Purpose |
 |----------|---------|
 | `authum_logger_*` / `authum_host_log_line` | the module's log — [logging.md](logging.md) |
-| `authum_host_engine` / game dir / print / command | engine facade (no HLSDK) |
-| `authum_host_engine_funcs` / `authum_host_globals` | escape hatch → HLSDK types |
-| `authum_host_env` / `authum_host_env_module` / `_module_config` / `_module_lang` / `_module_data` / `_game` / … | `authum_path_t` roots |
-| `authum_host_config_path` / `_data_path` | a module's files in its sandbox |
-| `authum_host_crypto` | Rijndael + SHA (`<authum/crypto.h>`) |
-| `authum_host_sandbox` | Module memory freed at unload — [sandbox.md](sandbox.md) |
-| `authum_host_events` / `authum_host_subscribe` / `authum_host_publish` | Event bus — [events.md](events.md) |
+| `authum_host_get_engine` / game dir / print / command | engine facade (no HLSDK) |
+| `authum_host_get_engine_funcs` / `authum_host_get_globals` | escape hatch → HLSDK types |
+| `authum_host_get_env` / `authum_host_get_module_path` / `_module_config` / `_module_lang` / `_module_data` / `_game` / … | `authum_path_t` roots |
+| `authum_host_join_config_path` / `_data_path` | a module's files in its sandbox |
+| `authum_host_get_crypto` | Rijndael + SHA (`<authum/crypto.h>`) |
+| `authum_host_get_sandbox` | Module memory freed at unload — [sandbox.md](sandbox.md) |
+| `authum_host_get_events` / `authum_host_subscribe` / `authum_host_publish` | Event bus — [events.md](events.md) |
 | `authum_host_kick` | `kick #userid "reason"` (sanitized) |
-| `authum_host_max_clients` / `_game_time` / `_get_map_name` | current map |
-| `authum_host_cvar_get` / `_cvar_set` | server cvars |
+| `authum_host_get_max_clients` / `_game_time` / `_get_map_name` | current map |
+| `authum_host_cvar_copy` / `_cvar_set` | server cvars |
 | `authum_host_client_is_connected` / `_userid` / `_index_by_userid` | player slots (entity index 1 … maxClients, as in `authum.client.*`) |
-| `authum_host_client_get_name` / `_auth_id` / `_address` / `_info` | who the player is (`_info` reads `setinfo` keys) |
+| `authum_host_client_copy_name` / `_auth_id` / `_address` / `_info` | who the player is (`_info` reads `setinfo` keys) |
 | `authum_host_client_print` | text to one player or everyone (`authum_engine_print_console` / `_center` / `_chat`) |
 | `authum_host_client_command` | run a command in the player's console |
 | `authum_host_query_cvar` | Ask a client for a cvar; the answer is `authum.client.cvar_value` — [events.md](events.md) |
 | `authum_host_client_chat` | colored chat line (`SayText`: `\x01` default, `\x04` green, `\x03` team color) |
-| `authum_host_client_get_stats` / `_set_info` | ping and loss; set a `setinfo` key |
+| `authum_host_client_try_get_stats` / `_set_info` | ping and loss; set a `setinfo` key |
 | `authum_host_client_is_alive` / `_is_bot` | state of a player slot |
 | `authum_host_cvar_register` / `_cvar_get_i32` / `_cvar_get_float` | the module's own server cvars (`mymod_enabled 1` in server.cfg) |
-| `authum_host_message_id` / `_message_begin` / `_write_*` / `_end` | send any user message — `<authum/engine/message.h>` |
+| `authum_host_message_get_id` / `_message_begin` / `_write_*` / `_end` | send any user message — `<authum/engine/message.h>` |
 | `authum_host_precache_model` / `_sound` / `_generic` | from an `authum.server.precache` handler only |
 | `authum_host_entity_*` | entity fields: health, frags, flags, origin, … — `<authum/engine/entity.h>` |
 | `authum_timer_add` / `_remove` | "in 5 s", "every 30 s" — `<authum/timer.h>` |
 | `authum_host_command_add[_all]` | `authum <module> <name>` console / RCON commands — [commands.md](commands.md) |
 
 Paths in `env` are absolute (current volume, native separators). Configs:
-`authum_host_config_path`; data the module writes: `authum_host_data_path`;
-translations: `authum_host_env_module_lang`. `authum_path_join` appends a leaf.
+`authum_host_join_config_path`; data the module writes: `authum_host_join_data_path`;
+translations: `authum_host_get_module_lang_path`. `authum_path_join` appends a leaf.
 
 **Config:** defaults on `g_mod_config = { … }`, then
 `authum_cfg_apply_items` from an `authum_cfg_item_t[]`. Keys that need a custom
@@ -164,11 +164,11 @@ Never touch `host->…` fields — only `authum_host_*` getters/setters.
 
 ```c
 authum_char_t game_dir[256];
-authum_host_get_game_dir(host, game_dir, sizeof game_dir);
+authum_host_copy_game_dir(host, game_dir, sizeof game_dir);
 authum_host_server_print(host, "[mod] hello\n");
 authum_host_server_command(host, "kick #1\n");
 
-const authum_crypto_t *crypto = authum_host_crypto(host);
+const authum_crypto_t *crypto = authum_host_get_crypto(host);
 authum_crypto_rijndael_t ctx;
 authum_crypto_rijndael_init(crypto, &ctx, key, 32, 0, 0, 32,
                             authum_crypto_rijndael_mode_ecb);
@@ -222,7 +222,7 @@ destinations, including journals. Details and construction: [logging.md](logging
 - [ ] `#include <authum/client.h>` (no lh in a pure client)
 - [ ] `authum_module_info.abi` = `AUTHUM_MODULE_ABI` (`1.0.0`); host kept with `authum_host_copy`, non-null `name`
 - [ ] `authum_module_api` exported; `start` returns `authum_bool_false` only on hard failure
-- [ ] Listed in `configs/modules.list`; everything in `modules/<name>/`: `<name>.so`, `configs/`, `lang/`, `data/` (via `authum_host_config_path` / `_data_path`)
+- [ ] Listed in `configs/modules.list`; everything in `modules/<name>/`: `<name>.so`, `configs/`, `lang/`, `data/` (via `authum_host_join_config_path` / `_data_path`)
 - [ ] Folder `foo` → `foo.so` / `foo.dll`
 - [ ] Not a `plugins.ini` entry
 - [ ] Logs via host facade

@@ -60,7 +60,7 @@ mymod_cmd_status(const authum_command_t *cmd, authum_ptr user)
     authum_i32_t slot;
 
     (void)user;
-    if (authum_command_argc(cmd) != 1u || !authum_command_arg_i32(cmd, 0u, &slot)) {
+    if (authum_command_get_argc(cmd) != 1u || !authum_command_try_get_arg_i32(cmd, 0u, &slot)) {
         return authum_bool_false; /* Authum prints the usage line */
     }
     authum_command_printf(cmd, "slot %d: ok", (int)slot);
@@ -94,10 +94,10 @@ name fails.
 
 | Call | Gives |
 |------|-------|
-| `authum_command_argc(cmd)` | Arguments after the command name |
-| `authum_command_argv(cmd, i)` | Argument `i` (`""` when out of range) |
-| `authum_command_arg_i32(cmd, i, &out)` | Argument `i` as a number |
-| `authum_command_scope(cmd)` / `_name(cmd)` | `qproto` / `info` |
+| `authum_command_get_argc(cmd)` | Arguments after the command name |
+| `authum_command_get_argv(cmd, i)` | Argument `i` (`""` when out of range) |
+| `authum_command_try_get_arg_i32(cmd, i, &out)` | Argument `i` as a number |
+| `authum_command_get_scope(cmd)` / `_name(cmd)` | `qproto` / `info` |
 | `authum_command_print(cmd, line)` | One line (newline added) |
 | `authum_command_printf(cmd, fmt, ...)` | Formatted line, up to 512 chars |
 
@@ -108,7 +108,7 @@ arrive as one argument.
 
 - Commands are owned by the module that added them and dropped by the host
   after its `stop` (or a failed `start`); nothing to remove by hand.
-- `authum_commands_remove(authum_host_commands(host), "name")` removes one
+- `authum_commands_remove(authum_host_get_commands(host), "name")` removes one
   early; a handler may remove its own command.
 - `authum` built-ins (`list`, `help`, `version`) win over a module named the
   same.

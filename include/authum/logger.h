@@ -162,7 +162,7 @@ authum_logger_level_parse(const authum_char_t *name, authum_logger_level_t *out)
 
 /** Lower-case PSR-3 name of @p level (`"warning"`), `"?"` when out of range. */
 const authum_char_t *
-authum_logger_level_name(authum_logger_level_t level);
+authum_logger_level_get_name(authum_logger_level_t level);
 
 AUTHUM_EXTERN_C_END
 

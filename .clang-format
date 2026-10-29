@@ -2,7 +2,7 @@
 AllowShortEnumsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: None
 BreakBeforeBraces: Allman
-AlwaysBreakAfterReturnType: All
+BreakAfterReturnType: All
 ColumnLimit: 100
 InsertBraces: true
 IndentPPDirectives: AfterHash

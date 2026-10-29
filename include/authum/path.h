@@ -44,13 +44,13 @@ authum_path_is_empty(const authum_path_t *self);
  * @brief C string view of @p self. Never null — empty path yields `""`.
  */
 const authum_char_t *
-authum_path_as_cstr(const authum_path_t *self);
+authum_path_get_cstr(const authum_path_t *self);
 
 /**
- * @brief Like ::authum_path_as_cstr, but null when @p self is null/empty.
+ * @brief Like ::authum_path_get_cstr, but null when @p self is null/empty.
  */
 const authum_char_t *
-authum_path_as_cstr_or_null(const authum_path_t *self);
+authum_path_get_cstr_or_null(const authum_path_t *self);
 
 authum_bool_t
 authum_path_set_cstr(authum_path_t *self, const authum_char_t *text);
@@ -59,7 +59,7 @@ authum_bool_t
 authum_path_assign(authum_path_t *self, const authum_path_t *other);
 
 authum_bool_t
-authum_path_ends_with_sep(const authum_path_t *self);
+authum_path_has_trailing_sep(const authum_path_t *self);
 
 /**
  * @brief Write @p dir + `/` + @p leaf into @p self (NUL-terminated).
@@ -77,7 +77,7 @@ authum_path_join(authum_path_t *self, const authum_path_t *dir, const authum_cha
  * `/a` → `/`, `C:/a` → `C:/`. Fails when there is no parent segment.
  */
 authum_bool_t
-authum_path_parent(authum_path_t *self, const authum_path_t *path);
+authum_path_assign_parent(authum_path_t *self, const authum_path_t *path);
 
 /** Create directory @p self (one level) if missing; true when it is a directory. */
 authum_bool_t

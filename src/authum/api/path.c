@@ -24,7 +24,7 @@ authum_path_is_empty(const authum_path_t *self)
 }
 
 const authum_char_t *
-authum_path_as_cstr(const authum_path_t *self)
+authum_path_get_cstr(const authum_path_t *self)
 {
     if (authum_null_eq(self) || lh_math_eq(self->size, 0u))
     {
@@ -34,7 +34,7 @@ authum_path_as_cstr(const authum_path_t *self)
 }
 
 const authum_char_t *
-authum_path_as_cstr_or_null(const authum_path_t *self)
+authum_path_get_cstr_or_null(const authum_path_t *self)
 {
     if (authum_null_eq(self) || lh_math_eq(self->size, 0u))
     {
@@ -93,7 +93,7 @@ authum_path_assign(authum_path_t *self, const authum_path_t *other)
 }
 
 authum_bool_t
-authum_path_ends_with_sep(const authum_path_t *self)
+authum_path_has_trailing_sep(const authum_path_t *self)
 {
     authum_char_t c;
 
@@ -127,7 +127,7 @@ authum_path_join(authum_path_t *self, const authum_path_t *dir, const authum_cha
 
     na = dir->size;
     nb = lh_cast_static(authum_usize_t, strlen(leaf));
-    slash = authum_path_ends_with_sep(dir);
+    slash = authum_path_has_trailing_sep(dir);
     need = lh_math_add(lh_math_add(na, (slash ? 0u : 1u)), nb);
     if (lh_math_ge(need, lh_cast_static(authum_usize_t, authum_path_capacity)))
     {
@@ -150,7 +150,7 @@ authum_path_join(authum_path_t *self, const authum_path_t *dir, const authum_cha
 }
 
 authum_bool_t
-authum_path_parent(authum_path_t *self, const authum_path_t *path)
+authum_path_assign_parent(authum_path_t *self, const authum_path_t *path)
 {
     authum_usize_t end;
     authum_usize_t cut;
@@ -247,7 +247,7 @@ authum_path_ensure_dir(const authum_path_t *self)
         return authum_bool_false;
     }
     lh_fs_path_init(lh_addr_of(dir));
-    lh_str_view_init(lh_addr_of(text), authum_path_as_cstr(self));
+    lh_str_view_init(lh_addr_of(text), authum_path_get_cstr(self));
     lh_fs_path_set(lh_addr_of(dir), text, lh_os_system_fs_path_style_native());
     ok = lh_os_fs_dir_create(lh_addr_of(dir));
     lh_fs_path_deinit(lh_addr_of(dir));

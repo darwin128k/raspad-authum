@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Independent private-file, host-copy and console settings, and per-channel
   retention. Worker-side cleanup runs at registration/reload and every 24
   hours, including idle channels, without deleting open files or invalid dates.
-- Managed thread service (ABI 1.1): `authum_host_threads(host)` starts, stops
+- Managed thread service (ABI 1.1): `authum_host_get_threads(host)` starts, stops
   and joins long-lived workers per module owner. The host wakes and joins the
   workers of an unloading module before calling its stop callback.
 - Shared HTTP service and monotonic clock (ABI 1.2): owner-bound static-file
@@ -40,6 +40,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Public API names say what they return (99 functions): values are `get_` / `is_` /
+  `has_` (`authum_host_get_engine`, `authum_array_get_size`, `authum_command_get_argv`,
+  `authum_env_get_game_path`, `authum_events_get_id`, `authum_clock_get_monotonic_ms`,
+  `authum_logger_buffer_is_active`, ...), results written into the caller's buffer are
+  `copy_` (`authum_host_client_copy_name`, `_copy_auth_id`, `_copy_info`,
+  `authum_engine_copy_map_name`, `authum_cfg_copy_cstr`, `authum_json_object_copy_cstr`),
+  scalars through a pointer with a success flag are `try_get_`
+  (`authum_host_entity_try_get_float`, `authum_command_try_get_arg_i32`,
+  `authum_json_object_try_get_i32`; `authum_json_object_get_i32` takes the fallback),
+  path builders are `join_` (`authum_host_join_config_path`), and
+  `authum_cfg_open_file`, `authum_cstr_is_equal`, `authum_char_to_lower`,
+  `authum_crypto_ed25519_is_valid` / `_create_key_pair`, `authum_path_get_cstr` /
+  `_has_trailing_sep` / `_assign_parent`, `authum_net_ipv4_collect_external` /
+  `_collect_internal`. `.clang-format` matches LH's.
 - Thread, task and logging workers use LH OS primitives behind the existing module API.
 
 - HTTP request parsing now uses LH's portable parser; removed PicoHTTPParser.
@@ -144,7 +158,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   standalone image cannot be opened as its own child module.
 - Windows build (MinGW): `authum_logger_ensure_dir` used the POSIX two-argument
   `mkdir`; the symbol test looked for `libc.so.6`, which exists only on Linux.
-- `authum_net_ipv4_internal` / `_external` list the interfaces on Windows too
+- `authum_net_ipv4_collect_internal` / `_external` list the interfaces on Windows too
   (they were always empty there).
 - `authum_engine_query_cvar` had a raw NUL byte in a character literal, so git
   took `src/client/engine.c` for a binary file.
@@ -163,8 +177,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `configs/modules.list`, `logs/`. `authum_env_t` starts with `size`;
   `module` is the module's folder, with `module_config`, `module_lang`,
   `module_data` (created at load); `authum_host_t.module_dir` is gone.
-  `authum_host_config_path` → `modules/<name>/configs/<file>`,
-  `authum_host_data_path` → `modules/<name>/data/<file>`. A
+  `authum_host_join_config_path` → `modules/<name>/configs/<file>`,
+  `authum_host_join_data_path` → `modules/<name>/data/<file>`. A
   `modules.list` entry `qproto` loads `modules/qproto/qproto.so`; without
   the list every module folder is loaded. The release zip ships `configs/`.
 - Everything authum_client asks of the OS (directories, page protection,
@@ -236,7 +250,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Engine facade, more of what modules took from raw `engine_funcs`:
-  user messages (`authum_engine_message_id` / `_begin` / `_write_byte` …
+  user messages (`authum_engine_message_get_id` / `_begin` / `_write_byte` …
   `_write_string` / `_end`, destinations and argument kinds in
   `<authum/engine/message.h>`), `authum_engine_client_chat` (colored chat
   through the game's `SayText`), `cvar_register` (a module's own server cvar,
@@ -305,7 +319,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `resume`: 5-byte `jmp rel32` detour on 32-bit x86 for engine-thread hooks
   (was `qproto_hook_patch_jmp` / `restore_bytes`). Client-side, no ABI bump.
 - `<authum/net.h>` — this machine's IPv4 addresses from its interfaces:
-  `authum_net_ipv4_external` (public) and `authum_net_ipv4_internal`
+  `authum_net_ipv4_collect_external` (public) and `authum_net_ipv4_collect_internal`
   (LAN / NAT side), plus `is_external` / `is_loopback` / `format`. For HLDS
   bound to every interface, where the engine only knows `0.0.0.0`.
   Linux only; elsewhere the lists are empty. Client-side, no ABI bump.
@@ -370,7 +384,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `<authum/path.h>` — `authum_path_t` (fixed capacity), join / parent / as_cstr
 - `authum_client` static lib + `<authum/cfg.h>` — flat `key = value`
   (`get_*` / `apply_*` / `apply_items`); modules link the lib, not Authum sources
-- `<authum/cstr.h>` — copy / `authum_cstr_eq(..., ignore_case)` / parse bool·i32·u32
+- `<authum/cstr.h>` — copy / `authum_cstr_is_equal(..., ignore_case)` / parse bool·i32·u32
 - `authum_host_t.module_dir` — deprecated C string of `env->module`
 - Docs: [docs/cfg.md](docs/cfg.md) (defaults + `apply_items`, custom keys outside
   the table), [docs/path.md](docs/path.md) (env roots / join)

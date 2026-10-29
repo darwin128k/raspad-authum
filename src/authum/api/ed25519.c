@@ -9,9 +9,10 @@
 #include <lh/crypto/wipe.h>
 
 void
-authum_crypto_ed25519_key_pair(authum_byte_t secret_key[AUTHUM_CRYPTO_ED25519_SECRET_KEY_SIZE],
-                               authum_byte_t public_key[AUTHUM_CRYPTO_ED25519_PUBLIC_KEY_SIZE],
-                               authum_byte_t seed[AUTHUM_CRYPTO_ED25519_SEED_SIZE])
+authum_crypto_ed25519_create_key_pair(
+    authum_byte_t secret_key[AUTHUM_CRYPTO_ED25519_SECRET_KEY_SIZE],
+    authum_byte_t public_key[AUTHUM_CRYPTO_ED25519_PUBLIC_KEY_SIZE],
+    authum_byte_t seed[AUTHUM_CRYPTO_ED25519_SEED_SIZE])
 {
     lh_crypto_ed25519_key_pair(secret_key, public_key, seed);
 }
@@ -25,9 +26,10 @@ authum_crypto_ed25519_sign(authum_byte_t signature[AUTHUM_CRYPTO_ED25519_SIGNATU
 }
 
 authum_bool_t
-authum_crypto_ed25519_check(const authum_byte_t signature[AUTHUM_CRYPTO_ED25519_SIGNATURE_SIZE],
-                            const authum_byte_t public_key[AUTHUM_CRYPTO_ED25519_PUBLIC_KEY_SIZE],
-                            const authum_byte_t *message, authum_usize_t size)
+authum_crypto_ed25519_is_valid(
+    const authum_byte_t signature[AUTHUM_CRYPTO_ED25519_SIGNATURE_SIZE],
+    const authum_byte_t public_key[AUTHUM_CRYPTO_ED25519_PUBLIC_KEY_SIZE],
+    const authum_byte_t *message, authum_usize_t size)
 {
     return lh_crypto_ed25519_check(signature, public_key, message, lh_cast_static(lh_usize_t, size))
                ? authum_bool_true

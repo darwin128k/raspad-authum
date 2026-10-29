@@ -98,7 +98,7 @@ log_complete(void *user)
 {
     log_job_t *job = user;
     CHECK(thread_id() == main_thread);
-    CHECK(authum_logger_buffer_dropped(&job->buffer) == 1);
+    CHECK(authum_logger_buffer_get_dropped(&job->buffer) == 1);
     authum_logger_buffer_flush(&job->buffer);
     CHECK(saw_auto_message);
     ++delivered;
@@ -135,7 +135,7 @@ test_buffer(void)
     CHECK(atomic_load(&written) == 3);
     CHECK(!atomic_load(&wrong_thread));
     CHECK(strstr(last_line, "1 background log messages dropped"));
-    CHECK(authum_logger_buffer_dropped(&job.buffer) == 0);
+    CHECK(authum_logger_buffer_get_dropped(&job.buffer) == 0);
     CHECK(authum_logger_buffer_init(&nested, &job.logger, 1));
     previous = authum_logger_buffer_begin(&job.buffer);
     authum_logger_info(&job.logger, "outer");

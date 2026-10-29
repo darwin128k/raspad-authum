@@ -308,9 +308,9 @@ TEST(authum_events, numeric_api_shares_registry_and_deduplicates_string_subscrip
 {
     int owner;
     auto events = test_events_for(&owner);
-    auto id = authum_events_resolve(&events, "test.numeric");
+    auto id = authum_events_get_id(&events, "test.numeric");
     ASSERT_NE(id, 0u);
-    EXPECT_EQ(authum_events_resolve(&events, "test.numeric"), id);
+    EXPECT_EQ(authum_events_get_id(&events, "test.numeric"), id);
     EXPECT_TRUE(authum_events_subscribe(&events, "test.numeric", test_on_b, authum_null));
     EXPECT_TRUE(authum_events_subscribe_id(&events, id, test_on_b, authum_null));
     EXPECT_EQ(authum_events_host_count(), 1u);
@@ -320,11 +320,11 @@ TEST(authum_events, numeric_api_shares_registry_and_deduplicates_string_subscrip
     EXPECT_TRUE(authum_events_unsubscribe_id(&events, id, test_on_b, authum_null));
     EXPECT_FALSE(authum_events_unsubscribe(&events, "test.numeric", test_on_b, authum_null));
     authum_events_host_clear();
-    EXPECT_EQ(authum_events_resolve(&events, "test.numeric"), id);
+    EXPECT_EQ(authum_events_get_id(&events, "test.numeric"), id);
     EXPECT_FALSE(authum_events_subscribe_id(&events, 0, test_on_a, authum_null));
     EXPECT_EQ(authum_events_publish_id(&events, 0, authum_null), authum_event_result_continue);
-    EXPECT_EQ(authum_events_resolve(&events, ""), 0u);
-    EXPECT_EQ(authum_events_resolve(authum_null, "test.numeric"), 0u);
+    EXPECT_EQ(authum_events_get_id(&events, ""), 0u);
+    EXPECT_EQ(authum_events_get_id(authum_null, "test.numeric"), 0u);
 }
 
 TEST(authum_events, host_cache_converts_id_values_without_aliasing_module_storage)
@@ -337,7 +337,7 @@ TEST(authum_events, host_cache_converts_id_values_without_aliasing_module_storag
     const auto id = authum_events_host_get_cached_id(&cached, "test.host.cached");
     ASSERT_NE(id, 0u);
     EXPECT_EQ(cached, id);
-    EXPECT_EQ(authum_events_resolve(&events, "test.host.cached"), id);
+    EXPECT_EQ(authum_events_get_id(&events, "test.host.cached"), id);
     EXPECT_EQ(authum_events_host_get_cached_id(&cached, "test.host.cached"), id);
     EXPECT_TRUE(authum_events_subscribe_id(&events, cached, test_on_b, authum_null));
     EXPECT_EQ(authum_events_host_publish_id(cached, authum_null), authum_event_result_handled);

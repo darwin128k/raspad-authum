@@ -36,7 +36,7 @@ chatfilter_find_word(const authum_char_t *text)
 
     for (i = 0u; text[i] != '\0' && i < sizeof lower - 1u; ++i)
     {
-        lower[i] = authum_char_ascii_lower(text[i]);
+        lower[i] = authum_char_to_lower(text[i]);
     }
     lower[i] = '\0';
     for (i = 0u; i < sizeof g_chatfilter_words / sizeof g_chatfilter_words[0]; ++i)

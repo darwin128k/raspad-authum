@@ -10,29 +10,29 @@
 #include <string.h>
 
 const authum_char_t *
-authum_command_scope(const authum_command_t *cmd)
+authum_command_get_scope(const authum_command_t *cmd)
 {
     return (!authum_null_eq(cmd) && !authum_null_eq(cmd->scope)) ? cmd->scope : "";
 }
 
 const authum_char_t *
-authum_command_name(const authum_command_t *cmd)
+authum_command_get_name(const authum_command_t *cmd)
 {
     return (!authum_null_eq(cmd) && !authum_null_eq(cmd->name)) ? cmd->name : "";
 }
 
 authum_usize_t
-authum_command_argc(const authum_command_t *cmd)
+authum_command_get_argc(const authum_command_t *cmd)
 {
     return (!authum_null_eq(cmd) && !authum_null_eq(cmd->argv)) ? cmd->argc : 0u;
 }
 
 const authum_char_t *
-authum_command_argv(const authum_command_t *cmd, authum_usize_t index)
+authum_command_get_argv(const authum_command_t *cmd, authum_usize_t index)
 {
     const authum_char_t *arg;
 
-    if (lh_math_ge(index, authum_command_argc(cmd)))
+    if (lh_math_ge(index, authum_command_get_argc(cmd)))
     {
         return "";
     }
@@ -41,13 +41,13 @@ authum_command_argv(const authum_command_t *cmd, authum_usize_t index)
 }
 
 authum_bool_t
-authum_command_arg_i32(const authum_command_t *cmd, authum_usize_t index, authum_i32_t *out)
+authum_command_try_get_arg_i32(const authum_command_t *cmd, authum_usize_t index, authum_i32_t *out)
 {
-    if (lh_math_ge(index, authum_command_argc(cmd)))
+    if (lh_math_ge(index, authum_command_get_argc(cmd)))
     {
         return authum_bool_false;
     }
-    return authum_cstr_parse_i32(authum_command_argv(cmd, index), out);
+    return authum_cstr_parse_i32(authum_command_get_argv(cmd, index), out);
 }
 
 void

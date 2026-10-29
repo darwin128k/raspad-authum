@@ -100,6 +100,17 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 
 ## Authum (after LH)
 
+- [ ] **Console and commands become LH bricks.** The command registry, argument
+  parsing, owner scopes (a module's commands go with it) and the reply sink are not
+  about the game; other projects need them. Move them to LH as bricks (LH is a
+  static library: bricks are enough, no second level). Authum keeps only the binding
+  to the engine console (registering a server command, printing into it).
+- [ ] **Audit the rest of Authum for generic mechanisms**: tasks, threads, logs and
+  their channels, cfg, placeholders, paths, the sandbox. Each is either generic
+  (→ LH, Authum a thin facade) or the game (stays). Bring the list to the owner.
+- [ ] **Rename the sandbox** (item 3 of the next task). It is hierarchical memory
+  ownership with destructors on the LH ownership tree, not isolation, and the name
+  misleads. Candidates: `arena`, `region`, `scope`; the owner decides.
 - [ ] **Remaining Authum test runners.** Events now use the pinned GoogleTest
   dependency and common runner; the other tests in `tests/` still use the local
   CHECK runner or plain assertions. Migrate them rather than adding another

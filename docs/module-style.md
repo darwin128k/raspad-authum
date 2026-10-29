@@ -137,8 +137,8 @@ Libc types remain OK for FILE*, `snprintf`, private buffers, etc.
 Host helpers:
 
 ```c
-authum_host_get_game_dir(host, buf, (authum_usize_t)sizeof buf);
-authum_crypto_sha_hash(authum_host_crypto(host), authum_crypto_sha_kind_256,
+authum_host_copy_game_dir(host, buf, (authum_usize_t)sizeof buf);
+authum_crypto_sha_hash(authum_host_get_crypto(host), authum_crypto_sha_kind_256,
                        (authum_ptr)data, (authum_usize_t)len,
                        (authum_ptr)out, (authum_usize_t)out_size);
 ```

@@ -38,8 +38,8 @@ authum_json_object_find(const lh_json_node_t *root, const authum_char_t *key)
 }
 
 authum_bool_t
-authum_json_object_get_cstr(const authum_char_t *json, const authum_char_t *key, authum_char_t *out,
-                            authum_usize_t out_size)
+authum_json_object_copy_cstr(const authum_char_t *json, const authum_char_t *key,
+                             authum_char_t *out, authum_usize_t out_size)
 {
     lh_json_node_t root;
     const lh_json_node_t *member;
@@ -78,7 +78,8 @@ authum_json_object_get_cstr(const authum_char_t *json, const authum_char_t *key,
 }
 
 authum_bool_t
-authum_json_object_get_i32(const authum_char_t *json, const authum_char_t *key, authum_i32_t *out)
+authum_json_object_try_get_i32(const authum_char_t *json, const authum_char_t *key,
+                               authum_i32_t *out)
 {
     lh_json_node_t root;
     const lh_json_node_t *member;
@@ -104,12 +105,12 @@ authum_json_object_get_i32(const authum_char_t *json, const authum_char_t *key, 
 }
 
 authum_i32_t
-authum_json_object_get_i32_or(const authum_char_t *json, const authum_char_t *key,
-                              authum_i32_t fallback)
+authum_json_object_get_i32(const authum_char_t *json, const authum_char_t *key,
+                           authum_i32_t fallback)
 {
     authum_i32_t v;
 
-    if (authum_json_object_get_i32(json, key, lh_addr_of(v)))
+    if (authum_json_object_try_get_i32(json, key, lh_addr_of(v)))
     {
         return v;
     }
