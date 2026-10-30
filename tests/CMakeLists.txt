@@ -101,12 +101,10 @@ if (AUTHUM_BUILD_EXAMPLES)
     add_test(NAME authum_examples COMMAND authum_test_examples)
 endif ()
 
-if(NOT WIN32)
-    add_executable(authum_test_threads src/authum/host/threads.cpp)
-    target_link_libraries(authum_test_threads PRIVATE authum_test_host authum_test_main)
-    add_test(NAME authum_threads COMMAND authum_test_threads)
-    set_tests_properties(authum_threads PROPERTIES TIMEOUT 10)
-endif()
+add_executable(authum_test_threads src/authum/host/threads.cpp)
+target_link_libraries(authum_test_threads PRIVATE authum_test_host authum_test_main)
+add_test(NAME authum_threads COMMAND authum_test_threads)
+set_tests_properties(authum_threads PROPERTIES TIMEOUT 10)
 
 # Exercise the same HTTP implementation linked into the host image.
 target_sources(authum_test_host PRIVATE "${CMAKE_SOURCE_DIR}/src/authum/host/clock.c")
