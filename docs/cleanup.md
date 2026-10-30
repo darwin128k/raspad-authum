@@ -160,10 +160,14 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   ответ на «API для API»: сначала метка источника, потом сервисы.
 - [ ] **Точка решения «пускать / не пускать»** — заглушка (`host/gate.c`, план на
   1.0.0). Владелец точки назначается конфигом; остальные модули наблюдают.
-- [ ] **`tools/check-native.py` отсутствует** (нет ни в `tools/`, ни в `lib/lh/tools/`),
-  хотя `cleanup.md` на него ссылается: правило «Authum не знает про ОС» сейчас
-  ничем не проверяется. Написать скрипт (запрет `_WIN32`, libc и нативных вызовов
-  в `src/authum` и `include/authum`) — иначе «кирпичность» держится на слове.
+- [x] **`tools/check-native.py`** — написан (2026-10-30): запрет `_WIN32`, libc и
+  нативных вызовов в `src/authum`, `include/authum` и `examples`. Правило
+  «Authum не знает про ОС» теперь проверяется, а не держится на слове.
+- [ ] **Скриптовый слой (cnor).** Дизайн в `docs/scripting.md`: мост — обычный
+  модуль Authum, который встраивает VM cnor и отдаёт ему таблицу нативов;
+  ядро о скриптах не знает. Осталось: модуль-мост (VM + таблица нативов),
+  путь решения (мостик вешает C-хук, скрипт отвечает), стандартная
+  библиотека скриптов (`authum.cn`, `rules.cn`).
 - [ ] **Authum on LH rails: it does not know which OS it runs on.** No `#if _WIN32`,
   no native or libc call outside LH (owner, 2026-10-29). In order:
   1. [ ] LH local time: the zone offset of a UTC moment (DST included) in the OS
@@ -190,12 +194,12 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
      of `gamedll/`.
      `include/authum/export.h` and `include/authum/symbol.h` are exempt on
      purpose: they sit on the ABI boundary with the host process.
-  5. [ ] **The thread test does not run on Windows.** `tests/CMakeLists.txt` adds
-     `authum_threads` only under `if(NOT WIN32)`, and `tests/src/authum/host/threads.cpp`
-     is POSIX-only (`pthread_sigmask`, `SIGPIPE`, `pipe`, `read`, `usleep`). So on
-     Windows the module threads have no coverage at all — and the threads are
-     exactly what the HTTP worker was moved to. Split the test: the cross-platform
-     part (start, wake, exit) everywhere, the signal-mask part on POSIX only.
+  5. [x] **The thread test does not run on Windows.** Переписан (2026-10-30) на
+     кирпичи LH (`lh/os/condition.h`, `lh/os/mutex.h`): каждый воркер ждёт
+     **своего** пробуждения на своём условии, дальше барьер. Сигнальная часть
+     (`pthread_sigmask`, `SIGPIPE`) осталась POSIX-only, на Windows добавлен
+     тест, что флаг `SIGPIPE` принимается и маскировать нечего. Тест идёт на
+     обеих платформах.
 - [ ] **The formatter cannot report an unknown conversion.** `lh_str_ptr_format_cstr`
   writes an empty string when the mask holds a conversion lh does not know
   (`%f`, `%p`, `%zu`), so a game line that formats a mask at runtime
