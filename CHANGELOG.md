@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `authum_host_t` carries the module's mark (`tag`), and what a module prints —
+  to a player, to the chat, to the console, or as a kick reason — says whose
+  it is: `[WELCOME] Welcome, Vega!`. The host hands the module the mark it
+  declared in `authum_module_info_t.tag`.
 - `authum_file_t` with `authum_file_open`, `authum_file_open_cstr`,
   `authum_file_read`, `authum_file_write`, `authum_file_close` and
   `authum_file_is_open`: a module reads and writes its own files through this

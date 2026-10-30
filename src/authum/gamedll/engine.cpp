@@ -15,23 +15,25 @@
 #include <authum/unused.h>
 #include <lh/cast/const.h>
 #include <lh/char/map.h>
+#include <lh/compiler/arch/family.h>
 #include <lh/memory/std.h>
+#include <lh/os/timestamp.h>
 #include <lh/str/format/text.h>
+#include <lh/util/str/ptr.h>
 
 #include <authum/event/message.h>
 #include <authum/event/server.h>
 #include <authum/host/events.h>
 
 #include <cstdarg>
-#include <cstring>
-#include <ctime>
 
 extern enginefuncs_t g_engfuncs;
 extern globalvars_t *gpGlobals;
 
 /* The game calls these; on i386 Linux it does not keep the stack aligned for
  * SSE, so they realign it like the engine-facing entry points do. */
-#if defined(__GNUC__) && defined(__i386__) && !defined(_WIN32)
+#if LH_COMPILER_TYPE_IS_GCC_LIKE && LH_COMPILER_OS != LH_COMPILER_OS_WINDOWS &&                   \
+    LH_COMPILER_ARCH == LH_COMPILER_ARCH_32 && LH_COMPILER_ARCH_FAMILY_IS_X86
 #    define AUTHUM_GAME_CALL __attribute__((force_align_arg_pointer))
 #else
 #    define AUTHUM_GAME_CALL
@@ -81,7 +83,7 @@ engine_arg(authum_i32_t kind, authum_i32_t value, authum_float_t real, const aut
     if (lh_math_eq(kind, authum_message_arg_string))
     {
         text = lh_math_ne(text, authum_null) ? text : "";
-        n = lh_math_add(std::strlen(text), 1u);
+        n = lh_math_add(lh_str_ptr_len(text), 1u);
         if (lh_math_gt(lh_math_add(g_message.text_used, n), authum_event_message_text_max))
         {
             n = lh_math_sub(authum_event_message_text_max, g_message.text_used);
@@ -262,6 +264,7 @@ engine_alert_message(ALERT_TYPE type, authum_char_t *fmt, ...)
     authum_event_server_log_t ev;
     va_list args;
     authum_usize_t n;
+    lh_timestamp_t now = 0;
 
     if (lh_math_eq(fmt, authum_null))
     {
@@ -278,7 +281,7 @@ engine_alert_message(ALERT_TYPE type, authum_char_t *fmt, ...)
     }
     lh_memory_std_set(lh_addr_of(ev), 0, sizeof ev);
     authum_cstr_copy(ev.text, sizeof ev.text, line);
-    n = std::strlen(ev.text);
+    n = lh_cast_static(authum_usize_t, lh_str_ptr_len(ev.text));
     while (lh_math_gt(n, 0u) && (lh_math_eq(ev.text[lh_math_sub(n, 1u)], lh_char_map_lf) ||
                                  lh_math_eq(ev.text[lh_math_sub(n, 1u)], lh_char_map_cr)))
     {
@@ -289,7 +292,8 @@ engine_alert_message(ALERT_TYPE type, authum_char_t *fmt, ...)
         return;
     }
     ev.game_time = lh_math_ne(gpGlobals, authum_null) ? gpGlobals->time : 0.0f;
-    ev.unix_time = lh_cast_static(authum_i64_t, std::time(authum_null));
+    authum_unused(lh_os_timestamp_try_get_now(lh_addr_of(now)));
+    ev.unix_time = lh_cast_static(authum_i64_t, now);
     g_log_pass = lh_math_add_one(g_log_pass);
     static authum_event_id_t log_id = 0u;
     authum_events_host_get_cached_id(lh_addr_of(log_id), AUTHUM_EVENT_SERVER_LOG);

@@ -9,6 +9,8 @@
 #include <lh/cast/const.h>
 #include <lh/char/map.h>
 #include <lh/memory/std.h>
+#include <lh/os/timestamp.h>
+#include <lh/util/str/ptr.h>
 #include <authum/gamedll/hooks.h>
 
 #include <authum/host/engine.h>
@@ -19,9 +21,6 @@
 #include <authum/host/tasks.h>
 
 #include <extdll.h>
-
-#include <cstring>
-#include <ctime>
 
 extern enginefuncs_t g_engfuncs;
 extern globalvars_t *gpGlobals;
@@ -53,9 +52,12 @@ copy(authum_char_t *dst, authum_usize_t dst_size, const authum_char_t *src)
 void
 client_fill(authum_event_client_t *ev, edict_t *entity, const authum_char_t *name)
 {
+    lh_timestamp_t now = 0;
+
     lh_memory_std_set(ev, 0, sizeof lh_ptr_deref(ev));
     ev->allow = authum_bool_true;
-    ev->unix_time = lh_cast_static(authum_i64_t, std::time(authum_null));
+    authum_unused(lh_os_timestamp_try_get_now(lh_addr_of(now)));
+    ev->unix_time = lh_cast_static(authum_i64_t, now);
     if (lh_math_ne(gpGlobals, authum_null))
     {
         ev->game_time = gpGlobals->time;
@@ -77,8 +79,11 @@ client_fill(authum_event_client_t *ev, edict_t *entity, const authum_char_t *nam
 void
 server_fill(authum_event_server_t *ev)
 {
+    lh_timestamp_t now = 0;
+
     lh_memory_std_set(ev, 0, sizeof lh_ptr_deref(ev));
-    ev->unix_time = lh_cast_static(authum_i64_t, std::time(authum_null));
+    authum_unused(lh_os_timestamp_try_get_now(lh_addr_of(now)));
+    ev->unix_time = lh_cast_static(authum_i64_t, now);
     if (lh_math_eq(gpGlobals, authum_null))
     {
         return;
@@ -251,7 +256,8 @@ h_spawn(edict_t *entity)
 {
     /* worldspawn is the map's first entity: precaching is allowed from here. */
     if (lh_math_ne(entity, authum_null) && lh_math_ne(gpGlobals, authum_null) &&
-        lh_math_eq(std::strcmp(STRING(entity->v.classname), "worldspawn"), 0))
+        lh_math_eq(lh_str_ptr_equals(STRING(entity->v.classname), "worldspawn", lh_bool_false),
+                   lh_bool_true))
     {
         authum_event_server_t ev;
         authum_engine_host_set_precache(authum_bool_true);

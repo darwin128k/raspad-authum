@@ -108,17 +108,17 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 
 - [ ] **Кто это сделал: выходы без метки источника** (аудит 2026-10-30).
   Логи и команды — эталон: owner → канал → tag, всё через одну точку
-  (`host/logs.c`, `host/commands.c` + LH console). Не маркируется:
+  (`host/logs.c`, `host/commands.c` + LH console). Сделано: **игровые выходы
+  помечены** — `authum_host_t` несёт метку модуля (`tag`), и всё, что модуль
+  печатает (игроку, в чат, в консоль, причину кика), уходит с ней:
+  `[WELCOME] Welcome, Vega!`. Не маркируется:
   1. **Publish событий**: владелец доходит до хоста, но выбрасывается
      (`host/events.c`, `authum_unused(owner)`) — издатель известен только по
      соглашению об имени `<module>.*`.
-  2. **Игровые выходы**: `authum_engine()` — один синглтон на всех модулей
-     (`host/engine_server.cpp`), поэтому `client_print`, chat, `message_*`,
-     `cvar_set`, `kick` уходят анонимно. У лога метка есть, у игры — нет.
-  3. **Решения модулей**: `allow` / `reject_reason` / `block` в payload
+  2. **Решения модулей**: `allow` / `reject_reason` / `block` в payload
      (`event/client.h`, `event/message.h`) — плоские поля, last-writer-wins,
      «кто постановил» не хранится. `gamedll/hooks.cpp` читает только `allow`.
-  4. **HTTP access-log**: в строке нет owner (`host/http/access.c`).
+  3. **HTTP access-log**: в строке нет owner (`host/http/access.c`).
   5. **`authum_module_info_t.logtag`**: объявлено в ABI, заполняется хостом и
      модулями, но хост его не читает — мёртвая метка.
   6. **Файлы модуля**: `authum_cfg_open` больше не идёт прямо в stdio (читает через
@@ -155,17 +155,17 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
      `host/http_windows.c` stub is gone, its tests run on Windows too. Static files are
      looked up below each root by `lh_os_system_fs_file_open_read_at`, now also on
      Windows (`NtCreateFile` relative to each directory, reparse points refused).
-  4. [ ] The remaining libc calls in `api/` and `host/` (157 in 31 files at the start)
+  4. [x] The remaining libc calls in `api/` and `host/` (157 in 31 files at the start)
      → LH bricks; a missing brick is added to LH first.
-     `tools/check-native.py` now exists and reports the debt: **15 places** —
-     9 string calls (`std::strlen` / `std::strcmp` / `std::strchr`: the lh string
-     kernels are `lh/str/*`), 3 clock calls (`lh/os/tick.h`, `lh/os/timestamp.h`),
-     2 platform branches, 1 `getenv` (`lh/os/env.h`). All of them are in `gamedll/`
-     (`engine.cpp` 3, `entry.cpp` 3, `game.cpp` 6, `hooks.cpp` 3).
+     `tools/check-native.py` now exists and reports the debt: **0 places**
+     (the last 15 were closed 2026-10-30, all in `gamedll/`): 9 string calls
+     (`std::strlen` / `std::strcmp` / `std::strchr` → `lh/str/*`), 3 clock calls
+     (`lh/os/timestamp.h`), 2 platform branches (the LH compiler / OS macros),
+     1 `getenv` (`lh/os/env.h`).
      The format, the files and the headers are done: `snprintf` →
      `lh/str/format/text.h` (`lh_str_ptr_format_cstr`, `authum_cstr_format`), the
      file calls → `lh/os/fs/file.h` (`api/cfg.c`, `api/env.c`, `gamedll/game.cpp`),
-     the forbidden headers are gone. Clean in this order: clock/env → the strings
+     the forbidden headers are gone. Done in this order: clock/env → the strings
      of `gamedll/`.
      `include/authum/export.h` and `include/authum/symbol.h` are exempt on
      purpose: they sit on the ABI boundary with the host process.
@@ -185,6 +185,11 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 - [ ] **`gamedll/` and `include/authum/{export,symbol}.h`: calling convention, export
      and the engine library name through LH compiler / OS macros, no `_WIN32`.
   A check (`tools/check-native.py`) keeps it at 0.
+  Done for `gamedll/` (2026-10-30): the calling convention and the export go
+  through `LH_COMPILER_OS` / `LH_COMPILER_TYPE` / `LH_COMPILER_ARCH`.
+  Left: `include/authum/symbol.h` names the engine library per platform — a
+  public Authum header may not include LH, and the platform is named there on
+  purpose (the exemption above).
 - [ ] **The module's own files went through libc.** `include/authum/cfg.h` hands a
   module a `FILE *` (`authum_cfg_t.file`, `authum_cfg_open_file`) and
   `include/authum/path.h` invites it to open files with `fopen`; the RASPAD

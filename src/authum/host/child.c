@@ -283,6 +283,8 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     authum_placeholder_host_init_env(lh_addr_of(data->placeholders), lh_addr_of(data->env),
                                      lh_addr_of(data->placeholder_service));
     out->placeholders = lh_addr_of(data->placeholder_service);
+    /* The module's mark: it goes into its log channel and into what it prints. */
+    out->tag = data->info->tag;
     authum_unused(authum_logs_open(data, data->info->name, data->info->tag,
                                    authum_path_get_cstr_or_null(data->env.module)));
 }
