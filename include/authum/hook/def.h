@@ -21,8 +21,10 @@ typedef enum authum_hook_point
     authum_hook_point_client_kill = 1,
     /** `ClientCommand` — the command may be swallowed here. */
     authum_hook_point_client_command = 2,
+    /** `ClientPutInServer` — the player may be kept off the map here. */
+    authum_hook_point_client_put_in_server = 3,
     /** How many points there are. */
-    authum_hook_point_count = 3
+    authum_hook_point_count = 4
 } authum_hook_point_t;
 
 /** @brief How long a name in a call may be. */

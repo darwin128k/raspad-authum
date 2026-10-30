@@ -14,9 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   budget one handler may spend, and the removal of a module's handlers when it
   unloads. The module gets `authum_host_get_hooks(host)` and adds a handler to
   a point. The points so far: client connect (a handler may change the
-  player's name or address, or stop the call with a reason), client kill and
+  player's name or address, or stop the call with a reason), client kill,
   client command (a handler may stop the call; for a command it sees the
-  command and its arguments).
+  command and its arguments) and client put in server (a handler may keep the
+  player off the map).
 - `authum_host_t` carries the module's mark (`tag`), and what a module prints —
   to a player, to the chat, to the console, or as a kick reason — says whose
   it is: `[WELCOME] Welcome, Vega!`. The host hands the module the mark it
