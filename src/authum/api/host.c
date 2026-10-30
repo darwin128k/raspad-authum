@@ -21,6 +21,12 @@ authum_host_get_placeholders(const authum_host_t *host)
     return host && !authum_null_eq((host)->placeholders) ? host->placeholders : authum_null;
 }
 
+const authum_hooks_t *
+authum_host_get_hooks(const authum_host_t *host)
+{
+    return host && !authum_null_eq((host)->hooks) ? host->hooks : authum_null;
+}
+
 const authum_threads_t *
 authum_host_get_threads(const authum_host_t *host)
 {

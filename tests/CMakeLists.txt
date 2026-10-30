@@ -42,6 +42,7 @@ add_library(authum_test_host STATIC
         "${CMAKE_SOURCE_DIR}/src/authum/host/events/ops.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/commands.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/logs.c"
+        "${CMAKE_SOURCE_DIR}/src/authum/host/hooks.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/tasks.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/threads.c"
 )
@@ -131,3 +132,9 @@ add_executable(authum_test_file src/authum/file.cpp)
 target_link_libraries(authum_test_file PRIVATE authum_client authum_test_main)
 add_test(NAME authum_file COMMAND authum_test_file)
 set_tests_properties(authum_file PROPERTIES TIMEOUT 10)
+
+# The chain of module handlers.
+add_executable(authum_test_hooks src/authum/host/hooks.cpp)
+target_link_libraries(authum_test_hooks PRIVATE authum_test_host authum_test_main)
+add_test(NAME authum_hooks COMMAND authum_test_hooks)
+set_tests_properties(authum_hooks PROPERTIES TIMEOUT 10)
