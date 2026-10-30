@@ -11,6 +11,8 @@
 #    include <stdatomic.h>
 #endif
 #include <lh/os/wake.h>
+#include <lh/os/loop.h>
+#include <lh/os/net/socket.h>
 #include <lh/os/system/fs/file.h>
 #include <lh/str/format/text.h>
 #include <lh/util/str/ptr.h>
@@ -76,8 +78,13 @@ struct authum_http_server
     lh_os_system_fs_file_handle_t roots[AUTHUM_HTTP_MAX_SOURCES];
     lh_os_system_net_socket_handle_t listener;
     lh_os_wake_t wake;
-    authum_threads_t threads;
-    authum_thread_t *thread;
+    /** The worker: a loop that sleeps in poll on the sockets and the wake signal. */
+    lh_os_loop_t *loop;
+    /** What the next poll watches, and what the last one found ready. */
+    lh_os_net_socket_poll_t events[AUTHUM_HTTP_MAX_CLIENTS + 2];
+    authum_i64_t last_refill;
+    double tokens;
+    authum_usize_t cursor;
     authum_http_client_t *clients;
     authum_http_peer_t peers[AUTHUM_HTTP_MAX_PEERS];
     authum_u32_t next_id;
@@ -128,18 +135,28 @@ authum_http_client_expired(const authum_http_client_t *c, const authum_http_opti
 void
 authum_http_budget_refill(double *tokens, authum_i64_t *last, authum_i64_t now,
                           const authum_http_options_t *options);
+/** One round of the worker: the sockets the last poll found ready, then the next poll's. */
 void
-authum_http_run(authum_ptr arg);
+authum_http_step(authum_ptr arg);
 
+/** The worker's sleep: poll the sockets and the wake signal. */
+void
+authum_http_wait(authum_ptr arg, lh_u32_t timeout_ms);
+
+/** Cut the worker's sleep short: signal its wake socket. */
 void
 authum_http_wake(authum_ptr arg);
+
+/** What the worker's first poll watches: the listener and the wake signal. */
+void
+authum_http_prepare_first_poll(authum_http_server_t *server);
 
 void
 authum_http_server_release(authum_http_server_t *server);
 
 authum_http_server_t *
-authum_http_server_create(const authum_http_options_t *options, const authum_threads_t *threads,
-                          authum_char_t *error, authum_u32_t error_size);
+authum_http_server_create(const authum_http_options_t *options, authum_char_t *error,
+                          authum_u32_t error_size);
 void
 authum_http_server_shutdown(authum_http_server_t *server);
 

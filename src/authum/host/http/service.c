@@ -96,8 +96,7 @@ service_open(authum_ptr context, const authum_http_options_t *options, authum_ch
         }
         return authum_null;
     }
-    authum_http_server_t *server =
-        authum_http_server_create(options, owner->threads, error, error_size);
+    authum_http_server_t *server = authum_http_server_create(options, error, error_size);
     if (server)
     {
         server->next = owner->head;
@@ -162,8 +161,7 @@ service_memory(authum_ptr owner, const authum_http_server_t *server)
 }
 
 void
-authum_http_host_init(authum_http_owner_t *owner, const authum_threads_t *threads,
-                      authum_http_service_t *service)
+authum_http_host_init(authum_http_owner_t *owner, authum_http_service_t *service)
 {
     static const authum_http_ops_t ops = {.open = service_open,
                                           .shutdown = service_shutdown,
@@ -171,7 +169,6 @@ authum_http_host_init(authum_http_owner_t *owner, const authum_threads_t *thread
                                           .drain = service_drain,
                                           .memory_usage = service_memory};
     owner->head = authum_null;
-    owner->threads = threads;
     service->ops = lh_addr_of(ops);
     service->owner = owner;
 }
