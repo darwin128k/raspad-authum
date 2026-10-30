@@ -101,8 +101,8 @@ class authum_http : public ::testing::Test
     SetUp() override
     {
         authum_threads_host_init(&thread_owner, &threads);
-        authum_http_host_init(&owner, &threads, &service);
-        authum_http_host_init(&foreign_owner, &threads, &foreign_service);
+        authum_http_host_init(&owner, &service);
+        authum_http_host_init(&foreign_owner, &foreign_service);
         ASSERT_TRUE(lh_os_net_init());
         server = authum_null;
         root_fd = LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;

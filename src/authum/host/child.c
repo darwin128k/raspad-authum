@@ -268,8 +268,7 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     out->tasks = lh_addr_of(data->tasks);
     authum_threads_host_init(lh_addr_of(data->thread_owner), lh_addr_of(data->threads));
     out->threads = lh_addr_of(data->threads);
-    authum_http_host_init(lh_addr_of(data->http_owner), lh_addr_of(data->threads),
-                          lh_addr_of(data->http));
+    authum_http_host_init(lh_addr_of(data->http_owner), lh_addr_of(data->http));
     out->http = lh_addr_of(data->http);
     out->clock = authum_clock_host();
     parent = lh_os_module_get_parent(child);

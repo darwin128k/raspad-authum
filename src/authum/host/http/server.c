@@ -7,6 +7,8 @@
 void
 authum_http_server_release(authum_http_server_t *server)
 {
+    /* A loop that never started is just freed; a running one is joined first. */
+    lh_os_loop_destroy(server->loop);
     for (authum_usize_t i = 0; lh_math_lt(i, AUTHUM_HTTP_MAX_SOURCES); i = lh_math_add_one(i))
     {
         if (lh_math_ne(server->roots[i], LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID))
@@ -24,10 +26,26 @@ authum_http_server_release(authum_http_server_t *server)
     authum_memory_free(server);
 }
 
-authum_http_server_t *
-authum_http_server_create(const authum_http_options_t *options, const authum_threads_t *threads,
+/** What the worker's first poll watches: the listener and the wake signal. */
+void
+authum_http_prepare_first_poll(authum_http_server_t *server)
+{
+    server->events[0] =
+        (lh_os_net_socket_poll_t){.handle = server->listener, .events = lh_os_net_socket_poll_read};
+    server->events[1] =
+        (lh_os_net_socket_poll_t){.handle = lh_os_wake_get_handle(lh_addr_of(server->wake)),
+                                  .events = lh_os_net_socket_poll_read};
+    for (authum_i32_t index = 0; lh_math_lt(index, server->options.max_clients);
+         index = lh_math_add_one(index))
+    {
+        server->events[lh_math_add(index, 2)] =
+            (lh_os_net_socket_poll_t){.handle = LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID};
+    }
+}
 
-                          authum_char_t *error, authum_u32_t error_size)
+authum_http_server_t *
+authum_http_server_create(const authum_http_options_t *options, authum_char_t *error,
+                          authum_u32_t error_size)
 {
     authum_http_server_t *server = authum_memory_alloc_zero(1, sizeof lh_ptr_deref(server));
     if (!server)
@@ -61,13 +79,6 @@ authum_http_server_create(const authum_http_options_t *options, const authum_thr
         authum_unused(lh_str_ptr_format_cstr(error, error_size, "invalid HTTP configuration bounds"));
         goto failed;
     }
-    if (!threads || !threads->ops || authum_null_eq((threads->ops)->start) ||
-        authum_null_eq((threads->ops)->stop))
-    {
-        authum_unused(lh_str_ptr_format_cstr(error, error_size, "host has no managed-thread API on this platform"));
-        goto failed;
-    }
-    server->threads = lh_ptr_deref(threads);
     server->clients = authum_memory_alloc_zero(lh_cast_static(authum_usize_t, options->max_clients),
                                                sizeof lh_ptr_deref(server->clients));
     if (!server->clients)
@@ -103,11 +114,17 @@ authum_http_server_create(const authum_http_options_t *options, const authum_thr
     {
         goto failed;
     }
-    server->thread =
-        authum_thread_start(lh_addr_of(server->threads), authum_http_run, authum_http_wake, server,
-                            options->cpu, AUTHUM_THREAD_BLOCK_SIGPIPE, error, error_size);
-    if (!server->thread)
+    server->tokens = lh_math_div(options->bytes_per_second, 10.0);
+    server->last_refill = authum_http_now_ms();
+    authum_http_prepare_first_poll(server);
+    /* The poll timeout of the worker: client timeouts and the byte budget tick on it. */
+    server->loop = lh_os_loop_try_create_waiting(20U, authum_http_step, server, authum_http_wait,
+                                                 authum_http_wake, server);
+    if (authum_null_eq(server->loop) ||
+        !lh_os_loop_try_start_on(server->loop, options->cpu, lh_os_thread_block_sigpipe))
     {
+        authum_unused(lh_str_ptr_format_cstr(error, error_size, "cannot start the HTTP worker: %s",
+                                             authum_http_get_error_text()));
         goto failed;
     }
     return server;
@@ -131,8 +148,8 @@ authum_http_server_shutdown(authum_http_server_t *server)
     {
         return;
     }
-    authum_thread_stop(lh_addr_of(server->threads), server->thread);
-    server->thread = authum_null;
+    lh_os_loop_destroy(server->loop);
+    server->loop = authum_null;
     server->joined = 1;
 }
 
