@@ -4,8 +4,7 @@
 #include <authum/null.h>
 
 #include <lh/os/net/interface.h>
-
-#include <stdio.h>
+#include <lh/str/format/text.h>
 
 authum_bool_t
 authum_net_ipv4_is_loopback(authum_u32_t ip)
@@ -50,20 +49,19 @@ authum_net_ipv4_is_external(authum_u32_t ip)
 authum_bool_t
 authum_net_ipv4_format(authum_u32_t ip, authum_char_t *buf, authum_usize_t buf_size)
 {
-    authum_i32_t written;
+    authum_usize_t written;
 
     if (authum_null_eq(buf) || lh_math_eq(buf_size, 0u))
     {
         return authum_bool_false;
     }
-    written = snprintf(
+    written = lh_str_ptr_format_cstr(
         buf, buf_size, "%u.%u.%u.%u", lh_cast_static(authum_u32_t, (lh_math_bit_shr(ip, 24))),
         lh_cast_static(authum_u32_t, (lh_math_bit_and((lh_math_bit_shr(ip, 16)), 0xffu))),
         lh_cast_static(authum_u32_t, (lh_math_bit_and((lh_math_bit_shr(ip, 8)), 0xffu))),
         lh_cast_static(authum_u32_t, (lh_math_bit_and(ip, 0xffu))));
-    return lh_math_gt(written, 0) && lh_math_lt(lh_cast_static(authum_usize_t, written), buf_size)
-               ? authum_bool_true
-               : authum_bool_false;
+    return lh_math_gt(written, 0u) && lh_math_lt(written, buf_size) ? authum_bool_true
+                                                                    : authum_bool_false;
 }
 
 /** What ::authum_net_ipv4_collect gathers while the OS lists addresses. */

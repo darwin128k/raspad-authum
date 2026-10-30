@@ -3,6 +3,7 @@
 #include <lh/char/map.h>
 #include <lh/memory/std.h>
 
+#include <authum/cstr.h>
 #include <authum/host/log.h>
 #include <authum/host/module.h>
 
@@ -97,7 +98,7 @@ host_dir(authum_char_t *out, authum_usize_t out_size)
         ok = lh_null_ne(dir);
         if (ok)
         {
-            std::snprintf(out, out_size, "%s", dir);
+            authum_cstr_copy(out, out_size, dir);
         }
     }
     lh_str_deinit(lh_addr_of(scratch));
@@ -116,16 +117,16 @@ read_gamedll_name(const authum_char_t *dir, authum_char_t *out, authum_usize_t o
 
     if (lh_math_ne(env, authum_null) && lh_math_ne(env[0], lh_char_map_nul))
     {
-        std::snprintf(out, out_size, "%s", env);
+        authum_cstr_copy(out, out_size, env);
         return true;
     }
-    std::snprintf(path, sizeof path, "%s/%s", dir, authum_gamedll_file);
+    lh_str_ptr_format_cstr(path, sizeof path, "%s/%s", dir, authum_gamedll_file);
     f = std::fopen(path, "r");
     if (lh_math_eq(f, authum_null))
     {
         authum_log_error("gamedll: no %s beside authum.so (looked at %s)", authum_gamedll_file,
                          path);
-        std::snprintf(out, out_size, "%s", authum_gamedll_default);
+        authum_cstr_copy(out, out_size, authum_gamedll_default);
         return false;
     }
     while (lh_math_ne(std::fgets(line, sizeof line, f), authum_null))
@@ -135,13 +136,13 @@ read_gamedll_name(const authum_char_t *dir, authum_char_t *out, authum_usize_t o
         {
             continue;
         }
-        std::snprintf(out, out_size, "%s", line);
+        authum_cstr_copy(out, out_size, line);
         std::fclose(f);
         return true;
     }
     std::fclose(f);
     authum_log_error("gamedll: %s is empty", path);
-    std::snprintf(out, out_size, "%s", authum_gamedll_default);
+    authum_cstr_copy(out, out_size, authum_gamedll_default);
     return false;
 }
 
@@ -203,11 +204,11 @@ gamedll_load(enginefuncs_t *engine_funcs, globalvars_t *globals)
     /* The path is relative to the game dir, the way liblist.gam resolves it. */
     if (lh_math_eq(name[0], lh_char_map_slash))
     {
-        std::snprintf(full, sizeof full, "%s", name); /* absolute: as it is */
+        authum_cstr_copy(full, sizeof full, name); /* absolute: as it is */
     }
     else
     {
-        std::snprintf(full, sizeof full, "%s/%s", game_dir, name);
+        lh_str_ptr_format_cstr(full, sizeof full, "%s/%s", game_dir, name);
     }
 
     if (!open_game(full))

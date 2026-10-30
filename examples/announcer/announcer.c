@@ -12,8 +12,6 @@
 
 #include <authum/client.h>
 
-#include <stdio.h>
-
 #define ANNOUNCER_SOUND "buttons/bell1.wav"
 
 authum_host_t g_announcer_host;
@@ -38,8 +36,8 @@ announcer_tick(authum_ptr user)
 
     authum_unused(user);
     ++g_announcer_count;
-    snprintf(text, sizeof text, "\x04[Info]\x01 This server runs Authum. Message #%d.",
-             g_announcer_count);
+    authum_cstr_format(text, sizeof text, "\x04[Info]\x01 This server runs Authum. Message #%d.",
+                       g_announcer_count);
     authum_host_client_chat(&g_announcer_host, 0, 0, text);
 }
 

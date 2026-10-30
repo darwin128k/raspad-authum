@@ -1,12 +1,10 @@
 #include <lh/assert/static.h>
 #include <lh/char/map.h>
 #include <lh/logger/level.h>
-#include <lh/util/ptr.h>
 #include <lh/memory/std.h>
+#include <lh/str/format/text.h>
 #include <authum/logger/buffer.h>
 
-
-#include <stdio.h>
 
 /* Authum's levels are LH's, value for value: the names come from LH. */
 lh_assert_static(authum_logger_level_emergency == lh_logger_level_emergency &&
@@ -184,7 +182,7 @@ authum_logger_log_v(authum_logger_t *self, authum_logger_level_t level, const au
     {
         return;
     }
-    vsnprintf(buf, sizeof buf, fmt, ap);
+    authum_cstr_format_v(buf, sizeof buf, fmt, ap);
     authum_logger_channel_write(authum_logger_get_channel(self), level, buf);
 }
 
@@ -216,15 +214,16 @@ authum_logger_hex_dump(authum_logger_t *self, const authum_char_t *label, authum
 
     for (i = 0u; lh_math_lt(i, len); i = lh_math_add(i, 16u))
     {
-        authum_i32_t pos = snprintf(line, sizeof line, "  %04x: ", lh_cast_static(authum_u32_t, i));
+        authum_usize_t pos =
+            lh_str_ptr_format_cstr(line, sizeof line, "  %04x: ", lh_cast_static(authum_u32_t, i));
         authum_usize_t j;
         for (j = 0u; lh_math_lt(j, 16u) && lh_math_lt((lh_math_add(i, j)), len);
              j = lh_math_add_one(j))
         {
             pos = lh_math_add(
-                pos, snprintf(lh_math_add(line, pos),
-                              lh_math_sub(sizeof line, lh_cast_static(authum_usize_t, pos)),
-                              "%02x ", p[lh_math_add(i, j)]));
+                pos, lh_str_ptr_format_cstr(lh_math_add(line, pos), lh_math_sub(sizeof line, pos),
+                                           "%02x ",
+                                           lh_cast_static(authum_u32_t, p[lh_math_add(i, j)])));
         }
         authum_logger_debug(self, "%s", line);
     }

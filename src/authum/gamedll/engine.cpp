@@ -11,19 +11,18 @@
  * the game calls for each of its messages before it sends any.
  */
 #include <authum/gamedll/engine.h>
-#include <authum/null.h>
+#include <authum/cstr.h>
 #include <authum/unused.h>
 #include <lh/cast/const.h>
 #include <lh/char/map.h>
 #include <lh/memory/std.h>
-#include <lh/util/ptr.h>
+#include <lh/str/format/text.h>
 
 #include <authum/event/message.h>
 #include <authum/event/server.h>
 #include <authum/host/events.h>
 
 #include <cstdarg>
-#include <cstdio>
 #include <cstring>
 #include <ctime>
 
@@ -151,8 +150,9 @@ engine_reg_user_msg(const authum_char_t *name, authum_i32_t size)
     if (lh_math_ne(name, authum_null) && lh_math_gt(id, 0) && lh_math_lt(id, engine_msg_max))
     {
         authum_char_t event[engine_event_max];
-        std::snprintf(g_msg_names[id], sizeof g_msg_names[id], "%s", name);
-        std::snprintf(event, sizeof event, "%s%s", AUTHUM_EVENT_MESSAGE_PREFIX, g_msg_names[id]);
+        authum_cstr_copy(g_msg_names[id], sizeof g_msg_names[id], name);
+        lh_str_ptr_format_cstr(event, sizeof event, "%s%s", AUTHUM_EVENT_MESSAGE_PREFIX,
+                               g_msg_names[id]);
         g_msg_events[id] = authum_events_host_get_id(event);
     }
     return id;
@@ -174,7 +174,7 @@ engine_message_begin(authum_i32_t dest, authum_i32_t type, const authum_float_t 
     }
     if (lh_math_eq(g_msg_events[type], 0u))
     {
-        std::snprintf(event, sizeof event, "%s%s", AUTHUM_EVENT_MESSAGE_PREFIX, name);
+        lh_str_ptr_format_cstr(event, sizeof event, "%s%s", AUTHUM_EVENT_MESSAGE_PREFIX, name);
         g_msg_events[type] = authum_events_host_get_id(event);
     }
     if (!authum_events_host_has_id(g_msg_events[type]))
@@ -185,7 +185,7 @@ engine_message_begin(authum_i32_t dest, authum_i32_t type, const authum_float_t 
     lh_memory_std_set(lh_addr_of(g_message), 0, sizeof g_message);
     g_message.dest = dest;
     g_message.msg_id = type;
-    std::snprintf(g_message.name, sizeof g_message.name, "%s", name);
+    authum_cstr_copy(g_message.name, sizeof g_message.name, name);
     g_message.index =
         (lh_math_ne(target, authum_null) && lh_math_ne(g_engfuncs.pfnIndexOfEdict, authum_null))
             ? g_engfuncs.pfnIndexOfEdict(target)
@@ -268,7 +268,7 @@ engine_alert_message(ALERT_TYPE type, authum_char_t *fmt, ...)
         return;
     }
     va_start(args, fmt);
-    std::vsnprintf(line, sizeof line, fmt, args);
+    authum_cstr_format_v(line, sizeof line, fmt, args);
     va_end(args);
     g_engfuncs.pfnAlertMessage(type, lh_cast_const(authum_char_t *, "%s"), line);
 
@@ -277,7 +277,7 @@ engine_alert_message(ALERT_TYPE type, authum_char_t *fmt, ...)
         return;
     }
     lh_memory_std_set(lh_addr_of(ev), 0, sizeof ev);
-    std::snprintf(ev.text, sizeof ev.text, "%s", line);
+    authum_cstr_copy(ev.text, sizeof ev.text, line);
     n = std::strlen(ev.text);
     while (lh_math_gt(n, 0u) && (lh_math_eq(ev.text[lh_math_sub(n, 1u)], lh_char_map_lf) ||
                                  lh_math_eq(ev.text[lh_math_sub(n, 1u)], lh_char_map_cr)))

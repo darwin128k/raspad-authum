@@ -13,8 +13,6 @@
 
 #include <authum/client.h>
 
-#include <stdio.h>
-
 authum_host_t g_stats_host;
 authum_logger_t g_stats_log;
 authum_logger_t g_stats_visits;
@@ -91,7 +89,7 @@ stats_on_put_in_server(const authum_char_t *name, authum_ptr payload, authum_ptr
         return authum_event_result_continue;
     }
     authum_logger_info(&g_stats_visits, "%s <%s> visit #%d", ev->name, ev->auth_id, visits);
-    snprintf(text, sizeof text, "Visit #%d. Welcome back!\n", visits);
+    authum_cstr_format(text, sizeof text, "Visit #%d. Welcome back!\n", visits);
     authum_host_client_print(&g_stats_host, ev->index, authum_engine_print_chat, text);
     return authum_event_result_continue;
 }

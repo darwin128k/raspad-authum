@@ -22,11 +22,11 @@
 #include <authum/host/gate.h>
 #include <authum/host/loader.h>
 #include <authum/host/log.h>
+#include <authum/cstr.h>
 
 #include <extdll.h>
 #include <eiface.h>
 
-#include <cstdio>
 #include <cstring>
 
 
@@ -110,11 +110,11 @@ log_mirror(authum_logger_level_t /* level */, const authum_char_t *name, const a
               : "\n";
     if (lh_math_ne(name, authum_null) && lh_math_ne(std::strcmp(name, "authum"), 0))
     {
-        std::snprintf(line, sizeof line, "[%s] %s%s", name, text, end);
+        authum_cstr_format(line, sizeof line, "[%s] %s%s", name, text, end);
     }
     else
     {
-        std::snprintf(line, sizeof line, "%s%s", text, end);
+        authum_cstr_format(line, sizeof line, "%s%s", text, end);
     }
     g_engfuncs.pfnServerPrint(line);
 }

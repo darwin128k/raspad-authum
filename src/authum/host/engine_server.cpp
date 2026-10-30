@@ -8,11 +8,11 @@
 #include <lh/util/str/ptr.h>
 #include <authum/memory.h>
 #include <lh/memory/std.h>
+#include <authum/cstr.h>
 #include <authum/host/engine.h>
 
 #include <extdll.h>
 
-#include <cstdio>
 #include <cstdlib>
 
 extern enginefuncs_t g_engfuncs;
@@ -32,8 +32,7 @@ authum_char_t authum_engine_addresses[authum_engine_slots][authum_engine_address
 void
 authum_engine_copy(authum_char_t *buf, authum_usize_t buf_size, const authum_char_t *src)
 {
-    std::snprintf(buf, lh_cast_static(authum_usize_t, buf_size), "%s",
-                  lh_math_ne(src, authum_null) ? src : "");
+    authum_cstr_copy(buf, buf_size, lh_math_ne(src, authum_null) ? src : "");
 }
 
 /** Engine string table entry (HLSDK `STRING`, without util.h). */

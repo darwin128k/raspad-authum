@@ -121,3 +121,41 @@ are the pilot: the first two rewritten on cnor, the last two after.
 - The log channels, the command registry, the placeholders, the sandbox, the
   module loader of lh.
 - lh itself: it is the box of bricks, and it is not rewritten here.
+
+## 10. The platform debt, measured
+
+`tools/check-native.py` counts every place where Authum names the platform it
+runs on. It started at **143** and stands at **82**:
+
+| what | count | the brick that replaces it |
+|---|---|---|
+| `snprintf` / `vsnprintf` | 33 | `lh_str_ptr_format_cstr` / `..._cstr_v` (`lh/str/format/text.h`) |
+| forbidden headers | 23 | `stdio.h` 14, `stdlib.h` 8, `string.h` 1 |
+| file calls | 9 | `lh/os/system/fs/file.h` (`open`, `read`, `write`, `remove`) |
+| libc string calls | 9 | `lh/str/ptr.h` (`lh_str_ptr_len`, `..._equals`, `..._find_of_char`) |
+| clock calls | 3 | `lh/os/tick.h`, `lh/os/timestamp.h` |
+| platform branches | 2 | the backend decides, not the caller |
+| numeric parses | 2 | `lh/str/parse/*` |
+| `getenv` | 1 | `lh/os/env.h` |
+
+Every brick the table names already exists in lh — nothing has to be written
+for it. Two differences matter when replacing: the lh formatter leaves the
+buffer **empty** when the result does not fit (libc truncates), and it knows
+`%% %c %s %d %i %u %x %X` only — no `%f`, `%zu` or `%+d`.
+
+`include/authum/export.h` and `include/authum/symbol.h` are exempt: they sit
+on the ABI boundary with the host process.
+
+## 11. The names, and the build
+
+Three words, three meanings: `owner` is who (a subscription, a journal, a
+decision), `tag` is the mark a source is shown with in a record, `name` is
+what it is called. The module identity carries `tag`, not `logtag`; the module
+ABI is 3.0.0 because of that rename, and no 2.x module loads.
+
+The build runs on Windows in 32 bits (`cmake --preset windows-mingw32`). The
+preset puts `C:\msys64\mingw32\bin` on the PATH — without it the i686 gcc
+cannot find `cc1.exe` and fails with `0xC0000135` (a DLL it cannot locate,
+not a missing package). WSL is the second path, not the first: it serves the
+tree over a slow filesystem and it dropped its service once during a long
+link.

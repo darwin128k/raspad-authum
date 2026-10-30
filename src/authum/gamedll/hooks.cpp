@@ -12,6 +12,7 @@
 #include <authum/gamedll/hooks.h>
 
 #include <authum/host/engine.h>
+#include <authum/cstr.h>
 #include <authum/event/client.h>
 #include <authum/event/server.h>
 #include <authum/host/events.h>
@@ -19,7 +20,6 @@
 
 #include <extdll.h>
 
-#include <cstdio>
 #include <cstring>
 #include <ctime>
 
@@ -47,7 +47,7 @@ authum_bool_t g_have_new = false;
 void
 copy(authum_char_t *dst, authum_usize_t dst_size, const authum_char_t *src)
 {
-    std::snprintf(dst, dst_size, "%s", lh_math_ne(src, authum_null) ? src : "");
+    authum_cstr_copy(dst, dst_size, lh_math_ne(src, authum_null) ? src : "");
 }
 
 void

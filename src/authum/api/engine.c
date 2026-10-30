@@ -1,10 +1,9 @@
 #include <authum/engine.h>
 #include <lh/char/map.h>
-#include <lh/util/ptr.h>
+#include <lh/str/format/text.h>
 
 #include <authum/cstr.h>
 
-#include <stdio.h>
 #include <stdlib.h>
 
 /** Empty @p buf so a refused call still leaves a valid string. */
@@ -125,11 +124,12 @@ authum_engine_kick(const authum_engine_t *engine, authum_i32_t userid, const aut
     clean[n] = lh_char_map_nul;
     if (lh_math_gt(n, 0u))
     {
-        snprintf(cmd, sizeof cmd, "kick #%d \"%s\"\n", lh_cast_static(authum_i32_t, userid), clean);
+        lh_str_ptr_format_cstr(cmd, sizeof cmd, "kick #%d \"%s\"\n",
+                               lh_cast_static(authum_i32_t, userid), clean);
     }
     else
     {
-        snprintf(cmd, sizeof cmd, "kick #%d\n", lh_cast_static(authum_i32_t, userid));
+        lh_str_ptr_format_cstr(cmd, sizeof cmd, "kick #%d\n", lh_cast_static(authum_i32_t, userid));
     }
     authum_engine_server_command(engine, cmd);
 }

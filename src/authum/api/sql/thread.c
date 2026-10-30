@@ -4,7 +4,6 @@
 #include <lh/sql/mysql/api.h>
 #include <authum/crypto/ed25519.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 typedef struct authum_sql_thread_job
 {
@@ -58,9 +57,10 @@ authum_sql_thread_run(authum_ptr arg)
     }
     if (!job->result.connected || !job->result.success)
     {
-        snprintf(job->result.error, sizeof job->result.error, "%s",
-                 authum_sql_first_error(lh_addr_of(db))[0] ? authum_sql_first_error(lh_addr_of(db))
-                                                           : "SQL task failed");
+        authum_cstr_copy(job->result.error, sizeof job->result.error,
+                         authum_sql_first_error(lh_addr_of(db))[0]
+                             ? authum_sql_first_error(lh_addr_of(db))
+                             : "SQL task failed");
     }
     authum_sql_close(lh_addr_of(db));
     if (api)

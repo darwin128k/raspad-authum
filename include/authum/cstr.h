@@ -15,6 +15,8 @@
 #include <authum/null.h>
 #include <authum/size.h>
 
+#include <stdarg.h>
+
 AUTHUM_EXTERN_C_BEGIN
 
 authum_char_t
@@ -26,6 +28,40 @@ authum_char_to_lower(authum_char_t c);
  */
 authum_bool_t
 authum_cstr_copy(authum_char_t *dst, authum_usize_t dst_size, const authum_char_t *src);
+
+/**
+ * @brief Format @p fmt and the arguments into @p dst (NUL-terminated).
+ *
+ * The conversions of the Authum string formatter: `%%`, `%c`, `%s`, `%d`, `%i`,
+ * `%u`, `%x`, `%X`; the flags `0` (zero-pad) and `-` (left-justify); the field
+ * width; a `.` precision for `%s`. There is no `%f`, no `%p` and no `+` sign.
+ *
+ * A result that does not fit is cut: @p dst holds the beginning of it and the
+ * rest is dropped.
+ *
+ * @param dst      Destination buffer.
+ * @param dst_size Capacity of @p dst in characters, the NUL included.
+ * @param fmt      Format mask.
+ * @param ...      One argument per conversion in @p fmt.
+ * @return Characters written into @p dst, without the NUL; 0 when @p dst is
+ *         null/empty, @p fmt is null or the mask holds an unknown conversion.
+ */
+authum_usize_t
+authum_cstr_format(authum_char_t *dst, authum_usize_t dst_size, const authum_char_t *fmt, ...);
+
+/**
+ * @brief ::authum_cstr_format with the arguments in @p ap.
+ *
+ * @param dst      Destination buffer.
+ * @param dst_size Capacity of @p dst in characters, the NUL included.
+ * @param fmt      Format mask.
+ * @param ap       Arguments, one per conversion in @p fmt.
+ * @return Characters written into @p dst, without the NUL; 0 when @p dst is
+ *         null/empty, @p fmt is null or the mask holds an unknown conversion.
+ */
+authum_usize_t
+authum_cstr_format_v(authum_char_t *dst, authum_usize_t dst_size, const authum_char_t *fmt,
+                     va_list ap);
 
 /**
  * @brief Equality of two C strings.
