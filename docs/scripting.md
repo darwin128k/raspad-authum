@@ -50,6 +50,11 @@ hook by itself. The bridge does it for the script:
 That is the whole "living rule" path: a script decides, the bridge carries the
 decision, the core applies it, and the log says whose decision it was.
 
+The same shape in C is [`examples/scriptlike`](examples/scriptlike/): a module
+reads its rule from a file, watches the connect event and refuses a player
+with a hook. The bridge does the same thing with a script's answer instead of
+a file — which is why the public API needs nothing new for it.
+
 The budget is the core's: the chain counts the time a handler spends, and the
 script's time is inside it. The bridge therefore keeps its own instruction
 budget for one answer and must not let a script loop in a game frame.

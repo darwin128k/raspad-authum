@@ -29,11 +29,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `decided_by`: the mark of the module that refused the client or swallowed
   the command. The host names it in the log: `client <name> refused by
   <mark>`.
-- `authum_file_t` with `authum_file_open`, `authum_file_open_cstr`,
-  `authum_file_read`, `authum_file_write`, `authum_file_close` and
-  `authum_file_is_open`: a module reads and writes its own files through this
-  facade, so it names no platform. It is a thin facade over the lh filesystem
-  (`lh/os/fs/file.h`); the public header names no lh type.
+- `authum_file_t` with `authum_file_init`, `authum_file_open`,
+  `authum_file_open_cstr`, `authum_file_read`, `authum_file_write`,
+  `authum_file_close` and `authum_file_is_open`: a module reads and writes its
+  own files through this facade, so it names no platform. It is a thin facade
+  over the lh filesystem (`lh/os/fs/file.h`); the public header names no lh
+  type. The file is initialized with `authum_file_init` before it is opened —
+  the object holds the open state, so it must not be uninitialized storage.
 - `authum_cstr_parse_float`: a thin facade over the lh number parser, for the
   modules that may not link lh. The whole text must be the number, and a value
   too big for `authum_float_t` is refused.
