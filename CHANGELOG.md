@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `authum_file_t` with `authum_file_open`, `authum_file_open_cstr`,
+  `authum_file_read`, `authum_file_write`, `authum_file_close` and
+  `authum_file_is_open`: a module reads and writes its own files through this
+  facade, so it names no platform. It is a thin facade over the lh filesystem
+  (`lh/os/fs/file.h`); the public header names no lh type.
 - `authum_cstr_parse_float`: a thin facade over the lh number parser, for the
   modules that may not link lh. The whole text must be the number, and a value
   too big for `authum_float_t` is refused.
@@ -49,6 +54,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `<authum/net/address.h>` (still brought in by `<authum/client.h>`).
 - Module API sources mirror their headers (`src/authum/api/command/def.c` for
   `<authum/command/def.h>`, ...); `tools/check-mirror.py` checks it.
+- The config reader reads files through lh (`lh/os/fs/file.h`), not through
+  libc: `authum_cfg_t` holds the config text it read instead of a `FILE *`,
+  and `authum_cfg_open_file` is gone. A config that is already in memory is
+  opened with `authum_cfg_open_text`. The values, the errors and the return
+  codes are the same.
 
 ### Added
 

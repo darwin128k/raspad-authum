@@ -2,13 +2,15 @@
 #include <authum/unused.h>
 #include <lh/char/map.h>
 #include <lh/memory/std.h>
+#include <lh/os/fs/file.h>
+#include <lh/os/system/fs/path.h>
+#include <lh/str/split/line.h>
 
 #include <authum/cstr.h>
 #include <authum/host/log.h>
 #include <authum/host/module.h>
 
 
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
@@ -106,6 +108,39 @@ host_dir(authum_char_t *out, authum_usize_t out_size)
     return ok;
 }
 
+/* Read the whole file into @p text, through lh. False when it cannot be
+ * opened or read. */
+bool
+read_file_text(const lh_fs_path_t *path, lh_str_t *out)
+{
+    lh_os_fs_file_t file;
+    lh_char_t buf[512];
+    lh_ssize_t n;
+
+    lh_os_fs_file_init(lh_addr_of(file));
+    if (!lh_os_fs_file_open(lh_addr_of(file), path, lh_fs_file_mode_read))
+    {
+        lh_os_fs_file_deinit(lh_addr_of(file));
+        return false;
+    }
+    for (;;)
+    {
+        n = lh_os_fs_file_read(lh_addr_of(file), buf, sizeof(buf));
+        if (lh_math_is_negative(n))
+        {
+            lh_os_fs_file_deinit(lh_addr_of(file));
+            return false;
+        }
+        if (lh_math_is_zero(n))
+        {
+            break;
+        }
+        lh_str_append(out, buf, lh_cast_static(lh_usize_t, n));
+    }
+    lh_os_fs_file_deinit(lh_addr_of(file));
+    return true;
+}
+
 /* The game DLL path as written in gamedll.txt (or $AUTHUM_GAMEDLL). */
 authum_bool_t
 read_gamedll_name(const authum_char_t *dir, authum_char_t *out, authum_usize_t out_size)
@@ -113,7 +148,15 @@ read_gamedll_name(const authum_char_t *dir, authum_char_t *out, authum_usize_t o
     const authum_char_t *env = std::getenv("AUTHUM_GAMEDLL");
     authum_char_t path[600];
     authum_char_t line[256];
-    FILE *f;
+    lh_fs_path_t file_path;
+    lh_str_view_t view;
+    lh_str_view_t text_view;
+    lh_str_view_t line_view;
+    lh_str_t text;
+    lh_usize_t pos;
+    lh_usize_t limit;
+    lh_usize_t size;
+    bool found;
 
     if (lh_math_ne(env, authum_null) && lh_math_ne(env[0], lh_char_map_nul))
     {
@@ -121,29 +164,52 @@ read_gamedll_name(const authum_char_t *dir, authum_char_t *out, authum_usize_t o
         return true;
     }
     lh_str_ptr_format_cstr(path, sizeof path, "%s/%s", dir, authum_gamedll_file);
-    f = std::fopen(path, "r");
-    if (lh_math_eq(f, authum_null))
+    lh_fs_path_init(lh_addr_of(file_path));
+    lh_str_view_init(lh_addr_of(view), path);
+    lh_fs_path_set(lh_addr_of(file_path), view, lh_os_system_fs_path_style_native());
+    lh_str_init(lh_addr_of(text));
+    if (!read_file_text(lh_addr_of(file_path), lh_addr_of(text)))
     {
+        lh_str_deinit(lh_addr_of(text));
+        lh_fs_path_deinit(lh_addr_of(file_path));
         authum_log_error("gamedll: no %s beside authum.so (looked at %s)", authum_gamedll_file,
                          path);
         authum_cstr_copy(out, out_size, authum_gamedll_default);
         return false;
     }
-    while (lh_math_ne(std::fgets(line, sizeof line, f), authum_null))
+    /* The first line that says something is the name. */
+    lh_str_as_view(lh_addr_of(text), lh_addr_of(text_view));
+    limit = lh_cast_static(lh_usize_t, sizeof line - 1U);
+    pos = 0u;
+    found = false;
+    while (lh_str_view_split_next_line(lh_addr_of(text_view), lh_addr_of(pos),
+                                       lh_addr_of(line_view)))
     {
+        size = lh_str_view_get_size(lh_addr_of(line_view));
+        if (size > limit)
+        {
+            size = limit;
+        }
+        lh_memory_std_copy(line, lh_str_view_get_data(lh_addr_of(line_view)), size);
+        line[size] = lh_char_map_nul;
         trim(line);
         if (lh_math_eq(line[0], lh_char_map_nul))
         {
             continue;
         }
         authum_cstr_copy(out, out_size, line);
-        std::fclose(f);
-        return true;
+        found = true;
+        break;
     }
-    std::fclose(f);
-    authum_log_error("gamedll: %s is empty", path);
-    authum_cstr_copy(out, out_size, authum_gamedll_default);
-    return false;
+    lh_str_deinit(lh_addr_of(text));
+    lh_fs_path_deinit(lh_addr_of(file_path));
+    if (!found)
+    {
+        authum_log_error("gamedll: %s is empty", path);
+        authum_cstr_copy(out, out_size, authum_gamedll_default);
+        return false;
+    }
+    return true;
 }
 
 /* Open the real game library, through lh's OS layer — the same call on both

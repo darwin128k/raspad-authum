@@ -1,7 +1,6 @@
 #include <authum/cfg.h>
 #include <authum/unused.h>
 #include <gtest/gtest.h>
-#include <stdio.h>
 #include <string.h>
 
 static authum_bool_t enable, adopted;
@@ -9,7 +8,8 @@ static authum_i32_t level;
 static authum_u32_t mask;
 static authum_char_t text[16];
 static authum_cfg_t cfg;
-static FILE *file;
+static const authum_char_t config[] = "# comment\n; also comment\n\n  enable = yes \nlevel=not-a-number\n"
+                                      "text = a=b=c\nextra = 12\n";
 static const authum_cfg_item_t items[] = {{"enable", authum_cfg_kind_bool, &enable, 0},
                                           {"level", authum_cfg_kind_i32, &level, 0},
                                           {"mask", authum_cfg_kind_u32, &mask, 0},
@@ -27,13 +27,7 @@ class authum_cfg : public ::testing::Test
         level = 5;
         mask = 1;
         strcpy(text, "default");
-        file = tmpfile();
-        ASSERT_NE(file, authum_null);
-        fputs("# comment\n; also comment\n\n  enable = yes \nlevel=not-a-number\n"
-              "text = a=b=c\nextra = 12\n",
-              file);
-        rewind(file);
-        adopted = authum_cfg_open_file(&cfg, file);
+        adopted = authum_cfg_open_text(&cfg, config, sizeof config - 1);
         ASSERT_TRUE(adopted);
     }
 
@@ -43,10 +37,6 @@ class authum_cfg : public ::testing::Test
         if (adopted)
         {
             authum_cfg_close(&cfg);
-        }
-        else if (file)
-        {
-            fclose(file);
         }
     }
 };

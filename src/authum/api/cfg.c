@@ -11,9 +11,7 @@
 #include <lh/memory/std.h>
 #include <lh/os/fs/file.h>
 #include <lh/os/system/fs/path.h>
-#include <lh/str.h>
-#include <lh/str/line/reader.h>
-#include <lh/util/str/ptr.h>
+#include <lh/str/split/line.h>
 
 /** The bytes one read of the config file brings in. */
 enum
@@ -199,26 +197,28 @@ authum_cfg_rtrim(authum_char_t *s)
  * call. @p pos is the offset of the line to read.
  */
 static authum_bool_t
-authum_cfg_next_line(authum_cfg_t *self, lh_str_line_reader_t *reader, lh_usize_t *pos)
+authum_cfg_next_line(authum_cfg_t *self, const lh_str_view_t *text, lh_usize_t *pos)
 {
     lh_str_view_t line;
     lh_usize_t limit;
     lh_usize_t chunk;
+    lh_usize_t start;
 
     limit = lh_math_sub(lh_cast_static(lh_usize_t, sizeof(self->line)), 1u);
-    lh_str_line_reader_set_pos(reader, *pos);
-    if (!lh_str_line_reader_next(reader, lh_addr_of(line)))
+    start = *pos;
+    if (!lh_str_view_split_next_line(text, pos, lh_addr_of(line)))
     {
         return authum_bool_false;
     }
     chunk = lh_str_view_get_size(lh_addr_of(line));
     if (chunk > limit)
     {
+        /* The line is longer than the buffer: the rest of it is the next line. */
         chunk = limit;
+        *pos = lh_math_add(start, limit);
     }
     lh_memory_std_copy(self->line, lh_str_view_get_data(lh_addr_of(line)), chunk);
     self->line[chunk] = lh_char_map_nul;
-    *pos = lh_math_add(*pos, chunk);
     return authum_bool_true;
 }
 
@@ -230,7 +230,6 @@ authum_cfg_get_value(authum_cfg_t *self, const authum_char_t *key)
     authum_char_t *key_end;
     authum_char_t *value;
     lh_str_view_t text;
-    lh_str_line_reader_t reader;
     lh_usize_t pos;
 
     if (authum_null_eq(self) || authum_null_eq(self->text) || authum_null_eq(key) ||
@@ -240,9 +239,8 @@ authum_cfg_get_value(authum_cfg_t *self, const authum_char_t *key)
     }
 
     lh_str_view_init_by_size(lh_addr_of(text), self->text, self->size);
-    lh_str_line_reader_init(lh_addr_of(reader), text);
     pos = 0u;
-    while (authum_cfg_next_line(self, lh_addr_of(reader), lh_addr_of(pos)))
+    while (authum_cfg_next_line(self, lh_addr_of(text), lh_addr_of(pos)))
     {
         p = authum_cfg_skip_spaces(self->line);
         authum_cfg_rtrim(p);

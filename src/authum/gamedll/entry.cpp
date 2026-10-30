@@ -11,7 +11,6 @@
  * then the real game DLL is loaded and handed the engine's functions.
  */
 #include <authum/gamedll/engine.h>
-#include <authum/float.h>
 #include <authum/unused.h>
 #include <lh/cast/const.h>
 #include <lh/char/map.h>
