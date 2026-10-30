@@ -1,12 +1,9 @@
 #include <authum/host/placeholders.h>
-#include <authum/cstr.h>
 #include <authum/memory.h>
 #include <authum/unused.h>
 #include <lh/char/letter.h>
 #include <lh/char/digit.h>
 #include <lh/memory/std.h>
-#include <lh/util/str/ptr.h>
-
 
 #include <stdlib.h>
 
@@ -95,8 +92,8 @@ authum_placeholder_is_standard(const authum_char_t *name, authum_usize_t length)
          index = lh_math_add_one(index))
     {
         if (lh_math_eq(lh_str_ptr_len(authum_placeholder_standard_names[index]), length) &&
-            lh_str_ptr_equals_by_size(authum_placeholder_standard_names[index], length, name, length,
-                                      lh_bool_false))
+            lh_str_ptr_equals_by_size(authum_placeholder_standard_names[index], length, name,
+                                      length, lh_bool_false))
         {
             return authum_bool_true;
         }
@@ -149,8 +146,8 @@ authum_placeholder_lookup(authum_placeholder_owner_t *owner, const authum_char_t
          index = lh_math_add_one(index))
     {
         if (lh_math_eq(lh_str_ptr_len(authum_placeholder_standard_names[index]), length) &&
-            lh_str_ptr_equals_by_size(authum_placeholder_standard_names[index], length, name, length,
-                                      lh_bool_false) &&
+            lh_str_ptr_equals_by_size(authum_placeholder_standard_names[index], length, name,
+                                      length, lh_bool_false) &&
             owner->standard[index] && owner->standard[index][0])
         {
             return owner->standard[index];
@@ -272,7 +269,7 @@ authum_placeholder_register_impl(authum_ptr owner, const authum_char_t *name,
     for (const authum_placeholder_entry_t *existing = authum_placeholder_entries; existing;
          existing = existing->next)
     {
-        if (!lh_str_ptr_equals(existing->name, name, lh_bool_false))
+        if (lh_str_ptr_equals(existing->name, name, lh_bool_false))
         {
             return authum_bool_false;
         }
@@ -306,7 +303,7 @@ authum_placeholder_unregister_impl(authum_ptr owner, const authum_char_t *name)
     while (lh_ptr_deref(link))
     {
         authum_placeholder_entry_t *entry = lh_ptr_deref(link);
-        if (lh_math_eq(entry->owner, owner) && !lh_str_ptr_equals(entry->name, name, lh_bool_false))
+        if (lh_math_eq(entry->owner, owner) && lh_str_ptr_equals(entry->name, name, lh_bool_false))
         {
             lh_ptr_deref(link) = entry->next;
             authum_memory_free(entry);

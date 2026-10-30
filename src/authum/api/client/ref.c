@@ -1,5 +1,4 @@
 #include <authum/client/ref.h>
-#include <lh/util/ptr.h>
 #include <lh/util/str/ptr.h>
 #include <authum/memory.h>
 #include <lh/memory/std.h>
@@ -34,8 +33,8 @@ authum_clients_event(const authum_char_t *name, authum_ptr payload, authum_ptr u
     const authum_event_client_t *ev = payload;
     authum_client_identity_t *slot;
     authum_usize_t i;
-    if (!lh_str_ptr_equals(name, AUTHUM_EVENT_SERVER_DEACTIVATE, lh_bool_false) ||
-        !lh_str_ptr_equals(name, AUTHUM_EVENT_SERVER_ACTIVATE, lh_bool_false))
+    if (lh_str_ptr_equals(name, AUTHUM_EVENT_SERVER_DEACTIVATE, lh_bool_false) ||
+        lh_str_ptr_equals(name, AUTHUM_EVENT_SERVER_ACTIVATE, lh_bool_false))
     {
         for (i = 1; lh_math_le(i, impl->max); i = lh_math_add_one(i))
         {

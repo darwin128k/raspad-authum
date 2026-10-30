@@ -209,9 +209,9 @@ TEST(authum_logs, routing)
     test_reset();
     EXPECT_TRUE(authum_logs_init(TEST_ROOT, test_mirror));
     authum_logs_set_clock(test_clock);
-    EXPECT_TRUE(authum_logs_open(&g_test_qproto, "qproto", authum_null));
-    EXPECT_TRUE(authum_logs_open(&g_test_quiet, "quiet", authum_null));
-    EXPECT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null));
+    EXPECT_TRUE(authum_logs_open(&g_test_qproto, "qproto", authum_null, authum_null));
+    EXPECT_TRUE(authum_logs_open(&g_test_quiet, "quiet", authum_null, authum_null));
+    EXPECT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null, authum_null));
 
     /* Per-module level from the cfg. */
     EXPECT_TRUE(authum_logs_is_enabled(&g_test_qproto, authum_logger_level_debug));
@@ -265,7 +265,7 @@ TEST(authum_logs, buffering)
     test_reset();
     EXPECT_TRUE(authum_logs_init(TEST_ROOT, authum_null));
     authum_logs_set_clock(test_clock);
-    EXPECT_TRUE(authum_logs_open(&g_test_qproto, "qproto", authum_null));
+    EXPECT_TRUE(authum_logs_open(&g_test_qproto, "qproto", authum_null, authum_null));
 
     authum_logs_write(&g_test_qproto, authum_logger_level_info, "buffered line");
 
@@ -290,7 +290,7 @@ TEST(authum_logs, periodic_flush)
     test_reset();
     EXPECT_TRUE(authum_logs_init(TEST_ROOT, authum_null));
     authum_logs_set_clock(test_clock);
-    EXPECT_TRUE(authum_logs_open(&g_test_qproto, "qproto", authum_null));
+    EXPECT_TRUE(authum_logs_open(&g_test_qproto, "qproto", authum_null, authum_null));
     authum_char_t previous[256];
     test_log_path(previous, sizeof previous, "qproto", TEST_DAY_ONE);
     remove(previous);
@@ -316,7 +316,7 @@ TEST(authum_logs, file_cache)
     test_reset();
     EXPECT_TRUE(authum_logs_init(TEST_ROOT, authum_null));
     authum_logs_set_clock(test_clock);
-    EXPECT_TRUE(authum_logs_open(&g_test_qproto, "qproto", authum_null));
+    EXPECT_TRUE(authum_logs_open(&g_test_qproto, "qproto", authum_null, authum_null));
     for (authum_u32_t round = 0; round < 2; ++round)
     {
         for (authum_u32_t index = 0; index < 40; ++index)
@@ -355,8 +355,8 @@ TEST(authum_logs, journals)
 
     EXPECT_TRUE(authum_logs_init(TEST_ROOT, authum_null));
     authum_logs_set_clock(test_clock);
-    EXPECT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null));
-    EXPECT_TRUE(authum_logs_open(&g_test_qproto, "qproto", authum_null));
+    EXPECT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null, authum_null));
+    EXPECT_TRUE(authum_logs_open(&g_test_qproto, "qproto", authum_null, authum_null));
 
     audit = authum_logs_open_journal(&g_test_hello, "audit");
     EXPECT_NE(audit, authum_null);
@@ -399,7 +399,7 @@ TEST(authum_logs, reload)
 {
     test_reset();
     EXPECT_TRUE(authum_logs_init(TEST_ROOT, authum_null));
-    EXPECT_TRUE(authum_logs_open(&g_test_qproto, "qproto", authum_null));
+    EXPECT_TRUE(authum_logs_open(&g_test_qproto, "qproto", authum_null, authum_null));
     EXPECT_TRUE(authum_logs_is_enabled(&g_test_qproto, authum_logger_level_debug));
 
     test_write_cfg("qproto.log_level = warning\n");
@@ -431,7 +431,7 @@ TEST(authum_logs, prune)
 
     EXPECT_TRUE(authum_logs_init(TEST_ROOT, authum_null));
     authum_logs_set_clock(test_clock);
-    EXPECT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null));
+    EXPECT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null, authum_null));
     authum_logs_write(&g_test_hello, authum_logger_level_info, "prune trigger");
     authum_logs_deinit();
 
@@ -454,7 +454,7 @@ TEST(authum_logs, module_logger)
 
     EXPECT_TRUE(authum_logs_init(TEST_ROOT, test_mirror));
     authum_logs_set_clock(test_clock);
-    EXPECT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null));
+    EXPECT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null, authum_null));
 
     channel.ops = authum_logs_ops();
     channel.owner = &g_test_hello;
@@ -520,7 +520,7 @@ TEST(authum_logs, local_config)
     test_write_cfg("log_level = warning\nlog_keep_days = 30\n");
     EXPECT_TRUE(authum_logs_init(TEST_ROOT, test_mirror));
     authum_logs_set_clock(test_clock);
-    EXPECT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null));
+    EXPECT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null, authum_null));
     EXPECT_TRUE(authum_logs_is_enabled(&g_test_hello, authum_logger_level_debug));
     EXPECT_TRUE(authum_logs_sync(5000));
     /* Registration cleans an idle module; no write was required. */
@@ -560,7 +560,7 @@ TEST(authum_logs, constructor)
     test_reset();
     EXPECT_TRUE(authum_logs_init(TEST_ROOT, authum_null));
     authum_logs_set_clock(test_clock);
-    EXPECT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null));
+    EXPECT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null, authum_null));
     authum_logger_channel_t channel = {authum_logs_ops(), &g_test_hello};
     authum_host_t host = {0};
     host.logger = &channel;
@@ -606,7 +606,7 @@ TEST(authum_logs, custom_sandbox)
     EXPECT_TRUE(authum_logs_init(TEST_ROOT, authum_null));
     authum_logs_set_clock(test_clock);
     int owner;
-    EXPECT_TRUE(authum_logs_open(&owner, "private", base));
+    EXPECT_TRUE(authum_logs_open(&owner, "private", authum_null, base));
     EXPECT_TRUE(authum_logs_is_enabled(&owner, authum_logger_level_debug));
     authum_logs_write(&owner, authum_logger_level_debug, "custom sandbox");
     EXPECT_TRUE(authum_logs_sync(5000));
@@ -626,7 +626,7 @@ TEST(authum_logs_environment, disabled)
     test_reset();
 
     EXPECT_TRUE(authum_logs_init(TEST_ROOT, test_mirror));
-    EXPECT_TRUE(authum_logs_open(&g_test_qproto, "qproto", authum_null));
+    EXPECT_TRUE(authum_logs_open(&g_test_qproto, "qproto", authum_null, authum_null));
     EXPECT_FALSE(authum_logs_is_enabled(&g_test_qproto, authum_logger_level_error));
     EXPECT_FALSE(authum_logs_is_enabled(authum_null, authum_logger_level_error));
     authum_logs_write(&g_test_qproto, authum_logger_level_error, "environment disabled");
@@ -678,7 +678,7 @@ class authum_log_line : public ::testing::Test
 
 TEST_F(authum_log_line, module_file_uses_hlds_timestamp_without_repeating_module_name)
 {
-    ASSERT_TRUE(authum_logs_open(&g_test_qproto, "qproto", authum_null));
+    ASSERT_TRUE(authum_logs_open(&g_test_qproto, "qproto", authum_null, authum_null));
     authum_logs_write(&g_test_qproto, authum_logger_level_info, "module line");
     EXPECT_TRUE(
         test_file_contains("qproto", g_test_now, "L 10/26/2026 - 08:09:18: [info] module line\n"));
@@ -686,7 +686,7 @@ TEST_F(authum_log_line, module_file_uses_hlds_timestamp_without_repeating_module
 
 TEST_F(authum_log_line, host_copy_includes_source_module)
 {
-    ASSERT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null));
+    ASSERT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null, authum_null));
     authum_logs_write(&g_test_hello, authum_logger_level_warning, "module warning");
     EXPECT_TRUE(test_file_contains("authum", g_test_now,
                                    "L 10/26/2026 - 08:09:18: [warning] [hello] module warning\n"));
@@ -701,7 +701,7 @@ TEST_F(authum_log_line, host_own_line_has_no_redundant_module_tag)
 
 TEST_F(authum_log_line, journal_tag_is_only_added_to_host_copy)
 {
-    ASSERT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null));
+    ASSERT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null, authum_null));
     auto *journal = authum_logs_open_journal(&g_test_hello, "audit");
     ASSERT_NE(journal, authum_null);
     authum_logs_write(journal, authum_logger_level_warning, "journal line");

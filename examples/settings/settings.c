@@ -50,7 +50,7 @@ AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
     .date = "2026-10-22",
     .author = "Authum examples",
     .url = "",
-    .logtag = "SETTINGS",
+    .tag = "SETTINGS",
 };
 
 /** `mode` is one of g_settings_modes; anything else keeps the current value. */

@@ -13,7 +13,6 @@
 #include <authum/client.h>
 
 #include <stdio.h>
-#include <string.h>
 
 #define ANNOUNCER_SOUND "buttons/bell1.wav"
 
@@ -29,7 +28,7 @@ AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
     .date = "2026-10-23",
     .author = "Authum examples",
     .url = "",
-    .logtag = "ANNOUNCER",
+    .tag = "ANNOUNCER",
 };
 
 void
@@ -66,7 +65,7 @@ announcer_on_log(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 
     authum_unused(name);
     authum_unused(user);
-    if (authum_null_eq(ev) || strstr(ev->text, "World triggered \"Round_Start\"") == authum_null)
+    if (authum_null_eq(ev) || !authum_cstr_contains(ev->text, "World triggered \"Round_Start\""))
     {
         return authum_event_result_continue;
     }

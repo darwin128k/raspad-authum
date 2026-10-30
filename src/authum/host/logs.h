@@ -66,9 +66,13 @@ authum_logs_ops(void);
  * Start a channel for module @p owner named @p name (its `log_level` is read
  * now), writing under `@p module_dir/logs` — or `modules/<name>/logs` when
  * @p module_dir is null.
+ *
+ * @p tag is the source mark the records carry (`QPROTO`); an empty @p tag
+ * falls back to @p name.
  */
 authum_bool_t
-authum_logs_open(authum_ptr owner, const authum_char_t *name, const authum_char_t *module_dir);
+authum_logs_open(authum_ptr owner, const authum_char_t *name, const authum_char_t *tag,
+                 const authum_char_t *module_dir);
 
 /** End @p owner's channel (after the module's `stop`). */
 void

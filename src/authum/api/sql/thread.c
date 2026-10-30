@@ -3,7 +3,6 @@
 #include <lh/memory/std.h>
 #include <lh/sql/mysql/api.h>
 #include <authum/crypto/ed25519.h>
-#include <lh/util/str/ptr.h>
 #include <stdlib.h>
 #include <stdio.h>
 

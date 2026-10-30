@@ -32,7 +32,7 @@ AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
     .date = "2026-10-22",
     .author = "Authum examples",
     .url = "",
-    .logtag = "WELCOME",
+    .tag = "WELCOME",
 };
 
 authum_event_result_t

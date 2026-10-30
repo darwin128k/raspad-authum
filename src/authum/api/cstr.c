@@ -66,7 +66,8 @@ authum_cstr_contains(const authum_char_t *haystack, const authum_char_t *needle)
     {
         return authum_bool_false;
     }
-    return lh_str_ptr_contains(haystack, needle, lh_bool_false) ? authum_bool_true : authum_bool_false;
+    return lh_str_ptr_contains(haystack, needle, lh_bool_false) ? authum_bool_true
+                                                                : authum_bool_false;
 }
 
 /*

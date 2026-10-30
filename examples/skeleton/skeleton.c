@@ -25,7 +25,7 @@ AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
     .date = "2026-10-22",
     .author = "Authum examples",
     .url = "",
-    .logtag = "SKELETON",
+    .tag = "SKELETON",
 };
 
 authum_bool_t

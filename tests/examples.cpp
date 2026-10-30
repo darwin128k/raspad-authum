@@ -491,7 +491,7 @@ test_load(test_module_t *m)
     m->commands.scope = m->info->name;
     m->logger.ops = authum_logs_ops();
     m->logger.owner = m;
-    authum_logs_open(m, m->info->name, authum_path_get_cstr(&m->module));
+    authum_logs_open(m, m->info->name, m->info->tag, authum_path_get_cstr(&m->module));
 
     memset(&m->host, 0, sizeof m->host);
     m->host.logger = &m->logger;
