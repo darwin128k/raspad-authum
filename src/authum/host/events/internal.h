@@ -3,7 +3,7 @@
  * @brief Host registry and exact module callback lookup.
  *
  * LH owns the registry, ordering and record lifetime. These helpers connect its
- * records to Authum's callback ABI and module ownership tag on the server thread.
+ * records to Authum's callback ABI and module ownership on the server thread.
  */
 
 #ifndef AUTHUM_HOST_EVENTS_INTERNAL_H

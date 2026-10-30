@@ -62,7 +62,8 @@ Every image that wants to be an Authum module exports two C symbols.
 | `name` | Required. A null name is rejected. |
 | `version` | The module's own SemVer. |
 | `datetime` | Build timestamp. |
-| `author`, `url`, `logtag` | Reported identity — the host's own identity is the same object. |
+| `author`, `url` | Reported identity — the host's own identity is the same object. |
+| `tag` | The mark the module is shown with in a log record. Three words, three meanings: `owner` is who owns a subscription, a journal or a decision; `tag` is the mark a source is shown with; `name` is what it is called. |
 
 `start` may be `authum_module_start` and `stop` may be `authum_module_stop`.
 Both are exported from the host image, so a child built against that

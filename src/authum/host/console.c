@@ -9,8 +9,6 @@
 
 #include <lh/os.h>
 
-#include <string.h>
-
 void
 authum_console_reply(authum_command_print_fn print, authum_ptr out, const authum_char_t *line)
 {

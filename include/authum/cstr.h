@@ -15,8 +15,6 @@
 #include <authum/null.h>
 #include <authum/size.h>
 
-#include <string.h>
-
 AUTHUM_EXTERN_C_BEGIN
 
 authum_char_t
@@ -35,6 +33,13 @@ authum_cstr_copy(authum_char_t *dst, authum_usize_t dst_size, const authum_char_
  */
 authum_bool_t
 authum_cstr_is_equal(const authum_char_t *a, const authum_char_t *b, authum_bool_t ignore_case);
+
+/**
+ * @brief True when @p haystack holds @p needle (exact bytes, case-sensitive).
+ * @return ::authum_bool_false when either pointer is null.
+ */
+authum_bool_t
+authum_cstr_contains(const authum_char_t *haystack, const authum_char_t *needle);
 
 /**
  * @brief Parse a signed 32-bit decimal integer (optional leading `+`/`-`).

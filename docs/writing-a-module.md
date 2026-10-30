@@ -53,7 +53,7 @@ AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
     .date = "2026-10-19",
     .author = "you",
     .url = "",
-    .logtag = "EXAMPLE",
+    .tag = "EXAMPLE",
 };
 
 authum_bool_t

@@ -78,6 +78,12 @@ session; do not make the owner repeat them again.
 - A field name does not repeat its context. The module identity carries `tag` (how
   the module is marked in the logs), not `logtag`: the struct already says what it
   is, and the neighbours `name`, `author`, `url` repeat nothing either.
+- **Three words, three meanings — do not mix them.** `owner` is *who*: the module
+  that owns a subscription, a journal, a decision. `tag` is *the mark a source is
+  shown with* in a record (the module's `tag`, the log record's tag). `name` is
+  *what it is called* (the module's name, a channel's name, a file's name). A
+  field never borrows a neighbour's word: the log channel's admin prefix is a
+  `name`, the subscription's holder is an `owner`.
 - Use `lh_fs_path_t` for private LH filesystem operations above `lh/os/system`;
   keep `authum_path_t` on the public Authum ABI. Raw native path text belongs at the kernel boundary. Preserve unresolved placeholder text as an Authum policy.
 - Include project headers with angle brackets and namespace paths. Keep module example

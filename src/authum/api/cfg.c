@@ -5,11 +5,11 @@
 
 #include <authum/cfg.h>
 #include <authum/unused.h>
+#include <lh/cast/const.h>
 #include <lh/char/map.h>
 #include <lh/util/ptr.h>
+#include <lh/util/str/ptr.h>
 #include <lh/memory/std.h>
-
-#include <string.h>
 
 void
 authum_cfg_close(authum_cfg_t *self)
@@ -81,7 +81,7 @@ authum_cfg_rtrim(authum_char_t *s)
     {
         return;
     }
-    n = lh_cast_static(authum_usize_t, strlen(s));
+    n = lh_cast_static(authum_usize_t, lh_str_ptr_len(s));
     while (lh_math_gt(n, 0u) && (lh_math_eq(s[lh_math_sub(n, 1u)], lh_char_map_lf) ||
                                  lh_math_eq(s[lh_math_sub(n, 1u)], lh_char_map_cr) ||
                                  lh_math_eq(s[lh_math_sub(n, 1u)], lh_char_map_space) ||
@@ -117,7 +117,8 @@ authum_cfg_get_value(authum_cfg_t *self, const authum_char_t *key)
             continue;
         }
 
-        eq = strchr(p, lh_char_map_equals);
+        eq = lh_cast_const(authum_char_t *,
+                           lh_str_ptr_find_of_char(p, lh_str_ptr_len(p), lh_char_map_equals));
         if (authum_null_eq(eq))
         {
             continue;
@@ -138,7 +139,7 @@ authum_cfg_get_value(authum_cfg_t *self, const authum_char_t *key)
         value = authum_cfg_skip_spaces(lh_math_add(eq, 1));
         if (lh_math_ne(value, self->line))
         {
-            authum_usize_t n = lh_cast_static(authum_usize_t, strlen(value));
+            authum_usize_t n = lh_cast_static(authum_usize_t, lh_str_ptr_len(value));
             lh_memory_std_move(self->line, value, lh_math_add(n, 1u));
         }
         return self->line;

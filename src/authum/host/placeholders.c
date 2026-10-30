@@ -1,12 +1,14 @@
 #include <authum/host/placeholders.h>
+#include <authum/cstr.h>
 #include <authum/memory.h>
+#include <authum/unused.h>
 #include <lh/char/letter.h>
 #include <lh/char/digit.h>
 #include <lh/memory/std.h>
+#include <lh/util/str/ptr.h>
 
 
 #include <stdlib.h>
-#include <string.h>
 
 #include <lh/os/system/fs/path.h>
 #include <lh/os/fs/path.h>
@@ -60,7 +62,7 @@ authum_placeholder_canonical(const authum_char_t *input, authum_char_t *out, aut
                           lh_addr_of(rendered));
         text = lh_str_get_data(lh_addr_of(rendered));
     }
-    const authum_u64_t length = strlen(text);
+    const authum_u64_t length = lh_str_ptr_len(text);
     const authum_bool_t fits = lh_math_lt(length, size) ? authum_bool_true : authum_bool_false;
     if (fits)
     {
@@ -92,8 +94,9 @@ authum_placeholder_is_standard(const authum_char_t *name, authum_usize_t length)
     for (authum_usize_t index = 0; lh_math_lt(index, authum_placeholder_standard_count);
          index = lh_math_add_one(index))
     {
-        if (lh_math_eq(strlen(authum_placeholder_standard_names[index]), length) &&
-            !strncmp(authum_placeholder_standard_names[index], name, length))
+        if (lh_math_eq(lh_str_ptr_len(authum_placeholder_standard_names[index]), length) &&
+            lh_str_ptr_equals_by_size(authum_placeholder_standard_names[index], length, name, length,
+                                      lh_bool_false))
         {
             return authum_bool_true;
         }
@@ -104,7 +107,7 @@ authum_placeholder_is_standard(const authum_char_t *name, authum_usize_t length)
 static authum_bool_t
 authum_placeholder_name_valid(const authum_char_t *name)
 {
-    authum_usize_t length = strlen(name);
+    authum_usize_t length = lh_str_ptr_len(name);
     if (!length || lh_math_ge(length, authum_placeholder_name_max))
     {
         return authum_bool_false;
@@ -145,8 +148,9 @@ authum_placeholder_lookup(authum_placeholder_owner_t *owner, const authum_char_t
     for (authum_usize_t index = 0; lh_math_lt(index, authum_placeholder_standard_count);
          index = lh_math_add_one(index))
     {
-        if (lh_math_eq(strlen(authum_placeholder_standard_names[index]), length) &&
-            !strncmp(authum_placeholder_standard_names[index], name, length) &&
+        if (lh_math_eq(lh_str_ptr_len(authum_placeholder_standard_names[index]), length) &&
+            lh_str_ptr_equals_by_size(authum_placeholder_standard_names[index], length, name, length,
+                                      lh_bool_false) &&
             owner->standard[index] && owner->standard[index][0])
         {
             return owner->standard[index];
@@ -155,7 +159,8 @@ authum_placeholder_lookup(authum_placeholder_owner_t *owner, const authum_char_t
     for (const authum_placeholder_entry_t *entry = authum_placeholder_entries; entry;
          entry = entry->next)
     {
-        if (lh_math_eq(strlen(entry->name), length) && !strncmp(entry->name, name, length))
+        if (lh_math_eq(lh_str_ptr_len(entry->name), length) &&
+            lh_str_ptr_equals_by_size(entry->name, length, name, length, lh_bool_false))
         {
             return entry->value;
         }
@@ -170,16 +175,21 @@ authum_placeholder_expand_impl(authum_ptr owner_ptr, const authum_char_t *templa
     authum_placeholder_owner_t *owner = owner_ptr;
     authum_char_t result[authum_placeholder_value_max];
     authum_usize_t used = 0;
+    const authum_char_t *template_end;
 
     if (authum_null_eq(owner) || !template || !lh_ptr_deref(template) || !out || !out_size)
     {
         return authum_bool_false;
     }
+    template_end = lh_math_add(template, lh_str_ptr_len(template));
     for (const authum_char_t *cursor = template; lh_ptr_deref(cursor);)
     {
         if (lh_math_eq(lh_ptr_deref(cursor), lh_char_map_lbrace))
         {
-            const authum_char_t *end = strchr(lh_math_add(cursor, 1), lh_char_map_rbrace);
+            const authum_char_t *end = lh_str_ptr_find_of_char(
+                lh_math_add(cursor, 1),
+                lh_cast_static(lh_usize_t, lh_math_sub(template_end, lh_math_add(cursor, 1))),
+                lh_char_map_rbrace);
             authum_usize_t length;
             const authum_char_t *value;
             if (!end)
@@ -192,7 +202,7 @@ authum_placeholder_expand_impl(authum_ptr owner_ptr, const authum_char_t *templa
             {
                 return authum_bool_false;
             }
-            authum_usize_t value_length = strlen(value);
+            authum_usize_t value_length = lh_str_ptr_len(value);
             if (lh_math_gt(lh_math_add(lh_math_add(used, value_length), 1), sizeof result))
             {
                 return authum_bool_false;
@@ -221,7 +231,7 @@ authum_placeholder_expand_impl(authum_ptr owner_ptr, const authum_char_t *templa
     if (!authum_placeholder_absolute(result))
     {
         const authum_char_t *base = owner->standard[authum_placeholder_module];
-        authum_usize_t base_length = base ? strlen(base) : 0;
+        authum_usize_t base_length = base ? lh_str_ptr_len(base) : 0;
         if (!base_length ||
             lh_math_gt(lh_math_add(lh_math_add(used, base_length), 2), sizeof result))
         {
@@ -251,7 +261,7 @@ authum_placeholder_register_impl(authum_ptr owner, const authum_char_t *name,
     {
         return authum_bool_false;
     }
-    if (authum_placeholder_is_standard(name, strlen(name)))
+    if (authum_placeholder_is_standard(name, lh_str_ptr_len(name)))
     {
         return authum_bool_false;
     }
@@ -262,7 +272,7 @@ authum_placeholder_register_impl(authum_ptr owner, const authum_char_t *name,
     for (const authum_placeholder_entry_t *existing = authum_placeholder_entries; existing;
          existing = existing->next)
     {
-        if (!strcmp(existing->name, name))
+        if (!lh_str_ptr_equals(existing->name, name, lh_bool_false))
         {
             return authum_bool_false;
         }
@@ -273,7 +283,7 @@ authum_placeholder_register_impl(authum_ptr owner, const authum_char_t *name,
         return authum_bool_false;
     }
     entry->owner = owner;
-    strncpy(entry->name, name, lh_math_sub(sizeof entry->name, 1));
+    authum_unused(authum_cstr_copy(entry->name, sizeof entry->name, name));
     if (!authum_placeholder_canonical(value, entry->value, sizeof entry->value))
     {
         authum_memory_free(entry);
@@ -296,7 +306,7 @@ authum_placeholder_unregister_impl(authum_ptr owner, const authum_char_t *name)
     while (lh_ptr_deref(link))
     {
         authum_placeholder_entry_t *entry = lh_ptr_deref(link);
-        if (lh_math_eq(entry->owner, owner) && !strcmp(entry->name, name))
+        if (lh_math_eq(entry->owner, owner) && !lh_str_ptr_equals(entry->name, name, lh_bool_false))
         {
             lh_ptr_deref(link) = entry->next;
             authum_memory_free(entry);

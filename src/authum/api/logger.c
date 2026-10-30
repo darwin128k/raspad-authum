@@ -7,7 +7,6 @@
 
 
 #include <stdio.h>
-#include <string.h>
 
 /* Authum's levels are LH's, value for value: the names come from LH. */
 lh_assert_static(authum_logger_level_emergency == lh_logger_level_emergency &&

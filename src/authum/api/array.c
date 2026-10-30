@@ -4,8 +4,6 @@
 
 #include <authum/null.h>
 
-#include <string.h>
-
 authum_bool_t
 authum_array_init(authum_array_t *self, const authum_sandbox_t *sandbox, authum_usize_t item_size)
 {

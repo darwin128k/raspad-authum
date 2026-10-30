@@ -3,7 +3,6 @@
 #include <authum/logger.h>
 
 #include <stdio.h>
-#include <string.h>
 
 const authum_http_service_t *
 authum_host_get_http(const authum_host_t *host)

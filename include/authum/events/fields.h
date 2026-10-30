@@ -2,7 +2,7 @@
  * @file fields.h
  * @brief Per-module event facade members.
  *
- * The ops table and borrowed module tag preserve the original ABI layout.
+ * The ops table and borrowed module owner preserve the original ABI layout.
  */
 
 #ifndef AUTHUM_EVENTS_FIELDS_H

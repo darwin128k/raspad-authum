@@ -18,8 +18,6 @@
 #include <lh/os/system/fs/path.h>
 #include <lh/runtime/allocator.h>
 
-#include <string.h>
-
 typedef struct authum_child_paths
 {
     authum_path_t game;

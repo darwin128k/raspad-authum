@@ -13,8 +13,6 @@
 #include <lh/runtime/allocator.h>
 #include <lh/size/limits.h>
 
-#include <string.h>
-
 /* lh treats a failed allocation as fatal and ends the process. A size no heap
  * could ever give (half the address space or more — a module's arithmetic gone
  * wrong) must not take the server down: refuse it with null instead. */

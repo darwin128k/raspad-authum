@@ -4,8 +4,6 @@
 
 #include <lh/json.h>
 
-#include <string.h>
-
 /* Read @p json into @p root; the caller deinits @p root whatever this returns. */
 static authum_bool_t
 authum_json_read(const authum_char_t *json, lh_json_node_t *root)
