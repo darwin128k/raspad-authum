@@ -63,6 +63,11 @@ struct authum_hook_call
     authum_char_t command[authum_hook_command_max];
     /** Everything after the command, one line; a handler may change it. */
     authum_char_t args[authum_hook_args_max];
+    /**
+     * The tag of the module whose handler stopped the call: the host writes
+     * it, so the log names who decided. Null when nobody stopped the call.
+     */
+    const authum_char_t *decided_by;
 };
 typedef struct authum_hook_call authum_hook_call_t;
 

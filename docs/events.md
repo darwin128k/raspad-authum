@@ -85,17 +85,20 @@ modules need no hooks of their own. Payload: `authum_event_client_t`.
 
 | Event | When | Notes |
 |-------|------|-------|
-| `authum.client.connect` | `ClientConnect` | Set `allow = authum_bool_false` + `reject_reason` to refuse; return `stop` if no one else should see it |
+| `authum.client.connect` | `ClientConnect` | |
 | `authum.client.put_in_server` | `ClientPutInServer` | |
 | `authum.client.info_changed` | `ClientUserInfoChanged` | `name` is the new name — rename history lives here |
 | `authum.client.disconnect` | `ClientDisconnect` | |
 
 Fields: `index` (entity index 1…maxClients — AMXX `id`), `userid`, `name`,
-`address` (connect), `auth_id`, `game_time`, `unix_time`, `allow`,
-`reject_reason`.
+`address` (connect), `auth_id`, `game_time`, `unix_time`.
 
-| `authum.client.command` | `ClientCommand` | Payload `authum_event_client_command_t`: `client`, `argc`, `argv[16][128]`, `args` (the line after the command). Set `block = authum_bool_true` and the game DLL never sees the command |
-| `authum.client.kill` | `ClientKill` (the `kill` command) | Payload `authum_event_client_t`; set `allow = authum_bool_false` to refuse the suicide |
+An event says what happened; it does not decide what happens next. Refusing a
+client, swallowing a command and stopping a kill are hook points
+(`<authum/hook.h>`, [docs/hooks.md](hooks.md)).
+
+| `authum.client.command` | `ClientCommand` | Payload `authum_event_client_command_t`: `client`, `argc`, `argv[16][128]`, `args` (the line after the command) |
+| `authum.client.kill` | `ClientKill` (the `kill` command) | Payload `authum_event_client_t` |
 | `authum.client.cvar_value` | `CvarValue2` | Payload `authum_event_client_cvar_t`: `client`, `request_id`, `cvar`, `value` — the answer to `authum_host_query_cvar(host, index, "cvar", request_id)` |
 
 Map and frame events, payload `authum_event_server_t` (`<authum/event/server.h>`):

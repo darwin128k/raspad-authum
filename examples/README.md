@@ -9,12 +9,12 @@ what you need, rename it, and build from there. They use only
 | [skeleton](skeleton/) | write any module | the empty template: info, start / stop, host copy, logger |
 | [hello](hello/) | see the usual pieces together | event subscription, sandbox array, console command |
 | [welcome](welcome/) | react to players and maps | `put_in_server` / `disconnect` / `server.activate`, engine facade: name, auth id, address, chat message, player list |
-| [chatfilter](chatfilter/) | stop a player's command | `authum.client.command` with `block` |
+| [chatfilter](chatfilter/) | stop a player's command | a command hook: the handler swallows the call before the game sees it |
 | [cvarguard](cvarguard/) | check a client's settings | `authum_host_query_cvar` → `authum.client.cvar_value`, kick |
 | [settings](settings/) | give your module a config file | defaults in a struct, `authum_cfg_apply_items`, a key with its own check, reload command |
 | [stats](stats/) | store data | SQLite through `<authum/sql.h>`, a separate journal (`authum_logger_open`) |
 | [scores](scores/) + [scoreboard](scoreboard/) | let two modules talk | a public types-only header, a forward and a query on the event bus |
-| [deathnotice](deathnotice/) | read or change a game message | `authum.message.DeathMsg`, colored chat, the module's own server cvars, refusing `kill` |
+| [deathnotice](deathnotice/) | read or change a game message | `authum.message.DeathMsg`, colored chat, the module's own server cvars, a kill hook that refuses `kill` |
 | [announcer](announcer/) | do something every N seconds or on a log line | timers, precache, `authum.server.log`, entity fields (health, armor) |
 
 Every example is loaded and exercised by `tests/examples.cpp` (CTest

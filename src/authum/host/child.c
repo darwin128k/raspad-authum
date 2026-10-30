@@ -267,6 +267,7 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     out->commands = lh_addr_of(data->commands);
     data->hooks.ops = authum_hooks_host_ops();
     data->hooks.owner = data;
+    data->hooks.tag = data->info->tag;
     out->hooks = lh_addr_of(data->hooks);
     data->tasks.ops = authum_tasks_host_ops();
     data->tasks.owner = data;

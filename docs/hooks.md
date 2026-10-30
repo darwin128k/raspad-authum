@@ -5,9 +5,8 @@ Decided on 2026-10-30. This is the design; the code follows it.
 ## 1. An event is not a hook
 
 An **event** tells a module that something happened. The module reacts; the
-game goes on. Today that is the whole story: `src/authum/gamedll/hooks.cpp`
-publishes `authum.client.*` and `authum.server.*` and then calls the game's own
-function, unless a handler set `allow = false` or `block = true`.
+game goes on. `src/authum/gamedll/hooks.cpp` publishes `authum.client.*` and
+`authum.server.*` and then calls the game's own function.
 
 A **hook** is a module that stands *in* the call. It sees the arguments, may
 change them, may change the result, and — with an explicit right — may stop the
@@ -16,7 +15,7 @@ kuprot that decides whether a player may spawn, a module that rewrites a
 command before the game reads it.
 
 So the two must not share a mechanism. An event is a message; a hook is a
-place in the call chain.
+place in the call chain. And there is only one road to a decision: the chain.
 
 ## 2. What gets hooked
 
@@ -25,12 +24,12 @@ The points where Authum already stands in the chain — the wrappers in
 
 | point | game call | today |
 |---|---|---|
-| client connect | `ClientConnect` | event, `allow` may refuse |
-| client put in server | `ClientPutInServer` | event |
+| client connect | `ClientConnect` | event + hook (the hook may refuse) |
+| client put in server | `ClientPutInServer` | event + hook (the hook may keep the player off) |
 | client info changed | `ClientUserInfoChanged` | event |
 | client disconnect | `ClientDisconnect` | event |
-| client kill | `ClientKill` | event, `allow` may refuse |
-| client command | `ClientCommand` | event, `block` may swallow |
+| client kill | `ClientKill` | event + hook (the hook may refuse) |
+| client command | `ClientCommand` | event + hook (the hook may swallow) |
 | cvar value | `CvarValue2` | event (answer) |
 | server activate | `ServerActivate` | event |
 | server deactivate | `ServerDeactivate` | event |
@@ -38,9 +37,8 @@ The points where Authum already stands in the chain — the wrappers in
 | server precache | `PrecacheModel` | event |
 | server shutdown | `ServerShutdown` | event |
 
-The first hooked point is **client connect**: it already carries the decision
-(`allow`, `reject_reason`) and it is where a module has to be right, not
-merely fast.
+The first hooked point is **client connect**: it is where a module has to be
+right, not merely fast.
 
 Points that are not in the table yet (`PlayerSpawn`, `RunCmd`, `GiveFnptrsToDll`)
 come later, one at a time, each with its own event first.
@@ -109,11 +107,11 @@ place in the call. A module may use both: the event to know *that* a player
 connected, the hook to decide *what happens next*. The event bus is not
 extended with hook powers, and the hook chain is not fed by the event bus.
 
-The `allow` / `reject_reason` / `block` fields of the client events stay as they
-are for now: they are the event's answer to the host, and the host reads them
-after the chain has run. When the hook chain for client connect is in place,
-the refusal moves into the chain (with its own author), and the event fields
-go away with it.
+The `allow` / `reject_reason` / `block` fields of the client events are gone:
+the refusal lives in the chain, and the chain knows who refused — the call
+carries the tag of the module whose handler stopped it
+(`authum_hook_call_t::decided_by`), so the log names the author of the
+decision.
 
 ## 7. The order of the work
 
@@ -140,11 +138,14 @@ and step 2 are only committed together with step 3.
   them, and may stop the call with a reason the player is shown. The kill
   handler may stop the kill. The command handler sees the command and its
   arguments and may swallow it. The put-in-server handler may keep the player
-  off the map. The event's own `allow` / `block` still work beside them — the
-  refusal moves into the chain when the modules move over.
-- Tests: `tests/src/authum/host/threads.cpp` — order, a changed call, a refused
-  call, a removed handler, a dropped owner, the budget, the slot limit.
+  off the map.
+- The refusal moved into the chain: the client events carry no decision any
+  more, and the call names the module that stopped it.
+- The examples: `hookguard` (a connect hook), `scriptlike` (a rule in a file,
+  a connect hook), `chatfilter` (a command hook), `deathnotice` (a kill hook).
+- Tests: `tests/src/authum/host/hooks.cpp` — order, a changed call, a refused
+  call, the author of the refusal, a removed handler, a dropped owner, the
+  budget, the slot limit.
 
-Left: client kill and client command, then the refusal of the event fields
-(`allow`, `reject_reason`, `block`) moving into the chain, and the modules of
-RASPAD that will use it.
+Left: the modules of RASPAD move over to the chain, and the points that are
+not in the table yet.

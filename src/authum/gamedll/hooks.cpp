@@ -1,8 +1,9 @@
 /*
  * The DLL_FUNCTIONS Authum hands the engine: Authum's wrappers for the calls
- * modules care about, each of which publishes an Authum event and then (unless
- * a handler blocked it) calls the real game's function. Everything else is the
- * game's own pointer, copied in hooks_fill_entity_table.
+ * modules care about, each of which publishes an Authum event, runs the hook
+ * chain and then (unless a handler stopped the call) calls the real game's
+ * function. Everything else is the game's own pointer, copied in
+ * hooks_fill_entity_table.
  */
 #include <authum/gamedll/game.h>
 #include <authum/host/log.h>
@@ -56,7 +57,6 @@ client_fill(authum_event_client_t *ev, edict_t *entity, const authum_char_t *nam
     lh_timestamp_t now = 0;
 
     lh_memory_std_set(ev, 0, sizeof lh_ptr_deref(ev));
-    ev->allow = authum_bool_true;
     authum_unused(lh_os_timestamp_try_get_now(lh_addr_of(now)));
     ev->unix_time = lh_cast_static(authum_i64_t, now);
     if (lh_math_ne(gpGlobals, authum_null))
@@ -165,23 +165,14 @@ h_client_connect(edict_t *entity, const authum_char_t *name, const authum_char_t
         authum_engine_host_set_client_address(ev.index, authum_null);
         copy(reject, 128,
              lh_math_ne(call.reject[0], lh_char_map_nul) ? call.reject : "Connection refused.");
-        authum_log_warning("client %s refused by a hook: %s", call.name, reject);
+        authum_log_warning("client %s refused by %s: %s", call.name,
+                           call.decided_by ? call.decided_by : "-", reject);
         return FALSE;
     }
     if (overran)
     {
         authum_log_warning("a hook on %s overran its budget and was dropped",
                            authum_hook_point_name(authum_hook_point_client_connect));
-    }
-    if (!ev.allow)
-    {
-        authum_engine_host_set_client_address(ev.index, authum_null);
-        copy(reject, 128,
-             lh_math_ne(ev.reject_reason[0], lh_char_map_nul) ? ev.reject_reason
-                                                              : "Connection refused.");
-        authum_log_warning("client %s refused by %s: %s", ev.name,
-                           ev.decided_by ? ev.decided_by : "-", reject);
-        return FALSE;
     }
     return lh_math_ne(g_game_dll.pfnClientConnect, authum_null)
                ? g_game_dll.pfnClientConnect(entity, call.name, call.address, reject)
@@ -204,7 +195,8 @@ h_client_put_in_server(edict_t *entity)
     if (!authum_hook_registry_call(authum_hook_registry(), authum_hook_point_client_put_in_server,
                                    lh_addr_of(call), authum_null))
     {
-        authum_log_info("%s was kept off the server by a hook", call.name);
+        authum_log_info("%s was kept off the server by %s", call.name,
+                        call.decided_by ? call.decided_by : "-");
         return; /* superseded: the game never puts the player in */
     }
     if (lh_math_ne(g_game_dll.pfnClientPutInServer, authum_null))
@@ -261,11 +253,8 @@ h_client_kill(edict_t *entity)
     if (!authum_hook_registry_call(authum_hook_registry(), authum_hook_point_client_kill,
                                    lh_addr_of(call), authum_null))
     {
-        authum_log_info("kill by %s refused by a hook", call.name);
-        return; /* superseded: the player is not killed */
-    }
-    if (!ev.allow)
-    {
+        authum_log_info("kill by %s refused by %s", call.name,
+                        call.decided_by ? call.decided_by : "-");
         return; /* superseded: the player is not killed */
     }
     if (lh_math_ne(g_game_dll.pfnClientKill, authum_null))
@@ -301,13 +290,8 @@ h_client_command(edict_t *entity)
     if (!authum_hook_registry_call(authum_hook_registry(), authum_hook_point_client_command,
                                    lh_addr_of(call), authum_null))
     {
-        authum_log_info("command from %s swallowed by a hook", call.args);
-        return; /* superseded: the game never sees the command */
-    }
-    if (ev.block)
-    {
-        authum_log_info("command from %s swallowed by %s", ev.args,
-                        ev.decided_by ? ev.decided_by : "-");
+        authum_log_info("command from %s swallowed by %s", call.args,
+                        call.decided_by ? call.decided_by : "-");
         return; /* superseded: the game never sees the command */
     }
     if (lh_math_ne(g_game_dll.pfnClientCommand, authum_null))

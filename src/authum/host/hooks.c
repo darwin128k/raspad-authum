@@ -30,8 +30,8 @@ authum_hook_registry_init(authum_hook_registry_t *self)
 }
 
 authum_bool_t
-authum_hook_registry_add(authum_hook_registry_t *self, authum_ptr owner, authum_hook_point_t point,
-                 authum_hook_fn fn, authum_ptr user)
+authum_hook_registry_add(authum_hook_registry_t *self, authum_ptr owner, const authum_char_t *tag,
+                         authum_hook_point_t point, authum_hook_fn fn, authum_ptr user)
 {
     authum_hook_chain_t *chain;
 
@@ -50,6 +50,7 @@ authum_hook_registry_add(authum_hook_registry_t *self, authum_ptr owner, authum_
     chain->handlers[chain->count].fn = fn;
     chain->handlers[chain->count].user = user;
     chain->handlers[chain->count].owner = owner;
+    chain->handlers[chain->count].tag = tag;
     chain->count = lh_math_add_one(chain->count);
     return authum_bool_true;
 }
@@ -131,14 +132,18 @@ authum_hook_registry_call(authum_hook_registry_t *self, authum_hook_point_t poin
     {
         return authum_bool_true;
     }
+    call->decided_by = authum_null;
     chain = lh_addr_of(self->chains[point]);
     for (index = chain->count; lh_math_gt(index, 0u); index = lh_math_sub_one(index))
     {
         authum_hook_handler_t *handler = lh_addr_of(chain->handlers[lh_math_sub_one(index)]);
-        lh_usize_t started = lh_os_tick_us();
+        /* The tick is 64-bit: a 32-bit counter would wrap and every handler
+         * would look like it overran its budget. */
+        lh_u64_t started = lh_os_tick_us();
         authum_bool_t keep = handler->fn(handler->user, call);
 
-        if (lh_math_gt(lh_math_sub(lh_os_tick_us(), started), authum_hook_budget_us))
+        if (lh_math_gt(lh_math_sub(lh_os_tick_us(), started),
+                       lh_cast_static(lh_u64_t, authum_hook_budget_us)))
         {
             if (!authum_null_eq(overran))
             {
@@ -149,6 +154,9 @@ authum_hook_registry_call(authum_hook_registry_t *self, authum_hook_point_t poin
         }
         if (!keep)
         {
+            /* The handler stopped the call: the tag of its module goes into the
+             * call, so the caller names who decided. */
+            call->decided_by = handler->tag;
             break;
         }
     }

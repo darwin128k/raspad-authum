@@ -5,7 +5,8 @@
  *     headshot, weapon); we announce it in chat with colors;
  *   - its own server cvars: `deathnotice_enabled`, `deathnotice_allow_kill`
  *     (set them in server.cfg like any other cvar);
- *   - authum.client.kill: refuse the `kill` command when it is not allowed.
+ *   - a kill hook (::authum_hook_point_client_kill): refuse the `kill`
+ *     command when it is not allowed.
  *
  * Counter-Strike chat colors: \x01 default, \x04 green, \x03 the team color of
  * the player given as sender.
@@ -66,23 +67,20 @@ deathnotice_on_death(const authum_char_t *name, authum_ptr payload, authum_ptr u
     return authum_event_result_continue;
 }
 
-authum_event_result_t
-deathnotice_on_kill(const authum_char_t *name, authum_ptr payload, authum_ptr user)
+/** The `kill` command is refused when the server does not allow it. */
+authum_bool_t
+deathnotice_on_kill(authum_ptr user, authum_hook_call_t *call)
 {
-    authum_event_client_t *ev = (authum_event_client_t *)payload;
-
-    authum_unused(name);
     authum_unused(user);
-    if (authum_null_eq(ev) ||
-        authum_host_cvar_get_i32(&g_deathnotice_host, "deathnotice_allow_kill", 1) != 0)
+    if (authum_host_cvar_get_i32(&g_deathnotice_host, "deathnotice_allow_kill", 1) != 0)
     {
-        return authum_event_result_continue;
+        return authum_bool_true;
     }
-    ev->allow = authum_bool_false;
-    authum_host_client_chat(&g_deathnotice_host, ev->index, ev->index,
+    call->proceed = authum_bool_false;
+    authum_host_client_chat(&g_deathnotice_host, call->index, call->index,
                             "\x04[Death]\x01 Suicide is disabled on this server.");
-    authum_logger_info(&g_deathnotice_log, "refused kill from %s", ev->name);
-    return authum_event_result_handled;
+    authum_logger_info(&g_deathnotice_log, "refused kill from %s", call->name);
+    return authum_bool_false;
 }
 
 authum_bool_t
@@ -100,8 +98,8 @@ deathnotice_start(authum_host_t *host)
     authum_host_cvar_register(&g_deathnotice_host, "deathnotice_allow_kill", "1", 0);
     return authum_host_subscribe(&g_deathnotice_host, AUTHUM_EVENT_MESSAGE_PREFIX "DeathMsg",
                                  deathnotice_on_death, authum_null) &&
-           authum_host_subscribe(&g_deathnotice_host, AUTHUM_EVENT_CLIENT_KILL, deathnotice_on_kill,
-                                 authum_null);
+           authum_hooks_add(authum_host_get_hooks(&g_deathnotice_host),
+                            authum_hook_point_client_kill, deathnotice_on_kill, authum_null);
 }
 
 void

@@ -34,6 +34,8 @@ typedef struct authum_hook_handler
     authum_ptr user;
     /** The module that added it. */
     authum_ptr owner;
+    /** The tag of that module: the chain names it when the handler stops a call. */
+    const authum_char_t *tag;
 } authum_hook_handler_t;
 
 /** @brief The handlers of one point. */
@@ -75,12 +77,15 @@ authum_hook_registry_init(authum_hook_registry_t *self);
 /**
  * @brief Add a handler to a point; the last one hooked is called first.
  *
+ * @param owner The module that adds it; its handlers go when it unloads.
+ * @param tag   The tag of that module: the chain names it when the handler
+ *              stops a call. May be null.
  * @return False when the point is unknown, the handler is null, or the point
  *         already holds as many handlers as it may.
  */
 authum_bool_t
-authum_hook_registry_add(authum_hook_registry_t *self, authum_ptr owner, authum_hook_point_t point,
-                 authum_hook_fn fn, authum_ptr user);
+authum_hook_registry_add(authum_hook_registry_t *self, authum_ptr owner, const authum_char_t *tag,
+                         authum_hook_point_t point, authum_hook_fn fn, authum_ptr user);
 
 /**
  * @brief Remove a handler from a point.
@@ -98,8 +103,9 @@ authum_hook_registry_drop_owner(authum_hook_registry_t *self, authum_ptr owner);
 /**
  * @brief Run the chain of @p point.
  *
- * A handler that stops the chain ends it. A handler that overruns the budget
- * is dropped and the rest of the chain runs.
+ * A handler that stops the chain ends it, and the call gets the mark of the
+ * module that stopped it. A handler that overruns the budget is dropped and the
+ * rest of the chain runs.
  *
  * @param call    The call the handlers see.
  * @param overrun Receives whether a handler was dropped for its budget; may be

@@ -233,60 +233,37 @@ TEST(authum_events, reentrancy)
     authum_events_host_clear();
 }
 
-authum_bool_t
-test_client_get_allow(const authum_event_client_t *self)
-{
-    return self->allow;
-}
-
-void
-test_client_set_allow(authum_event_client_t *self, authum_bool_t allow)
-{
-    self->allow = allow;
-}
-
 authum_char_t *
 test_client_get_name_mut(authum_event_client_t *self)
 {
     return self->name;
 }
 
-authum_char_t *
-test_client_get_reject_reason_mut(authum_event_client_t *self)
-{
-    return self->reject_reason;
-}
-
 authum_event_result_t
-test_on_connect_refuse(const authum_char_t *name, authum_ptr payload, authum_ptr user)
+test_on_connect(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 {
     authum_event_client_t *ev = static_cast<authum_event_client_t *>(payload);
 
     authum_unused(name);
     authum_unused(user);
-    if (strcmp(test_client_get_name_mut(ev), "bad") != 0)
-    {
-        return authum_event_result_continue;
-    }
-    test_client_set_allow(ev, authum_bool_false);
-    strcpy(test_client_get_reject_reason_mut(ev), "no");
-    return authum_event_result_stop;
+    strcpy(test_client_get_name_mut(ev), "seen");
+    return authum_event_result_continue;
 }
 
-TEST(authum_events, client_connect_refusal)
+TEST(authum_events, a_client_event_is_a_message)
 {
     int owner;
     authum_events_t ev = test_events_for(&owner);
     authum_event_client_t client;
 
-    EXPECT_TRUE(authum_events_subscribe(&ev, AUTHUM_EVENT_CLIENT_CONNECT, test_on_connect_refuse,
-                                        authum_null));
+    /* An event says what happened. Refusing a client is a hook
+     * (::authum_hook_point_client_connect), not a field of the event. */
+    EXPECT_TRUE(
+        authum_events_subscribe(&ev, AUTHUM_EVENT_CLIENT_CONNECT, test_on_connect, authum_null));
     memset(&client, 0, sizeof client);
-    test_client_set_allow(&client, authum_bool_true);
     strcpy(test_client_get_name_mut(&client), "bad");
     authum_events_host_publish(AUTHUM_EVENT_CLIENT_CONNECT, &client);
-    EXPECT_TRUE(!test_client_get_allow(&client));
-    EXPECT_STREQ(test_client_get_reject_reason_mut(&client), "no");
+    EXPECT_STREQ(test_client_get_name_mut(&client), "seen");
     authum_events_host_clear();
 }
 
