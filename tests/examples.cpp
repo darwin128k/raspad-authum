@@ -500,6 +500,8 @@ test_load(test_module_t *m)
     m->host.sandbox = &m->sandbox;
     m->host.events = test_module_get_events_mut(m);
     m->host.commands = &m->commands;
+    /* The host hands the module its mark; what the module prints carries it. */
+    m->host.tag = m->info->tag;
 
     m->started = m->api->start(&m->host);
     return m->started;
@@ -681,15 +683,21 @@ class authum_examples : public ::testing::Test
 
 TEST_F(authum_examples, welcomes_connected_player)
 {
-    EXPECT_NE(strstr(g_prints, "1|Welcome, Vega! You are playing de_dust2."), authum_null);
+    EXPECT_NE(strstr(g_prints, "1|[WELCOME] Welcome, Vega! You are playing de_dust2."), authum_null);
+}
+
+TEST_F(authum_examples, prints_carry_the_module_mark)
+{
+    /* The welcome module printed to the player; the mark says who wrote it. */
+    EXPECT_NE(strstr(g_prints, "[WELCOME] Welcome"), authum_null);
 }
 
 TEST_F(authum_examples, counts_repeat_visits)
 {
-    EXPECT_NE(strstr(g_prints, "1|Visit #1. Welcome back!"), authum_null);
+    EXPECT_NE(strstr(g_prints, "1|[STATS] Visit #1. Welcome back!"), authum_null);
     /* The same player comes back: the visit count grows. */
     test_client_event(AUTHUM_EVENT_CLIENT_PUT_IN_SERVER, 1);
-    EXPECT_NE(strstr(g_prints, "1|Visit #2."), authum_null);
+    EXPECT_NE(strstr(g_prints, "1|[STATS] Visit #2."), authum_null);
 }
 
 TEST_F(authum_examples, ignores_bots_in_visit_history)
@@ -725,7 +733,7 @@ TEST_F(authum_examples, filters_forbidden_chat)
 {
     g_prints[0] = 0;
     EXPECT_TRUE(test_say(1, "who uses an AIMBOT here"));
-    EXPECT_NE(strstr(g_prints, "1|Your message was not sent"), authum_null);
+    EXPECT_NE(strstr(g_prints, "1|[CHATFILTER] Your message was not sent"), authum_null);
 }
 
 TEST_F(authum_examples, allows_ordinary_chat)
@@ -739,7 +747,7 @@ TEST_F(authum_examples, scoreboard_reads_score_from_peer_module)
     g_prints[0] = '\0';
     EXPECT_TRUE(test_run("scores", "add", 2u, add_args));
     EXPECT_NE(strstr(g_out, "#1 now has 5"), authum_null);
-    EXPECT_NE(strstr(g_prints, "0|Vega: +5, now 5 points"), authum_null);
+    EXPECT_NE(strstr(g_prints, "0|[SCOREBOARD] Vega: +5, now 5 points"), authum_null);
     EXPECT_TRUE(test_run("scoreboard", "show", 1u, show_args));
     EXPECT_NE(strstr(g_out, "#1 has 5 points"), authum_null);
 }
@@ -817,7 +825,7 @@ TEST_F(authum_examples, deathnotice_formats_game_message)
         g_prints[0] = '\0';
         (void)authum_events_host_publish(AUTHUM_EVENT_MESSAGE_PREFIX "DeathMsg", &death);
         EXPECT_TRUE(strstr(g_prints,
-                           "chat|0|\x04[Death]\x03 Vega\x01 killed Gordon with ak47 (headshot)") !=
+                           "chat|0|[DEATHNOTICE] \x04[Death]\x03 Vega\x01 killed Gordon with ak47 (headshot)") !=
                     authum_null);
         EXPECT_FALSE(death.block);
     }
@@ -881,7 +889,7 @@ TEST_F(authum_examples, announcer_waits_for_timer_deadline)
     }
     EXPECT_EQ(strstr(g_prints, "Message #1"), authum_null);
     (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_FRAME, &server); /* 120 s */
-    EXPECT_TRUE(strstr(g_prints, "chat|0|\x04[Info]\x01 This server runs Authum. Message #1.") !=
+    EXPECT_TRUE(strstr(g_prints, "chat|0|[ANNOUNCER] \x04[Info]\x01 This server runs Authum. Message #1.") !=
                 authum_null);
 }
 

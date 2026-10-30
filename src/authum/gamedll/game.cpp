@@ -2,6 +2,7 @@
 #include <authum/unused.h>
 #include <lh/char/map.h>
 #include <lh/memory/std.h>
+#include <lh/os/env.h>
 #include <lh/os/fs/file.h>
 #include <lh/os/system/fs/path.h>
 #include <lh/str/split/line.h>
@@ -9,10 +10,6 @@
 #include <authum/cstr.h>
 #include <authum/host/log.h>
 #include <authum/host/module.h>
-
-
-#include <cstdlib>
-#include <cstring>
 
 extern enginefuncs_t g_engfuncs;
 
@@ -22,7 +19,7 @@ namespace
 {
 /* The game's GiveFnptrsToDll is __stdcall on Windows (HLSDK's DLLEXPORT): it
  * pops its own arguments, so calling it as cdecl unbalances our stack. */
-#if defined(_WIN32)
+#if LH_COMPILER_OS == LH_COMPILER_OS_WINDOWS
 typedef void(__stdcall *give_fn_t)(enginefuncs_t *, globalvars_t *);
 #else
 typedef void (*give_fn_t)(enginefuncs_t *, globalvars_t *);
@@ -52,12 +49,12 @@ trim(authum_char_t *line)
 {
     authum_char_t *start = line;
     authum_char_t *end;
-    authum_char_t *comment;
+    const authum_char_t *comment;
 
-    comment = std::strchr(line, lh_char_map_hash);
+    comment = lh_str_ptr_find_of_char(line, lh_str_ptr_len(line), lh_char_map_hash);
     if (lh_math_ne(comment, authum_null))
     {
-        lh_ptr_deref(comment) = lh_char_map_nul;
+        lh_str_ptr_erase(line, lh_ptr_udiff(comment, line));
     }
     while (lh_math_eq(lh_ptr_deref(start), lh_char_map_space) ||
            lh_math_eq(lh_ptr_deref(start), lh_char_map_ht))
@@ -66,9 +63,9 @@ trim(authum_char_t *line)
     }
     if (lh_math_ne(start, line))
     {
-        lh_memory_std_move(line, start, lh_math_add(std::strlen(start), 1u));
+        lh_memory_std_move(line, start, lh_math_add(lh_str_ptr_len(start), 1u));
     }
-    end = lh_math_add(line, std::strlen(line));
+    end = lh_math_add(line, lh_str_ptr_len(line));
     while (lh_math_gt(end, line) &&
            (lh_math_eq(end[-1], lh_char_map_lf) || lh_math_eq(end[-1], lh_char_map_cr) ||
             lh_math_eq(end[-1], lh_char_map_space) || lh_math_eq(end[-1], lh_char_map_ht)))
@@ -145,7 +142,7 @@ read_file_text(const lh_fs_path_t *path, lh_str_t *out)
 authum_bool_t
 read_gamedll_name(const authum_char_t *dir, authum_char_t *out, authum_usize_t out_size)
 {
-    const authum_char_t *env = std::getenv("AUTHUM_GAMEDLL");
+    const authum_char_t *env = lh_os_env_get("AUTHUM_GAMEDLL");
     authum_char_t path[600];
     authum_char_t line[256];
     lh_fs_path_t file_path;
@@ -231,7 +228,7 @@ open_game(const authum_char_t *path)
     lh_os_shared_init(lh_addr_of(g_game));
     lh_fs_path_init(lh_addr_of(image));
     lh_str_init(lh_addr_of(text));
-    lh_str_append(lh_addr_of(text), path, std::strlen(path));
+    lh_str_append(lh_addr_of(text), path, lh_str_ptr_len(path));
     lh_str_as_view(lh_addr_of(text), lh_addr_of(view));
     lh_fs_path_set(lh_addr_of(image), view, lh_fs_path_style_posix);
     ok = lh_os_shared_open(lh_addr_of(g_game), lh_addr_of(image));

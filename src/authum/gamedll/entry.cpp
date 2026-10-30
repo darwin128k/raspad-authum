@@ -14,6 +14,7 @@
 #include <authum/unused.h>
 #include <lh/cast/const.h>
 #include <lh/char/map.h>
+#include <lh/compiler/arch/family.h>
 #include <authum/gamedll/game.h>
 #include <authum/gamedll/hooks.h>
 
@@ -26,9 +27,6 @@
 #include <extdll.h>
 #include <eiface.h>
 
-#include <cstring>
-
-
 extern enginefuncs_t g_engfuncs;
 extern globalvars_t *gpGlobals;
 
@@ -36,23 +34,20 @@ extern globalvars_t *gpGlobals;
  * SSE code faults on a misaligned one, so every export realigns it itself.
  * The engine resolves these by name, so they must be exported (on Windows
  * that means dllexport, a visibility attribute is not enough). */
-#if defined(__GNUC__) && defined(__i386__) && !defined(_WIN32)
+#if LH_COMPILER_TYPE_IS_GCC_LIKE && LH_COMPILER_OS != LH_COMPILER_OS_WINDOWS &&                   \
+    LH_COMPILER_ARCH == LH_COMPILER_ARCH_32 && LH_COMPILER_ARCH_FAMILY_IS_X86
 #    define AUTHUM_ENTRY extern "C" AUTHUM_IMAGE_EXPORT __attribute__((force_align_arg_pointer))
-#elif defined(_WIN32)
-#    define AUTHUM_ENTRY extern "C" AUTHUM_IMAGE_EXPORT
-#elif defined(__GNUC__)
-#    define AUTHUM_ENTRY extern "C" AUTHUM_IMAGE_EXPORT
 #else
-#    define AUTHUM_ENTRY extern "C"
+#    define AUTHUM_ENTRY extern "C" AUTHUM_IMAGE_EXPORT
 #endif
 
 /* GiveFnptrsToDll alone is __stdcall on Windows (HLSDK's DLLEXPORT): the
  * engine calls it so and expects it to pop its own arguments — a cdecl one
  * leaves the engine's stack 8 bytes off. Its export name stays undecorated
  * (no @8): MinGW links with --kill-at, MSVC gets the alias below. */
-#if defined(_WIN32)
+#if LH_COMPILER_OS == LH_COMPILER_OS_WINDOWS
 #    define AUTHUM_GIVE_CALL __stdcall
-#    if defined(_MSC_VER)
+#    if LH_COMPILER_TYPE == LH_COMPILER_TYPE_MSVC
 #        pragma comment(linker, "/EXPORT:GiveFnptrsToDll=_GiveFnptrsToDll@8")
 #    endif
 #else
@@ -104,10 +99,11 @@ log_mirror(authum_logger_level_t /* level */, const authum_char_t *name, const a
     }
     /* ServerPrint prints as it is: a line needs its own newline. */
     end = (lh_math_ne(text[0], lh_char_map_nul) &&
-           lh_math_eq(text[lh_math_sub(std::strlen(text), 1u)], lh_char_map_lf))
+           lh_math_eq(text[lh_math_sub(lh_str_ptr_len(text), 1u)], lh_char_map_lf))
               ? ""
               : "\n";
-    if (lh_math_ne(name, authum_null) && lh_math_ne(std::strcmp(name, "authum"), 0))
+    if (lh_math_ne(name, authum_null) &&
+        lh_math_ne(lh_str_ptr_equals(name, "authum", lh_bool_false), lh_bool_true))
     {
         authum_cstr_format(line, sizeof line, "[%s] %s%s", name, text, end);
     }

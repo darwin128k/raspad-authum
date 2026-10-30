@@ -74,6 +74,11 @@ typedef struct authum_host
     const authum_clock_t *clock;
     /** Path placeholders: standard names and those modules registered. */
     const authum_placeholder_service_t *placeholders;
+    /**
+     * The module's mark: how it is called in the logs and in what it prints.
+     * Null on a host that is not a module.
+     */
+    const authum_char_t *tag;
 } authum_host_t;
 
 AUTHUM_EXTERN_C_BEGIN
@@ -109,6 +114,13 @@ authum_host_get_crypto(const authum_host_t *host);
 
 const authum_engine_t *
 authum_host_get_engine(const authum_host_t *host);
+
+/**
+ * @brief The module's mark: how it is called in the logs and in what it prints.
+ * @return Null when the host is not a module, or the module named no mark.
+ */
+const authum_char_t *
+authum_host_get_tag(const authum_host_t *host);
 
 const authum_sandbox_t *
 authum_host_get_sandbox(const authum_host_t *host);

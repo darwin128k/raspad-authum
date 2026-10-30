@@ -70,6 +70,12 @@ authum_host_get_engine(const authum_host_t *host)
     return (!authum_null_eq(host) && !authum_null_eq((host)->engine)) ? host->engine : authum_null;
 }
 
+const authum_char_t *
+authum_host_get_tag(const authum_host_t *host)
+{
+    return (!authum_null_eq(host) && !authum_null_eq((host)->tag)) ? host->tag : authum_null;
+}
+
 const authum_path_t *
 authum_host_get_game_path(const authum_host_t *host)
 {
@@ -251,10 +257,44 @@ authum_host_set_events(authum_host_t *host, const authum_events_t *events)
     }
 }
 
+/** The longest line the game takes, plus room for the module's mark. */
+enum
+{
+    authum_host_print_max = 640
+};
+
+/**
+ * @brief Write @p text with the module's mark in front, so a line says who wrote it.
+ *
+ * A host that is not a module, or a module that named no mark, writes the text
+ * as it is.
+ */
+static void
+authum_host_marked_text(const authum_host_t *host, const authum_char_t *text,
+                         authum_char_t *buf, authum_usize_t buf_size)
+{
+    const authum_char_t *tag = authum_host_get_tag(host);
+
+    if (authum_null_eq(text))
+    {
+        authum_cstr_copy(buf, buf_size, "");
+        return;
+    }
+    if (authum_null_eq(tag) || authum_cstr_is_equal(tag, "", authum_bool_false))
+    {
+        authum_cstr_copy(buf, buf_size, text);
+        return;
+    }
+    authum_cstr_format(buf, buf_size, "[%s] %s", tag, text);
+}
+
 void
 authum_host_kick(const authum_host_t *host, authum_i32_t userid, const authum_char_t *reason)
 {
-    authum_engine_kick(authum_host_get_engine(host), userid, reason);
+    authum_char_t marked[authum_host_print_max];
+
+    authum_host_marked_text(host, reason, marked, sizeof marked);
+    authum_engine_kick(authum_host_get_engine(host), userid, marked);
 }
 
 authum_i32_t
@@ -339,7 +379,10 @@ authum_bool_t
 authum_host_client_print(const authum_host_t *host, authum_i32_t index, authum_i32_t kind,
                          const authum_char_t *text)
 {
-    return authum_engine_client_print(authum_host_get_engine(host), index, kind, text);
+    authum_char_t marked[authum_host_print_max];
+
+    authum_host_marked_text(host, text, marked, sizeof marked);
+    return authum_engine_client_print(authum_host_get_engine(host), index, kind, marked);
 }
 
 authum_bool_t
@@ -366,7 +409,10 @@ authum_bool_t
 authum_host_client_chat(const authum_host_t *host, authum_i32_t index, authum_i32_t sender,
                         const authum_char_t *text)
 {
-    return authum_engine_client_chat(authum_host_get_engine(host), index, sender, text);
+    authum_char_t marked[authum_host_print_max];
+
+    authum_host_marked_text(host, text, marked, sizeof marked);
+    return authum_engine_client_chat(authum_host_get_engine(host), index, sender, marked);
 }
 
 authum_bool_t
@@ -584,7 +630,10 @@ authum_host_copy_game_dir(const authum_host_t *host, authum_char_t *buf, authum_
 void
 authum_host_server_print(const authum_host_t *host, const authum_char_t *text)
 {
-    authum_engine_server_print(authum_host_get_engine(host), text);
+    authum_char_t marked[authum_host_print_max];
+
+    authum_host_marked_text(host, text, marked, sizeof marked);
+    authum_engine_server_print(authum_host_get_engine(host), marked);
 }
 
 void
