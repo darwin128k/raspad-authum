@@ -101,6 +101,8 @@ service_open(authum_ptr context, const authum_http_options_t *options, authum_ch
     {
         server->next = owner->head;
         owner->head = server;
+        /* The access log says which module served the request. */
+        server->tag = owner->tag;
     }
     return server;
 }

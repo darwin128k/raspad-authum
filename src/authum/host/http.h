@@ -7,6 +7,8 @@
 typedef struct authum_http_owner
 {
     authum_http_server_t *head;
+    /** The module's mark: it names the owner in the access log. */
+    const authum_char_t *tag;
 } authum_http_owner_t;
 
 AUTHUM_EXTERN_C_BEGIN

@@ -70,6 +70,21 @@ close_in_log(const authum_char_t *line, authum_ptr user)
     authum_http_close(context->service, context->server);
 }
 
+typedef struct collected_log
+{
+    authum_bool_t named;
+} collected_log_t;
+
+void
+collect_line(const authum_char_t *line, authum_ptr user)
+{
+    collected_log_t *context = static_cast<collected_log_t *>(user);
+    if (strstr(line, "module=TESTMOD"))
+    {
+        context->named = authum_bool_true;
+    }
+}
+
 static authum_thread_owner_t thread_owner;
 static authum_threads_t threads;
 static authum_http_owner_t owner, foreign_owner;
@@ -268,6 +283,18 @@ TEST_F(authum_http, serves_complete_static_resource)
     ASSERT_NO_FATAL_FAILURE(request_resource(response, sizeof response));
     EXPECT_NE(strstr(response, "200 OK"), authum_null);
     EXPECT_NE(strstr(response, "\r\n\r\nshared-http"), authum_null);
+}
+
+TEST_F(authum_http, access_log_names_the_owner)
+{
+    /* The module that opened the server is named in every access line. */
+    owner.tag = "TESTMOD";
+    ASSERT_NO_FATAL_FAILURE(open_server());
+    char response[512] = {0};
+    ASSERT_NO_FATAL_FAILURE(request_resource(response, sizeof response));
+    collected_log_t collected = {authum_bool_false};
+    EXPECT_GE(authum_http_drain(&service, server, collect_line, &collected, 1000), 1u);
+    EXPECT_TRUE(collected.named);
 }
 
 TEST_F(authum_http, callback_may_close_server_during_log_drain)

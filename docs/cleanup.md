@@ -118,7 +118,18 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   2. **Решения модулей**: `allow` / `reject_reason` / `block` в payload
      (`event/client.h`, `event/message.h`) — плоские поля, last-writer-wins,
      «кто постановил» не хранится. `gamedll/hooks.cpp` читает только `allow`.
-  3. **HTTP access-log**: в строке нет owner (`host/http/access.c`).
+  3. **HTTP access-log** — сделано: строка называет модуль-владельца
+     (`module=TESTMOD`), метка идёт от `authum_module_info_t.tag` через
+     HTTP-владельца.
+- [ ] **Кто опубликовал событие: forward и query слиты.** `authum_events_publish`
+  делает два разных дела (так и написано в `include/authum/events.h`): объявить
+  своё событие и спросить чужое. Пока это одна функция, модуль может
+  опубликовать forward под чужим именем — и подписчик решит, что это его
+  событие. Разделить: `forward` (только под своим именем) и `query` (запрос к
+  чужому имени; отвечает владелец имени). Для проверки по ID хосту нужен
+  реестр `id → имя`: в LH-шине имя есть только у записи подписки. Это меняет
+  публичный API модулей (ABI 3.0); внешние модули (qproto, gatekeeper) и
+  примеры правятся после пуша Authum.
   5. **`authum_module_info_t.logtag`**: объявлено в ABI, заполняется хостом и
      модулями, но хост его не читает — мёртвая метка.
   6. **Файлы модуля**: `authum_cfg_open` больше не идёт прямо в stdio (читает через
