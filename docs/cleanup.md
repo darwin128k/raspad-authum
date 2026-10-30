@@ -115,9 +115,13 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   1. **Publish событий**: владелец доходит до хоста, но выбрасывается
      (`host/events.c`, `authum_unused(owner)`) — издатель известен только по
      соглашению об имени `<module>.*`.
-  2. **Решения модулей**: `allow` / `reject_reason` / `block` в payload
-     (`event/client.h`, `event/message.h`) — плоские поля, last-writer-wins,
-     «кто постановил» не хранится. `gamedll/hooks.cpp` читает только `allow`.
+  2. **Решения модулей** — наполовину сделано: в payload появилось поле
+     `decided_by` (хост обнуляет, модуль пишет свою метку, хост называет
+     автора в логе: `client <name> refused by <mark>`). Осталось enforcement:
+     модуль может запретить и не написать метку — тогда в логе будет «-».
+     Полное решение требует объекта-решения (структуру, которую заполняет
+     модуль, растить нельзя — значит, нужна новая структура) и придёт вместе
+     с разделением forward/query.
   3. **HTTP access-log** — сделано: строка называет модуль-владельца
      (`module=TESTMOD`), метка идёт от `authum_module_info_t.tag` через
      HTTP-владельца.

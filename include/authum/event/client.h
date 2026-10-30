@@ -65,6 +65,12 @@ struct authum_event_client
     authum_bool_t allow;
     /** Connect only: message shown to the refused client. */
     authum_char_t reject_reason[authum_event_client_reject_max];
+    /**
+     * The module that decided: it refused the client (`allow = false`) or gave
+     * a reason. A module writes its own mark here — the host keeps it and
+     * names it in the log. Null when nobody decided.
+     */
+    const authum_char_t *decided_by;
 };
 typedef struct authum_event_client authum_event_client_t;
 
@@ -90,6 +96,12 @@ struct authum_event_client_command
     authum_char_t args[authum_event_client_command_args_max];
     /** Set to true to swallow the command: the game DLL never sees it. */
     authum_bool_t block;
+    /**
+     * The module that decided: it swallowed the command (`block = true`). A
+     * module writes its own mark here — the host keeps it and names it in the
+     * log. Null when nobody decided.
+     */
+    const authum_char_t *decided_by;
 };
 typedef struct authum_event_client_command authum_event_client_command_t;
 
