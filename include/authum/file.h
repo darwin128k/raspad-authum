@@ -9,6 +9,7 @@
  * @code
  * authum_file_t file;
  *
+ * authum_file_init(&file);
  * if (authum_file_open_cstr(&file, "modules/qproto/allow.txt", authum_file_mode_read))
  * {
  *     authum_char_t line[256];
@@ -85,6 +86,8 @@ authum_file_is_open(const authum_file_t *self);
 /**
  * @brief Open @p path in @p mode.
  *
+ * @p self must be initialized with ::authum_file_init.
+ *
  * @param self  File to fill; an already open file in @p self is closed first.
  * @param path  Path of the file.
  * @param mode  How to open it.
@@ -95,6 +98,8 @@ authum_file_open(authum_file_t *self, const authum_path_t *path, authum_file_mod
 
 /**
  * @brief Open @p path (as text) in @p mode.
+ *
+ * @p self must be initialized with ::authum_file_init.
  */
 authum_bool_t
 authum_file_open_cstr(authum_file_t *self, const authum_char_t *path, authum_file_mode_t mode);

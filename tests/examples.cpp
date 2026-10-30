@@ -636,9 +636,24 @@ test_exists(const char *path)
 }
 
 test_module_t g_modules[] = {
-    {"skeleton"}, {"hello"},  {"welcome"},    {"chatfilter"},  {"cvarguard"}, {"settings"},
-    {"stats"},    {"scores"}, {"scoreboard"}, {"deathnotice"}, {"announcer"}, {"hookguard"},
+    {"skeleton"},  {"hello"},     {"welcome"},    {"chatfilter"}, {"cvarguard"},
+    {"settings"},  {"stats"},     {"scores"},     {"scoreboard"}, {"deathnotice"},
+    {"announcer"}, {"hookguard"}, {"scriptlike"},
 };
+
+/** The loaded module named @p name, or null when there is none. */
+test_module_t *
+test_module_by_name(const char *name)
+{
+    for (authum_usize_t i = 0u; i < sizeof g_modules / sizeof g_modules[0]; ++i)
+    {
+        if (strcmp(g_modules[i].name, name) == 0)
+        {
+            return &g_modules[i];
+        }
+    }
+    return authum_null;
+}
 
 static const authum_char_t *add_args[] = {"1", "5"};
 static const authum_char_t *show_args[] = {"1"};
@@ -664,6 +679,25 @@ class authum_examples : public ::testing::Test
         remove(TEST_ROOT "/modules/stats/data");
         remove(TEST_ROOT "/modules/settings/configs/settings.cfg");
         ASSERT_TRUE(authum_logs_init(TEST_ROOT, authum_null));
+
+        /* The scriptlike module reads its rule from its data dir: the file must
+         * be there before the module starts. */
+        {
+            authum_path_t modules, module_dir, data_dir, rule_path;
+            FILE *rule;
+
+            authum_path_join(&modules, &root, "modules");
+            authum_path_ensure_dir(&modules);
+            authum_path_join(&module_dir, &modules, "scriptlike");
+            authum_path_ensure_dir(&module_dir);
+            authum_path_join(&data_dir, &module_dir, "data");
+            authum_path_ensure_dir(&data_dir);
+            authum_path_join(&rule_path, &data_dir, "rules.txt");
+            rule = fopen(authum_path_get_cstr(&rule_path), "wb");
+            ASSERT_NE(rule, authum_null);
+            fputs("<", rule);
+            fclose(rule);
+        }
 
         for (i = 0u; i < sizeof g_modules / sizeof g_modules[0]; ++i)
         {
@@ -891,7 +925,25 @@ TEST_F(authum_examples, hookguard_is_unloaded_with_its_module)
     call.point = authum_hook_point_client_connect;
     authum_cstr_copy(call.name, sizeof call.name, "!intruder");
     call.proceed = authum_bool_true;
-    test_unload(&g_modules[sizeof g_modules / sizeof g_modules[0] - 1u]);
+    test_unload(test_module_by_name("hookguard"));
+    EXPECT_TRUE(authum_hook_registry_call(authum_hook_registry(), authum_hook_point_client_connect,
+                                          &call, authum_null));
+}
+
+TEST_F(authum_examples, scriptlike_refuses_a_player_the_rule_names)
+{
+    authum_hook_call_t call = {};
+
+    /* The rule came from the file the module read at start. */
+    call.point = authum_hook_point_client_connect;
+    authum_cstr_copy(call.name, sizeof call.name, "<intruder");
+    call.proceed = authum_bool_true;
+    EXPECT_FALSE(authum_hook_registry_call(authum_hook_registry(), authum_hook_point_client_connect,
+                                           &call, authum_null));
+    EXPECT_STREQ(call.reject, "This server does not welcome you.");
+
+    authum_cstr_copy(call.name, sizeof call.name, "Vega");
+    call.proceed = authum_bool_true;
     EXPECT_TRUE(authum_hook_registry_call(authum_hook_registry(), authum_hook_point_client_connect,
                                           &call, authum_null));
 }
