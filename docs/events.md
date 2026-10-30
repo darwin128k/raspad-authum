@@ -7,7 +7,7 @@ its subscriptions after `stop`.
 
 Headers: `<authum/events.h>` (bus), `<authum/event/client.h>` (player events
 the host publishes), `<authum/event/server.h>` (map and frame events). Shortcuts on the host facade: `authum_host_subscribe`,
-`authum_host_publish`.
+`authum_host_forward`, `authum_host_query`.
 
 The rule behind it: **one module = one job.** qproto knows how a client
 authenticated; it does not keep bans or history. A ban module refuses
@@ -38,7 +38,7 @@ publishes; the module that owns the answer fills the out-fields and returns
 
 ```c
 qproto_client_query_t q = { .index = 1 };
-if (authum_host_publish(host, QPROTO_EVENT_CLIENT_QUERY, &q) != authum_event_result_continue
+if (authum_host_query(host, QPROTO_EVENT_CLIENT_QUERY, &q) != authum_event_result_continue
     && q.found) {
     /* q.info.auth_kind — protocol the player connected with */
 }
@@ -57,7 +57,8 @@ is not loaded, or nothing matched).
 | `authum_event_result_handled` | I acted or answered — still call the rest |
 | `authum_event_result_stop` | I acted; nobody after me sees this event |
 
-`authum_events_publish` returns the strongest result any handler gave.
+`authum_events_forward` and `authum_events_query` return the strongest result any
+handler gave.
 
 ---
 
@@ -203,8 +204,12 @@ Resolve an event once during module startup, then retain its ID:
 authum_event_id_t id = authum_events_get_id(authum_host_get_events(host), "scores.changed");
 /* Check id != 0 before retaining/using it. */
 authum_events_subscribe_id(authum_host_get_events(host), id, on_changed, user);
-authum_events_publish_id(authum_host_get_events(host), id, payload);
 ```
+
+A module publishes by name, never by ID: `authum_events_forward` for an event of
+its own, `authum_events_query` for a question to another module. A name is
+checked against the module's own prefix, so a module cannot announce itself
+under someone else's name.
 
 `authum_events_unsubscribe_id` removes the same subscription as the string
 operation. Mixed string/numeric registration still deduplicates by module,

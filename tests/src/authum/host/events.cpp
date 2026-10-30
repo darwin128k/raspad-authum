@@ -59,6 +59,7 @@ test_events_for(authum_ptr owner)
 
     authum_events_set_ops(&ev, authum_events_host_ops());
     authum_events_set_owner(&ev, owner);
+    authum_events_set_prefix(&ev, "test");
     return ev;
 }
 
@@ -75,9 +76,9 @@ TEST(authum_events, forward_order_and_results)
     EXPECT_TRUE(authum_events_subscribe(&b, "test.ping", test_on_b, authum_null));
     EXPECT_TRUE(authum_events_host_count() == 2u);
 
-    EXPECT_TRUE(authum_events_publish(&a, "test.ping", authum_null) == authum_event_result_handled);
+    EXPECT_TRUE(authum_events_forward(&a, "test.ping", authum_null) == authum_event_result_handled);
     EXPECT_STREQ(g_trace, "ab");
-    EXPECT_TRUE(authum_events_publish(&a, "test.none", authum_null) ==
+    EXPECT_TRUE(authum_events_forward(&a, "test.none", authum_null) ==
                 authum_event_result_continue);
 
     EXPECT_TRUE(authum_events_subscribe(&a, "test.stop", test_on_stop, authum_null));
@@ -89,7 +90,7 @@ TEST(authum_events, forward_order_and_results)
     authum_events_host_drop_owner(&mod_a);
     EXPECT_TRUE(authum_events_host_count() == 2u);
     g_trace[0] = '\0';
-    authum_events_publish(&b, "test.ping", authum_null);
+    authum_events_forward(&b, "test.ping", authum_null);
     EXPECT_STREQ(g_trace, "b");
 
     EXPECT_TRUE(authum_events_unsubscribe(&b, "test.ping", test_on_b, authum_null));
@@ -183,20 +184,20 @@ TEST(authum_events, query)
     memset(&q, 0, sizeof q);
     test_query_set_size(&q, sizeof q);
     test_query_set_in_index(&q, 3);
-    EXPECT_TRUE(authum_events_publish(&c, "test.query", &q) == authum_event_result_handled);
+    EXPECT_TRUE(authum_events_query(&c, "test.query", &q) == authum_event_result_handled);
     EXPECT_TRUE(test_query_get_out_found(&q) && test_query_get_out_value(&q) == 333);
 
     memset(&q, 0, sizeof q);
     q.size = sizeof q;
     test_query_set_in_index(&q, 4);
-    EXPECT_TRUE(authum_events_publish(&c, "test.query", &q) == authum_event_result_continue);
+    EXPECT_TRUE(authum_events_query(&c, "test.query", &q) == authum_event_result_continue);
     EXPECT_TRUE(!test_query_get_out_found(&q));
 
     authum_events_host_drop_owner(&provider);
     memset(&q, 0, sizeof q);
     q.size = sizeof q;
     q.in_index = 3;
-    EXPECT_TRUE(authum_events_publish(&c, "test.query", &q) == authum_event_result_continue);
+    EXPECT_TRUE(authum_events_query(&c, "test.query", &q) == authum_event_result_continue);
     authum_events_host_clear();
 }
 
@@ -209,7 +210,7 @@ test_on_self_remove(const authum_char_t *name, authum_ptr payload, authum_ptr us
     authum_unused(user);
     test_trace("r");
     authum_events_unsubscribe(&g_self_removing, name, test_on_self_remove, authum_null);
-    authum_events_publish(&g_self_removing, "test.nested", authum_null);
+    authum_events_forward(&g_self_removing, "test.nested", authum_null);
     return authum_event_result_continue;
 }
 
@@ -300,7 +301,7 @@ TEST(authum_events, invalid_args)
     EXPECT_TRUE(!authum_events_subscribe(&ev, "", test_on_a, authum_null));
     EXPECT_TRUE(!authum_events_subscribe(&ev, long_name, test_on_a, authum_null));
     EXPECT_TRUE(!authum_events_subscribe(&ev, "x", 0, authum_null));
-    EXPECT_TRUE(authum_events_publish(authum_null, "x", authum_null) ==
+    EXPECT_TRUE(authum_events_forward(authum_null, "x", authum_null) ==
                 authum_event_result_continue);
 }
 
@@ -315,14 +316,14 @@ TEST(authum_events, numeric_api_shares_registry_and_deduplicates_string_subscrip
     EXPECT_TRUE(authum_events_subscribe_id(&events, id, test_on_b, authum_null));
     EXPECT_EQ(authum_events_host_count(), 1u);
     g_trace[0] = '\0';
-    EXPECT_EQ(authum_events_publish_id(&events, id, authum_null), authum_event_result_handled);
+    EXPECT_EQ(authum_events_forward(&events, "test.numeric", authum_null), authum_event_result_handled);
     EXPECT_STREQ(g_trace, "b");
     EXPECT_TRUE(authum_events_unsubscribe_id(&events, id, test_on_b, authum_null));
     EXPECT_FALSE(authum_events_unsubscribe(&events, "test.numeric", test_on_b, authum_null));
     authum_events_host_clear();
     EXPECT_EQ(authum_events_get_id(&events, "test.numeric"), id);
     EXPECT_FALSE(authum_events_subscribe_id(&events, 0, test_on_a, authum_null));
-    EXPECT_EQ(authum_events_publish_id(&events, 0, authum_null), authum_event_result_continue);
+    EXPECT_EQ(authum_events_forward(&events, "other.name", authum_null), authum_event_result_continue);
     EXPECT_EQ(authum_events_get_id(&events, ""), 0u);
     EXPECT_EQ(authum_events_get_id(authum_null, "test.numeric"), 0u);
 }

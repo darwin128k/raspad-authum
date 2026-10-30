@@ -18,7 +18,7 @@ publish_client(const authum_host_t *host, const char *event)
     authum_event_client_t ev = {0};
     ev.index = 1;
     ev.userid = current_user;
-    authum_host_publish(host, event, &ev);
+    authum_host_forward(host, event, &ev);
 }
 
 static authum_clients_t clients, other;
@@ -40,7 +40,7 @@ class authum_client_ref : public ::testing::Test
         other = {};
         host = {};
         engine = {};
-        events = {authum_events_host_ops(), &host};
+        events = {authum_events_host_ops(), &host, "authum"};
         host.events = &events;
         host.engine = &engine;
         engine.client_userid = userid;
@@ -92,7 +92,7 @@ TEST_F(authum_client_ref, changed_userid_invalidates_reference)
 
 TEST_F(authum_client_ref, map_deactivation_invalidates_reference)
 {
-    authum_host_publish(&host, AUTHUM_EVENT_SERVER_DEACTIVATE, authum_null);
+    authum_host_forward(&host, AUTHUM_EVENT_SERVER_DEACTIVATE, authum_null);
     EXPECT_FALSE(authum_client_ref_is_current(&clients, &ref));
 }
 

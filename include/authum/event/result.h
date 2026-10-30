@@ -7,8 +7,8 @@
 #define AUTHUM_EVENT_RESULT_H
 
 /**
- * Ordered by strength: ::authum_events_publish returns the strongest result
- * any handler gave.
+ * Ordered by strength: ::authum_events_forward and ::authum_events_query return
+ * the strongest result any handler gave.
  */
 enum authum_event_result
 {

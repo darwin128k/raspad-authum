@@ -14,7 +14,6 @@
 #include <authum/events/resolve/cb.h>
 #include <authum/events/subscribe_id/cb.h>
 #include <authum/events/unsubscribe_id/cb.h>
-#include <authum/events/publish_id/cb.h>
 
 /** @brief ABI member order; append operations only. */
 #define authum_events_ops_fields()                                                                 \
@@ -23,7 +22,6 @@
     authum_events_publish_cb publish;                                                              \
     authum_events_resolve_cb resolve;                                                              \
     authum_events_subscribe_id_cb subscribe_id;                                                    \
-    authum_events_unsubscribe_id_cb unsubscribe_id;                                                \
-    authum_events_publish_id_cb publish_id
+    authum_events_unsubscribe_id_cb unsubscribe_id
 
 #endif /* AUTHUM_EVENTS_OPS_FIELDS_H */

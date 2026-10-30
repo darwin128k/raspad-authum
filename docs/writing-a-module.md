@@ -121,7 +121,7 @@ survives Authum's internal changes.
 | `authum_host_join_config_path` / `_data_path` | a module's files in its sandbox |
 | `authum_host_get_crypto` | Rijndael + SHA (`<authum/crypto.h>`) |
 | `authum_host_get_sandbox` | Module memory freed at unload — [sandbox.md](sandbox.md) |
-| `authum_host_get_events` / `authum_host_subscribe` / `authum_host_publish` | Event bus — [events.md](events.md) |
+| `authum_host_get_events` / `authum_host_subscribe` / `authum_host_forward` / `authum_host_query` | Event bus — [events.md](events.md) |
 | `authum_host_kick` | `kick #userid "reason"` (sanitized) |
 | `authum_host_get_max_clients` / `_game_time` / `_get_map_name` | current map |
 | `authum_host_cvar_copy` / `_cvar_set` | server cvars |

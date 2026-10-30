@@ -35,6 +35,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The event bus has two kinds of publication now, as its own documentation
+  always said: `authum_events_forward` announces an event of your own — the
+  name must start with your prefix, so a module never publishes under another
+  module's name — and `authum_events_query` asks the module that owns the
+  name and reads its answer. `authum_events_publish` and
+  `authum_events_publish_id` are gone; `authum_host_forward` and
+  `authum_host_query` replace `authum_host_publish`.
 - The module identity field `logtag` is now `tag`: it is the mark the module is
   shown with in a log record, not a logging thing of its own. A module built
   against the old name does not compile — the module ABI moves to **3.0.0**,

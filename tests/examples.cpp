@@ -486,6 +486,8 @@ test_load(test_module_t *m)
     m->sandbox.root = authum_sandbox_host_root_create();
     authum_events_set_ops(test_module_get_events_mut(m), authum_events_host_ops());
     authum_events_set_owner(test_module_get_events_mut(m), m);
+    /* The module owns the names under its own name. */
+    authum_events_set_prefix(test_module_get_events_mut(m), m->info->name);
     m->commands.ops = authum_commands_host_ops();
     m->commands.owner = m;
     m->commands.scope = m->info->name;
