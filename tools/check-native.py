@@ -26,8 +26,10 @@ FORBIDDEN_HEADERS = [
 ]
 # Calls that belong to lh, not to Authum.
 FORBIDDEN_CALLS = [
-    (r'(?<![\w>.])(?:printf|fprintf|sprintf|snprintf|vprintf|vsnprintf|puts|fputs)\s*\(',
+    (r'(?<![\w>.])(?:printf|fprintf|vprintf|vfprintf|puts|fputs)\s*\(',
      "print through the lh logger or the engine console"),
+    (r'(?<![\w>.])(?:sprintf|snprintf|vsprintf|vsnprintf)\s*\(',
+     "format through the lh string formatter (lh/str/format/text.h)"),
     (r'(?<![\w>.])(?:fopen|freopen|fdopen|fclose|fflush|setvbuf|fread|fwrite|fgets|fgetc|fputc|feof|ferror|remove|rename)\s*\(',
      "open and write files through lh/os/system/fs/file.h"),
     (r'(?<![\w>.])(?:getenv|setenv|putenv|system|popen|_popen)\s*\(',
