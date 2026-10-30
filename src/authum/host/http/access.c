@@ -32,11 +32,11 @@ authum_http_access_record(authum_http_server_t *server, const authum_http_client
     authum_unused(lh_str_ptr_format_cstr(
         server->logs[lh_math_mod(write_index, AUTHUM_HTTP_LOG_CAPACITY)], sizeof server->logs[0],
         "http event=%s id=%u ip=%s:%u method=%s path=\"%s\" status=%d bytes=%s source=%u "
-        "duration_ms=%s",
+        "module=%s duration_ms=%s",
         event, client->id, client->ip, client->port,
         lh_ptr_deref(client->method) ? client->method : "-",
         lh_ptr_deref(client->path) ? client->path : "-", client->status, bytes, client->source,
-        duration));
+        server->tag ? server->tag : "-", duration));
     atomic_store_explicit(lh_addr_of(server->log_write), lh_math_add(write_index, 1),
                           memory_order_release);
 }

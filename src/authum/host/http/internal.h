@@ -75,6 +75,8 @@ struct authum_http_server
 {
     authum_http_server_t *next;
     authum_http_options_t options;
+    /** The module that owns the server; it names the owner in the access log. */
+    const authum_char_t *tag;
     lh_os_system_fs_file_handle_t roots[AUTHUM_HTTP_MAX_SOURCES];
     lh_os_system_net_socket_handle_t listener;
     lh_os_wake_t wake;
