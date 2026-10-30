@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HTTP serves on Windows as on Linux: one transport on LH sockets, file handles and
   formatting; a source path may be absolute in either OS's form. The server starts and
   stops Winsock itself.
+- The HTTP worker is an LH loop that sleeps in `poll` on its sockets; it no longer
+  takes one of the module's 64 thread slots. `authum_http_host_init` takes no thread
+  facade.
 - A module's threads are an LH thread group (`lh/os/thread/group`).
 - Log files are written by the LH log queue and daily files (`lh/os/logger`): the
   writer sleeps until a record instead of polling every 10 ms, records carry a

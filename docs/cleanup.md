@@ -120,11 +120,13 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   5. [ ] `gamedll/` and `include/authum/{export,symbol}.h`: calling convention, export
      and the engine library name through LH compiler / OS macros, no `_WIN32`.
   A check (`tools/check-native.py`) keeps it at 0.
-- [ ] **`lh/os/loop`: one worker loop under every background thread.** Done: the
-  loop itself, `lh/os/logger/queue` and `lh/os/worker` on it; Authum's module
-  threads on the new `lh/os/thread/group` (their body is the module's own code, not
-  a step). Left: Authum's `http/loop.c` (needs a waiter on `poll` + `lh/os/wake`
-  beside the condition one).
+- [x] **`lh/os/loop`: one worker loop under every background thread.** The log
+  queue, `lh/os/worker` and Authum's HTTP worker run on it (HTTP with a waiter:
+  `poll` on its sockets and an `lh/os/wake` signal); Authum's module threads are an
+  `lh/os/thread/group` (their body is the module's own code, not a step).
+- [ ] **Static functions in Authum.** `lib/lh/AGENTS.md` 2 forbids them and the LH
+  rules apply to Authum; the new LH files are clean, Authum's host and api sources
+  still have many (`http/loop.c`, `logs.c`, `commands.c`, ...).
 - [ ] **Runtime output.** `lh_runtime_logger` writes to stderr with `fwrite` itself,
   past `lh_runtime_writer`: give it a writer of its own that a host can rebind (stderr
   by default). A Windows debugger writer (`OutputDebugStringW`, Visual Studio's Output)
