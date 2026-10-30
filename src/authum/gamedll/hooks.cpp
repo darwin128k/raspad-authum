@@ -14,6 +14,7 @@
 #include <authum/gamedll/hooks.h>
 
 #include <authum/host/engine.h>
+#include <authum/host/hooks.h>
 #include <authum/cstr.h>
 #include <authum/event/client.h>
 #include <authum/event/server.h>
@@ -145,11 +146,33 @@ h_client_connect(edict_t *entity, const authum_char_t *name, const authum_char_t
                  authum_char_t reject[128])
 {
     authum_event_client_t ev;
+    authum_hook_call_t call;
     client_fill(lh_addr_of(ev), entity, name);
     copy(ev.address, sizeof ev.address, address);
     authum_engine_host_set_client_address(ev.index, address);
     authum_unused(
         authum_events_host_publish_id(hook_event_id(hook_event_client_connect), lh_addr_of(ev)));
+    lh_memory_std_set(lh_addr_of(call), 0, sizeof call);
+    call.point = authum_hook_point_client_connect;
+    call.index = ev.index;
+    copy(call.name, sizeof call.name, name);
+    copy(call.address, sizeof call.address, address);
+    call.proceed = authum_bool_true;
+    authum_bool_t overran = authum_bool_false;
+    if (!authum_hook_registry_call(authum_hook_registry(), authum_hook_point_client_connect,
+                                   lh_addr_of(call), &overran))
+    {
+        authum_engine_host_set_client_address(ev.index, authum_null);
+        copy(reject, 128,
+             lh_math_ne(call.reject[0], lh_char_map_nul) ? call.reject : "Connection refused.");
+        authum_log_warning("client %s refused by a hook: %s", call.name, reject);
+        return FALSE;
+    }
+    if (overran)
+    {
+        authum_log_warning("a hook on %s overran its budget and was dropped",
+                           authum_hook_point_name(authum_hook_point_client_connect));
+    }
     if (!ev.allow)
     {
         authum_engine_host_set_client_address(ev.index, authum_null);
@@ -161,7 +184,7 @@ h_client_connect(edict_t *entity, const authum_char_t *name, const authum_char_t
         return FALSE;
     }
     return lh_math_ne(g_game_dll.pfnClientConnect, authum_null)
-               ? g_game_dll.pfnClientConnect(entity, name, address, reject)
+               ? g_game_dll.pfnClientConnect(entity, call.name, call.address, reject)
                : TRUE;
 }
 

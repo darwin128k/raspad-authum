@@ -124,3 +124,24 @@ go away with it.
 
 Nothing lands half-done: a chain with no hooked point is dead code, so step 1
 and step 2 are only committed together with step 3.
+
+## 8. What is done (2026-10-30)
+
+- The chain: `src/authum/host/hooks.c` — one slot per point, the handlers kept
+  in the order they were hooked and run from the last one, a budget of 5 ms
+  per handler (the handler that overruns it is dropped and the core reports it
+  to the caller, which owns the journal), and every handler of a module removed
+  when it unloads.
+- The module API: `include/authum/hook.h` (`authum_hooks_add` / `_remove`,
+  `authum_hook_call_t`), the ops table behind it, and the handle the module
+  gets from `authum_host_get_hooks`.
+- The first point: client connect. The handler sees the player's name and
+  address, may change them, and may stop the call with a reason the player is
+  shown. The event's own `allow` still works beside it — the refusal moves
+  into the chain when the modules move over.
+- Tests: `tests/src/authum/host/threads.cpp` — order, a changed call, a refused
+  call, a removed handler, a dropped owner, the budget, the slot limit.
+
+Left: client kill and client command, then the refusal of the event fields
+(`allow`, `reject_reason`, `block`) moving into the chain, and the modules of
+RASPAD that will use it.

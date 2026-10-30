@@ -18,6 +18,7 @@
 #include <authum/engine.h>
 #include <authum/env.h>
 #include <authum/events.h>
+#include <authum/hook.h>
 #include <authum/logger/ops.h>
 #include <authum/sandbox.h>
 #include <authum/task.h>
@@ -79,6 +80,8 @@ typedef struct authum_host
      * Null on a host that is not a module.
      */
     const authum_char_t *tag;
+    /** The chain of module handlers; a module adds its own there. */
+    const authum_hooks_t *hooks;
 } authum_host_t;
 
 AUTHUM_EXTERN_C_BEGIN
@@ -93,6 +96,10 @@ authum_host_get_clock(const authum_host_t *host);
 /** The placeholder service; null on hosts older than ABI 1.3. */
 const authum_placeholder_service_t *
 authum_host_get_placeholders(const authum_host_t *host);
+
+/** The chain of module handlers; null on hosts older than ABI 3.0. */
+const authum_hooks_t *
+authum_host_get_hooks(const authum_host_t *host);
 
 const authum_threads_t *
 authum_host_get_threads(const authum_host_t *host);
