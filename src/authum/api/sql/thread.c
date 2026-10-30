@@ -3,7 +3,6 @@
 #include <lh/memory/std.h>
 #include <lh/sql/mysql/api.h>
 #include <authum/crypto/ed25519.h>
-#include <stdlib.h>
 
 typedef struct authum_sql_thread_job
 {

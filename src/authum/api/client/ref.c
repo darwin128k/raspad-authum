@@ -4,7 +4,6 @@
 #include <lh/memory/std.h>
 #include <authum/event/client.h>
 #include <authum/event/server.h>
-#include <stdlib.h>
 
 typedef struct authum_client_identity
 {

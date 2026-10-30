@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `authum_cstr_parse_float`: a thin facade over the lh number parser, for the
+  modules that may not link lh. The whole text must be the number, and a value
+  too big for `authum_float_t` is refused.
 - `authum_cstr_format` and `authum_cstr_format_v`: a thin Authum facade over
   the lh string formatter, for the modules that may not link lh. It cuts a
   result that does not fit, like the C runtime does, so a log line keeps the

@@ -12,6 +12,7 @@
 #include <authum/bool.h>
 #include <authum/char.h>
 #include <authum/extern.h>
+#include <authum/float.h>
 #include <authum/null.h>
 #include <authum/size.h>
 
@@ -88,6 +89,20 @@ authum_cstr_parse_i32(const authum_char_t *text, authum_i32_t *out);
  */
 authum_bool_t
 authum_cstr_parse_u32(const authum_char_t *text, authum_u32_t *out);
+
+/**
+ * @brief Parse a decimal number into a single-precision float.
+ *
+ * The whole text must be the number: `-? digits? (. digits?)? ([eE] [+-]? digits)?`.
+ * A value too big for ::authum_float_t is refused, as is a text with
+ * anything else in it.
+ *
+ * @param text Number text.
+ * @param out  Receives the value; untouched when the text is not a number.
+ * @return ::authum_bool_true when @p text is a number.
+ */
+authum_bool_t
+authum_cstr_parse_float(const authum_char_t *text, authum_float_t *out);
 
 /**
  * @brief Parse a boolean: `0`/`1`, `true`/`false`, `yes`/`no`, `on`/`off`.

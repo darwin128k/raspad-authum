@@ -5,6 +5,7 @@
 #include <lh/memory/std.h>
 
 #include <lh/str.h>
+#include <lh/str/parse/real.h>
 #include <lh/str/parse/ullong.h>
 
 authum_char_t
@@ -183,6 +184,20 @@ authum_cstr_parse_u32(const authum_char_t *text, authum_u32_t *out)
         return authum_bool_false;
     }
     lh_ptr_deref(out) = lh_cast_static(authum_u32_t, value);
+    return authum_bool_true;
+}
+
+authum_bool_t
+authum_cstr_parse_float(const authum_char_t *text, authum_float_t *out)
+{
+    lh_real_t value;
+
+    if (authum_null_eq(text) || authum_null_eq(out) ||
+        !lh_str_ptr_parse_real(text, lh_str_ptr_len(text), lh_addr_of(value)))
+    {
+        return authum_bool_false;
+    }
+    lh_ptr_deref(out) = lh_cast_static(authum_float_t, value);
     return authum_bool_true;
 }
 

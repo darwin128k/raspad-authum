@@ -135,6 +135,16 @@ TEST(authum_cstr, unsigned_parser_accepts_whitespace_but_not_negative_sign)
     EXPECT_FALSE(authum_cstr_parse_u32("-1", &u));
 }
 
+TEST(authum_cstr, float_parser_takes_a_whole_number)
+{
+    authum_float_t f;
+    EXPECT_TRUE(authum_cstr_parse_float("1.5", &f) && f == 1.5f);
+    EXPECT_TRUE(authum_cstr_parse_float("-2", &f) && f == -2.0f);
+    EXPECT_TRUE(authum_cstr_parse_float("1e3", &f) && f == 1000.0f);
+    EXPECT_FALSE(authum_cstr_parse_float("1.5x", &f));
+    EXPECT_FALSE(authum_cstr_parse_float("", &f));
+}
+
 TEST(authum_cstr, boolean_parser_accepts_known_spellings)
 {
     authum_char_t buf[4];
