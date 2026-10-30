@@ -78,11 +78,17 @@ single point each (`host/logs.c`, `host/commands.c` over the lh console).
 
 The holes, to close:
 
-- the publisher of an event is dropped (`host/events.c`);
+- the publisher of an event is dropped (`host/events.c`) — closed: a module may
+  only forward under its own prefix, the host checks it (`api/events.c`), so the
+  publisher is the name's owner and not a convention;
 - the engine ops table is one singleton for all modules, so `client_print`,
-  chat, `cvar_set` and `kick` are anonymous (`host/engine_server.cpp`);
-- the HTTP access line has no owner (`host/http/access.c`);
-- `authum_module_info_t.logtag` is declared in the ABI and read by nobody.
+  chat, `cvar_set` and `kick` are anonymous (`host/engine_server.cpp`) — the
+  text output is marked now (`[WELCOME] …`), the escape hatches
+  (`authum_host_t.engine_funcs`, `.globals`) are left;
+- the HTTP access line has no owner (`host/http/access.c`) — closed: the line
+  says `module=<tag>`;
+- `authum_module_info_t.logtag` is declared in the ABI and read by nobody —
+  closed: the field is `tag` now, and the host reads it.
 
 ## 7. The interpreter is a module
 
