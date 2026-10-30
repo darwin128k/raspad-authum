@@ -43,6 +43,7 @@ add_library(authum_test_host STATIC
         "${CMAKE_SOURCE_DIR}/src/authum/host/commands.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/logs.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/hooks.c"
+        "${CMAKE_SOURCE_DIR}/src/authum/host/hook/ops.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/tasks.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/threads.c"
 )
@@ -98,7 +99,7 @@ if (AUTHUM_BUILD_EXAMPLES)
             AUTHUM_TEST_EXAMPLES_DIR="${CMAKE_BINARY_DIR}/examples"
             AUTHUM_TEST_MODULE_SUFFIX="${CMAKE_SHARED_MODULE_SUFFIX}")
     add_dependencies(authum_test_examples skeleton hello welcome chatfilter cvarguard settings
-            stats scores scoreboard deathnotice announcer)
+            stats scores scoreboard deathnotice announcer hookguard)
     add_test(NAME authum_examples COMMAND authum_test_examples)
 endif ()
 
