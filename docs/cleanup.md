@@ -156,16 +156,23 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
      Windows (`NtCreateFile` relative to each directory, reparse points refused).
   4. [ ] The remaining libc calls in `api/` and `host/` (157 in 31 files at the start)
      → LH bricks; a missing brick is added to LH first.
-     `tools/check-native.py` now exists and reports the debt: **143 places** —
-     48 libc string calls (`strlen` / `strcmp` / `strchr` …), 33 `printf` /
-     `fprintf`, 45 forbidden headers (`string.h` 23, `stdio.h` 14, `stdlib.h` 8),
-     9 file calls (`fopen` / `fclose` / `fread` / `fwrite`), 3 clock calls, 2
-     platform branches, 2 numeric parses, 1 `getenv`. By area: `api/` 55,
-     `gamedll/` 36, `examples/` 26, `host/` 23, `include/` 3. Clean in this
-     order: strings → print → files → clock/env → `gamedll/` → `examples/`.
+     `tools/check-native.py` now exists and reports the debt: **82 places** —
+     33 `snprintf` / `vsnprintf` (the lh string formatter is `lh/str/format/text.h`:
+     `lh_str_ptr_format_cstr`, `lh_str_ptr_format_cstr_v`), 23 forbidden headers
+     (`stdio.h` 14, `stdlib.h` 8, `string.h` 1), 9 file calls (`fopen` / `fclose` /
+     `fread` / `fwrite`), 9 string calls, 3 clock calls, 2 platform branches,
+     2 numeric parses, 1 `getenv`. By area: `gamedll/` 26, `api/` 26,
+     `examples/` 15, `host/` 12, `include/` 3. Clean in this order: format →
+     files → clock/env → `gamedll/` → `examples/`.
      `include/authum/export.h` and `include/authum/symbol.h` are exempt on
      purpose: they sit on the ABI boundary with the host process.
-  5. [ ] `gamedll/` and `include/authum/{export,symbol}.h`: calling convention, export
+  5. [ ] **The thread test does not run on Windows.** `tests/CMakeLists.txt` adds
+     `authum_threads` only under `if(NOT WIN32)`, and `tests/src/authum/host/threads.cpp`
+     is POSIX-only (`pthread_sigmask`, `SIGPIPE`, `pipe`, `read`, `usleep`). So on
+     Windows the module threads have no coverage at all — and the threads are
+     exactly what the HTTP worker was moved to. Split the test: the cross-platform
+     part (start, wake, exit) everywhere, the signal-mask part on POSIX only.
+  6. [ ] **`gamedll/` and `include/authum/{export,symbol}.h`: calling convention, export
      and the engine library name through LH compiler / OS macros, no `_WIN32`.
   A check (`tools/check-native.py`) keeps it at 0.
 - [x] **`lh/os/loop`: one worker loop under every background thread.** The log
