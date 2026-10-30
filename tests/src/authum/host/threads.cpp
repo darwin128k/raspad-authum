@@ -3,9 +3,13 @@
  * @brief The module threads: they start, they are woken before the join, they release.
  *
  * The wake path uses the lh condition and mutex bricks, so the suite runs on
- * every OS. The signal mask is POSIX-only (Windows has no SIGPIPE), so that
- * part sits behind `#if !defined(_WIN32)`; the flag itself is refused on
- * Windows, and that refusal is what the platform test checks.
+ * every OS. Each worker waits for **its own** wake on its own condition — a
+ * shared condition would lose the notification — and then meets the others at
+ * a barrier, so the test can tell that every worker was woken before the join.
+ *
+ * The signal mask is POSIX-only (Windows has no SIGPIPE), so that part sits
+ * behind `#if !defined(_WIN32)`. On Windows the flag is accepted and has
+ * nothing to mask.
  */
 #ifndef _GNU_SOURCE
 #    define _GNU_SOURCE
@@ -13,7 +17,6 @@
 #include <authum/null.h>
 #include <authum/host/threads.h>
 #include <lh/os/condition.h>
-#include <lh/os/mutex.h>
 #include <lh/util/str/ptr.h>
 #include <atomic>
 #include <gtest/gtest.h>
@@ -27,11 +30,15 @@ typedef struct job
     lh_os_mutex_t mutex;
     lh_os_condition_t condition;
     std::atomic_int *wakes;
-    std::atomic_int exited, all_woken;
+    std::atomic_int woken, exited, all_woken;
 #if !defined(_WIN32)
     std::atomic_int masked;
 #endif
 } job_t;
+
+static std::atomic_int awake;
+static lh_os_mutex_t awake_mutex;
+static lh_os_condition_t awake_condition;
 
 void
 run_job(void *arg)
@@ -42,13 +49,27 @@ run_job(void *arg)
     pthread_sigmask(SIG_SETMASK, authum_null, &mask);
     std::atomic_store(&job->masked, sigismember(&mask, SIGPIPE));
 #endif
+    /* Wait for my own wake: my condition, my mutex. */
     lh_os_mutex_lock(lh_addr_of(job->mutex));
-    for (int i = 0; i < 1000 && std::atomic_load(job->wakes) < 2; i++)
+    for (int i = 0; i < 1000 && !std::atomic_load(&job->woken); i++)
     {
         lh_os_condition_wait_for(lh_addr_of(job->condition), lh_addr_of(job->mutex), 1u);
     }
     lh_os_mutex_unlock(lh_addr_of(job->mutex));
-    std::atomic_store(&job->all_woken, std::atomic_load(job->wakes) == 2);
+    /* The barrier: everybody must be awake before anybody leaves. The last one
+     * to arrive wakes the others; a waiter never signals the condition it
+     * waits on, or the wake would come back to itself at once. */
+    lh_os_mutex_lock(lh_addr_of(awake_mutex));
+    if (std::atomic_fetch_add(&awake, 1) + 1 >= 2)
+    {
+        lh_os_condition_broadcast(lh_addr_of(awake_condition));
+    }
+    while (std::atomic_load(&awake) < 2)
+    {
+        lh_os_condition_wait_for(lh_addr_of(awake_condition), lh_addr_of(awake_mutex), 1u);
+    }
+    lh_os_mutex_unlock(lh_addr_of(awake_mutex));
+    std::atomic_store(&job->all_woken, std::atomic_load(&awake) == 2);
     std::atomic_store(&job->exited, 1);
 }
 
@@ -56,10 +77,11 @@ void
 wake_job(void *arg)
 {
     job_t *job = static_cast<job_t *>(arg);
+    std::atomic_store(&job->woken, 1);
     lh_os_mutex_lock(lh_addr_of(job->mutex));
-    std::atomic_fetch_add(job->wakes, 1);
     lh_os_condition_broadcast(lh_addr_of(job->condition));
     lh_os_mutex_unlock(lh_addr_of(job->mutex));
+    std::atomic_fetch_add(job->wakes, 1);
 }
 
 static authum_thread_owner_t owner, other;
@@ -84,12 +106,15 @@ class authum_threads : public ::testing::Test
         authum_threads_host_init(&owner, &threads);
         authum_threads_host_init(&other, &others);
         wakes = 0;
+        awake = 0;
+        lh_os_mutex_init(lh_addr_of(awake_mutex));
+        lh_os_condition_init(lh_addr_of(awake_condition));
         for (int index = 0; index < 2; ++index)
         {
             lh_os_mutex_init(lh_addr_of(jobs[index].mutex));
             lh_os_condition_init(lh_addr_of(jobs[index].condition));
             jobs[index].wakes = &wakes;
-            jobs[index].exited = jobs[index].all_woken = 0;
+            jobs[index].woken = jobs[index].exited = jobs[index].all_woken = 0;
 #if !defined(_WIN32)
             jobs[index].masked = 0;
 #endif
@@ -111,6 +136,8 @@ class authum_threads : public ::testing::Test
             lh_os_condition_close(lh_addr_of(jobs[index].condition));
             lh_os_mutex_close(lh_addr_of(jobs[index].mutex));
         }
+        lh_os_condition_close(lh_addr_of(awake_condition));
+        lh_os_mutex_close(lh_addr_of(awake_mutex));
 #if !defined(_WIN32)
         pthread_sigmask(SIG_SETMASK, &original, authum_null);
 #endif
@@ -194,12 +221,17 @@ TEST_F(authum_threads, joined_handles_can_be_released_explicitly)
 
 #if defined(_WIN32)
 
-TEST_F(authum_threads, sigpipe_flag_is_refused_without_a_signal)
+TEST_F(authum_threads, sigpipe_flag_starts_the_worker_without_a_signal)
 {
-    EXPECT_EQ(authum_thread_start(&threads, run_job, wake_job, authum_null, -1,
-                                  AUTHUM_THREAD_BLOCK_SIGPIPE, error, sizeof error),
-              authum_null);
-    EXPECT_EQ(lh_os_thread_group_get_count(&owner.group), 0u);
+    /* Windows has no SIGPIPE: the flag is accepted and has nothing to mask. */
+    ASSERT_NO_FATAL_FAILURE(start_two_jobs(AUTHUM_THREAD_BLOCK_SIGPIPE));
+    authum_threads_host_stop_owner(&owner);
+    EXPECT_EQ(wakes.load(), 2);
+    for (int index = 0; index < 2; ++index)
+    {
+        EXPECT_TRUE(jobs[index].exited.load());
+        EXPECT_TRUE(jobs[index].all_woken.load());
+    }
 }
 
 #else
