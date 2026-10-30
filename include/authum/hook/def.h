@@ -32,7 +32,11 @@ enum
     /** How long an address in a call may be. */
     authum_hook_address_max = 64,
     /** How long the reason shown to a refused client may be. */
-    authum_hook_reject_max = 128
+    authum_hook_reject_max = 128,
+    /** How long the command in a call may be. */
+    authum_hook_command_max = 64,
+    /** How long the arguments after the command may be. */
+    authum_hook_args_max = 512
 };
 
 /**
@@ -53,6 +57,10 @@ struct authum_hook_call
     authum_bool_t proceed;
     /** The reason shown to a refused client; empty means the default one. */
     authum_char_t reject[authum_hook_reject_max];
+    /** The command in the call, the first word; a handler may change it. */
+    authum_char_t command[authum_hook_command_max];
+    /** Everything after the command, one line; a handler may change it. */
+    authum_char_t args[authum_hook_args_max];
 };
 typedef struct authum_hook_call authum_hook_call_t;
 

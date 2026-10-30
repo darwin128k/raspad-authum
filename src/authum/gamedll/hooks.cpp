@@ -237,9 +237,21 @@ void
 h_client_kill(edict_t *entity)
 {
     authum_event_client_t ev;
+    authum_hook_call_t call;
     client_fill(lh_addr_of(ev), entity, authum_null);
     authum_unused(
         authum_events_host_publish_id(hook_event_id(hook_event_client_kill), lh_addr_of(ev)));
+    lh_memory_std_set(lh_addr_of(call), 0, sizeof call);
+    call.point = authum_hook_point_client_kill;
+    call.index = ev.index;
+    copy(call.name, sizeof call.name, ev.name);
+    call.proceed = authum_bool_true;
+    if (!authum_hook_registry_call(authum_hook_registry(), authum_hook_point_client_kill,
+                                   lh_addr_of(call), authum_null))
+    {
+        authum_log_info("kill by %s refused by a hook", call.name);
+        return; /* superseded: the player is not killed */
+    }
     if (!ev.allow)
     {
         return; /* superseded: the player is not killed */
@@ -254,6 +266,7 @@ void
 h_client_command(edict_t *entity)
 {
     authum_event_client_command_t ev;
+    authum_hook_call_t call;
     authum_i32_t i;
     lh_memory_std_set(lh_addr_of(ev), 0, sizeof ev);
     client_fill(lh_addr_of(ev.client), entity, authum_null);
@@ -266,6 +279,19 @@ h_client_command(edict_t *entity)
     copy(ev.args, sizeof ev.args, g_engfuncs.pfnCmd_Args());
     authum_unused(
         authum_events_host_publish_id(hook_event_id(hook_event_client_command), lh_addr_of(ev)));
+    lh_memory_std_set(lh_addr_of(call), 0, sizeof call);
+    call.point = authum_hook_point_client_command;
+    call.index = ev.client.index;
+    copy(call.name, sizeof call.name, ev.client.name);
+    copy(call.command, sizeof call.command, ev.argc > 0 ? ev.argv[0] : "");
+    copy(call.args, sizeof call.args, ev.args);
+    call.proceed = authum_bool_true;
+    if (!authum_hook_registry_call(authum_hook_registry(), authum_hook_point_client_command,
+                                   lh_addr_of(call), authum_null))
+    {
+        authum_log_info("command from %s swallowed by a hook", call.args);
+        return; /* superseded: the game never sees the command */
+    }
     if (ev.block)
     {
         authum_log_info("command from %s swallowed by %s", ev.args,

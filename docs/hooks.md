@@ -135,10 +135,12 @@ and step 2 are only committed together with step 3.
 - The module API: `include/authum/hook.h` (`authum_hooks_add` / `_remove`,
   `authum_hook_call_t`), the ops table behind it, and the handle the module
   gets from `authum_host_get_hooks`.
-- The first point: client connect. The handler sees the player's name and
-  address, may change them, and may stop the call with a reason the player is
-  shown. The event's own `allow` still works beside it — the refusal moves
-  into the chain when the modules move over.
+- The first points: client connect, client kill and client command. The
+  connect handler sees the player's name and address, may change them, and may
+  stop the call with a reason the player is shown. The kill handler may stop
+  the kill. The command handler sees the command and its arguments and may
+  swallow it. The event's own `allow` / `block` still work beside them — the
+  refusal moves into the chain when the modules move over.
 - Tests: `tests/src/authum/host/threads.cpp` — order, a changed call, a refused
   call, a removed handler, a dropped owner, the budget, the slot limit.
 
