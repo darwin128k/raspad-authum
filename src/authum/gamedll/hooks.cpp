@@ -5,12 +5,12 @@
  * game's own pointer, copied in hooks_fill_entity_table.
  */
 #include <authum/gamedll/game.h>
+#include <authum/host/log.h>
 #include <authum/unused.h>
 #include <lh/cast/const.h>
 #include <lh/char/map.h>
 #include <lh/memory/std.h>
 #include <lh/os/timestamp.h>
-#include <lh/util/str/ptr.h>
 #include <authum/gamedll/hooks.h>
 
 #include <authum/host/engine.h>
@@ -156,6 +156,8 @@ h_client_connect(edict_t *entity, const authum_char_t *name, const authum_char_t
         copy(reject, 128,
              lh_math_ne(ev.reject_reason[0], lh_char_map_nul) ? ev.reject_reason
                                                               : "Connection refused.");
+        authum_log_warning("client %s refused by %s: %s", ev.name,
+                           ev.decided_by ? ev.decided_by : "-", reject);
         return FALSE;
     }
     return lh_math_ne(g_game_dll.pfnClientConnect, authum_null)
@@ -243,6 +245,8 @@ h_client_command(edict_t *entity)
         authum_events_host_publish_id(hook_event_id(hook_event_client_command), lh_addr_of(ev)));
     if (ev.block)
     {
+        authum_log_info("command from %s swallowed by %s", ev.args,
+                        ev.decided_by ? ev.decided_by : "-");
         return; /* superseded: the game never sees the command */
     }
     if (lh_math_ne(g_game_dll.pfnClientCommand, authum_null))

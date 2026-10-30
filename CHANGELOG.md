@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The HTTP access line names the module that opened the server:
   `module=<mark>`. The line said where the file came from (the sandbox root),
   but not who asked.
+- `authum_event_client_t` and `authum_event_client_command_t` carry
+  `decided_by`: the mark of the module that refused the client or swallowed
+  the command. The host names it in the log: `client <name> refused by
+  <mark>`.
 - `authum_file_t` with `authum_file_open`, `authum_file_open_cstr`,
   `authum_file_read`, `authum_file_write`, `authum_file_close` and
   `authum_file_is_open`: a module reads and writes its own files through this
