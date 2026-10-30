@@ -13,8 +13,6 @@
 
 #include <authum/client.h>
 
-#include <stdio.h>
-
 enum
 {
     welcome_slots = 33 /* 1 … 32 */
@@ -57,7 +55,7 @@ welcome_on_put_in_server(const authum_char_t *name, authum_ptr payload, authum_p
                        address);
 
     authum_host_copy_map_name(&g_welcome_host, map, sizeof map);
-    snprintf(text, sizeof text, "Welcome, %s! You are playing %s.\n", ev->name, map);
+    authum_cstr_format(text, sizeof text, "Welcome, %s! You are playing %s.\n", ev->name, map);
     authum_host_client_print(&g_welcome_host, ev->index, authum_engine_print_chat, text);
     return authum_event_result_continue;
 }

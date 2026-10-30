@@ -81,6 +81,12 @@ L 10/26/2026 - 08:09:18: [warning] [qproto/audit] ticket rejected
 Authum's own records omit a redundant `authum` tag. Raw journals retain their
 text-only format. Daily filenames remain `YYYY-MM-DD.log`.
 
+The tag is the module's own mark: `authum_module_info_t.tag` — what the module
+says it is called in the records. An empty tag falls back to the module's name.
+A journal under a module is `<module tag>/<journal name>`. The name stays what
+the channel is called: the folder under the module and the admin keys in the
+configuration (`qproto.`, `qproto/bans.`).
+
 ## Special loggers
 
 Open a named journal with `authum_logger_open`, or use the constructor

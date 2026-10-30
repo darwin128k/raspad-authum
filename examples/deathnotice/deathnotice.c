@@ -13,8 +13,6 @@
 
 #include <authum/client.h>
 
-#include <stdio.h>
-
 authum_host_t g_deathnotice_host;
 authum_logger_t g_deathnotice_log;
 
@@ -55,13 +53,13 @@ deathnotice_on_death(const authum_char_t *name, authum_ptr payload, authum_ptr u
     if (killer == victim ||
         !authum_host_client_copy_name(&g_deathnotice_host, killer, killer_name, sizeof killer_name))
     {
-        snprintf(text, sizeof text, "\x04[Death]\x01 %s died", victim_name);
+        authum_cstr_format(text, sizeof text, "\x04[Death]\x01 %s died", victim_name);
     }
     else
     {
-        snprintf(text, sizeof text, "\x04[Death]\x03 %s\x01 killed %s with %s%s", killer_name,
-                 victim_name, authum_event_message_get_string(ev, 3),
-                 authum_event_message_get_i32(ev, 2) != 0 ? " (headshot)" : "");
+        authum_cstr_format(text, sizeof text, "\x04[Death]\x03 %s\x01 killed %s with %s%s",
+                           killer_name, victim_name, authum_event_message_get_string(ev, 3),
+                           authum_event_message_get_i32(ev, 2) != 0 ? " (headshot)" : "");
     }
     /* Sender = the killer: \x03 takes their team color. 0 = everyone. */
     authum_host_client_chat(&g_deathnotice_host, 0, killer, text);

@@ -11,7 +11,6 @@
 
 #include <authum/client.h>
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #define CVARGUARD_CVAR "fps_max"
@@ -80,8 +79,8 @@ cvarguard_on_cvar_value(const authum_char_t *name, authum_ptr payload, authum_pt
     authum_logger_debug(&g_cvarguard_log, "%s: %s = %s", ev->client.name, ev->cvar, ev->value);
     if (value > CVARGUARD_LIMIT)
     {
-        snprintf(reason, sizeof reason, "Set %s to %d or lower", CVARGUARD_CVAR,
-                 (int)CVARGUARD_LIMIT);
+        authum_cstr_format(reason, sizeof reason, "Set %s to %d or lower", CVARGUARD_CVAR,
+                           (int)CVARGUARD_LIMIT);
         authum_logger_info(&g_cvarguard_log, "kick %s <%s>: %s = %s", ev->client.name,
                            ev->client.auth_id, ev->cvar, ev->value);
         authum_host_kick(&g_cvarguard_host, ev->request_id, reason);

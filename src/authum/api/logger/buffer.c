@@ -1,7 +1,6 @@
 #include <authum/logger/buffer.h>
 #include <lh/util/ptr.h>
 #include <authum/memory.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 typedef struct authum_logger_buffer_line
@@ -107,7 +106,7 @@ authum_logger_buffer_log_v(authum_logger_t *logger, authum_logger_level_t level,
      * Channel ops and journal ownership must still outlive capture + flush. */
     line->target = lh_ptr_deref(channel);
     line->level = level;
-    vsnprintf(line->text, sizeof line->text, fmt, ap);
+    authum_cstr_format_v(line->text, sizeof line->text, fmt, ap);
     return authum_bool_true;
 }
 

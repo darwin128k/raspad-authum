@@ -1,10 +1,11 @@
 #include <authum/cstr.h>
+#include <authum/unused.h>
 #include <lh/char/letter.h>
 #include <lh/util/char.h>
 #include <lh/memory/std.h>
 
+#include <lh/str.h>
 #include <lh/str/parse/ullong.h>
-#include <lh/util/str/ptr.h>
 
 authum_char_t
 authum_char_to_lower(authum_char_t c)
@@ -29,6 +30,42 @@ authum_cstr_copy(authum_char_t *dst, authum_usize_t dst_size, const authum_char_
     lh_memory_std_copy(dst, src, n);
     dst[n] = lh_char_map_nul;
     return authum_bool_true;
+}
+
+authum_usize_t
+authum_cstr_format_v(authum_char_t *dst, authum_usize_t dst_size, const authum_char_t *fmt,
+                     va_list ap)
+{
+    lh_str_t text;
+    authum_usize_t n;
+
+    if (authum_null_eq(dst) || lh_math_eq(dst_size, 0u) || authum_null_eq(fmt))
+    {
+        return 0u;
+    }
+    lh_str_init(lh_addr_of(text));
+    authum_unused(lh_str_format_v(lh_addr_of(text), fmt, ap));
+    n = lh_cast_static(authum_usize_t, lh_str_get_size(lh_addr_of(text)));
+    if (lh_math_ge(n, dst_size))
+    {
+        n = lh_math_sub(dst_size, 1u);
+    }
+    lh_memory_std_copy(dst, lh_str_get_data(lh_addr_of(text)), n);
+    dst[n] = lh_char_map_nul;
+    lh_str_deinit(lh_addr_of(text));
+    return n;
+}
+
+authum_usize_t
+authum_cstr_format(authum_char_t *dst, authum_usize_t dst_size, const authum_char_t *fmt, ...)
+{
+    va_list args;
+    authum_usize_t n;
+
+    va_start(args, fmt);
+    n = authum_cstr_format_v(dst, dst_size, fmt, args);
+    va_end(args);
+    return n;
 }
 
 authum_bool_t
