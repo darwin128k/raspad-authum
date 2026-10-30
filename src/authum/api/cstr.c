@@ -4,8 +4,7 @@
 #include <lh/memory/std.h>
 
 #include <lh/str/parse/ullong.h>
-
-#include <string.h>
+#include <lh/util/str/ptr.h>
 
 authum_char_t
 authum_char_to_lower(authum_char_t c)
@@ -22,7 +21,7 @@ authum_cstr_copy(authum_char_t *dst, authum_usize_t dst_size, const authum_char_
     {
         return authum_bool_false;
     }
-    n = lh_cast_static(authum_usize_t, strlen(src));
+    n = lh_cast_static(authum_usize_t, lh_str_ptr_len(src));
     if (lh_math_ge(n, dst_size))
     {
         n = lh_math_sub(dst_size, 1u);
@@ -41,7 +40,7 @@ authum_cstr_is_equal(const authum_char_t *a, const authum_char_t *b, authum_bool
     }
     if (!ignore_case)
     {
-        return (lh_math_eq(strcmp(a, b), 0)) ? authum_bool_true : authum_bool_false;
+        return lh_str_ptr_equals(a, b, lh_bool_false) ? authum_bool_true : authum_bool_false;
     }
     for (;;)
     {
@@ -58,6 +57,16 @@ authum_cstr_is_equal(const authum_char_t *a, const authum_char_t *b, authum_bool
         a = lh_math_add_one(a);
         b = lh_math_add_one(b);
     }
+}
+
+authum_bool_t
+authum_cstr_contains(const authum_char_t *haystack, const authum_char_t *needle)
+{
+    if (authum_null_eq(haystack) || authum_null_eq(needle))
+    {
+        return authum_bool_false;
+    }
+    return lh_str_ptr_contains(haystack, needle, lh_bool_false) ? authum_bool_true : authum_bool_false;
 }
 
 /*
@@ -86,7 +95,7 @@ authum_cstr_number_digits(const authum_char_t *text, authum_bool_t allow_minus,
                                      : authum_bool_false;
         text = lh_math_add_one(text);
     }
-    end = lh_math_add(text, strlen(text));
+    end = lh_math_add(text, lh_str_ptr_len(text));
     while (lh_math_gt(end, text) &&
            (lh_math_eq(end[-1], lh_char_map_space) || lh_math_eq(end[-1], lh_char_map_ht)))
     {

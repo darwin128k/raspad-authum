@@ -1,6 +1,7 @@
 #include <authum/path.h>
 #include <lh/char/map.h>
 #include <lh/memory/std.h>
+#include <lh/util/str/ptr.h>
 
 #include <lh/os/fs/dir.h>
 #include <lh/os/system/fs/path.h>
@@ -57,7 +58,7 @@ authum_path_set_cstr(authum_path_t *self, const authum_char_t *text)
         authum_path_clear(self);
         return authum_bool_true;
     }
-    n = lh_cast_static(authum_usize_t, strlen(text));
+    n = lh_cast_static(authum_usize_t, lh_str_ptr_len(text));
     if (lh_math_ge(n, lh_cast_static(authum_usize_t, authum_path_capacity)))
     {
         authum_path_clear(self);
@@ -126,7 +127,7 @@ authum_path_join(authum_path_t *self, const authum_path_t *dir, const authum_cha
     }
 
     na = dir->size;
-    nb = lh_cast_static(authum_usize_t, strlen(leaf));
+    nb = lh_cast_static(authum_usize_t, lh_str_ptr_len(leaf));
     slash = authum_path_has_trailing_sep(dir);
     need = lh_math_add(lh_math_add(na, (slash ? 0u : 1u)), nb);
     if (lh_math_ge(need, lh_cast_static(authum_usize_t, authum_path_capacity)))

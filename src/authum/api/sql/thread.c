@@ -3,9 +3,9 @@
 #include <lh/memory/std.h>
 #include <lh/sql/mysql/api.h>
 #include <authum/crypto/ed25519.h>
+#include <lh/util/str/ptr.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 
 typedef struct authum_sql_thread_job
 {
@@ -118,7 +118,7 @@ authum_sql_thread_query(const authum_host_t *host, const authum_sql_connection_t
     {
         if (values[i])
         {
-            authum_u64_t length = strlen(values[i]);
+            authum_u64_t length = lh_str_ptr_len(values[i]);
             if (lh_math_ge(length, lh_math_sub(lh_math_sub(LH_U32_T_MAX, sizeof lh_ptr_deref(job)),
                                                strings_size)))
             {

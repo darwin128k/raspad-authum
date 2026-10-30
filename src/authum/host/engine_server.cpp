@@ -5,6 +5,7 @@
 
 #include <lh/cast/const.h>
 #include <lh/char/map.h>
+#include <lh/util/str/ptr.h>
 #include <authum/memory.h>
 #include <lh/memory/std.h>
 #include <authum/host/engine.h>
@@ -13,7 +14,6 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
 
 extern enginefuncs_t g_engfuncs;
 extern globalvars_t *gpGlobals;
@@ -349,7 +349,7 @@ authum_engine_client_set_info_impl(authum_i32_t index, const authum_char_t *key,
 authum_char_t *
 authum_engine_strdup(const authum_char_t *text)
 {
-    authum_usize_t n = lh_math_add(std::strlen(text), 1u);
+    authum_usize_t n = lh_math_add(lh_str_ptr_len(text), 1u);
     authum_char_t *copy = lh_cast_static(authum_char_t *, authum_memory_alloc(n));
 
     if (lh_math_ne(copy, authum_null))

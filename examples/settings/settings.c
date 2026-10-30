@@ -15,8 +15,6 @@
 
 #include <authum/client.h>
 
-#include <string.h>
-
 typedef struct settings_config
 {
     authum_bool_t enabled;

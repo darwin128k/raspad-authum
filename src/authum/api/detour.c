@@ -4,8 +4,6 @@
 
 #include <lh/os/memory.h>
 
-#include <string.h>
-
 /* rel32 reaches anywhere only in a 32-bit address space. */
 #if defined(__i386__) || defined(_M_IX86)
 #    define AUTHUM_DETOUR_X86 1

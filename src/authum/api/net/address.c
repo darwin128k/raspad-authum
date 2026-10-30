@@ -3,7 +3,7 @@
 #include <lh/net/port.h>
 #include <lh/char/digit.h>
 #include <lh/memory/std.h>
-#include <string.h>
+#include <lh/util/str/ptr.h>
 
 authum_bool_t
 authum_net_address_copy_host(const authum_char_t *address, authum_char_t *out,
@@ -21,11 +21,11 @@ authum_net_address_copy_host(const authum_char_t *address, authum_char_t *out,
     {
         goto invalid;
     }
-    end = lh_math_add(address, strlen(address));
+    end = lh_math_add(address, lh_str_ptr_len(address));
     if (lh_math_eq(lh_ptr_deref(begin), lh_char_map_lbracket))
     {
         begin = lh_math_add_one(begin);
-        end = strchr(begin, lh_char_map_rbracket);
+        end = lh_str_ptr_find_of_char(begin, lh_math_sub(end, begin), lh_char_map_rbracket);
         if (!end || lh_math_eq(end, begin) || (end[1] && lh_math_ne(end[1], lh_char_map_colon)))
         {
             goto invalid;
@@ -46,7 +46,7 @@ authum_net_address_copy_host(const authum_char_t *address, authum_char_t *out,
         }
         if (lh_math_eq(colons, 1))
         {
-            end = strchr(begin, lh_char_map_colon);
+            end = lh_str_ptr_find_of_char(begin, lh_math_sub(end, begin), lh_char_map_colon);
             port = lh_math_add(end, 1);
         }
     }

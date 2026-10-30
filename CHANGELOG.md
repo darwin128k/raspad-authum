@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The module identity field `logtag` is now `tag`: it is the mark the module is
+  shown with in a log record, not a logging thing of its own. A module built
+  against the old name does not compile — the next version breaks the module ABI
+  on purpose. The three words are separated now: `owner` is who owns a
+  subscription, a journal or a decision; `tag` is the mark a source is shown
+  with; `name` is what it is called.
 - Standard file logs use the HLDS `L MM/DD/YYYY - HH:MM:SS:` timestamp prefix,
   followed by the level and text. Shared-host copies retain their module/journal
   tag; a module's own file does not repeat its name.

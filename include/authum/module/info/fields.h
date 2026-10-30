@@ -17,6 +17,6 @@
     str_type date;                                                                                 \
     str_type author;                                                                               \
     str_type url;                                                                                  \
-    str_type logtag
+    str_type tag
 
 #endif /* AUTHUM_MODULE_INFO_FIELDS_H */
