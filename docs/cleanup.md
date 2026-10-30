@@ -121,8 +121,9 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   4. **HTTP access-log**: в строке нет owner (`host/http/access.c`).
   5. **`authum_module_info_t.logtag`**: объявлено в ABI, заполняется хостом и
      модулями, но хост его не читает — мёртвая метка.
-  6. **Файлы модуля**: `authum_cfg_open` идёт прямо в stdio, без owner; записи
-     файлов у модуля нет вообще.
+  6. **Файлы модуля**: `authum_cfg_open` больше не идёт прямо в stdio (читает через
+     `lh/os/fs/file.h`), но owner у файла модуля всё ещё нет; записи файлов у модуля
+     нет вообще.
   Самое дешёвое: (1) вернуть owner в publish (нужна новая структура — ABI 2.0
   не растёт); (2) копия engine-таблицы на модуль + префикс `[модуль]` в текст
   вывода, как это уже делает зеркало лога; (3) отдельная структура «решение»
@@ -156,14 +157,16 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
      Windows (`NtCreateFile` relative to each directory, reparse points refused).
   4. [ ] The remaining libc calls in `api/` and `host/` (157 in 31 files at the start)
      → LH bricks; a missing brick is added to LH first.
-     `tools/check-native.py` now exists and reports the debt: **82 places** —
-     33 `snprintf` / `vsnprintf` (the lh string formatter is `lh/str/format/text.h`:
-     `lh_str_ptr_format_cstr`, `lh_str_ptr_format_cstr_v`), 23 forbidden headers
-     (`stdio.h` 14, `stdlib.h` 8, `string.h` 1), 9 file calls (`fopen` / `fclose` /
-     `fread` / `fwrite`), 9 string calls, 3 clock calls, 2 platform branches,
-     2 numeric parses, 1 `getenv`. By area: `gamedll/` 26, `api/` 26,
-     `examples/` 15, `host/` 12, `include/` 3. Clean in this order: format →
-     files → clock/env → `gamedll/` → `examples/`.
+     `tools/check-native.py` now exists and reports the debt: **15 places** —
+     9 string calls (`std::strlen` / `std::strcmp` / `std::strchr`: the lh string
+     kernels are `lh/str/*`), 3 clock calls (`lh/os/tick.h`, `lh/os/timestamp.h`),
+     2 platform branches, 1 `getenv` (`lh/os/env.h`). All of them are in `gamedll/`
+     (`engine.cpp` 3, `entry.cpp` 3, `game.cpp` 6, `hooks.cpp` 3).
+     The format, the files and the headers are done: `snprintf` →
+     `lh/str/format/text.h` (`lh_str_ptr_format_cstr`, `authum_cstr_format`), the
+     file calls → `lh/os/fs/file.h` (`api/cfg.c`, `api/env.c`, `gamedll/game.cpp`),
+     the forbidden headers are gone. Clean in this order: clock/env → the strings
+     of `gamedll/`.
      `include/authum/export.h` and `include/authum/symbol.h` are exempt on
      purpose: they sit on the ABI boundary with the host process.
   5. [ ] **The thread test does not run on Windows.** `tests/CMakeLists.txt` adds
@@ -182,6 +185,15 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 - [ ] **`gamedll/` and `include/authum/{export,symbol}.h`: calling convention, export
      and the engine library name through LH compiler / OS macros, no `_WIN32`.
   A check (`tools/check-native.py`) keeps it at 0.
+- [ ] **The module's own files went through libc.** `include/authum/cfg.h` hands a
+  module a `FILE *` (`authum_cfg_t.file`, `authum_cfg_open_file`) and
+  `include/authum/path.h` invites it to open files with `fopen`; the RASPAD
+  modules do exactly that (fastdl, gatekeeper, monitoring, qproto — about 15
+  places). The public `authum_file_t` with `authum_file_open/read/write/close`
+  is a thin facade over `lh/os/fs/file.h` and is in place. Left: `authum_cfg_t`
+  keeps its own file type instead of `FILE *`, `stdio.h` leaves the public
+  headers, and the modules move over — after Authum is pushed, so they pick
+  the new ABI 3.0 once.
 - [x] **`lh/os/loop`: one worker loop under every background thread.** The log
   queue, `lh/os/worker` and Authum's HTTP worker run on it (HTTP with a waiter:
   `poll` on its sockets and an `lh/os/wake` signal); Authum's module threads are an

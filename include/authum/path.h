@@ -18,7 +18,6 @@
 #include <authum/path/capacity.h>
 #include <authum/path/sep.h>
 
-
 /**
  * @struct authum_path
  * @brief Absolute or relative path text of at most ::authum_path_capacity - 1.

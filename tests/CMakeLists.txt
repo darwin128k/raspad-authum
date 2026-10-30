@@ -125,3 +125,9 @@ set_tests_properties(authum_placeholders PROPERTIES TIMEOUT 15)
 add_executable(authum_test_memory src/authum/memory.cpp)
 target_link_libraries(authum_test_memory PRIVATE authum_client authum_test_main)
 add_test(NAME authum_memory COMMAND authum_test_memory)
+
+# The module's own file: the facade over the lh filesystem.
+add_executable(authum_test_file src/authum/file.cpp)
+target_link_libraries(authum_test_file PRIVATE authum_client authum_test_main)
+add_test(NAME authum_file COMMAND authum_test_file)
+set_tests_properties(authum_file PROPERTIES TIMEOUT 10)
