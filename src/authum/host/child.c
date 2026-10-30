@@ -251,6 +251,8 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
 
     authum_events_set_ops(authum_child_data_get_events_mut(data), authum_events_host_ops());
     authum_events_set_owner(authum_child_data_get_events_mut(data), data);
+    /* The module owns the names under its own name: `scores.` for `scores`. */
+    authum_events_set_prefix(authum_child_data_get_events_mut(data), data->info->name);
     out->events = authum_child_data_get_events_mut(data);
 
     data->logger.ops = authum_logs_ops();

@@ -63,7 +63,7 @@ scoreboard_cmd_show(const authum_command_t *cmd, authum_ptr user)
         return authum_bool_false;
     }
     /* continue = nobody answered: the owner is not loaded, or it did not know. */
-    if (authum_host_publish(&g_scoreboard_host, SCORES_EVENT_QUERY, &q) ==
+    if (authum_host_query(&g_scoreboard_host, SCORES_EVENT_QUERY, &q) ==
             authum_event_result_continue ||
         !q.found)
     {

@@ -616,9 +616,15 @@ authum_host_subscribe(const authum_host_t *host, const authum_char_t *name,
 }
 
 authum_event_result_t
-authum_host_publish(const authum_host_t *host, const authum_char_t *name, authum_ptr payload)
+authum_host_forward(const authum_host_t *host, const authum_char_t *name, authum_ptr payload)
 {
-    return authum_events_publish(authum_host_get_events(host), name, payload);
+    return authum_events_forward(authum_host_get_events(host), name, payload);
+}
+
+authum_event_result_t
+authum_host_query(const authum_host_t *host, const authum_char_t *name, authum_ptr payload)
+{
+    return authum_events_query(authum_host_get_events(host), name, payload);
 }
 
 void

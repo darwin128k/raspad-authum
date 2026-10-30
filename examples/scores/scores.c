@@ -43,7 +43,7 @@ scores_add(authum_i32_t index, authum_i32_t delta)
     ev.index = index;
     ev.score = g_scores[index];
     ev.delta = delta;
-    (void)authum_host_publish(&g_scores_host, SCORES_EVENT_CHANGED, &ev);
+    (void)authum_host_forward(&g_scores_host, SCORES_EVENT_CHANGED, &ev);
 }
 
 authum_event_result_t

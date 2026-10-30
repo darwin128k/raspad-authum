@@ -45,10 +45,6 @@ authum_events_ops_get_subscribe_id(const authum_events_ops_t *self);
 authum_events_unsubscribe_id_cb
 authum_events_ops_get_unsubscribe_id(const authum_events_ops_t *self);
 
-/** @brief Level-1 read of publish_id; self must be nonnull and reach this field. */
-authum_events_publish_id_cb
-authum_events_ops_get_publish_id(const authum_events_ops_t *self);
-
 /** @brief Whether the table provides subscribe; null is unavailable. */
 authum_bool_t
 authum_events_ops_has_subscribe(const authum_events_ops_t *self);
@@ -72,10 +68,6 @@ authum_events_ops_has_subscribe_id(const authum_events_ops_t *self);
 /** @brief Whether the table provides unsubscribe_id; null is unavailable. */
 authum_bool_t
 authum_events_ops_has_unsubscribe_id(const authum_events_ops_t *self);
-
-/** @brief Whether the table provides publish_id; null is unavailable. */
-authum_bool_t
-authum_events_ops_has_publish_id(const authum_events_ops_t *self);
 
 AUTHUM_EXTERN_C_END
 

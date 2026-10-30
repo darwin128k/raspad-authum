@@ -394,8 +394,21 @@ authum_bool_t
 authum_host_subscribe(const authum_host_t *host, const authum_char_t *name,
                       authum_event_handler_fn fn, authum_ptr user);
 
+/**
+ * @brief Announce an event of your own; the name must start with your prefix.
+ *
+ * @see ::authum_events_forward
+ */
 authum_event_result_t
-authum_host_publish(const authum_host_t *host, const authum_char_t *name, authum_ptr payload);
+authum_host_forward(const authum_host_t *host, const authum_char_t *name, authum_ptr payload);
+
+/**
+ * @brief Ask the module that owns @p name; it answers by filling the out-fields.
+ *
+ * @see ::authum_events_query
+ */
+authum_event_result_t
+authum_host_query(const authum_host_t *host, const authum_char_t *name, authum_ptr payload);
 
 /* --- command shortcuts (same as authum_commands_* on ::authum_host_get_commands) */
 

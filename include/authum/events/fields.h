@@ -11,6 +11,8 @@
 /** @brief Declare the dispatch table and module identity using supplied types. */
 #define authum_events_fields(ops_type, owner_type)                                                 \
     ops_type ops;                                                                                  \
-    owner_type owner
+    owner_type owner;                                                                              \
+    /** The names this module owns: `scores.` for the module `scores`. */                          \
+    const authum_char_t *prefix
 
 #endif /* AUTHUM_EVENTS_FIELDS_H */

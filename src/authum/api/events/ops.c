@@ -38,12 +38,6 @@ authum_events_ops_get_unsubscribe_id(const authum_events_ops_t *self)
     return self->unsubscribe_id;
 }
 
-authum_events_publish_id_cb
-authum_events_ops_get_publish_id(const authum_events_ops_t *self)
-{
-    return self->publish_id;
-}
-
 authum_bool_t
 authum_events_ops_has_subscribe(const authum_events_ops_t *self)
 {
@@ -88,14 +82,6 @@ authum_bool_t
 authum_events_ops_has_unsubscribe_id(const authum_events_ops_t *self)
 {
     return !authum_null_eq(self) && !authum_null_eq(authum_events_ops_get_unsubscribe_id(self))
-               ? authum_bool_true
-               : authum_bool_false;
-}
-
-authum_bool_t
-authum_events_ops_has_publish_id(const authum_events_ops_t *self)
-{
-    return !authum_null_eq(self) && !authum_null_eq(authum_events_ops_get_publish_id(self))
                ? authum_bool_true
                : authum_bool_false;
 }
