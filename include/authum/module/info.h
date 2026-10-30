@@ -19,17 +19,20 @@
 
 /**
  * @def AUTHUM_MODULE_ABI
- * @brief Loader ABI (`2.0.0`) — lh-free module API (`authum_module_api`).
+ * @brief Loader ABI (`3.0.0`) — lh-free module API (`authum_module_api`).
  *
- * 2.0 (Authum 0.4.0) starts over: no 1.x module loads, and the host tables
- * carry no size to check. From here the ABI is frozen: nothing that exists
- * changes or moves. New API is added at the end of a table, or as a new
- * table or a new structure, and bumps the minor; an input structure a module
- * fills in never grows (a new field is a new structure). A module therefore
- * runs on a host of the same major and the same or a later minor, which
+ * 3.0 renames the module identity field `logtag` to `tag`: it is the mark the
+ * module is shown with in a log record, and the struct already says what it is.
+ * No 2.x module loads.
+ *
+ * From here the ABI is frozen: nothing that exists changes or moves. New API
+ * is added at the end of a table, or as a new table or a new structure, and
+ * bumps the minor; an input structure a module fills in never grows (a new
+ * field is a new structure). A module therefore runs on a host of the same
+ * major and the same or a later minor, which
  * ::authum_version_is_abi_compatible checks at load.
  */
-#define AUTHUM_MODULE_ABI AUTHUM_VERSION(2, 0, 0)
+#define AUTHUM_MODULE_ABI AUTHUM_VERSION(3, 0, 0)
 
 struct authum_module_info
 {

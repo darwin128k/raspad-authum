@@ -14,7 +14,6 @@
 #include <authum/client.h>
 
 #include <stdio.h>
-#include <string.h>
 
 authum_host_t g_stats_host;
 authum_logger_t g_stats_log;
@@ -28,7 +27,7 @@ AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
     .date = "2026-10-22",
     .author = "Authum examples",
     .url = "",
-    .logtag = "STATS",
+    .tag = "STATS",
 };
 
 /** Count one more visit for @p auth_id; the new count, or 0 on a database error. */
@@ -82,7 +81,7 @@ stats_on_put_in_server(const authum_char_t *name, authum_ptr payload, authum_ptr
         return authum_event_result_continue;
     }
     /* Bots and players whose auth id is not known yet are not counted. */
-    if (ev->auth_id[0] == '\0' || strcmp(ev->auth_id, "BOT") == 0)
+    if (ev->auth_id[0] == '\0' || authum_cstr_is_equal(ev->auth_id, "BOT", authum_bool_false))
     {
         return authum_event_result_continue;
     }

@@ -1,5 +1,4 @@
 #include <authum/event/message.h>
-#include <lh/util/ptr.h>
 #include <lh/util/str/ptr.h>
 #include <lh/memory/std.h>
 

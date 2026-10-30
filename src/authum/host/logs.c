@@ -43,7 +43,7 @@ struct authum_logs_channel
     authum_usize_t refs;
     /** Folder name: `qproto`, or `bans` under `qproto/` for a journal. */
     authum_char_t name[authum_logs_name_max];
-    /** How lines are tagged elsewhere: `qproto`, `qproto/bans`. */
+    /** The source mark of the records: `QPROTO`, `QPROTO/bans` for a journal. */
     authum_char_t tag[lh_math_mul(authum_logs_name_max, 2)];
     /** Most verbose level written to the file, or ::authum_logs_level_off. */
     authum_i32_t level;
@@ -286,10 +286,10 @@ authum_logs_inherit(authum_logs_channel_t *channel, const authum_logs_channel_t 
 }
 
 static void
-authum_logs_admin(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authum_char_t *tag)
+authum_logs_admin(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authum_char_t *name)
 {
     authum_char_t prefix[144];
-    lh_str_ptr_format_cstr(prefix, sizeof prefix, "%s.", tag);
+    lh_str_ptr_format_cstr(prefix, sizeof prefix, "%s.", name);
     for (authum_char_t *p = prefix; lh_ptr_deref(p); p = lh_math_add_one(p))
     {
         if (lh_math_eq(lh_ptr_deref(p), lh_char_map_slash))
@@ -305,6 +305,7 @@ authum_logs_read_channel_level(authum_logs_channel_t *channel, authum_cfg_t *adm
 {
     authum_cfg_t local;
     const authum_logs_channel_t *module = channel->parent ? channel->parent : channel;
+    authum_char_t path[lh_math_add(lh_math_mul(authum_logs_name_max, 2), 2)];
     /* Resolve each channel afresh: admin module overrides outrank local journal keys. */
     authum_logs_inherit(channel, lh_addr_of(authum_logs_defaults));
     if (lh_math_ne(channel, lh_addr_of(authum_logs_host)) &&
@@ -319,11 +320,19 @@ authum_logs_read_channel_level(authum_logs_channel_t *channel, authum_cfg_t *adm
     }
     if (admin)
     {
+        /* The keys are named, not tagged: `qproto.` for a module, `qproto/bans.` for a
+         * journal under it. */
         if (channel->parent)
         {
-            authum_logs_admin(channel, admin, channel->parent->tag);
+            authum_logs_admin(channel, admin, channel->parent->name);
+            lh_str_ptr_format_cstr(path, sizeof path, "%s/%s", channel->parent->name,
+                                   channel->name);
+            authum_logs_admin(channel, admin, path);
         }
-        authum_logs_admin(channel, admin, channel->tag);
+        else
+        {
+            authum_logs_admin(channel, admin, channel->name);
+        }
     }
     if (authum_logs_environment_override)
     {
@@ -511,7 +520,7 @@ authum_logs_write(authum_ptr owner, authum_logger_level_t level, const authum_ch
 
 authum_logs_channel_t *
 authum_logs_add(authum_ptr owner, authum_logs_channel_t *parent, const authum_char_t *name,
-                const authum_char_t *module_dir)
+                const authum_char_t *tag, const authum_char_t *module_dir)
 {
     authum_path_t base = {0};
     authum_path_t modules;
@@ -534,11 +543,14 @@ authum_logs_add(authum_ptr owner, authum_logs_channel_t *parent, const authum_ch
     authum_logs_set_name(channel->name, sizeof channel->name, name);
     if (authum_null_eq(parent))
     {
-        authum_cstr_copy(channel->tag, sizeof channel->tag, channel->name);
+        /* The source mark of the module; without one it is called by its name. */
+        authum_cstr_copy(
+            channel->tag, sizeof channel->tag,
+            (authum_null_eq(tag) || lh_math_eq(tag[0], lh_char_map_nul)) ? channel->name : tag);
     }
     else
     {
-        lh_str_ptr_format_cstr(channel->tag, sizeof channel->tag, "%s/%s", parent->name,
+        lh_str_ptr_format_cstr(channel->tag, sizeof channel->tag, "%s/%s", parent->tag,
                                channel->name);
     }
     /* journal: <module logs>/<journal>; module: <module_dir>/logs, by default
@@ -615,7 +627,8 @@ authum_logs_free(authum_logs_channel_t *channel)
 }
 
 authum_bool_t
-authum_logs_open(authum_ptr owner, const authum_char_t *name, const authum_char_t *module_dir)
+authum_logs_open(authum_ptr owner, const authum_char_t *name, const authum_char_t *tag,
+                 const authum_char_t *module_dir)
 {
     if (authum_null_eq(owner) || authum_null_eq(name))
     {
@@ -625,7 +638,7 @@ authum_logs_open(authum_ptr owner, const authum_char_t *name, const authum_char_
     {
         return authum_bool_true;
     }
-    return !authum_null_eq(authum_logs_add(owner, authum_null, name, module_dir))
+    return !authum_null_eq(authum_logs_add(owner, authum_null, name, tag, module_dir))
                ? authum_bool_true
                : authum_bool_false;
 }
@@ -675,7 +688,7 @@ authum_logs_open_journal(authum_ptr owner, const authum_char_t *name)
             return channel->owner;
         }
     }
-    channel = authum_logs_add(authum_null, module, clean, authum_null);
+    channel = authum_logs_add(authum_null, module, clean, authum_null, authum_null);
     return !authum_null_eq(channel) ? channel->owner : authum_null;
 }
 

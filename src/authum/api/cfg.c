@@ -7,7 +7,6 @@
 #include <authum/unused.h>
 #include <lh/cast/const.h>
 #include <lh/char/map.h>
-#include <lh/util/ptr.h>
 #include <lh/util/str/ptr.h>
 #include <lh/memory/std.h>
 

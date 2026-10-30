@@ -35,11 +35,10 @@ Include **`#include <authum/client.h>`** only. Do **not** include lh or link
 | `authum_module_info` | `authum_module_info_t` | Name, SemVer, ABI, … |
 | `authum_module_api` | `authum_module_api_t` | `.start(host)` / `.stop()` |
 
-ABI: `AUTHUM_MODULE_ABI` = `1.0.0`. Every table the host passes starts with
-`size` and only grows at the end, so a 1.x module loads on any 1.x host: a
-function the host is too old for answers "not available" (false / 0 / empty
-string) instead of crashing. Only a major bump means rebuilding. See
-`<authum/abi.h>`.
+ABI: `AUTHUM_MODULE_ABI` = `3.0.0`. A host table only grows at the end, so a
+3.x module loads on any 3.x host: a function the host is too old for answers
+"not available" (false / 0 / empty string) instead of crashing. Only a major
+bump means rebuilding. See `<authum/version.h>`.
 
 ```c
 #include <authum/client.h>
@@ -220,7 +219,7 @@ destinations, including journals. Details and construction: [logging.md](logging
 - [ ] Strict snake_case; enums `{type}_leaf` ([module-style.md](module-style.md))
 - [ ] Authum foundation types on Authum / public ABI
 - [ ] `#include <authum/client.h>` (no lh in a pure client)
-- [ ] `authum_module_info.abi` = `AUTHUM_MODULE_ABI` (`1.0.0`); host kept with `authum_host_copy`, non-null `name`
+- [ ] `authum_module_info.abi` = `AUTHUM_MODULE_ABI` (`3.0.0`); host kept with `authum_host_copy`, non-null `name`
 - [ ] `authum_module_api` exported; `start` returns `authum_bool_false` only on hard failure
 - [ ] Listed in `configs/modules.list`; everything in `modules/<name>/`: `<name>.so`, `configs/`, `lang/`, `data/` (via `authum_host_join_config_path` / `_data_path`)
 - [ ] Folder `foo` → `foo.so` / `foo.dll`

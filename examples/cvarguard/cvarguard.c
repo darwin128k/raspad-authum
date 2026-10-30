@@ -13,7 +13,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define CVARGUARD_CVAR "fps_max"
 #define CVARGUARD_LIMIT 101.0
@@ -28,7 +27,7 @@ AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
     .date = "2026-10-22",
     .author = "Authum examples",
     .url = "",
-    .logtag = "CVARGUARD",
+    .tag = "CVARGUARD",
 };
 
 authum_event_result_t
@@ -60,7 +59,7 @@ cvarguard_on_cvar_value(const authum_char_t *name, authum_ptr payload, authum_pt
 
     authum_unused(name);
     authum_unused(user);
-    if (authum_null_eq(ev) || strcmp(ev->cvar, CVARGUARD_CVAR) != 0)
+    if (authum_null_eq(ev) || !authum_cstr_is_equal(ev->cvar, CVARGUARD_CVAR, authum_bool_false))
     {
         return authum_event_result_continue;
     }

@@ -9,8 +9,6 @@
 
 #include <authum/client.h>
 
-#include <string.h>
-
 authum_host_t g_chatfilter_host;
 authum_logger_t g_chatfilter_log;
 
@@ -24,7 +22,7 @@ AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
     .date = "2026-10-22",
     .author = "Authum examples",
     .url = "",
-    .logtag = "CHATFILTER",
+    .tag = "CHATFILTER",
 };
 
 /** The banned word found in @p text (case-insensitive), or null. */
@@ -41,7 +39,7 @@ chatfilter_find_word(const authum_char_t *text)
     lower[i] = '\0';
     for (i = 0u; i < sizeof g_chatfilter_words / sizeof g_chatfilter_words[0]; ++i)
     {
-        if (strstr(lower, g_chatfilter_words[i]) != authum_null)
+        if (authum_cstr_contains(lower, g_chatfilter_words[i]))
         {
             return g_chatfilter_words[i];
         }
@@ -61,7 +59,8 @@ chatfilter_on_command(const authum_char_t *name, authum_ptr payload, authum_ptr 
     {
         return authum_event_result_continue;
     }
-    if (strcmp(ev->argv[0], "say") != 0 && strcmp(ev->argv[0], "say_team") != 0)
+    if (!authum_cstr_is_equal(ev->argv[0], "say", authum_bool_false) &&
+        !authum_cstr_is_equal(ev->argv[0], "say_team", authum_bool_false))
     {
         return authum_event_result_continue;
     }
