@@ -83,11 +83,14 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   `LH_LIBRARY_OPTION_OS_WINDOW=OFF`, so `os/window.c`, the backends and their tests only
   build in Authum's builds. `build-lh-window-windows` / `build-lh-window-linux` (ON) were
   added for this pass; make one of them the standard.
-- [ ] **`_v` for the safe forms** of ui setters and getters (a check or a side effect) was
-  chosen by the rule 'no suffix is the fast form'. Review with the owner, together with
-  the lower-layer collisions the tools report: `lh_datetime_get_date` / `_get_time`,
-  `lh_io_stream_get_reader` / `_writer`, `lh_io_dgram_*`, `lh_net_*_get_ip`,
-  `lh_os_fs_file_set_path` take an out parameter or a pointer under an accessor's name.
+- [ ] **`_v` for the safe forms** of ui setters and getters (a check or a side effect).
+  The rule is the owner's (2026-10-30): the fast form has no suffix and does not
+  check, the validating form has `_v`; `_unsafe` is gone from LH (the four pointer
+  arithmetic macros of `lh/util/ptr.h` are now `lh_ptr_{add,sub}[_by_offset][_v]`).
+  Left: the lower-layer collisions the tools report — `lh_datetime_get_date` /
+  `_get_time`, `lh_io_stream_get_reader` / `_writer`, `lh_io_dgram_*`,
+  `lh_net_*_get_ip`, `lh_os_fs_file_set_path` take an out parameter or a pointer
+  under an accessor's name.
 - [ ] **Const containers hand out mutable elements.** `lh_list_get_first` / `_get_next`
   and `lh_array_get_ptr` take a const container and return a mutable node or slot, so
   everything built on them inherits the hole: `lh_os_module_event_bus_get_entry` / `_get_first` /
@@ -103,6 +106,42 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 
 ## Authum (after LH)
 
+- [ ] **Кто это сделал: выходы без метки источника** (аудит 2026-10-30).
+  Логи и команды — эталон: owner → канал → tag, всё через одну точку
+  (`host/logs.c`, `host/commands.c` + LH console). Не маркируется:
+  1. **Publish событий**: владелец доходит до хоста, но выбрасывается
+     (`host/events.c`, `authum_unused(owner)`) — издатель известен только по
+     соглашению об имени `<module>.*`.
+  2. **Игровые выходы**: `authum_engine()` — один синглтон на всех модулей
+     (`host/engine_server.cpp`), поэтому `client_print`, chat, `message_*`,
+     `cvar_set`, `kick` уходят анонимно. У лога метка есть, у игры — нет.
+  3. **Решения модулей**: `allow` / `reject_reason` / `block` в payload
+     (`event/client.h`, `event/message.h`) — плоские поля, last-writer-wins,
+     «кто постановил» не хранится. `gamedll/hooks.cpp` читает только `allow`.
+  4. **HTTP access-log**: в строке нет owner (`host/http/access.c`).
+  5. **`authum_module_info_t.logtag`**: объявлено в ABI, заполняется хостом и
+     модулями, но хост его не читает — мёртвая метка.
+  6. **Файлы модуля**: `authum_cfg_open` идёт прямо в stdio, без owner; записи
+     файлов у модуля нет вообще.
+  Самое дешёвое: (1) вернуть owner в publish (нужна новая структура — ABI 2.0
+  не растёт); (2) копия engine-таблицы на модуль + префикс `[модуль]` в текст
+  вывода, как это уже делает зеркало лога; (3) отдельная структура «решение»
+  с автором; (4) оживить `logtag` и добавить owner в access-строку — это по
+  одной строке в существующей точке.
+- [ ] **`authum_detour_attach` — мёртвый код**: объявлен (`include/authum/detour.h`),
+  но не вызывается нигде. Механизм влияния на игру сегодня — подмена таблиц
+  `DLL_FUNCTIONS` / `NEW_DLL_FUNCTIONS` в `gamedll/hooks.cpp`; модули сами игру
+  не хукают. Решить: хуки для модулей — да (тогда нужна цепочка подмен и пределы
+  в ядре) или нет (тогда `detour.h` убрать из публичного API).
+- [ ] **Реестра сервисов нет**: модуль не может получить API другого модуля —
+  единственный межмодульный канал шина по именам. Осознанно (пока) — но это и есть
+  ответ на «API для API»: сначала метка источника, потом сервисы.
+- [ ] **Точка решения «пускать / не пускать»** — заглушка (`host/gate.c`, план на
+  1.0.0). Владелец точки назначается конфигом; остальные модули наблюдают.
+- [ ] **`tools/check-native.py` отсутствует** (нет ни в `tools/`, ни в `lib/lh/tools/`),
+  хотя `cleanup.md` на него ссылается: правило «Authum не знает про ОС» сейчас
+  ничем не проверяется. Написать скрипт (запрет `_WIN32`, libc и нативных вызовов
+  в `src/authum` и `include/authum`) — иначе «кирпичность» держится на слове.
 - [ ] **Authum on LH rails: it does not know which OS it runs on.** No `#if _WIN32`,
   no native or libc call outside LH (owner, 2026-10-29). In order:
   1. [ ] LH local time: the zone offset of a UTC moment (DST included) in the OS
@@ -117,6 +156,15 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
      Windows (`NtCreateFile` relative to each directory, reparse points refused).
   4. [ ] The remaining libc calls in `api/` and `host/` (157 in 31 files at the start)
      → LH bricks; a missing brick is added to LH first.
+     `tools/check-native.py` now exists and reports the debt: **143 places** —
+     48 libc string calls (`strlen` / `strcmp` / `strchr` …), 33 `printf` /
+     `fprintf`, 45 forbidden headers (`string.h` 23, `stdio.h` 14, `stdlib.h` 8),
+     9 file calls (`fopen` / `fclose` / `fread` / `fwrite`), 3 clock calls, 2
+     platform branches, 2 numeric parses, 1 `getenv`. By area: `api/` 55,
+     `gamedll/` 36, `examples/` 26, `host/` 23, `include/` 3. Clean in this
+     order: strings → print → files → clock/env → `gamedll/` → `examples/`.
+     `include/authum/export.h` and `include/authum/symbol.h` are exempt on
+     purpose: they sit on the ABI boundary with the host process.
   5. [ ] `gamedll/` and `include/authum/{export,symbol}.h`: calling convention, export
      and the engine library name through LH compiler / OS macros, no `_WIN32`.
   A check (`tools/check-native.py`) keeps it at 0.
