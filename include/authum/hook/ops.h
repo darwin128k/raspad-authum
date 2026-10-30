@@ -13,8 +13,8 @@
 
 struct authum_hook_ops
 {
-    authum_bool_t (*add)(authum_ptr owner, authum_hook_point_t point, authum_hook_fn fn,
-                         authum_ptr user);
+    authum_bool_t (*add)(authum_ptr owner, const authum_char_t *tag, authum_hook_point_t point,
+                         authum_hook_fn fn, authum_ptr user);
     authum_bool_t (*remove)(authum_ptr owner, authum_hook_point_t point, authum_hook_fn fn,
                             authum_ptr user);
 };

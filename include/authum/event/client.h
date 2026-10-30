@@ -8,16 +8,21 @@
  *
  * | Event | When | Payload |
  * |-------|------|---------|
- * | ::AUTHUM_EVENT_CLIENT_CONNECT | `ClientConnect` (after the engine auth step) | ::authum_event_client_t, all fields; a handler may set `allow = false` + `reject_reason` |
+ * | ::AUTHUM_EVENT_CLIENT_CONNECT | `ClientConnect` (after the engine auth step) | ::authum_event_client_t |
  * | ::AUTHUM_EVENT_CLIENT_PUT_IN_SERVER | `ClientPutInServer` | ::authum_event_client_t: index, userid, name, auth_id, times |
  * | ::AUTHUM_EVENT_CLIENT_INFO_CHANGED | `ClientUserInfoChanged` | ::authum_event_client_t: index, userid, name, times |
  * | ::AUTHUM_EVENT_CLIENT_DISCONNECT | `ClientDisconnect` | ::authum_event_client_t: index, userid, name, auth_id, times |
- * | ::AUTHUM_EVENT_CLIENT_COMMAND | `ClientCommand` (`say`, `menuselect`, …) | ::authum_event_client_command_t; a handler may set `block` |
+ * | ::AUTHUM_EVENT_CLIENT_COMMAND | `ClientCommand` (`say`, `menuselect`, …) | ::authum_event_client_command_t |
  * | ::AUTHUM_EVENT_CLIENT_CVAR_VALUE | `CvarValue2`, the answer to `QueryClientCvarValue2` | ::authum_event_client_cvar_t |
- * | ::AUTHUM_EVENT_CLIENT_KILL | `ClientKill`, the `kill` command | ::authum_event_client_t; set `allow = false` to refuse |
+ * | ::AUTHUM_EVENT_CLIENT_KILL | `ClientKill`, the `kill` command | ::authum_event_client_t |
  *
  * `index` is the engine entity index (1 … maxClients), the same number AMXX
  * calls `id`.
+ *
+ * An event is a message: it says what happened and nothing more. A module that
+ * wants to change what happens next stands in the call — a hook
+ * (<authum/hook.h>). Refusing a client, swallowing a command and stopping a
+ * kill are hook points, not event fields: there is one road to a decision.
  */
 // clang-format on
 
@@ -42,8 +47,7 @@ enum
 {
     authum_event_client_name_max = 32,
     authum_event_client_address_max = 64,
-    authum_event_client_auth_id_max = 64,
-    authum_event_client_reject_max = 128
+    authum_event_client_auth_id_max = 64
 };
 
 struct authum_event_client
@@ -61,16 +65,6 @@ struct authum_event_client
     authum_float_t game_time;
     /** Wall clock, seconds since 1970-01-01 UTC. */
     authum_i64_t unix_time;
-    /** Connect only: set to false to refuse the connection. */
-    authum_bool_t allow;
-    /** Connect only: message shown to the refused client. */
-    authum_char_t reject_reason[authum_event_client_reject_max];
-    /**
-     * The module that decided: it refused the client (`allow = false`) or gave
-     * a reason. A module writes its own mark here — the host keeps it and
-     * names it in the log. Null when nobody decided.
-     */
-    const authum_char_t *decided_by;
 };
 typedef struct authum_event_client authum_event_client_t;
 
@@ -94,14 +88,6 @@ struct authum_event_client_command
                       [authum_event_client_command_arg_max];
     /** Everything after the command as one line (`CMD_ARGS`). */
     authum_char_t args[authum_event_client_command_args_max];
-    /** Set to true to swallow the command: the game DLL never sees it. */
-    authum_bool_t block;
-    /**
-     * The module that decided: it swallowed the command (`block = true`). A
-     * module writes its own mark here — the host keeps it and names it in the
-     * log. Null when nobody decided.
-     */
-    const authum_char_t *decided_by;
 };
 typedef struct authum_event_client_command authum_event_client_command_t;
 

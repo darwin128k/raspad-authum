@@ -22,6 +22,12 @@ authum_hooks_get_owner(const authum_hooks_t *self)
     return authum_null_eq(self) ? authum_null : self->owner;
 }
 
+const authum_char_t *
+authum_hooks_get_tag(const authum_hooks_t *self)
+{
+    return authum_null_eq(self) ? authum_null : self->tag;
+}
+
 authum_bool_t
 authum_hooks_add(const authum_hooks_t *self, authum_hook_point_t point, authum_hook_fn fn,
                  authum_ptr user)
@@ -32,7 +38,7 @@ authum_hooks_add(const authum_hooks_t *self, authum_hook_point_t point, authum_h
     {
         return authum_bool_false;
     }
-    return ops->add(authum_hooks_get_owner(self), point, fn, user);
+    return ops->add(authum_hooks_get_owner(self), authum_hooks_get_tag(self), point, fn, user);
 }
 
 authum_bool_t

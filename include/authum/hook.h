@@ -46,6 +46,11 @@ struct authum_hooks
 {
     const authum_hook_ops_t *ops;
     authum_ptr owner;
+    /**
+     * The module's tag: the host writes it, the chain names it in the log
+     * when a handler of this module stops a call. Null when there is none.
+     */
+    const authum_char_t *tag;
 };
 typedef struct authum_hooks authum_hooks_t;
 
@@ -62,6 +67,12 @@ authum_hooks_get_ops(const authum_hooks_t *self);
  */
 authum_ptr
 authum_hooks_get_owner(const authum_hooks_t *self);
+
+/**
+ * @brief The tag of the module that owns @p self; null when there is none.
+ */
+const authum_char_t *
+authum_hooks_get_tag(const authum_hooks_t *self);
 
 /**
  * @brief Add a handler to a point; the module that owns @p self is the owner of

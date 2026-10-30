@@ -495,6 +495,7 @@ test_load(test_module_t *m)
     m->commands.scope = m->info->name;
     m->hooks.ops = authum_hooks_host_ops();
     m->hooks.owner = m;
+    m->hooks.tag = m->info->tag;
     m->logger.ops = authum_logs_ops();
     m->logger.owner = m;
     authum_logs_open(m, m->info->name, m->info->tag, authum_path_get_cstr(&m->module));
@@ -563,7 +564,6 @@ test_client_event(const char *event, authum_i32_t index)
     test_player_t *player = test_player(index);
 
     memset(&ev, 0, sizeof ev);
-    ev.allow = authum_bool_true;
     ev.index = index;
     ev.userid = player->userid;
     ev.game_time = 10.0f;
@@ -574,11 +574,12 @@ test_client_event(const char *event, authum_i32_t index)
     (void)authum_events_host_publish(event, &ev);
 }
 
-/** A chat line @p player types; returns whether something blocked it. */
+/** A chat line @p player types; returns whether a hook stopped it. */
 authum_bool_t
 test_say(authum_i32_t index, const char *text)
 {
     authum_event_client_command_t ev;
+    authum_hook_call_t call;
     test_player_t *player = test_player(index);
 
     memset(&ev, 0, sizeof ev);
@@ -591,7 +592,16 @@ test_say(authum_i32_t index, const char *text)
     authum_cstr_copy(ev.argv[1], sizeof ev.argv[1], text);
     authum_cstr_copy(ev.args, sizeof ev.args, text);
     (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_COMMAND, &ev);
-    return ev.block;
+    /* The decision is the chain's: the event only says what happened. */
+    memset(&call, 0, sizeof call);
+    call.point = authum_hook_point_client_command;
+    call.index = index;
+    authum_cstr_copy(call.name, sizeof call.name, player->name);
+    authum_cstr_copy(call.command, sizeof call.command, "say");
+    authum_cstr_copy(call.args, sizeof call.args, text);
+    call.proceed = authum_bool_true;
+    return !authum_hook_registry_call(authum_hook_registry(), authum_hook_point_client_command,
+                                      &call, authum_null);
 }
 
 void
@@ -878,16 +888,18 @@ TEST_F(authum_examples, deathnotice_can_block_kill_command)
 {
     /* deathnotice: kill is allowed until its cvar says otherwise. */
     {
-        authum_event_client_t kill;
+        authum_hook_call_t call = {};
 
-        memset(&kill, 0, sizeof kill);
-        kill.index = 1;
-        kill.allow = authum_bool_true;
-        (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_KILL, &kill);
-        EXPECT_TRUE(kill.allow);
+        call.point = authum_hook_point_client_kill;
+        call.index = 1;
+        authum_cstr_copy(call.name, sizeof call.name, "Vega");
+        call.proceed = authum_bool_true;
+        EXPECT_TRUE(authum_hook_registry_call(authum_hook_registry(), authum_hook_point_client_kill,
+                                              &call, authum_null));
         EXPECT_TRUE(test_cvar_set("deathnotice_allow_kill", "0"));
-        (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_KILL, &kill);
-        EXPECT_FALSE(kill.allow);
+        call.proceed = authum_bool_true;
+        EXPECT_FALSE(authum_hook_registry_call(authum_hook_registry(),
+                                               authum_hook_point_client_kill, &call, authum_null));
     }
 }
 
@@ -910,6 +922,8 @@ TEST_F(authum_examples, hookguard_refuses_a_marked_player)
     EXPECT_FALSE(authum_hook_registry_call(authum_hook_registry(), authum_hook_point_client_connect,
                                            &call, authum_null));
     EXPECT_STREQ(call.reject, "This server does not welcome you.");
+    /* The call names the module that refused: the log can say who decided. */
+    EXPECT_STREQ(call.decided_by, "HOOKGUARD");
 
     /* A player with an ordinary name goes in. */
     authum_cstr_copy(call.name, sizeof call.name, "Vega");

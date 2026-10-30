@@ -25,10 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The HTTP access line names the module that opened the server:
   `module=<mark>`. The line said where the file came from (the sandbox root),
   but not who asked.
-- `authum_event_client_t` and `authum_event_client_command_t` carry
-  `decided_by`: the mark of the module that refused the client or swallowed
-  the command. The host names it in the log: `client <name> refused by
-  <mark>`.
+- `authum_hook_call_t` carries `decided_by`: the tag of the module whose
+  handler stopped the call. The host names it in the log: `client <name>
+  refused by <tag>`. The tag is the module's own (`authum_module_info_t.tag`),
+  handed to the chain by the host — a module does not write it itself.
 - `authum_file_t` with `authum_file_init`, `authum_file_open`,
   `authum_file_open_cstr`, `authum_file_read`, `authum_file_write`,
   `authum_file_close` and `authum_file_is_open`: a module reads and writes its
@@ -46,6 +46,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **The client events carry no decision any more.** `authum_event_client_t` has
+  no `allow`, `reject_reason` or `decided_by`, and `authum_event_client_command_t`
+  has no `block` or `decided_by`. An event is a message: it says what happened.
+  Refusing a client, swallowing a command and stopping a kill are hook points
+  now — there is one road to a decision, and the log names the module that took
+  it. A module built against the old fields does not compile — the module ABI
+  moves to **3.0.0** anyway.
 - The event bus has two kinds of publication now, as its own documentation
   always said: `authum_events_forward` announces an event of your own — the
   name must start with your prefix, so a module never publishes under another
@@ -146,6 +153,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and shipped configuration are 10 days; explicitly configured values are preserved.
 - This changes module logging only. The native HLDS asynchronous file writer
   remains an isolated Linux experiment and is not enabled by this release.
+
+### Fixed
+
+- **The hook budget never fitted.** The chain measured a handler with a 32-bit
+  counter while the clock is 64-bit, so the elapsed time was a huge number and
+  every handler looked like it had overrun its budget: it ran once, was dropped
+  from the chain and the core reported an overrun. The counter is 64-bit now, so
+  a handler that keeps to the budget stays where it is.
 
 ## [4.0.0] - 2026-10-24
 

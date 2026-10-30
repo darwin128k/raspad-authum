@@ -81,7 +81,6 @@ The holes, to close:
 - the publisher of an event is dropped (`host/events.c`);
 - the engine ops table is one singleton for all modules, so `client_print`,
   chat, `cvar_set` and `kick` are anonymous (`host/engine_server.cpp`);
-- a module's decision (`allow`, `reject_reason`, `block`) keeps no author;
 - the HTTP access line has no owner (`host/http/access.c`);
 - `authum_module_info_t.logtag` is declared in the ABI and read by nobody.
 
@@ -105,14 +104,14 @@ are the pilot: the first two rewritten on cnor, the last two after.
 ## 8. The plan
 
 1. **0.4.0 into master** as it is; the new work happens on a branch.
-2. **Clear the path** before building anything new:
-   - `tools/check-native.py` to 0 (it reports 143 places today: strings, print,
-     file calls, headers);
+2. **Clear the path** before building anything new — done:
+   - `tools/check-native.py` to 0 (it reported 143 places);
    - owner marks on the outputs above;
    - the `_v` naming rule everywhere (`no suffix` = fast, `_v` = validating;
      `_unsafe` is gone).
-3. **New bricks, then new mechanisms**: the hook chain, the service registry,
-   the decision point — each a lh brick with a thin Authum facade.
+3. **New bricks, then new mechanisms**: the hook chain (done — one road to a
+   decision, [docs/hooks.md](hooks.md)), the service registry, the decision
+   point — each a lh brick with a thin Authum facade.
 4. **cnor**: the interpreter module, the natives, the standard library.
 
 ## 9. What stays as it is
@@ -125,9 +124,9 @@ are the pilot: the first two rewritten on cnor, the last two after.
 ## 10. The platform debt, measured
 
 `tools/check-native.py` counts every place where Authum names the platform it
-runs on. It started at **143** and stands at **82**:
+runs on. It started at **143** and stands at **0**:
 
-| what | count | the brick that replaces it |
+| what | count | the brick that replaced it |
 |---|---|---|
 | `snprintf` / `vsnprintf` | 33 | `lh_str_ptr_format_cstr` / `..._cstr_v` (`lh/str/format/text.h`) |
 | forbidden headers | 23 | `stdio.h` 14, `stdlib.h` 8, `string.h` 1 |
@@ -138,8 +137,8 @@ runs on. It started at **143** and stands at **82**:
 | numeric parses | 2 | `lh/str/parse/*` |
 | `getenv` | 1 | `lh/os/env.h` |
 
-Every brick the table names already exists in lh — nothing has to be written
-for it. Two differences matter when replacing: the lh formatter leaves the
+Every brick the table names already exists in lh — nothing had to be written
+for it. Two differences mattered when replacing: the lh formatter leaves the
 buffer **empty** when the result does not fit (libc truncates), and it knows
 `%% %c %s %d %i %u %x %X` only — no `%f`, `%zu` or `%+d`.
 
