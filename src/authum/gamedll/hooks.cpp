@@ -192,9 +192,21 @@ void
 h_client_put_in_server(edict_t *entity)
 {
     authum_event_client_t ev;
+    authum_hook_call_t call;
     client_fill(lh_addr_of(ev), entity, authum_null);
     authum_unused(authum_events_host_publish_id(hook_event_id(hook_event_client_put_in_server),
                                                 lh_addr_of(ev)));
+    lh_memory_std_set(lh_addr_of(call), 0, sizeof call);
+    call.point = authum_hook_point_client_put_in_server;
+    call.index = ev.index;
+    copy(call.name, sizeof call.name, ev.name);
+    call.proceed = authum_bool_true;
+    if (!authum_hook_registry_call(authum_hook_registry(), authum_hook_point_client_put_in_server,
+                                   lh_addr_of(call), authum_null))
+    {
+        authum_log_info("%s was kept off the server by a hook", call.name);
+        return; /* superseded: the game never puts the player in */
+    }
     if (lh_math_ne(g_game_dll.pfnClientPutInServer, authum_null))
     {
         g_game_dll.pfnClientPutInServer(entity);

@@ -7,6 +7,7 @@ static const authum_char_t *const g_hook_point_names[authum_hook_point_count] = 
     "client_connect",
     "client_kill",
     "client_command",
+    "client_put_in_server",
 };
 
 const authum_hook_ops_t *
