@@ -5,7 +5,6 @@
 #include <lh/char/digit.h>
 #include <lh/memory/std.h>
 
-#include <stdlib.h>
 
 #include <lh/os/system/fs/path.h>
 #include <lh/os/fs/path.h>

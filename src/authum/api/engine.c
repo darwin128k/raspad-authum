@@ -4,7 +4,6 @@
 
 #include <authum/cstr.h>
 
-#include <stdlib.h>
 
 /** Empty @p buf so a refused call still leaves a valid string. */
 authum_bool_t
@@ -330,15 +329,13 @@ authum_engine_cvar_get_float(const authum_engine_t *engine, const authum_char_t 
                              authum_float_t fallback)
 {
     authum_char_t text[64];
-    authum_char_t *end;
     authum_float_t value;
 
     if (!authum_engine_cvar_copy(engine, name, text, sizeof text))
     {
         return fallback;
     }
-    value = strtof(text, lh_addr_of(end));
-    return (lh_math_ne(end, text)) ? value : fallback;
+    return authum_cstr_parse_float(text, lh_addr_of(value)) ? value : fallback;
 }
 
 /* --- user messages ---------------------------------------------------------- */

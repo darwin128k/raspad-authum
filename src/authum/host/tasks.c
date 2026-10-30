@@ -2,7 +2,6 @@
 #include <authum/memory.h>
 #include <authum/null.h>
 #include <lh/os/worker.h>
-#include <stdlib.h>
 
 typedef lh_os_worker_job_t authum_task_job_t;
 

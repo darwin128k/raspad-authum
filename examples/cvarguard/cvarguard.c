@@ -11,7 +11,6 @@
 
 #include <authum/client.h>
 
-#include <stdlib.h>
 
 #define CVARGUARD_CVAR "fps_max"
 #define CVARGUARD_LIMIT 101.0
@@ -52,8 +51,7 @@ authum_event_result_t
 cvarguard_on_cvar_value(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 {
     const authum_event_client_cvar_t *ev = (const authum_event_client_cvar_t *)payload;
-    char *end;
-    double value;
+    authum_float_t value;
     authum_char_t reason[96];
 
     authum_unused(name);
@@ -68,8 +66,7 @@ cvarguard_on_cvar_value(const authum_char_t *name, authum_ptr payload, authum_pt
         return authum_event_result_continue;
     }
 
-    value = strtod(ev->value, &end);
-    if (end == ev->value)
+    if (!authum_cstr_parse_float(ev->value, &value))
     {
         /* The engine answers "Bad CVAR request" / "Bad Player" instead of a value. */
         authum_logger_notice(&g_cvarguard_log, "%s: no %s (%s)", ev->client.name, ev->cvar,

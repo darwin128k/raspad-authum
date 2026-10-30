@@ -1,7 +1,6 @@
 #include <authum/logger/buffer.h>
 #include <lh/util/ptr.h>
 #include <authum/memory.h>
-#include <stdlib.h>
 
 typedef struct authum_logger_buffer_line
 {

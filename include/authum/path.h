@@ -18,7 +18,6 @@
 #include <authum/path/capacity.h>
 #include <authum/path/sep.h>
 
-#include <string.h>
 
 /**
  * @struct authum_path

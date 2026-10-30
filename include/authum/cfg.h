@@ -35,8 +35,6 @@
 #include <authum/cfg/item.h>
 #include <authum/path.h>
 
-#include <stdio.h>
-
 enum
 {
     authum_cfg_line_max = 512
@@ -44,11 +42,17 @@ enum
 
 /**
  * @struct authum_cfg
- * @brief Open flat-cfg file; getters rewind and scan for each key.
+ * @brief Open flat-cfg file; getters scan it for each key.
+ *
+ * The file is read whole when it is opened; every getter scans the text
+ * from its first line, the way the old stream was rewound and read.
  */
 struct authum_cfg
 {
-    FILE *file;
+    /** The config text, owned by the cfg; null when nothing is open. */
+    authum_char_t *text;
+    /** Bytes in @p text, without the terminator. */
+    authum_usize_t size;
     authum_char_t line[authum_cfg_line_max];
 };
 typedef struct authum_cfg authum_cfg_t;
@@ -64,8 +68,16 @@ authum_cfg_open_cstr(authum_cfg_t *self, const authum_char_t *path);
 authum_bool_t
 authum_cfg_open(authum_cfg_t *self, const authum_path_t *path);
 
+/**
+ * @brief Open a config that is already in memory.
+ *
+ * The text is copied; the cfg owns its copy. A missing file and an
+ * unreadable one both leave the cfg closed.
+ *
+ * @return ::authum_bool_true when the config is open.
+ */
 authum_bool_t
-authum_cfg_open_file(authum_cfg_t *self, FILE *file);
+authum_cfg_open_text(authum_cfg_t *self, const authum_char_t *text, authum_usize_t size);
 
 /**
  * @brief Look up @p key (case-insensitive). Value lives in @p self->line

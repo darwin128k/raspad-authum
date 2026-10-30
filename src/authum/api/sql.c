@@ -6,7 +6,6 @@
 #include <lh/sql/mysql.h>
 #include <lh/sql/sqlite.h>
 
-#include <stdlib.h>
 
 /* Private storage: keep the public SQL handle layout unchanged. */
 struct authum_sql_db_impl
