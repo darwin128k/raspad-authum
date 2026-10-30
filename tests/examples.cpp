@@ -10,6 +10,7 @@
 #include <authum/client.h>
 #include <authum/host/commands.h>
 #include <authum/host/events.h>
+#include <authum/host/hooks.h>
 #include <authum/host/logs.h>
 #include <authum/host/sandbox.h>
 
@@ -397,6 +398,7 @@ typedef struct test_module
     authum_sandbox_t sandbox;
     authum_events_t events;
     authum_commands_t commands;
+    authum_hooks_t hooks;
     authum_logger_channel_t logger;
     authum_bool_t started;
 } test_module_t;
@@ -491,6 +493,8 @@ test_load(test_module_t *m)
     m->commands.ops = authum_commands_host_ops();
     m->commands.owner = m;
     m->commands.scope = m->info->name;
+    m->hooks.ops = authum_hooks_host_ops();
+    m->hooks.owner = m;
     m->logger.ops = authum_logs_ops();
     m->logger.owner = m;
     authum_logs_open(m, m->info->name, m->info->tag, authum_path_get_cstr(&m->module));
@@ -502,6 +506,7 @@ test_load(test_module_t *m)
     m->host.sandbox = &m->sandbox;
     m->host.events = test_module_get_events_mut(m);
     m->host.commands = &m->commands;
+    m->host.hooks = &m->hooks;
     /* The host hands the module its mark; what the module prints carries it. */
     m->host.tag = m->info->tag;
 
@@ -519,6 +524,7 @@ test_unload(test_module_t *m)
     m->started = authum_bool_false;
     authum_commands_host_drop_owner(m);
     authum_events_host_drop_owner(m);
+    authum_hook_registry_drop_owner(authum_hook_registry(), m);
     authum_logs_close(m);
     if (m->sandbox.root != authum_null)
     {
@@ -631,7 +637,7 @@ test_exists(const char *path)
 
 test_module_t g_modules[] = {
     {"skeleton"}, {"hello"},  {"welcome"},    {"chatfilter"},  {"cvarguard"}, {"settings"},
-    {"stats"},    {"scores"}, {"scoreboard"}, {"deathnotice"}, {"announcer"},
+    {"stats"},    {"scores"}, {"scoreboard"}, {"deathnotice"}, {"announcer"}, {"hookguard"},
 };
 
 static const authum_char_t *add_args[] = {"1", "5"};
@@ -858,6 +864,36 @@ TEST_F(authum_examples, scoreboard_forgets_disconnected_player)
     test_client_event(AUTHUM_EVENT_CLIENT_DISCONNECT, 1);
     EXPECT_TRUE(test_run("scoreboard", "show", 1u, show_args));
     EXPECT_NE(strstr(g_out, "#1 has 0 points"), authum_null);
+}
+
+TEST_F(authum_examples, hookguard_refuses_a_marked_player)
+{
+    authum_hook_call_t call = {};
+
+    call.point = authum_hook_point_client_connect;
+    authum_cstr_copy(call.name, sizeof call.name, "!intruder");
+    call.proceed = authum_bool_true;
+    EXPECT_FALSE(authum_hook_registry_call(authum_hook_registry(), authum_hook_point_client_connect,
+                                           &call, authum_null));
+    EXPECT_STREQ(call.reject, "This server does not welcome you.");
+
+    /* A player with an ordinary name goes in. */
+    authum_cstr_copy(call.name, sizeof call.name, "Vega");
+    call.proceed = authum_bool_true;
+    EXPECT_TRUE(authum_hook_registry_call(authum_hook_registry(), authum_hook_point_client_connect,
+                                          &call, authum_null));
+}
+
+TEST_F(authum_examples, hookguard_is_unloaded_with_its_module)
+{
+    authum_hook_call_t call = {};
+
+    call.point = authum_hook_point_client_connect;
+    authum_cstr_copy(call.name, sizeof call.name, "!intruder");
+    call.proceed = authum_bool_true;
+    test_unload(&g_modules[sizeof g_modules / sizeof g_modules[0] - 1u]);
+    EXPECT_TRUE(authum_hook_registry_call(authum_hook_registry(), authum_hook_point_client_connect,
+                                          &call, authum_null));
 }
 
 TEST_F(authum_examples, announcer_precaches_sound)
