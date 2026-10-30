@@ -59,9 +59,11 @@ that owns the point where a player is let in.
   right. A hook is not an event, and it is not in the bus.
 
 Today the host influences the game by replacing the `DLL_FUNCTIONS` /
-`NEW_DLL_FUNCTIONS` tables (`gamedll/hooks.cpp`). `authum_detour_attach` is dead
-code. When modules get hooks, they get a chain of slots with limits — the
-budget is counted by the core, not by the module.
+`NEW_DLL_FUNCTIONS` tables (`gamedll/hooks.cpp`). `authum_detour_attach` is a
+different thing — it patches the engine's code (`raspad-qproto` uses it for
+`Steam_NotifyClientConnect`) — and the chain does not replace it. Modules that
+stand in the call get a chain of slots with limits — the budget is counted by
+the core, not by the module.
 
 ## 5. The game objects are handles, never pointers
 
