@@ -172,7 +172,14 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
      Windows the module threads have no coverage at all — and the threads are
      exactly what the HTTP worker was moved to. Split the test: the cross-platform
      part (start, wake, exit) everywhere, the signal-mask part on POSIX only.
-  6. [ ] **`gamedll/` and `include/authum/{export,symbol}.h`: calling convention, export
+- [ ] **The formatter cannot report an unknown conversion.** `lh_str_ptr_format_cstr`
+  writes an empty string when the mask holds a conversion lh does not know
+  (`%f`, `%p`, `%zu`), so a game line that formats a mask at runtime
+  (`gamedll/engine.cpp`, the `ALERT_LOGGED` mask) can come out empty instead of
+  formatted. The lh formatter needs a form that says what went wrong, and
+  `authum_cstr_format` needs to pass it on; until then a runtime mask must stay
+  within `%% %c %s %d %i %u %x %X`.
+- [ ] **`gamedll/` and `include/authum/{export,symbol}.h`: calling convention, export
      and the engine library name through LH compiler / OS macros, no `_WIN32`.
   A check (`tools/check-native.py`) keeps it at 0.
 - [x] **`lh/os/loop`: one worker loop under every background thread.** The log
