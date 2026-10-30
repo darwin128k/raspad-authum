@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `authum_cstr_format` and `authum_cstr_format_v`: a thin Authum facade over
+  the lh string formatter, for the modules that may not link lh. It cuts a
+  result that does not fit, like the C runtime does, so a log line keeps the
+  documented "the rest is cut" behaviour.
+
 ### Changed
 
 - The module identity field `logtag` is now `tag`: it is the mark the module is
