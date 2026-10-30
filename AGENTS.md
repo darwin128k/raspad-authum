@@ -69,6 +69,15 @@ session; do not make the owner repeat them again.
   Keep sandbox ownership on the existing LH ownership tree; never mix the two kinds of blocks.
 - Use LH memory kernels, math operations, cast and pointer helpers, character predicates,
   ASCII names and numeric/domain limits instead of open-coding equivalent primitives.
+- **Everything runs on the LH core — all of it.** Every brick Authum uses is an lh
+  brick, and there is no second road. If something in Authum falls behind on speed,
+  the problem is in lh: fix lh (measure before and after with `bench/`, and write
+  the reason and the numbers into the root's documentation and `CHANGELOG.md`).
+  **Never write a local workaround to be faster** — a parallel implementation is a
+  defect, not a solution, and nobody can later tell why it exists.
+- A field name does not repeat its context. The module identity carries `tag` (how
+  the module is marked in the logs), not `logtag`: the struct already says what it
+  is, and the neighbours `name`, `author`, `url` repeat nothing either.
 - Use `lh_fs_path_t` for private LH filesystem operations above `lh/os/system`;
   keep `authum_path_t` on the public Authum ABI. Raw native path text belongs at the kernel boundary. Preserve unresolved placeholder text as an Authum policy.
 - Include project headers with angle brackets and namespace paths. Keep module example
