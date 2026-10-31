@@ -156,3 +156,57 @@ TEST(authum_cstr, boolean_parser_accepts_known_spellings)
     EXPECT_TRUE(authum_cstr_parse_bool("7", &b) && b);
     EXPECT_FALSE(authum_cstr_parse_bool("maybe", &b));
 }
+
+TEST(authum_cstr, length_counts_the_characters)
+{
+    EXPECT_EQ(authum_cstr_len(""), 0u);
+    EXPECT_EQ(authum_cstr_len("abc"), 3u);
+    EXPECT_EQ(authum_cstr_len(authum_null), 0u);
+}
+
+TEST(authum_cstr, bounded_equality)
+{
+    EXPECT_TRUE(authum_cstr_is_equal_n("abcd", "abce", 3, authum_bool_false));
+    EXPECT_FALSE(authum_cstr_is_equal_n("abcd", "abce", 4, authum_bool_false));
+    EXPECT_TRUE(authum_cstr_is_equal_n("abcd", "ABCE", 3, authum_bool_true));
+    EXPECT_FALSE(authum_cstr_is_equal_n("ab", "abc", 3, authum_bool_false));
+}
+
+TEST(authum_cstr, starts_and_ends_with)
+{
+    EXPECT_TRUE(authum_cstr_starts_with("abcdef", "abc", authum_bool_false));
+    EXPECT_TRUE(authum_cstr_starts_with("ABCdef", "abc", authum_bool_true));
+    EXPECT_FALSE(authum_cstr_starts_with("abcdef", "xyz", authum_bool_false));
+    EXPECT_TRUE(authum_cstr_ends_with("abcdef", "def", authum_bool_false));
+    EXPECT_TRUE(authum_cstr_ends_with("abcdefDEF", "def", authum_bool_true));
+    EXPECT_FALSE(authum_cstr_ends_with("abcdef", "xyz", authum_bool_false));
+}
+
+TEST(authum_cstr, finds_a_needle_and_a_character)
+{
+    const authum_char_t *found = authum_cstr_find("hello world", "world");
+
+    ASSERT_NE(found, authum_null);
+    EXPECT_STREQ(found, "world");
+    EXPECT_EQ(authum_cstr_find("hello", "zzz"), authum_null);
+    EXPECT_EQ(authum_cstr_find_char("hello", 'l'), authum_cstr_find_char("hello", 'l'));
+    EXPECT_NE(authum_cstr_find_char("hello", 'l'), authum_null);
+    EXPECT_EQ(authum_cstr_find_char("hello", 'z'), authum_null);
+}
+
+TEST(authum_cstr, hex_bytes_both_ways)
+{
+    const authum_byte_t bytes[3] = {0x0aU, 0x1bU, 0x2cU};
+    authum_char_t text[8];
+    authum_byte_t back[3];
+
+    EXPECT_EQ(
+        authum_cstr_format_hex_bytes(bytes, sizeof bytes, text, sizeof text, authum_bool_false),
+        6u);
+    EXPECT_STREQ(text, "0a1b2c");
+    EXPECT_TRUE(authum_cstr_parse_hex_bytes(text, back, sizeof back));
+    EXPECT_EQ(back[0], 0x0aU);
+    EXPECT_EQ(back[1], 0x1bU);
+    EXPECT_EQ(back[2], 0x2cU);
+    EXPECT_FALSE(authum_cstr_parse_hex_bytes("0a1b", back, sizeof back));
+}

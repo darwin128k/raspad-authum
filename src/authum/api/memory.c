@@ -1,6 +1,7 @@
 #include <authum/memory.h>
 #include <authum/null.h>
 #include <lh/config.h>
+#include <lh/cast/const.h>
 #include <lh/memory/std.h>
 #include <lh/runtime/allocator.h>
 
@@ -48,4 +49,45 @@ void
 authum_memory_free(authum_ptr block)
 {
     lh_runtime_allocator_free(block);
+}
+
+void
+authum_memory_copy(authum_ptr dst, authum_cptr src, authum_usize_t size)
+{
+    if (authum_null_eq(dst) || authum_null_eq(src))
+    {
+        return;
+    }
+    lh_memory_std_copy(dst, src, size);
+}
+
+void
+authum_memory_set(authum_ptr dst, authum_byte_t value, authum_usize_t size)
+{
+    if (authum_null_eq(dst))
+    {
+        return;
+    }
+    lh_memory_std_set(dst, value, size);
+}
+
+authum_bool_t
+authum_memory_is_equal(authum_cptr a, authum_cptr b, authum_usize_t size)
+{
+    if (authum_null_eq(a) || authum_null_eq(b))
+    {
+        return authum_bool_false;
+    }
+    return lh_null_eq(lh_memory_std_compare(a, b, size)) ? authum_bool_true : authum_bool_false;
+}
+
+const authum_byte_t *
+authum_memory_find(authum_cptr haystack, authum_usize_t size, authum_cptr needle,
+                   authum_usize_t needle_size)
+{
+    if (authum_null_eq(haystack) || authum_null_eq(needle))
+    {
+        return authum_null;
+    }
+    return lh_cast_const(authum_byte_t *, lh_memory_std_find(haystack, size, needle, needle_size));
 }

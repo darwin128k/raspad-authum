@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **The module's own string, byte and wall-clock bricks**, so that a module can
+  leave libc behind: `authum_cstr_len`, `authum_cstr_is_equal_n`,
+  `authum_cstr_starts_with`, `authum_cstr_ends_with`, `authum_cstr_find`,
+  `authum_cstr_find_char`, `authum_cstr_format_hex_bytes`,
+  `authum_cstr_parse_hex_bytes`, `authum_char_is_digit`, `authum_char_is_letter`,
+  `authum_char_is_lower`, `authum_char_is_upper`, `authum_char_is_space`,
+  `authum_char_is_xdigit`, `authum_char_to_upper`, `authum_memory_copy`,
+  `authum_memory_set`, `authum_memory_is_equal`, `authum_memory_find`,
+  `authum_time_now_seconds`, `authum_time_format_utc`. Every one of them is a
+  thin wrapper over an lh brick — the two hex ones over the new
+  `lh_str_ptr_format_hex_bytes` and `lh_str_ptr_parse_hex_bytes`.
 - **Module hooks.** A module may stand in the game's call chain: the core owns
   the chain — the order (the module that hooked last is called first), the
   budget one handler may spend, and the removal of a module's handlers when it
@@ -46,6 +57,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The module ABI moves to **3.1.0** — the bricks above are new API, and the
+  minor says so. A 3.1 module needs a host of the same major and a minor of 1
+  or later; a 3.0 module still runs on a 3.1 host.
 - **The client events carry no decision any more.** `authum_event_client_t` has
   no `allow`, `reject_reason` or `decided_by`, and `authum_event_client_command_t`
   has no `block` or `decided_by`. An event is a message: it says what happened.

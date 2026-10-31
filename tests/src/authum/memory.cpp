@@ -1,5 +1,4 @@
 #include <authum/memory.h>
-#include <authum/bool.h>
 #include <authum/char.h>
 #include <authum/null.h>
 #include <authum/unused.h>
@@ -152,4 +151,44 @@ TEST_F(authum_memory, freeing_null_does_not_call_allocator)
     EXPECT_EQ(releases, 0u);
 }
 
+TEST_F(authum_memory, copies_bytes)
+{
+    authum_byte_t source[4] = {1U, 2U, 3U, 4U};
+    authum_byte_t target[4] = {0U, 0U, 0U, 0U};
+
+    authum_memory_copy(target, source, sizeof source);
+    EXPECT_TRUE(authum_memory_is_equal(target, source, sizeof source));
+}
+
+TEST_F(authum_memory, sets_bytes)
+{
+    authum_byte_t block[4] = {0U, 1U, 2U, 3U};
+
+    authum_memory_set(block, 0xA5U, sizeof block);
+    EXPECT_EQ(block[0], 0xA5U);
+    EXPECT_EQ(block[3], 0xA5U);
+}
+
+TEST_F(authum_memory, compares_bytes)
+{
+    const authum_byte_t a[3] = {1U, 2U, 3U};
+    const authum_byte_t b[3] = {1U, 2U, 4U};
+
+    EXPECT_TRUE(authum_memory_is_equal(a, a, sizeof a));
+    EXPECT_FALSE(authum_memory_is_equal(a, b, sizeof a));
+    EXPECT_FALSE(authum_memory_is_equal(authum_null, b, sizeof b));
+}
+
+TEST_F(authum_memory, finds_a_block)
+{
+    const authum_byte_t haystack[8] = {0U, 0U, 1U, 2U, 3U, 0U, 0U, 0U};
+    const authum_byte_t needle[2] = {2U, 3U};
+    const authum_byte_t *found;
+
+    found = authum_memory_find(haystack, sizeof haystack, needle, sizeof needle);
+    ASSERT_NE(found, authum_null);
+    EXPECT_EQ(found - haystack, 3);
+    EXPECT_EQ(authum_memory_find(haystack, sizeof haystack, needle, sizeof needle + 4U),
+              authum_null);
+}
 } // namespace tests
