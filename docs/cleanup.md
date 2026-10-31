@@ -27,6 +27,24 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   `str/scanf/spec.c` assigns a zero struct directly; the setter assertion is
   too late. Bring clear onto the accessor bricks and enforce its contract
   before the write. Found during the pointer assertion pass.
+- [ ] **`lh_wstr_view_init` and `lh_wstr_view_lit` disagree on the empty string.**
+  `lh_test_str` fails on `wstr_view_make.empty_string_matches_the_literal_spelling`:
+  the runtime spelling of `L""` yields other endpoints than the literal one.
+  Since `fcc91005` (2026-10-28) `lh_wstr_view_init` no longer stores the
+  endpoints of an empty string itself, it goes through
+  `lh_wstr_view_init_by_size`, which rejects the size and falls back to an
+  explicitly empty view. The two spellings must agree: "present and empty"
+  must not depend on which one the caller wrote. Found on 2026-10-31 while the
+  declaration pass ran the LH tests; the failure predates that pass.
+- [ ] **GCC 16 reports a false `-Wstringop-overflow` in the SHA-1 path.**
+  In the LTO link of the LH tests: "at offset 63 into destination object
+  'digest' of size 20" (`ui/web/host.c`, the WebSocket handshake). The write
+  is bounded — `lh_crypto_sha_finish` returns 0 when the digest size does not
+  fit, and the caller passes exactly `LH_CRYPTO_SHA1_DIGEST_SIZE` bytes — but
+  GCC cannot prove the digest size of the kind at the LTO stage, so the loop
+  in `lh_crypto_sha_put_digest` looks unbounded to it. The same noise appears
+  for `lh_memory_std_set` under `lh_str_ptr_format_ullong`. Silence it in the
+  source (a size the compiler can see), not by dropping the warning.
 - [ ] **Order every module by level** (AGENTS.md 0.0, `tools/order-levels.py`).
   The tool refuses a file whose definitions sit between `#if` blocks (it would
   move code in or out of them): `crypto/rijndael.c` (AES-NI) is ordered by hand or
