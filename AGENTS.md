@@ -84,6 +84,14 @@ session; do not make the owner repeat them again.
   *what it is called* (the module's name, a channel's name, a file's name). A
   field never borrows a neighbour's word: the log channel's admin prefix is a
   `name`, the subscription's holder is an `owner`.
+- **A brick is added for a need, and looked at again afterwards.** When
+  something is missing, add it: in the right place, with its own header, its
+  own implementation and its own test. But nothing is added "for the sake of
+  implementation" — every brick closes a concrete need. After it is in, look
+  at the code around it once more: what was written inline and now has a
+  brick of its own, what belongs to a neighbouring level, what can be moved
+  out. A function that does two independent things — allocates and zeroes,
+  scans and builds — is two bricks and one caller, never one function.
 - Use `lh_fs_path_t` for private LH filesystem operations above `lh/os/system`;
   keep `authum_path_t` on the public Authum ABI. Raw native path text belongs at the kernel boundary. Preserve unresolved placeholder text as an Authum policy.
 - Include project headers with angle brackets and namespace paths. Keep module example
