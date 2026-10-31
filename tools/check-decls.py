@@ -214,6 +214,83 @@ def scan_loop_counters(path):
     return findings
 
 
+ESCAPE = re.compile(
+    r"([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:lh_addr_of\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)|&\s*([A-Za-z_][A-Za-z0-9_]*))"
+)
+ESCAPE_OUT = re.compile(r"lh_ptr_deref\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)\s*=\s*lh_addr_of")
+
+
+def params_of(lines, index):
+    """Names of the parameters of the function that owns the given line."""
+    text = ""
+    for back in range(index, max(-1, index - 60), -1):
+        line = lines[back]
+        if not text and line.strip() == "{":
+            continue
+        text = line + " " + text
+        if ")" in line:
+            break
+    if "(" not in text or ")" not in text:
+        return []
+    head = text.index("(")
+    tail = text.index(")", head)
+    names = []
+    for part in text[head + 1 : tail].split(","):
+        words = re.findall(r"[A-Za-z_][A-Za-z0-9_]*", part)
+        if words:
+            names.append(words[-1])
+    return names
+
+
+def scan_escaping_addresses(path):
+    """Report a local whose address is taken and outlives its block."""
+    lines = open(path, encoding="utf-8", errors="replace").read().splitlines()
+    depth = 0
+    findings = []
+    for index, line in enumerate(lines):
+        start_depth = depth
+        if start_depth >= 2:
+            match = PLAIN_DECL.match(line)
+            if match and "typedef" not in line:
+                name = match.group(1)
+                inner = start_depth
+                scan = inner
+                params = params_of(lines, index)
+                for follow in range(index + 1, len(lines)):
+                    text = lines[follow]
+                    targets = []
+                    for hit in ESCAPE.finditer(text):
+                        taken = hit.group(2) or hit.group(3)
+                        if taken == name:
+                            targets.append((hit.group(1), scan))
+                    for hit in ESCAPE_OUT.finditer(text):
+                        targets.append((hit.group(1), scan))
+                    for pointer, where in targets:
+                        if where < inner:
+                            findings.append(
+                                (index + 1, name, follow + 1, text.strip())
+                            )
+                            break
+                        if pointer in params:
+                            findings.append(
+                                (index + 1, name, follow + 1, text.strip())
+                            )
+                            break
+                        tail = re.search(
+                            r"\b%s\b" % re.escape(pointer), "\n".join(lines[follow + 1 :])
+                        )
+                        if tail:
+                            findings.append(
+                                (index + 1, name, follow + 1, text.strip())
+                            )
+                            break
+                    scan += text.count("{") - text.count("}")
+                    if scan < inner:
+                        break
+        depth += line.count("{") - line.count("}")
+    return findings
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("paths", nargs="+")
@@ -235,6 +312,7 @@ def main():
         try:
             groups = list(scan_piles(path, args.limit))
             counters = scan_loop_counters(path)
+            escapes = scan_escaping_addresses(path)
         except OSError as error:
             print(f"{path}: {error}", file=sys.stderr)
             continue
@@ -251,6 +329,13 @@ def main():
                 f" ({path}:{loop})"
             )
             print(f"    {declaration}: {text}")
+        for declaration, name, use, text in escapes:
+            total += 1
+            print(
+                f"{path}:{declaration}: the address of '{name}' leaves its block"
+                f" ({path}:{use})"
+            )
+            print(f"    {use}: {text}")
     if total:
         print(f"{total} place(s) to fix.")
     return 1 if total else 0
