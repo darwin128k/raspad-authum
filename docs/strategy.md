@@ -42,12 +42,19 @@ Nothing in Authum is forbidden by a list. The limit is the API.
 |---|---|
 | observe | every module |
 | change a value or a result | every module |
-| refuse (do not let a player in, cancel an action) | the owner of the decision point |
+| refuse (do not let a player in, cancel an action) | every module that hooked the point |
 
-The **owner of a decision point** is named in the configuration: the host asks
-that one module, and the others observe the outcome. That is the gatekeeper
-(`host/gate.c` today is a stub): it is not a privileged module, it is the module
-that owns the point where a player is let in.
+**Decision (2026-10-31): the chain stays as it is.** The refusal is the right
+of every module that hooked the point — the hook *is* the claim on that point.
+The chain is the only road to a decision: the core owns the order (the module
+that hooked last is called first), the budget and the removal on unload, and
+the log names the module that refused (`authum_hook_call_t::decided_by`).
+
+The "owner of a decision point" stays a *name*: which module owns a point in
+the configuration is for the log and for the documentation, not a second
+mechanism that takes the right to refuse away from the hooks. A configuration
+that named an owner and a chain that let any hook refuse would be two roads to
+one decision — and the second one would win by accident.
 
 ## 4. Events and hooks are different things
 
