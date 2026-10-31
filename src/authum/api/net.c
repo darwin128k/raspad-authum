@@ -33,9 +33,7 @@ authum_net_ipv4_is_external(authum_u32_t ip)
         {0xe0000000u, 0xe0000000u}, /* 224.0.0.0/3 multicast + reserved */
     };
 
-    authum_usize_t i;
-
-    for (i = 0u; lh_math_lt(i, lh_math_div(sizeof reserved, sizeof reserved[0]));
+    for (authum_usize_t i = 0u; lh_math_lt(i, lh_math_div(sizeof reserved, sizeof reserved[0]));
          i = lh_math_add_one(i))
     {
         if (lh_math_eq((lh_math_bit_and(ip, reserved[i].mask)), reserved[i].net))

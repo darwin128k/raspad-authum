@@ -8,15 +8,14 @@
 static authum_bool_t
 authum_json_read(const authum_char_t *json, lh_json_node_t *root)
 {
-    lh_json_reader_t reader;
-    lh_str_view_t text;
-
     lh_json_node_init(root);
     if (authum_null_eq(json))
     {
         return authum_bool_false;
     }
+    lh_str_view_t text;
     lh_str_view_init(lh_addr_of(text), json);
+    lh_json_reader_t reader;
     lh_json_reader_init(lh_addr_of(reader), text);
     return lh_json_reader_read(lh_addr_of(reader), root) ? authum_bool_true : authum_bool_false;
 }

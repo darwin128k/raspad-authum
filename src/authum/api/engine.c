@@ -104,7 +104,6 @@ void
 authum_engine_kick(const authum_engine_t *engine, authum_i32_t userid, const authum_char_t *reason)
 {
     authum_char_t clean[128];
-    authum_char_t cmd[192];
     authum_usize_t n = 0u;
 
     if (!authum_null_eq(reason))
@@ -121,6 +120,7 @@ authum_engine_kick(const authum_engine_t *engine, authum_i32_t userid, const aut
         }
     }
     clean[n] = lh_char_map_nul;
+    authum_char_t cmd[192];
     if (lh_math_gt(n, 0u))
     {
         lh_str_ptr_format_cstr(cmd, sizeof cmd, "kick #%d \"%s\"\n",
@@ -250,9 +250,8 @@ authum_engine_client_try_get_stats(const authum_engine_t *engine, authum_i32_t i
                                    authum_i32_t *ping, authum_i32_t *loss)
 {
     authum_i32_t dummy_ping;
-    authum_i32_t dummy_loss;
-
     ping = authum_null_eq(ping) ? lh_addr_of(dummy_ping) : ping;
+    authum_i32_t dummy_loss;
     loss = authum_null_eq(loss) ? lh_addr_of(dummy_loss) : loss;
     lh_ptr_deref(ping) = 0;
     lh_ptr_deref(loss) = 0;
@@ -316,12 +315,13 @@ authum_engine_cvar_get_i32(const authum_engine_t *engine, const authum_char_t *n
                            authum_i32_t fallback)
 {
     authum_char_t text[64];
-    authum_i32_t value;
 
-    return (authum_engine_cvar_copy(engine, name, text, sizeof text) &&
-            authum_cstr_parse_i32(text, lh_addr_of(value)))
-               ? value
-               : fallback;
+    if (!authum_engine_cvar_copy(engine, name, text, sizeof text))
+    {
+        return fallback;
+    }
+    authum_i32_t value;
+    return authum_cstr_parse_i32(text, lh_addr_of(value)) ? value : fallback;
 }
 
 authum_float_t
@@ -329,12 +329,12 @@ authum_engine_cvar_get_float(const authum_engine_t *engine, const authum_char_t 
                              authum_float_t fallback)
 {
     authum_char_t text[64];
-    authum_float_t value;
 
     if (!authum_engine_cvar_copy(engine, name, text, sizeof text))
     {
         return fallback;
     }
+    authum_float_t value;
     return authum_cstr_parse_float(text, lh_addr_of(value)) ? value : fallback;
 }
 
@@ -587,18 +587,25 @@ authum_engine_entity_set_vector(const authum_engine_t *engine, authum_i32_t inde
 authum_bool_t
 authum_engine_client_is_alive(const authum_engine_t *engine, authum_i32_t index)
 {
+    if (!authum_engine_client_is_connected(engine, index))
+    {
+        return authum_bool_false;
+    }
     authum_i32_t dead;
+    if (!authum_engine_entity_try_get_i32(engine, index, authum_entity_i32_dead,
+                                          lh_addr_of(dead)) ||
+        !lh_math_eq(dead, authum_entity_dead_no))
+    {
+        return authum_bool_false;
+    }
     authum_float_t health;
-
-    return (authum_engine_client_is_connected(engine, index) &&
-            authum_engine_entity_try_get_i32(engine, index, authum_entity_i32_dead,
-                                             lh_addr_of(dead)) &&
-            lh_math_eq(dead, authum_entity_dead_no) &&
-            authum_engine_entity_try_get_float(engine, index, authum_entity_float_health,
-                                               lh_addr_of(health)) &&
-            lh_math_gt(health, 0.0f))
-               ? authum_bool_true
-               : authum_bool_false;
+    if (!authum_engine_entity_try_get_float(engine, index, authum_entity_float_health,
+                                            lh_addr_of(health)) ||
+        !lh_math_gt(health, 0.0f))
+    {
+        return authum_bool_false;
+    }
+    return authum_bool_true;
 }
 
 authum_bool_t

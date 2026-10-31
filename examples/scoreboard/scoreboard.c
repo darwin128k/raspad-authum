@@ -30,8 +30,6 @@ scoreboard_on_changed(const authum_char_t *name, authum_ptr payload, authum_ptr 
 {
     const scores_changed_t *ev = (const scores_changed_t *)payload;
     const authum_char_t *sign;
-    authum_char_t player[64];
-    authum_char_t text[128];
 
     authum_unused(name);
     authum_unused(user);
@@ -39,9 +37,11 @@ scoreboard_on_changed(const authum_char_t *name, authum_ptr payload, authum_ptr 
     {
         return authum_event_result_continue;
     }
+    authum_char_t player[64];
     authum_host_client_copy_name(&g_scoreboard_host, ev->index, player, sizeof player);
     /* The sign is written by hand: the Authum formatter has no `+` flag. */
     sign = (ev->delta >= 0) ? "+" : "";
+    authum_char_t text[128];
     authum_cstr_format(text, sizeof text, "%s: %s%d, now %d points\n", player, sign, ev->delta,
                        ev->score);
     authum_host_client_print(&g_scoreboard_host, 0, authum_engine_print_chat, text); /* 0 = all */

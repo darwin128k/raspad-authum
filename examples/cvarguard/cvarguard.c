@@ -51,8 +51,6 @@ authum_event_result_t
 cvarguard_on_cvar_value(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 {
     const authum_event_client_cvar_t *ev = (const authum_event_client_cvar_t *)payload;
-    authum_float_t value;
-    authum_char_t reason[96];
 
     authum_unused(name);
     authum_unused(user);
@@ -66,6 +64,7 @@ cvarguard_on_cvar_value(const authum_char_t *name, authum_ptr payload, authum_pt
         return authum_event_result_continue;
     }
 
+    authum_float_t value;
     if (!authum_cstr_parse_float(ev->value, &value))
     {
         /* The engine answers "Bad CVAR request" / "Bad Player" instead of a value. */
@@ -76,6 +75,7 @@ cvarguard_on_cvar_value(const authum_char_t *name, authum_ptr payload, authum_pt
     authum_logger_debug(&g_cvarguard_log, "%s: %s = %s", ev->client.name, ev->cvar, ev->value);
     if (value > CVARGUARD_LIMIT)
     {
+        authum_char_t reason[96];
         authum_cstr_format(reason, sizeof reason, "Set %s to %d or lower", CVARGUARD_CVAR,
                            (int)CVARGUARD_LIMIT);
         authum_logger_info(&g_cvarguard_log, "kick %s <%s>: %s = %s", ev->client.name,

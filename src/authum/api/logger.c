@@ -199,25 +199,21 @@ void
 authum_logger_hex_dump(authum_logger_t *self, const authum_char_t *label, authum_ptr data,
                        authum_usize_t len)
 {
-    const authum_byte_t *p;
-    authum_char_t line[128];
-    authum_usize_t i;
-
     if (authum_null_eq(label) || (authum_null_eq(data) && lh_math_ne(len, 0u)) ||
         !authum_logger_is_enabled(self, authum_logger_level_debug))
     {
         return;
     }
 
-    p = lh_cast_reinterpret(const authum_byte_t *, data);
+    const authum_byte_t *p = lh_cast_reinterpret(const authum_byte_t *, data);
     authum_logger_debug(self, "%s (%u bytes):", label, lh_cast_static(authum_u32_t, len));
 
-    for (i = 0u; lh_math_lt(i, len); i = lh_math_add(i, 16u))
+    authum_char_t line[128];
+    for (authum_usize_t i = 0u; lh_math_lt(i, len); i = lh_math_add(i, 16u))
     {
         authum_usize_t pos =
             lh_str_ptr_format_cstr(line, sizeof line, "  %04x: ", lh_cast_static(authum_u32_t, i));
-        authum_usize_t j;
-        for (j = 0u; lh_math_lt(j, 16u) && lh_math_lt((lh_math_add(i, j)), len);
+        for (authum_usize_t j = 0u; lh_math_lt(j, 16u) && lh_math_lt((lh_math_add(i, j)), len);
              j = lh_math_add_one(j))
         {
             pos = lh_math_add(

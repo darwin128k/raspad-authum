@@ -6,9 +6,6 @@ authum_ptr
 authum_symbol_find(const authum_char_t *library, const authum_char_t *name,
                    authum_bool_t *out_via_dynsym)
 {
-    lh_os_shared_t image;
-    authum_ptr address;
-
     if (!authum_null_eq(out_via_dynsym))
     {
         lh_ptr_deref(out_via_dynsym) = authum_bool_false;
@@ -18,13 +15,14 @@ authum_symbol_find(const authum_char_t *library, const authum_char_t *name,
         return authum_null;
     }
     /* Only an image already loaded: lh never loads it here. */
+    lh_os_shared_t image;
     lh_os_shared_init(lh_addr_of(image));
     if (!lh_os_shared_bind_name(lh_addr_of(image), library))
     {
         lh_os_shared_deinit(lh_addr_of(image));
         return authum_null;
     }
-    address = lh_os_shared_get_sym(lh_addr_of(image), name);
+    authum_ptr address = lh_os_shared_get_sym(lh_addr_of(image), name);
     if (!authum_null_eq(address))
     {
         if (!authum_null_eq(out_via_dynsym))

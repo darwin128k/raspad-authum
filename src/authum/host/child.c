@@ -322,11 +322,9 @@ authum_child_start(authum_module_t *self)
 {
     const authum_version_t required = AUTHUM_MODULE_ABI;
     authum_child_data_t *data;
-    lh_ptr sym_info;
-    lh_ptr sym_api;
+    lh_ptr sym_info = lh_os_module_get_sym(self, AUTHUM_MODULE_INFO_SYM);
+    lh_ptr sym_api = lh_os_module_get_sym(self, AUTHUM_MODULE_API_SYM);
 
-    sym_info = lh_os_module_get_sym(self, AUTHUM_MODULE_INFO_SYM);
-    sym_api = lh_os_module_get_sym(self, AUTHUM_MODULE_API_SYM);
     if (lh_null_eq(sym_info) || lh_null_eq(sym_api))
     {
         lh_os_set_last_error_lit(authum_error_code_missing_info, "missing authum_module_info/api");

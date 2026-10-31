@@ -69,11 +69,6 @@ authum_env_get_module_data_path(const authum_env_t *env)
 authum_bool_t
 authum_env_join_config_path(const authum_env_t *env, const authum_char_t *leaf, authum_path_t *out)
 {
-    lh_fs_path_t path;
-    lh_str_view_t view;
-    lh_os_fs_file_t file;
-    lh_bool_t opened;
-
     if (authum_null_eq(out))
     {
         return authum_bool_false;
@@ -86,11 +81,14 @@ authum_env_join_config_path(const authum_env_t *env, const authum_char_t *leaf, 
         return authum_bool_false;
     }
     /* The config must be there: open it through lh and let it go again. */
+    lh_fs_path_t path;
     lh_fs_path_init(lh_addr_of(path));
+    lh_str_view_t view;
     lh_str_view_init(lh_addr_of(view), authum_path_get_cstr(out));
     lh_fs_path_set(lh_addr_of(path), view, lh_os_system_fs_path_style_native());
+    lh_os_fs_file_t file;
     lh_os_fs_file_init(lh_addr_of(file));
-    opened = lh_os_fs_file_open(lh_addr_of(file), lh_addr_of(path), lh_fs_file_mode_read);
+    lh_bool_t opened = lh_os_fs_file_open(lh_addr_of(file), lh_addr_of(path), lh_fs_file_mode_read);
     lh_os_fs_file_deinit(lh_addr_of(file));
     lh_fs_path_deinit(lh_addr_of(path));
     return opened ? authum_bool_true : authum_bool_false;
