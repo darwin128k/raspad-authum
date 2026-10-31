@@ -24,7 +24,7 @@ import sys
 ROOTS = ('include', 'src', 'tests', 'examples', 'lib/lh/include', 'lib/lh/src',
          'lib/lh/test/src', 'lib/lh/bench', 'lib/lh/example')
 SKIP = ('lib/sqlite', 'lib/monocypher', 'lib/hlsdk', '/build', 'third_party', 'googletest',
-        '/lib/lh/lib/', 'tools/data')
+        '/lib/lh/lib/', 'lib/lh/bench/lib/', 'tools/data')
 GUARD = re.compile(r'#define [A-Z0-9_]+_H\b\s*$')
 TOP_DECL = re.compile(r'^(?:static\s+|const\s+|struct\s+|enum\s+|unsigned\s+|signed\s+)*'
                       r'[A-Za-z_][\w\s\*]*$')
