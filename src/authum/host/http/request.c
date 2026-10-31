@@ -6,11 +6,11 @@ authum_http_request_read(authum_http_client_t *client, const lh_os_system_fs_fil
                          const authum_http_options_t *options)
 {
     lh_http_parser_t parser;
-    lh_http_request_t request;
-    lh_http_header_t headers[64];
-    lh_str_view_t input = lh_str_view_initializer(client->input, client->used);
     lh_http_parser_init(lh_addr_of(parser));
     lh_http_parser_set_limits(lh_addr_of(parser), sizeof client->input, sizeof client->input);
+    lh_http_request_t request;
+    lh_str_view_t input = lh_str_view_initializer(client->input, client->used);
+    lh_http_header_t headers[64];
     lh_http_parse_status_t parsed =
         lh_http_parser_request(lh_addr_of(parser), input, lh_addr_of(request), headers, 64);
     if (lh_math_eq(parsed, lh_http_parse_incomplete) &&

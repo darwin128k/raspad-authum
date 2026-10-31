@@ -161,13 +161,12 @@ authum_logs_sink_close(lh_ptr user)
 static lh_void
 authum_logs_sink_dropped(lh_ptr user, lh_u32_t count)
 {
-    lh_os_logger_record_t record;
     lh_str_t text;
-
     lh_str_init(lh_addr_of(text));
     authum_unused(lh_str_format(lh_addr_of(text),
                                 "queue full: dropped %u file records; game thread did not wait",
                                 lh_cast_static(lh_uint_t, count)));
+    lh_os_logger_record_t record;
     lh_os_logger_record_init_line(lh_addr_of(record), authum_logs_host.id,
                                   authum_logger_level_warning, authum_logs_now(), "logger",
                                   lh_str_get_data(lh_addr_of(text)));

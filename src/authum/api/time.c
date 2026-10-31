@@ -19,16 +19,14 @@ authum_time_now_seconds(void)
 authum_usize_t
 authum_time_format_utc(authum_i64_t seconds, authum_char_t *dst, authum_usize_t dst_size)
 {
-    lh_timestamp_t moment;
-    lh_date_t date;
-    lh_time_t clock;
-
     if (authum_null_eq(dst) || lh_math_le(dst_size, 24u))
     {
         return 0u;
     }
-    moment = lh_cast_static(lh_timestamp_t, seconds);
+    lh_timestamp_t moment = lh_cast_static(lh_timestamp_t, seconds);
+    lh_date_t date;
     lh_timestamp_get_date(moment, lh_addr_of(date));
+    lh_time_t clock;
     lh_timestamp_get_time(moment, lh_addr_of(clock));
     lh_date_format_by(lh_addr_of(date), dst, 11u, '-');
     dst[10] = ' ';

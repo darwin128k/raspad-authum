@@ -31,9 +31,9 @@ const authum_char_t *
 chatfilter_find_word(const authum_char_t *text)
 {
     authum_char_t lower[authum_hook_args_max];
-    authum_usize_t i;
+    authum_usize_t i = 0u;
 
-    for (i = 0u; text[i] != '\0' && i < sizeof lower - 1u; ++i)
+    for (; text[i] != '\0' && i < sizeof lower - 1u; ++i)
     {
         lower[i] = authum_char_to_lower(text[i]);
     }

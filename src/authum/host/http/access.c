@@ -22,10 +22,9 @@ authum_http_access_record(authum_http_server_t *server, const authum_http_client
         return;
     }
     authum_char_t bytes[24];
-    authum_char_t duration[24];
-
     bytes[lh_str_ptr_format_ullong(lh_cast_static(lh_ullong_t, client->body_bytes), bytes,
                                    sizeof bytes - 1u)] = lh_char_map_nul;
+    authum_char_t duration[24];
     duration[lh_str_ptr_format_sllong(
         lh_cast_static(lh_sllong_t, lh_math_sub(authum_http_now_ms(), client->born)), duration,
         sizeof duration - 1u)] = lh_char_map_nul;

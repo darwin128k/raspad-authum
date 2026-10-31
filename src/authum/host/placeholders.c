@@ -45,8 +45,8 @@ authum_placeholder_canonical(const authum_char_t *input, authum_char_t *out, aut
         return authum_bool_false;
     }
     lh_fs_path_t path;
-    lh_str_view_t view;
     lh_fs_path_init(lh_addr_of(path));
+    lh_str_view_t view;
     lh_str_view_init(lh_addr_of(view), input);
     lh_fs_path_set(lh_addr_of(path), view, lh_os_system_fs_path_style_native());
     lh_str_t rendered;
@@ -74,8 +74,8 @@ static authum_bool_t
 authum_placeholder_absolute(const authum_char_t *path)
 {
     lh_fs_path_t parsed;
-    lh_str_view_t text;
     lh_fs_path_init(lh_addr_of(parsed));
+    lh_str_view_t text;
     lh_str_view_init(lh_addr_of(text), path);
     lh_fs_path_set(lh_addr_of(parsed), text, lh_os_system_fs_path_style_native());
     const authum_bool_t absolute =

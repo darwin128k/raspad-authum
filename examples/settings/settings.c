@@ -80,13 +80,16 @@ settings_apply_mode(authum_cfg_t *cfg)
 authum_bool_t
 settings_load(void)
 {
-    authum_path_t path;
-    authum_cfg_t cfg;
-
     g_settings = g_settings_defaults;
     /* modules/settings/configs/settings.cfg */
-    if (!authum_host_join_config_path(&g_settings_host, "settings.cfg", &path) ||
-        !authum_cfg_open(&cfg, &path))
+    authum_path_t path;
+    if (!authum_host_join_config_path(&g_settings_host, "settings.cfg", &path))
+    {
+        authum_logger_notice(&g_settings_log, "no settings.cfg, using defaults");
+        return authum_bool_false;
+    }
+    authum_cfg_t cfg;
+    if (!authum_cfg_open(&cfg, &path))
     {
         authum_logger_notice(&g_settings_log, "no settings.cfg, using defaults");
         return authum_bool_false;

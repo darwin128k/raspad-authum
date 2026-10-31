@@ -108,8 +108,6 @@ authum_console_info(authum_command_print_fn print, authum_ptr out, const authum_
     authum_module_t *child;
     const authum_module_info_t *info;
     const lh_fs_path_t *image;
-    lh_str_t scratch;
-    const lh_str_ptr path_text;
 
     lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
     cmd.print = print;
@@ -157,10 +155,11 @@ authum_console_info(authum_command_print_fn print, authum_ptr out, const authum_
     authum_command_printf(lh_addr_of(cmd), "commands  %s",
                           authum_commands_host_has_scope(info->name) ? "yes" : "no");
     image = lh_os_module_get_path(child);
-    path_text = lh_null;
     if (lh_null_ne(image) && !lh_fs_path_is_empty(image))
     {
-        path_text = lh_fs_path_to_cstr(image, lh_fs_path_style_posix, lh_addr_of(scratch));
+        lh_str_t scratch;
+        const lh_str_ptr path_text =
+            lh_fs_path_to_cstr(image, lh_fs_path_style_posix, lh_addr_of(scratch));
         authum_command_printf(lh_addr_of(cmd), "path      %s",
                               lh_math_ne(path_text, lh_null) ? path_text : "?");
         lh_str_deinit(lh_addr_of(scratch));

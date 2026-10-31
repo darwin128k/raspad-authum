@@ -147,9 +147,7 @@ authum_timer_add(const authum_host_t *host, authum_float_t delay, authum_float_t
 authum_bool_t
 authum_timer_remove(authum_u32_t id)
 {
-    authum_usize_t i;
-
-    for (i = 0u; lh_math_lt(i, authum_array_get_size(lh_addr_of(authum_timers)));
+    for (authum_usize_t i = 0u; lh_math_lt(i, authum_array_get_size(lh_addr_of(authum_timers)));
          i = lh_math_add_one(i))
     {
         authum_timer_t *timer = lh_cast_reinterpret(
@@ -171,9 +169,7 @@ authum_timer_remove(authum_u32_t id)
 void
 authum_timer_clear(void)
 {
-    authum_usize_t i;
-
-    for (i = 0u; lh_math_lt(i, authum_array_get_size(lh_addr_of(authum_timers)));
+    for (authum_usize_t i = 0u; lh_math_lt(i, authum_array_get_size(lh_addr_of(authum_timers)));
          i = lh_math_add_one(i))
     {
         (lh_cast_reinterpret(authum_timer_t *, authum_array_get_at(lh_addr_of(authum_timers), i)))

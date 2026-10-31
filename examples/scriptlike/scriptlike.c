@@ -30,19 +30,18 @@ AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
 authum_bool_t
 scriptlike_read_rule(void)
 {
-    authum_file_t file;
     authum_path_t path;
-    authum_usize_t size = 0u;
-
     if (!authum_host_join_data_path(&g_scriptlike_host, "rules.txt", &path))
     {
         return authum_bool_false;
     }
+    authum_file_t file;
     authum_file_init(&file);
     if (!authum_file_open(&file, &path, authum_file_mode_read))
     {
         return authum_bool_false;
     }
+    authum_usize_t size = 0u;
     if (!authum_file_read_all(&file, &g_scriptlike_rule, sizeof g_scriptlike_rule - 1u, &size))
     {
         authum_file_close(&file);

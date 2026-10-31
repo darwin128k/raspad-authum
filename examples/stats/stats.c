@@ -69,8 +69,6 @@ authum_event_result_t
 stats_on_put_in_server(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 {
     const authum_event_client_t *ev = (const authum_event_client_t *)payload;
-    authum_char_t text[96];
-    authum_i32_t visits;
 
     authum_unused(name);
     authum_unused(user);
@@ -83,12 +81,13 @@ stats_on_put_in_server(const authum_char_t *name, authum_ptr payload, authum_ptr
     {
         return authum_event_result_continue;
     }
-    visits = stats_count_visit(ev->auth_id, ev->name, ev->unix_time);
+    authum_i32_t visits = stats_count_visit(ev->auth_id, ev->name, ev->unix_time);
     if (visits == 0)
     {
         return authum_event_result_continue;
     }
     authum_logger_info(&g_stats_visits, "%s <%s> visit #%d", ev->name, ev->auth_id, visits);
+    authum_char_t text[96];
     authum_cstr_format(text, sizeof text, "Visit #%d. Welcome back!\n", visits);
     authum_host_client_print(&g_stats_host, ev->index, authum_engine_print_chat, text);
     return authum_event_result_continue;

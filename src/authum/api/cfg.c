@@ -29,15 +29,9 @@ enum
 static authum_bool_t
 authum_cfg_read_file(const lh_fs_path_t *path, authum_char_t **out_text, authum_usize_t *out_size)
 {
-    lh_os_fs_file_t file;
     lh_str_t text;
-    lh_char_t buf[authum_cfg_read_chunk];
-    lh_ssize_t n;
-    authum_bool_t ok;
-    authum_char_t *bytes;
-    authum_usize_t size;
-
     lh_str_init(lh_addr_of(text));
+    lh_os_fs_file_t file;
     lh_os_fs_file_init(lh_addr_of(file));
     if (!lh_os_fs_file_open(lh_addr_of(file), path, lh_fs_file_mode_read))
     {
@@ -45,10 +39,11 @@ authum_cfg_read_file(const lh_fs_path_t *path, authum_char_t **out_text, authum_
         lh_str_deinit(lh_addr_of(text));
         return authum_bool_false;
     }
-    ok = authum_bool_true;
+    authum_bool_t ok = authum_bool_true;
+    lh_char_t buf[authum_cfg_read_chunk];
     for (;;)
     {
-        n = lh_os_fs_file_read(lh_addr_of(file), buf, sizeof(buf));
+        lh_ssize_t n = lh_os_fs_file_read(lh_addr_of(file), buf, sizeof(buf));
         if (lh_math_is_negative(n))
         {
             ok = authum_bool_false;
@@ -66,8 +61,9 @@ authum_cfg_read_file(const lh_fs_path_t *path, authum_char_t **out_text, authum_
         lh_str_deinit(lh_addr_of(text));
         return authum_bool_false;
     }
-    size = lh_str_get_size(lh_addr_of(text));
-    bytes = lh_cast_static(authum_char_t *, authum_memory_alloc(lh_math_add(size, 1u)));
+    lh_usize_t size = lh_str_get_size(lh_addr_of(text));
+    authum_char_t *bytes =
+        lh_cast_static(authum_char_t *, authum_memory_alloc(lh_math_add(size, 1u)));
     if (authum_null_eq(bytes))
     {
         lh_str_deinit(lh_addr_of(text));
@@ -100,10 +96,6 @@ authum_cfg_close(authum_cfg_t *self)
 authum_bool_t
 authum_cfg_open_cstr(authum_cfg_t *self, const authum_char_t *path)
 {
-    lh_fs_path_t file_path;
-    lh_str_view_t view;
-    authum_bool_t ok;
-
     if (authum_null_eq(self))
     {
         return authum_bool_false;
@@ -115,10 +107,13 @@ authum_cfg_open_cstr(authum_cfg_t *self, const authum_char_t *path)
     {
         return authum_bool_false;
     }
+    lh_fs_path_t file_path;
     lh_fs_path_init(lh_addr_of(file_path));
+    lh_str_view_t view;
     lh_str_view_init(lh_addr_of(view), path);
     lh_fs_path_set(lh_addr_of(file_path), view, lh_os_system_fs_path_style_native());
-    ok = authum_cfg_read_file(lh_addr_of(file_path), lh_addr_of(self->text), lh_addr_of(self->size));
+    authum_bool_t ok =
+        authum_cfg_read_file(lh_addr_of(file_path), lh_addr_of(self->text), lh_addr_of(self->size));
     lh_fs_path_deinit(lh_addr_of(file_path));
     return ok;
 }
@@ -199,18 +194,14 @@ authum_cfg_rtrim(authum_char_t *s)
 static authum_bool_t
 authum_cfg_next_line(authum_cfg_t *self, const lh_str_view_t *text, lh_usize_t *pos)
 {
+    lh_usize_t start = *pos;
     lh_str_view_t line;
-    lh_usize_t limit;
-    lh_usize_t chunk;
-    lh_usize_t start;
-
-    limit = lh_math_sub(lh_cast_static(lh_usize_t, sizeof(self->line)), 1u);
-    start = *pos;
     if (!lh_str_view_split_next_line(text, pos, lh_addr_of(line)))
     {
         return authum_bool_false;
     }
-    chunk = lh_str_view_get_size(lh_addr_of(line));
+    lh_usize_t chunk = lh_str_view_get_size(lh_addr_of(line));
+    lh_usize_t limit = lh_math_sub(lh_cast_static(lh_usize_t, sizeof(self->line)), 1u);
     if (chunk > limit)
     {
         /* The line is longer than the buffer: the rest of it is the next line. */
@@ -225,24 +216,18 @@ authum_cfg_next_line(authum_cfg_t *self, const lh_str_view_t *text, lh_usize_t *
 const authum_char_t *
 authum_cfg_get_value(authum_cfg_t *self, const authum_char_t *key)
 {
-    authum_char_t *p;
-    authum_char_t *eq;
-    authum_char_t *key_end;
-    authum_char_t *value;
-    lh_str_view_t text;
-    lh_usize_t pos;
-
     if (authum_null_eq(self) || authum_null_eq(self->text) || authum_null_eq(key) ||
         lh_math_eq(key[0], lh_char_map_nul))
     {
         return authum_null;
     }
 
+    lh_str_view_t text;
     lh_str_view_init_by_size(lh_addr_of(text), self->text, self->size);
-    pos = 0u;
+    lh_usize_t pos = 0u;
     while (authum_cfg_next_line(self, lh_addr_of(text), lh_addr_of(pos)))
     {
-        p = authum_cfg_skip_spaces(self->line);
+        authum_char_t *p = authum_cfg_skip_spaces(self->line);
         authum_cfg_rtrim(p);
         if (lh_math_eq(p[0], lh_char_map_nul) || lh_math_eq(p[0], lh_char_map_hash) ||
             lh_math_eq(p[0], lh_char_map_semicolon))
@@ -250,14 +235,14 @@ authum_cfg_get_value(authum_cfg_t *self, const authum_char_t *key)
             continue;
         }
 
-        eq = lh_cast_const(authum_char_t *,
-                           lh_str_ptr_find_of_char(p, lh_str_ptr_len(p), lh_char_map_equals));
+        authum_char_t *eq = lh_cast_const(
+            authum_char_t *, lh_str_ptr_find_of_char(p, lh_str_ptr_len(p), lh_char_map_equals));
         if (authum_null_eq(eq))
         {
             continue;
         }
         lh_ptr_deref(eq) = lh_char_map_nul;
-        key_end = eq;
+        authum_char_t *key_end = eq;
         while (lh_math_gt(key_end, p) && (lh_math_eq(key_end[-1], lh_char_map_space) ||
                                           lh_math_eq(key_end[-1], lh_char_map_ht)))
         {
@@ -269,7 +254,7 @@ authum_cfg_get_value(authum_cfg_t *self, const authum_char_t *key)
             continue;
         }
 
-        value = authum_cfg_skip_spaces(lh_math_add(eq, 1));
+        authum_char_t *value = authum_cfg_skip_spaces(lh_math_add(eq, 1));
         if (lh_math_ne(value, self->line))
         {
             authum_usize_t n = lh_cast_static(authum_usize_t, lh_str_ptr_len(value));

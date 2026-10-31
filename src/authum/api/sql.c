@@ -117,9 +117,7 @@ authum_sql_fail(authum_sql_t *self, const authum_char_t *message)
 static void
 authum_sql_stmt_drop_columns(struct authum_sql_stmt_impl *impl)
 {
-    authum_usize_t i;
-
-    for (i = 0u; lh_math_lt(i, impl->column_count); i = lh_math_add_one(i))
+    for (authum_usize_t i = 0u; lh_math_lt(i, impl->column_count); i = lh_math_add_one(i))
     {
         lh_str_deinit(lh_addr_of(impl->columns[i]));
     }
@@ -444,23 +442,20 @@ authum_sql_stmt_column_i64(authum_sql_stmt_t *stmt, authum_i32_t index)
 const authum_char_t *
 authum_sql_stmt_column_cstr(authum_sql_stmt_t *stmt, authum_i32_t index)
 {
-    struct authum_sql_stmt_impl *impl;
-    lh_str_view_t text;
-    authum_usize_t at;
-
     if (authum_null_eq(stmt) || authum_null_eq(stmt->stmt) || lh_math_lt(index, 0))
     {
         return "";
     }
-    impl = authum_sql_stmt_get_impl(stmt);
-    text = lh_sql_stmt_get_column_str(lh_addr_of(impl->stmt), lh_cast_static(lh_usize_t, index));
+    struct authum_sql_stmt_impl *impl = authum_sql_stmt_get_impl(stmt);
+    lh_str_view_t text =
+        lh_sql_stmt_get_column_str(lh_addr_of(impl->stmt), lh_cast_static(lh_usize_t, index));
     if (lh_str_view_is_empty(lh_addr_of(text)))
     {
         return "";
     }
 
     /* A copy that ends in a NUL, one per column, kept until the next step. */
-    at = lh_cast_static(authum_usize_t, index);
+    authum_usize_t at = lh_cast_static(authum_usize_t, index);
     if (lh_math_ge(at, impl->column_count))
     {
         lh_str_t *grown = lh_cast_reinterpret(

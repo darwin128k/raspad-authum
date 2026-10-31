@@ -83,22 +83,21 @@ authum_bool_t
 announcer_cmd_hp(const authum_command_t *cmd, authum_ptr user)
 {
     authum_i32_t max = authum_host_get_max_clients(&g_announcer_host);
-    authum_i32_t index;
-    authum_char_t player[64];
-    authum_float_t health;
-    authum_float_t armor;
     authum_usize_t alive = 0u;
 
     authum_unused(user);
-    for (index = 1; index <= max; ++index)
+    for (authum_i32_t index = 1; index <= max; ++index)
     {
         if (!authum_host_client_is_alive(&g_announcer_host, index))
         {
             continue;
         }
+        authum_char_t player[64];
         authum_host_client_copy_name(&g_announcer_host, index, player, sizeof player);
+        authum_float_t health;
         authum_host_entity_try_get_float(&g_announcer_host, index, authum_entity_float_health,
                                          &health);
+        authum_float_t armor;
         authum_host_entity_try_get_float(&g_announcer_host, index, authum_entity_float_armor,
                                          &armor);
         authum_command_printf(cmd, "  %-24s %3d hp %3d armor", player, (int)health, (int)armor);

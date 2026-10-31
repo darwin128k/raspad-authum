@@ -156,20 +156,17 @@ authum_file_close(authum_file_t *self)
 authum_bool_t
 authum_file_open_cstr(authum_file_t *self, const authum_char_t *path, authum_file_mode_t mode)
 {
-    lh_fs_path_t lh_path;
-    lh_str_view_t view;
-    lh_os_fs_file_t *file;
-    lh_bool_t ok;
-
     if (authum_null_eq(self) || authum_null_eq(path))
     {
         return authum_bool_false;
     }
     authum_file_close(self);
+    lh_fs_path_t lh_path;
     lh_fs_path_init(lh_addr_of(lh_path));
-    view = lh_initializer_of(lh_str_view_t, lh_str_view_initializer, path, lh_str_ptr_len(path));
+    lh_str_view_t view =
+        lh_initializer_of(lh_str_view_t, lh_str_view_initializer, path, lh_str_ptr_len(path));
     lh_fs_path_set(lh_addr_of(lh_path), view, lh_os_system_fs_path_style_native());
-    file = lh_cast_static(lh_os_fs_file_t *, authum_memory_alloc(sizeof *file));
+    lh_os_fs_file_t *file = lh_cast_static(lh_os_fs_file_t *, authum_memory_alloc(sizeof *file));
     if (authum_null_eq(file))
     {
         lh_fs_path_deinit(lh_addr_of(lh_path));
@@ -177,7 +174,8 @@ authum_file_open_cstr(authum_file_t *self, const authum_char_t *path, authum_fil
     }
     lh_os_fs_file_init(file);
     /* The mode values are the same on both sides, in the same order. */
-    ok = lh_os_fs_file_open(file, lh_addr_of(lh_path), lh_cast_static(lh_fs_file_mode_t, mode));
+    lh_bool_t ok =
+        lh_os_fs_file_open(file, lh_addr_of(lh_path), lh_cast_static(lh_fs_file_mode_t, mode));
     lh_fs_path_deinit(lh_addr_of(lh_path));
     if (!ok)
     {

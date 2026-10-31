@@ -15,13 +15,13 @@ authum_http_listener_open(const authum_http_options_t *options, authum_char_t *e
                           authum_u32_t error_size)
 {
     lh_net_ip4_t ip;
-    lh_net_ip4_socket_addr_t address;
     if (!lh_net_ip4_parse(options->bind, lh_str_ptr_len(options->bind), lh_addr_of(ip)))
     {
         authum_unused(lh_str_ptr_format_cstr(error, error_size, "bind '%s' must be an IPv4 address",
                                              options->bind));
         return LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID;
     }
+    lh_net_ip4_socket_addr_t address;
     lh_net_ip4_socket_addr_init(lh_addr_of(address), lh_addr_of(ip),
                                 lh_cast_static(lh_net_port_t, options->port));
     lh_os_system_net_socket_handle_t listener =
@@ -49,12 +49,13 @@ lh_os_system_net_socket_handle_t
 authum_http_socket_accept(lh_os_system_net_socket_handle_t listener, authum_http_client_t *peer, authum_u32_t *address)
 {
     lh_net_ip4_socket_addr_t remote;
-    lh_net_ip4_t ip;
-    lh_os_system_net_socket_handle_t socket = lh_os_system_net_socket_accept_nonblocking(listener, lh_addr_of(remote));
+    lh_os_system_net_socket_handle_t socket =
+        lh_os_system_net_socket_accept_nonblocking(listener, lh_addr_of(remote));
     if (lh_math_eq(socket, LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID))
     {
         return LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID;
     }
+    lh_net_ip4_t ip;
     lh_net_ip4_socket_addr_get_ip(lh_addr_of(remote), lh_addr_of(ip));
     /* Keep the existing network-order byte key used by the per-peer limits. */
     lh_memory_std_copy(address, ip.octets, sizeof lh_ptr_deref(address));
