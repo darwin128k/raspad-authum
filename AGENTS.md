@@ -101,6 +101,12 @@ session; do not make the owner repeat them again.
   variable outlives the loop and is read after it. Both forms compile to the
   same code — the difference is the scope and what the line says at a glance,
   not the speed.
+- **A variable lives as long as the pointer that names it.** A declaration moves
+  into the block that needs it only when nothing outlives that block. When the
+  address of a variable is taken and the pointer is read after the block ends,
+  the variable stays in the outer scope: the block ends, the variable is gone,
+  and the pointer names nothing. `python tools/check-decls.py <paths>` reports
+  that shape as well.
 - **A pointer is checked once, at the boundary that receives it.** A public
   function checks the arguments it takes from the outside; an internal helper
   that only ever gets the pointer from a checked caller does not check it
