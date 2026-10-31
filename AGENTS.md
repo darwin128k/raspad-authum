@@ -95,6 +95,13 @@ session; do not make the owner repeat them again.
   `python tools/check-decls.py <paths>` reports the piles (two or more
   declarations in a row at the start of a block); read the report and move the
   variables that one statement uses.
+- **A pointer is checked once, at the boundary that receives it.** A public
+  function checks the arguments it takes from the outside; an internal helper
+  that only ever gets the pointer from a checked caller does not check it
+  again. One path never checks the same pointer twice: when the caller checks
+  and the callee checks too, one of the two goes — keep the check in the
+  function that owns the contract (the public one), and drop the caller's.
+  `python tools/check-asserts.py <paths>` reports the double checks.
 - Preserve line endings when scripting edits; inspect the diff for accidental blank lines.
 - Run `python tools/check-conventions.py` after foundation or include changes.
 - Run `python tools/check-native.py`: Authum names no platform — no `_WIN32`, no
