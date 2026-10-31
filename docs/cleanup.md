@@ -7,6 +7,37 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 
 ## LH (first)
 
+- [ ] **The web host carries an application inside it.** `lh_ui_web_host_t`
+  serves a hardcoded Canvas2D player at `/` and answers a fixed route set
+  (`/ui/press`, `/ui/release`, `/ui/move`, `/ui/wheel`, `/ui/key`, `/ui/text`,
+  `/ui/size`, `/ui.json`, `/ws`); the player picks its own scale mode
+  (`?scale=fit`, `layout` otherwise). The transport, the application and the
+  protocol are one thing, and the scaling is a hidden default. Split them:
+  the host is the transport, the application belongs to the caller (its page,
+  its routes, its scaling), and a REST surface is a brick the caller attaches
+  when it wants one — a desktop program has no use for it. Nothing is removed:
+  the player becomes an application built on the transport. The target and the
+  cost are in [lib/lh/docs/roadmap.md](../lib/lh/docs/roadmap.md) item 1.
+- [ ] **There is no XML, and the HTML tree is borrowed pointers.**
+  `lh_ui_web_html_t` is a node with children, but the children are arrays the
+  caller builds by hand (the page builder declares about thirty locals for
+  one page) and there is no XML in lh at all. What is wanted is an entity (the
+  data) and a node (the same entity with the operations), with HTML as XML
+  under different tagging rules. Roadmap item 2.
+- [ ] **Every script lh ships is JavaScript written as C strings.**
+  `lh/ui/web/js.h` is a public string DSL (`_var`, `_vars`, `_fun`, `_if`,
+  `_stmt`, ...) and `src/lh/ui/web/page.c` builds the whole player with it.
+  The engine exists and is written in C — QuickJS (MIT, no dependencies, ES2025)
+  fits; MuJS and Duktape are ES5, V8 and SpiderMonkey are C++. The brick must
+  load the engine dynamically, the way the Win32 backend looks up the pointer
+  API at run time, so lh never links one. Roadmap item 3.
+- [ ] **The gamepad has an event type and no driver.** `lh_os_input_kind_controller_button_down`,
+  `_controller_axis` and the device kind `controller` exist, and no backend
+  produces them: no XInput on Windows, no evdev on Linux, no device
+  enumeration, no hot-plug. The mouse, keyboard, touch and pen have real
+  backends; the gamepad is the gap. Roadmap item 4. The desktop applications
+  are the consumers — the Authum game modules are server side, so the input
+  never crosses the Authum facade.
 - [ ] **Duplicate pointer assertions** (LH AGENTS.md section 0). Audit LH
   and Authum by layer; inspect delegation and every relevant execution path
   before choosing which assertion to remove. A public wrapper may rely on a
