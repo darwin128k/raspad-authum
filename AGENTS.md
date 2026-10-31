@@ -95,6 +95,12 @@ session; do not make the owner repeat them again.
   `python tools/check-decls.py <paths>` reports the piles (two or more
   declarations in a row at the start of a block); read the report and move the
   variables that one statement uses.
+- **A loop counter lives in the `for` header.** A variable that belongs to the
+  loop alone is declared in the header itself: `for (lh_usize_t i = 0; i < 8u;
+  ++i)`. A separate `lh_usize_t i;` line above the loop is right only when the
+  variable outlives the loop and is read after it. Both forms compile to the
+  same code — the difference is the scope and what the line says at a glance,
+  not the speed.
 - **A pointer is checked once, at the boundary that receives it.** A public
   function checks the arguments it takes from the outside; an internal helper
   that only ever gets the pointer from a checked caller does not check it
