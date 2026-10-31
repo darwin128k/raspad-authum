@@ -210,3 +210,28 @@ TEST(authum_cstr, hex_bytes_both_ways)
     EXPECT_EQ(back[2], 0x2cU);
     EXPECT_FALSE(authum_cstr_parse_hex_bytes("0a1b", back, sizeof back));
 }
+
+TEST(authum_cstr, formats_64_bit_numbers)
+{
+    authum_char_t buf[32];
+
+    EXPECT_EQ(authum_cstr_format_u64(0U, buf, sizeof buf), 1U);
+    EXPECT_STREQ(buf, "0");
+    EXPECT_EQ(authum_cstr_format_u64((authum_u64_t)1234567890123ULL, buf, sizeof buf), 13U);
+    EXPECT_STREQ(buf, "1234567890123");
+    EXPECT_EQ(authum_cstr_format_i64(-42, buf, sizeof buf), 3U);
+    EXPECT_STREQ(buf, "-42");
+    EXPECT_EQ(authum_cstr_format_i64(0, buf, sizeof buf), 1U);
+    EXPECT_STREQ(buf, "0");
+}
+
+TEST(authum_cstr, parses_hexadecimal_numbers)
+{
+    authum_u32_t value = 0u;
+
+    EXPECT_TRUE(authum_cstr_parse_hex("ff", &value));
+    EXPECT_EQ(value, 255U);
+    EXPECT_TRUE(authum_cstr_parse_hex("DEAD", &value));
+    EXPECT_EQ(value, 0xDEADU);
+    EXPECT_FALSE(authum_cstr_parse_hex("zz", &value));
+}

@@ -32,6 +32,9 @@
  * major and the same or a later minor, which
  * ::authum_version_is_abi_compatible checks at load.
  *
+ * 3.2.0 — the 64-bit numbers: `authum_cstr_format_u64` and
+ * `authum_cstr_format_i64` (the mask formatter has no length modifiers).
+ *
  * 3.1.0 — the module string, byte and wall-clock bricks: `authum_cstr_len`,
  * `authum_cstr_is_equal_n`, `authum_cstr_starts_with`, `authum_cstr_ends_with`,
  * `authum_cstr_find`, `authum_cstr_find_char`, `authum_cstr_format_hex_bytes`,
@@ -40,7 +43,7 @@
  * `authum_memory_is_equal`, `authum_memory_find`, `authum_time_now_seconds`,
  * `authum_time_format_utc`.
  */
-#define AUTHUM_MODULE_ABI AUTHUM_VERSION(3, 1, 0)
+#define AUTHUM_MODULE_ABI AUTHUM_VERSION(3, 2, 0)
 
 struct authum_module_info
 {

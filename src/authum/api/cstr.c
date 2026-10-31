@@ -6,6 +6,7 @@
 #include <lh/memory/std.h>
 
 #include <lh/str.h>
+#include <lh/str/format/sllong.h>
 #include <lh/str/parse/real.h>
 #include <lh/str/parse/ullong.h>
 
@@ -85,16 +86,14 @@ authum_usize_t
 authum_cstr_format_v(authum_char_t *dst, authum_usize_t dst_size, const authum_char_t *fmt,
                      va_list ap)
 {
-    lh_str_t text;
-    authum_usize_t n;
-
     if (authum_null_eq(dst) || lh_math_eq(dst_size, 0u) || authum_null_eq(fmt))
     {
         return 0u;
     }
+    lh_str_t text;
     lh_str_init(lh_addr_of(text));
     authum_unused(lh_str_format_v(lh_addr_of(text), fmt, ap));
-    n = lh_cast_static(authum_usize_t, lh_str_get_size(lh_addr_of(text)));
+    authum_usize_t n = lh_cast_static(authum_usize_t, lh_str_get_size(lh_addr_of(text)));
     if (lh_math_ge(n, dst_size))
     {
         n = lh_math_sub(dst_size, 1u);
@@ -109,10 +108,8 @@ authum_usize_t
 authum_cstr_format(authum_char_t *dst, authum_usize_t dst_size, const authum_char_t *fmt, ...)
 {
     va_list args;
-    authum_usize_t n;
-
     va_start(args, fmt);
-    n = authum_cstr_format_v(dst, dst_size, fmt, args);
+    authum_usize_t n = authum_cstr_format_v(dst, dst_size, fmt, args);
     va_end(args);
     return n;
 }
@@ -196,15 +193,20 @@ authum_cstr_number_digits(const authum_char_t *text, authum_bool_t allow_minus,
 authum_bool_t
 authum_cstr_parse_i32(const authum_char_t *text, authum_i32_t *out)
 {
-    const authum_char_t *digits;
-    authum_usize_t size;
-    authum_bool_t negative;
-    lh_ullong_t magnitude;
-
-    if (authum_null_eq(text) || authum_null_eq(out) ||
-        !authum_cstr_number_digits(text, authum_bool_true, lh_addr_of(negative), lh_addr_of(digits),
-                                   lh_addr_of(size)) ||
-        !lh_str_ptr_parse_ullong_digits(digits, lh_cast_static(lh_usize_t, size),
+    if (authum_null_eq(text) || authum_null_eq(out))
+    {
+        return authum_bool_false;
+    }
+    authum_bool_t negative = authum_bool_false;
+    const authum_char_t *digits = authum_null;
+    authum_usize_t size = 0u;
+    if (!authum_cstr_number_digits(text, authum_bool_true, lh_addr_of(negative), lh_addr_of(digits),
+                                   lh_addr_of(size)))
+    {
+        return authum_bool_false;
+    }
+    lh_ullong_t magnitude = 0u;
+    if (!lh_str_ptr_parse_ullong_digits(digits, lh_cast_static(lh_usize_t, size),
                                         negative ? 2147483648ULL : 2147483647ULL,
                                         lh_addr_of(magnitude)))
     {
@@ -216,17 +218,39 @@ authum_cstr_parse_i32(const authum_char_t *text, authum_i32_t *out)
 }
 
 authum_bool_t
+authum_cstr_parse_hex(const authum_char_t *text, authum_u32_t *out)
+{
+    lh_uint_t value = 0u;
+
+    if (authum_null_eq(text) || authum_null_eq(out))
+    {
+        return authum_bool_false;
+    }
+    if (!lh_str_ptr_parse_hex(text, lh_str_ptr_len(text), 0xffffffffU, lh_addr_of(value)))
+    {
+        return authum_bool_false;
+    }
+    lh_ptr_deref(out) = lh_cast_static(authum_u32_t, value);
+    return authum_bool_true;
+}
+
+authum_bool_t
 authum_cstr_parse_u32(const authum_char_t *text, authum_u32_t *out)
 {
-    const authum_char_t *digits;
-    authum_usize_t size;
-    authum_bool_t negative;
-    lh_ullong_t value;
-
-    if (authum_null_eq(text) || authum_null_eq(out) ||
-        !authum_cstr_number_digits(text, authum_bool_false, lh_addr_of(negative),
-                                   lh_addr_of(digits), lh_addr_of(size)) ||
-        !lh_str_ptr_parse_ullong_digits(digits, lh_cast_static(lh_usize_t, size), 0xffffffffULL,
+    if (authum_null_eq(text) || authum_null_eq(out))
+    {
+        return authum_bool_false;
+    }
+    authum_bool_t negative = authum_bool_false;
+    const authum_char_t *digits = authum_null;
+    authum_usize_t size = 0u;
+    if (!authum_cstr_number_digits(text, authum_bool_false, lh_addr_of(negative),
+                                   lh_addr_of(digits), lh_addr_of(size)))
+    {
+        return authum_bool_false;
+    }
+    lh_ullong_t value = 0u;
+    if (!lh_str_ptr_parse_ullong_digits(digits, lh_cast_static(lh_usize_t, size), 0xffffffffULL,
                                         lh_addr_of(value)))
     {
         return authum_bool_false;
@@ -367,4 +391,41 @@ authum_cstr_parse_hex_bytes(const authum_char_t *text, authum_byte_t *out, authu
     return lh_str_ptr_parse_hex_bytes(text, lh_str_ptr_len(text), out, out_size)
                ? authum_bool_true
                : authum_bool_false;
+}
+
+authum_usize_t
+authum_cstr_format_u64(authum_u64_t value, authum_char_t *dst, authum_usize_t dst_size)
+{
+    authum_usize_t n;
+
+    if (authum_null_eq(dst) || lh_math_is_zero(dst_size))
+    {
+        return 0u;
+    }
+    /* The lh formatters write no terminator: the room for it is reserved here. */
+    n = lh_str_ptr_format_ullong(lh_cast_static(lh_ullong_t, value), dst, dst_size - 1u);
+    if (lh_math_is_zero(n))
+    {
+        return 0u;
+    }
+    dst[n] = lh_char_map_nul;
+    return n;
+}
+
+authum_usize_t
+authum_cstr_format_i64(authum_i64_t value, authum_char_t *dst, authum_usize_t dst_size)
+{
+    authum_usize_t n;
+
+    if (authum_null_eq(dst) || lh_math_is_zero(dst_size))
+    {
+        return 0u;
+    }
+    n = lh_str_ptr_format_sllong(lh_cast_static(lh_sllong_t, value), dst, dst_size - 1u);
+    if (lh_math_is_zero(n))
+    {
+        return 0u;
+    }
+    dst[n] = lh_char_map_nul;
+    return n;
 }
