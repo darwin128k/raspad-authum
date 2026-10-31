@@ -7,6 +7,26 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 
 ## LH (first)
 
+- [ ] **Duplicate pointer assertions** (LH AGENTS.md section 0). Audit LH
+  and Authum by layer; inspect delegation and every relevant execution path
+  before choosing which assertion to remove. A public wrapper may rely on a
+  checked brick only before its first use of the pointer; a private helper
+  may rely on all its callers. Keep independently callable brick contracts.
+  `tools/check-asserts.py` is a same-file heuristic, not proof or a complete
+  inventory. Audit 2026-10-31: 948 call-site candidates in 85 files / 316 caller
+  functions, plus 50 supplemental cross-file tuples (all heuristic). Full
+  inventory and reviewed examples: [report](reports/lh-pointer-assertions-2026-10-31.md). Start with memory, then strings, remaining
+  foundations, network and UI; verify each affected layer and integration.
+  First implementation pass (2026-10-31): reviewed the memory move branches
+  and string candidates; removed six delegated assertions in `str` / `wstr`
+  (`as_view`, `truncate`, `list_get`). The 948-checker baseline does not fall:
+  these chains cross files or pass the pointer outside the first argument.
+  Retained parser, scanf conversion/default, formatter early-return and
+  memory tiny/SIMD guards. The rest of the inventory remains open.
+- [ ] **`lh_str_scanf_spec_clear` dereferences `self` before its setter checks it.**
+  `str/scanf/spec.c` assigns a zero struct directly; the setter assertion is
+  too late. Bring clear onto the accessor bricks and enforce its contract
+  before the write. Found during the pointer assertion pass.
 - [ ] **Order every module by level** (AGENTS.md 0.0, `tools/order-levels.py`).
   The tool refuses a file whose definitions sit between `#if` blocks (it would
   move code in or out of them): `crypto/rijndael.c` (AES-NI) is ordered by hand or
@@ -76,6 +96,9 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 - [ ] **`lh_fs_path_t`.** It is awkward to use. Decide: simplify it, or split
   into two entities — a dynamic (owning) path and a static/fixed one usable
   directly with `lh_str_ptr`. Owner: "later", after the general cleanup.
+- [ ] **Declaration piles in the string layer.** The assertion pass reports
+  13 existing places across `str.c`, `wstr.c`, `str/list.c`, `wstr/list.c`
+  (`check-decls.py`); keep the declaration cleanup as a separate pass.
 - [ ] **Lines past 100 columns** (`.clang-format` ColumnLimit) in code nobody has touched
   since. Changed lines are formatted with clang-format 22 from MSYS2 clang64, changed lines
   only: `git-clang-format --binary <clang64>/clang-format.exe --style file --diff HEAD`.
@@ -103,6 +126,12 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   `util/{char,wchar}/case/fold.h` and `util/{str,wstr}/case/map.h`; the `memory/std`
   pieces are private headers beside `std.c` (`std/words.h`, `std/x86/*.h`), one
   translation unit as before.
+
+- [ ] **Assertion checker misses multiline definitions and cross-file calls.**
+  `tools/check-asserts.py` recognizes only a signature whose function-name
+  line is followed by `{`, and matches variable spelling rather than actual
+  parameter positions. Extend its analysis before using its count as a
+  cleanup completion criterion; retain manual control-flow review.
 
 ## Authum (after LH)
 
