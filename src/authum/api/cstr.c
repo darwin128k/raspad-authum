@@ -1,7 +1,8 @@
 #include <authum/cstr.h>
 #include <authum/unused.h>
-#include <lh/char/letter.h>
-#include <lh/util/char.h>
+#include <lh/char/space.h>
+#include <lh/char/xdigit.h>
+#include <lh/util/str/case/map.h>
 #include <lh/memory/std.h>
 
 #include <lh/str.h>
@@ -12,6 +13,53 @@ authum_char_t
 authum_char_to_lower(authum_char_t c)
 {
     return lh_char_is_upper(c) ? lh_char_fold_case(c) : c;
+}
+
+authum_bool_t
+authum_char_is_digit(authum_char_t c)
+{
+    return lh_char_is_digit(c) ? authum_bool_true : authum_bool_false;
+}
+
+authum_bool_t
+authum_char_is_letter(authum_char_t c)
+{
+    return lh_char_is_letter(c) ? authum_bool_true : authum_bool_false;
+}
+
+authum_bool_t
+authum_char_is_lower(authum_char_t c)
+{
+    return lh_char_is_lower(c) ? authum_bool_true : authum_bool_false;
+}
+
+authum_bool_t
+authum_char_is_upper(authum_char_t c)
+{
+    return lh_char_is_upper(c) ? authum_bool_true : authum_bool_false;
+}
+
+authum_bool_t
+authum_char_is_space(authum_char_t c)
+{
+    return lh_char_is_whitespace(c) ? authum_bool_true : authum_bool_false;
+}
+
+authum_bool_t
+authum_char_is_xdigit(authum_char_t c)
+{
+    return lh_char_is_xdigit(c) ? authum_bool_true : authum_bool_false;
+}
+
+authum_char_t
+authum_char_to_upper(authum_char_t c)
+{
+    authum_char_t text[2];
+
+    text[0] = c;
+    text[1] = '\0';
+    lh_str_ptr_to_upper(text, 1u);
+    return text[0];
 }
 
 authum_bool_t
@@ -230,4 +278,93 @@ authum_cstr_parse_bool(const authum_char_t *text, authum_bool_t *out)
     }
     lh_ptr_deref(out) = (lh_math_ne(n, 0)) ? authum_bool_true : authum_bool_false;
     return authum_bool_true;
+}
+
+authum_usize_t
+authum_cstr_len(const authum_char_t *text)
+{
+    if (authum_null_eq(text))
+    {
+        return 0u;
+    }
+    return lh_cast_static(authum_usize_t, lh_str_ptr_len(text));
+}
+
+authum_bool_t
+authum_cstr_is_equal_n(const authum_char_t *a, const authum_char_t *b, authum_usize_t size,
+                       authum_bool_t ignore_case)
+{
+    if (authum_null_eq(a) || authum_null_eq(b))
+    {
+        return authum_bool_false;
+    }
+    return lh_str_ptr_equals_by_size(a, size, b, size, ignore_case) ? authum_bool_true
+                                                                    : authum_bool_false;
+}
+
+authum_bool_t
+authum_cstr_starts_with(const authum_char_t *text, const authum_char_t *prefix,
+                        authum_bool_t ignore_case)
+{
+    if (authum_null_eq(text) || authum_null_eq(prefix))
+    {
+        return authum_bool_false;
+    }
+    return lh_str_ptr_starts_with(text, prefix, ignore_case) ? authum_bool_true : authum_bool_false;
+}
+
+authum_bool_t
+authum_cstr_ends_with(const authum_char_t *text, const authum_char_t *suffix,
+                      authum_bool_t ignore_case)
+{
+    if (authum_null_eq(text) || authum_null_eq(suffix))
+    {
+        return authum_bool_false;
+    }
+    return lh_str_ptr_ends_with(text, suffix, ignore_case) ? authum_bool_true : authum_bool_false;
+}
+
+const authum_char_t *
+authum_cstr_find(const authum_char_t *haystack, const authum_char_t *needle)
+{
+    if (authum_null_eq(haystack) || authum_null_eq(needle))
+    {
+        return authum_null;
+    }
+    return lh_str_ptr_find(haystack, lh_str_ptr_len(haystack), needle, lh_str_ptr_len(needle),
+                           lh_bool_false);
+}
+
+const authum_char_t *
+authum_cstr_find_char(const authum_char_t *text, authum_char_t c)
+{
+    if (authum_null_eq(text))
+    {
+        return authum_null;
+    }
+    return lh_str_ptr_find_of_char(text, lh_str_ptr_len(text), c);
+}
+
+authum_usize_t
+authum_cstr_format_hex_bytes(const authum_byte_t *bytes, authum_usize_t size, authum_char_t *dst,
+                             authum_usize_t dst_size, authum_bool_t uppercase)
+{
+    if (authum_null_eq(dst) || authum_null_eq(bytes))
+    {
+        return 0u;
+    }
+    return lh_cast_static(authum_usize_t,
+                          lh_str_ptr_format_hex_bytes(bytes, size, dst, dst_size, uppercase));
+}
+
+authum_bool_t
+authum_cstr_parse_hex_bytes(const authum_char_t *text, authum_byte_t *out, authum_usize_t out_size)
+{
+    if (authum_null_eq(text) || authum_null_eq(out))
+    {
+        return authum_bool_false;
+    }
+    return lh_str_ptr_parse_hex_bytes(text, lh_str_ptr_len(text), out, out_size)
+               ? authum_bool_true
+               : authum_bool_false;
 }

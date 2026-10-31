@@ -1,6 +1,6 @@
 /**
  * @file char.h
- * @brief Character type for Authum module text (no lh).
+ * @brief Character type for Authum modules (no lh).
  *
  * Mirrors ::lh_char_t. Distinct from ::authum_byte_t (raw binary).
  */

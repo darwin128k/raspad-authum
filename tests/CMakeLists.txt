@@ -20,6 +20,8 @@ target_link_libraries(authum_test_main PUBLIC gtest)
 
 add_executable(authum_test_client
         src/authum/cstr.cpp
+        src/authum/char.cpp
+        src/authum/time.cpp
         src/authum/path.cpp
         src/authum/cfg.cpp
         src/authum/engine.cpp

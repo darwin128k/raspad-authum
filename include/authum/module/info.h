@@ -31,8 +31,16 @@
  * field is a new structure). A module therefore runs on a host of the same
  * major and the same or a later minor, which
  * ::authum_version_is_abi_compatible checks at load.
+ *
+ * 3.1.0 — the module string, byte and wall-clock bricks: `authum_cstr_len`,
+ * `authum_cstr_is_equal_n`, `authum_cstr_starts_with`, `authum_cstr_ends_with`,
+ * `authum_cstr_find`, `authum_cstr_find_char`, `authum_cstr_format_hex_bytes`,
+ * `authum_cstr_parse_hex_bytes`, `authum_char_is_digit` and its siblings,
+ * `authum_char_to_upper`, `authum_memory_copy`, `authum_memory_set`,
+ * `authum_memory_is_equal`, `authum_memory_find`, `authum_time_now_seconds`,
+ * `authum_time_format_utc`.
  */
-#define AUTHUM_MODULE_ABI AUTHUM_VERSION(3, 0, 0)
+#define AUTHUM_MODULE_ABI AUTHUM_VERSION(3, 1, 0)
 
 struct authum_module_info
 {
