@@ -133,6 +133,20 @@ authum_bool_t
 authum_cstr_parse_u32(const authum_char_t *text, authum_u32_t *out);
 
 /**
+ * @brief Parse an unsigned hexadecimal integer from @p text.
+ *
+ * No sign, no `0x` prefix: the digits are the value. A character that is not
+ * a hexadecimal digit ends the number — what follows it is left alone.
+ *
+ * @param text Text to parse.
+ * @param out  Receives the value on success; untouched on failure.
+ *
+ * @return ::authum_bool_true when a number was read.
+ */
+authum_bool_t
+authum_cstr_parse_hex(const authum_char_t *text, authum_u32_t *out);
+
+/**
  * @brief Parse a decimal number into a single-precision float.
  *
  * The whole text must be the number: `-? digits? (. digits?)? ([eE] [+-]? digits)?`.
@@ -242,6 +256,35 @@ authum_cstr_format_hex_bytes(const authum_byte_t *bytes, authum_usize_t size, au
  */
 authum_bool_t
 authum_cstr_parse_hex_bytes(const authum_char_t *text, authum_byte_t *out, authum_usize_t out_size);
+
+/**
+ * @brief @p value as decimal text, no sign, no leading zeros.
+ *
+ * The mask formatter of ::authum_cstr_format has no length modifiers, so a
+ * 64-bit number gets its own function.
+ *
+ * @param value    Number to write.
+ * @param dst      Destination buffer.
+ * @param dst_size Capacity of @p dst in characters, the NUL included.
+ *
+ * @return Characters written, the NUL not counted; 0 when the result does not
+ *         fit.
+ */
+authum_usize_t
+authum_cstr_format_u64(authum_u64_t value, authum_char_t *dst, authum_usize_t dst_size);
+
+/**
+ * @brief @p value as decimal text, with a minus sign when it is negative.
+ *
+ * @param value    Number to write.
+ * @param dst      Destination buffer.
+ * @param dst_size Capacity of @p dst in characters, the NUL included.
+ *
+ * @return Characters written, the NUL not counted; 0 when the result does not
+ *         fit.
+ */
+authum_usize_t
+authum_cstr_format_i64(authum_i64_t value, authum_char_t *dst, authum_usize_t dst_size);
 
 AUTHUM_EXTERN_C_END
 

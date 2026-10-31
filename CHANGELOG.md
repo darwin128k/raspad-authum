@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `authum_cstr_format_u64` and `authum_cstr_format_i64`: a 64-bit number as
+  decimal text. The mask formatter of `authum_cstr_format` has no length
+  modifiers, so a 64-bit value gets its own function — over the lh bricks
+  `lh_str_ptr_format_ullong` and `lh_str_ptr_format_sllong`. The module ABI
+  moves to **3.2.0**; a 3.1 module still runs on a 3.2 host.
 - **The module's own string, byte and wall-clock bricks**, so that a module can
   leave libc behind: `authum_cstr_len`, `authum_cstr_is_equal_n`,
   `authum_cstr_starts_with`, `authum_cstr_ends_with`, `authum_cstr_find`,
