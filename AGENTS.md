@@ -88,6 +88,13 @@ session; do not make the owner repeat them again.
   keep `authum_path_t` on the public Authum ABI. Raw native path text belongs at the kernel boundary. Preserve unresolved placeholder text as an Authum policy.
 - Include project headers with angle brackets and namespace paths. Keep module example
   contracts in that module's include namespace, not in the Authum host API.
+- **A variable is declared where it is used.** The code is C11, so a declaration
+  lives in the innermost block that needs it, right before the statement that
+  uses it — not in a pile at the top of the function (that is the C89 habit).
+  A variable the whole body works with may stay at the top of the function.
+  `python tools/check-decls.py <paths>` reports the piles (two or more
+  declarations in a row at the start of a block); read the report and move the
+  variables that one statement uses.
 - Preserve line endings when scripting edits; inspect the diff for accidental blank lines.
 - Run `python tools/check-conventions.py` after foundation or include changes.
 - Run `python tools/check-native.py`: Authum names no platform — no `_WIN32`, no
