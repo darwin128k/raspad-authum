@@ -7,6 +7,25 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 
 ## LH (first)
 
+- [ ] **JS expression serialization has a recursive level cycle.**
+  `lh_ui_web_js_emit_x` and `lh_ui_web_js_emit_args` call each other for nested
+  calls. Give recursive traversal an explicit layering contract so the level
+  checker can verify declaration order without treating this dependency as an
+  ordinary acyclic helper chain.
+
+- [ ] **Review direct address operators outside LH C implementations.** The LH
+  C sources were switched to `lh_addr_of`; headers, test code and Authum still
+  need a syntax-aware audit. C++ references and bitwise operators are not
+  address operations and must not be changed by a text replacement.
+
+- [ ] **Boolean API names need a contract-by-contract audit.** A scan of public
+  `lh_bool_t` declarations found 493 candidates without an `is_`, `has_`,
+  `can_`, `needs_`, or `try_` component. This is a candidate count, not 493
+  confirmed defects: getters and fallible actions need separate review. For
+  example, predicates named `equals` / `contains` and fallible `parse` / `open`
+  APIs must be checked against AGENTS.md, then renamed with all LH and Authum
+  callers, tests and documentation. Preserve backend-native API conventions.
+
 - [ ] **The web host carries an application inside it.** `lh_ui_web_host_t`
   serves a hardcoded Canvas2D player at `/` and answers a fixed route set
   (`/ui/press`, `/ui/release`, `/ui/move`, `/ui/wheel`, `/ui/key`, `/ui/text`,
