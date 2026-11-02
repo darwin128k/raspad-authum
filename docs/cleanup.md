@@ -58,8 +58,8 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   `lh_timer`). The rest of lh sees one brick of its own (`lh/web/js/engine`)
   that takes script text or precompiled bytecode (`JS_WriteObject` /
   `JS_ReadObject`), so an application serializes to text and still runs on a
-  bytecode machine. Open with the owner: whether the core's own libc calls stay
-  as third-party code or go through LH too (a fork to maintain). Roadmap item 3.
+  bytecode machine. The core's own libc calls go through LH wrappers too (owner,
+  2026-11-02); a missing wrapper is added to LH first. Roadmap item 3.
 - [ ] **The gamepad has an event type and no driver.** `lh_os_input_kind_controller_button_down`,
   `_controller_axis` and the device kind `controller` exist, and no backend
   produces them: no XInput on Windows, no evdev on Linux, no device
