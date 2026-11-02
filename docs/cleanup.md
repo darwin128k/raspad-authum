@@ -7,9 +7,14 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 
 ## LH (first)
 
-- [ ] **JS expression serialization has a recursive level cycle.**
-  `lh_ui_web_js_emit_x` and `lh_ui_web_js_emit_args` call each other for nested
-  calls. Give recursive traversal an explicit layering contract so the level
+- [ ] **Recursive traversal has level cycles.**
+  Every owning tree in `lh/web` has them. The node files (`json`, `html`, `js`):
+  `clear` -> `destroy` -> `deinit` -> `clear`. `lh_web_json_reader_read_value` <->
+  `read_object` / `read_array`; `lh_web_json_writer_write` <-> `write_object` /
+  `write_array`; `lh_web_html_writer_try_write` <-> `try_write_children`;
+  `lh_web_js_writer_try_write_statement` / `try_write_expression` through
+  `try_write_bare`, `try_write_items`, `try_write_function`, `try_write_body`.
+  Give recursive traversal an explicit layering contract so the level
   checker can verify declaration order without treating this dependency as an
   ordinary acyclic helper chain.
 
@@ -37,19 +42,24 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   when it wants one — a desktop program has no use for it. Nothing is removed:
   the player becomes an application built on the transport. The target and the
   cost are in [lib/lh/docs/roadmap.md](../lib/lh/docs/roadmap.md) item 1.
-- [ ] **There is no XML, and the HTML tree is borrowed pointers.**
-  `lh_ui_web_html_t` is a node with children, but the children are arrays the
-  caller builds by hand (the page builder declares about thirty locals for
-  one page) and there is no XML in lh at all. What is wanted is an entity (the
+- [ ] **There is no XML.** `lh/web/html` is an owning tree (node, attribute,
+  escaping, names, writer), but there is no XML in lh at all. What is wanted is an entity (the
   data) and a node (the same entity with the operations), with HTML as XML
   under different tagging rules. Roadmap item 2.
-- [ ] **Every script lh ships is JavaScript written as C strings.**
-  `lh/ui/web/js.h` is a public string DSL (`_var`, `_vars`, `_fun`, `_if`,
-  `_stmt`, ...) and `src/lh/ui/web/page.c` builds the whole player with it.
-  The engine exists and is written in C — QuickJS (MIT, no dependencies, ES2025)
-  fits; MuJS and Duktape are ES5, V8 and SpiderMonkey are C++. The brick must
-  load the engine dynamically, the way the Win32 backend looks up the pointer
-  API at run time, so lh never links one. Roadmap item 3.
+- [ ] **There is no JS engine.** Scripts are built as a tree (`lh/web/js` node
+  and writer; `src/lh/ui/web/player/page.c` builds the player with it) and
+  only serialized to text; nothing in lh runs them.
+  The engine is QuickJS (C, MIT, no dependencies, ES2025; MuJS and Duktape are
+  ES5, V8 and SpiderMonkey are C++), built into the ecosystem on LH wrappers, not
+  loaded from outside: its core (`quickjs.c`, `libregexp`, `libunicode`,
+  `dtoa`) sits in `lib/` as third-party code, and `quickjs-libc.c` is not used.
+  Memory goes through `JS_NewRuntime2` to the LH runtime allocator; output,
+  files, time and the module loader are LH bricks (`lh/os/*`, `lh/str/*`,
+  `lh_timer`). The rest of lh sees one brick of its own (`lh/web/js/engine`)
+  that takes script text or precompiled bytecode (`JS_WriteObject` /
+  `JS_ReadObject`), so an application serializes to text and still runs on a
+  bytecode machine. Open with the owner: whether the core's own libc calls stay
+  as third-party code or go through LH too (a fork to maintain). Roadmap item 3.
 - [ ] **The gamepad has an event type and no driver.** `lh_os_input_kind_controller_button_down`,
   `_controller_axis` and the device kind `controller` exist, and no backend
   produces them: no XInput on Windows, no evdev on Linux, no device
@@ -107,8 +117,8 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   Done: the whole lower layer — `memory/*`, `str/*`, `array`, `str/list`,
   `wstr/list`, `http/*`, `spsc`, `logger`, `timer`, `math/*`, `numeric/big`,
   `fs/stat`, `real/*`, `sql/*`, `net/*`, `crypto/*`, `os/*`, most of `ui/*` (Authum `host/http/request.c` reads requests
-  through them). Left in `ui` (~166): the tagged unions — `lh_ui_decl_t` (`row->as.label.text`),
-  `lh_ui_web_x_t` (`x->u.dot.obj`), `lh_ui_web_html_t` — want accessors per variant,
+  through them). Left in `ui` (98): the tagged union `lh_ui_decl_t` (`row->as.label.text`)
+  wants accessors per variant,
   which the tools do not generate yet; the private run state of `ui/radius.c`;
   a few out-parameter addresses of value fields (`&out->y0`, `&run->spread`).
   In `os` only native structs (`fd_set`, `XImage`, `XEvent`, the `user32.h` mirrors, ...),
@@ -137,7 +147,8 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   brick; libc `str*` / `mem*` calls in portable code.
 - [ ] **Audit for monoliths.** Split heavy functions into public bricks
   (decompose, delegate). Done: `lh/memory/allocator`. 64 functions exceed 60
-  lines, 13 exceed 100. Worst: `lh_ui_web_page_build` (774, `ui/web/page.c`),
+  lines, 13 exceed 100. Worst: `lh_ui_web_player_page_create_play` (446, `ui/web/player/page.c`; also
+  `create_fit` 350, `create_emit` 310),
   `lh_os_system_window_open` (211, posix), `lh_os_system_win_window_proc` (207),
   `lh_ui_canvas_web_put_head` (156), `lh_memory_rfind_step` (92; `lh_memory_find_step` done),
   `lh_mb_link_poll` (155), `lh_memory_std_copy` (127), `lh_ui_decl_build` (114),
