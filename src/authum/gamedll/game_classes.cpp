@@ -10,7 +10,7 @@
 
 #include <authum/export.h>
 #include <authum/null.h>
-#include <lh/cast/reinterpret.h>
+#include <lh/core/cast/reinterpret.h>
 
 #include <extdll.h>
 

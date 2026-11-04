@@ -2,8 +2,8 @@
 
 #include <authum/unused.h>
 #include <lh/os/tick.h>
-#include <lh/size.h>
-#include <lh/util/ptr.h>
+#include <lh/core/size.h>
+#include <lh/core/util/ptr.h>
 
 /** The chain every module hooks into. */
 static authum_hook_registry_t g_hooks;

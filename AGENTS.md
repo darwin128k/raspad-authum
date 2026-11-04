@@ -39,8 +39,8 @@ session; do not make the owner repeat them again.
 - **First rule: use the bricks that exist.** The owner: "Why did we create all
   these wrappers at all, if nobody uses them — not even LH itself?" Code that
   re-implements an existing LH brick (a character literal instead of
-  `lh/char/map.h`, a `switch` instead of `lh_str_ptr_contains_char`, a digit
-  loop instead of `lh/str/format`) is a defect. Search first; fix the brick if
+  `lh/core/char/map.h`, a `switch` instead of `lh_str_ptr_contains_char`, a digit
+  loop instead of `lh/core/str/format`) is a defect. Search first; fix the brick if
   it does not fit; never write a local copy.
 - **Sources mirror headers, exactly.** `include/lh/<path>.h` is implemented by
   `src/lh/<path>.c`, `include/authum/<path>.h` by `src/authum/api/<path>.c`: the same

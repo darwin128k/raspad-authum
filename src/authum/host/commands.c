@@ -9,9 +9,9 @@
 
 #include <authum/host/commands.h>
 #include <authum/null.h>
-#include <lh/char/map.h>
-#include <lh/console.h>
-#include <lh/util/return.h>
+#include <lh/core/char/map.h>
+#include <lh/core/console.h>
+#include <lh/core/util/return.h>
 
 static lh_console_t authum_commands_console;
 static authum_bool_t authum_commands_initialized;

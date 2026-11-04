@@ -5,8 +5,8 @@
 
 #include <authum/crypto/ed25519.h>
 
-#include <lh/crypto/ed25519.h>
-#include <lh/crypto/wipe.h>
+#include <lh/core/crypto/ed25519.h>
+#include <lh/core/crypto/wipe.h>
 
 void
 authum_crypto_ed25519_create_key_pair(

@@ -8,7 +8,7 @@
  */
 #include <authum/export.h>
 #include <authum/null.h>
-#include <lh/util/ptr.h>
+#include <lh/core/util/ptr.h>
 #include <extdll.h>
 
 #define AUTHUM_EXPORT extern "C" AUTHUM_IMAGE_EXPORT

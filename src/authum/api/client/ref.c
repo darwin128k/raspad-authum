@@ -1,7 +1,7 @@
 #include <authum/client/ref.h>
-#include <lh/util/str/ptr.h>
+#include <lh/core/util/str/ptr.h>
 #include <authum/memory.h>
-#include <lh/memory/std.h>
+#include <lh/core/memory/std.h>
 #include <authum/event/client.h>
 #include <authum/event/server.h>
 

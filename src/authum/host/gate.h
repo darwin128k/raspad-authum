@@ -16,7 +16,7 @@
 #define AUTHUM_HOST_GATE_H
 
 #include <authum/extern.h>
-#include <lh/bool.h>
+#include <lh/core/bool.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

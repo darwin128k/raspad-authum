@@ -1,6 +1,6 @@
 #include <authum/host/hooks.h>
 
-#include <lh/util/ptr.h>
+#include <lh/core/util/ptr.h>
 
 static authum_bool_t
 authum_hooks_host_add(authum_ptr owner, const authum_char_t *tag, authum_hook_point_t point,

@@ -1,15 +1,16 @@
 #include <authum/http.h>
 #include <authum/null.h>
-#include <lh/char/map.h>
-#include <lh/memory/std.h>
+#include <lh/core/char/map.h>
+#include <lh/core/memory/std.h>
 #include <authum/unused.h>
-#include <lh/fs/path.h>
+#include <lh/core/fs/path.h>
 #include <lh/os/system/fs/path.h>
 
 void
 authum_http_options_init(authum_http_options_t *options)
 {
     lh_memory_std_set(options, 0, sizeof lh_ptr_deref(options));
+    options->struct_size = lh_cast_static(authum_u32_t, sizeof lh_ptr_deref(options));
     authum_unused(lh_str_ptr_format_cstr(options->bind, sizeof options->bind, "%s", "127.0.0.1"));
     options->port = 17015;
     options->max_clients = 64;
@@ -20,6 +21,7 @@ authum_http_options_init(authum_http_options_t *options)
     options->access_log = authum_bool_true;
     options->bytes_per_second = lh_math_mul(lh_math_mul(8, 1024), 1024);
     options->max_file_bytes = lh_math_mul(lh_math_mul(128, 1024), 1024);
+    options->per_ip_pending = 4;
 }
 
 authum_bool_t

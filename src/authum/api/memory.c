@@ -1,9 +1,9 @@
 #include <authum/memory.h>
 #include <authum/null.h>
 #include <lh/config.h>
-#include <lh/cast/const.h>
-#include <lh/memory/std.h>
-#include <lh/runtime/allocator.h>
+#include <lh/core/cast/const.h>
+#include <lh/core/memory/std.h>
+#include <lh/core/runtime/allocator.h>
 
 authum_ptr
 authum_memory_alloc(authum_usize_t size)
@@ -12,7 +12,7 @@ authum_memory_alloc(authum_usize_t size)
     {
         return authum_null;
     }
-    return lh_memory_allocator_try_alloc(lh_runtime_allocator(), size);
+    return lh_memory_allocator_try_alloc(lh_runtime_allocator_get_mut(), size);
 }
 
 authum_ptr
@@ -42,7 +42,7 @@ authum_memory_realloc(authum_ptr block, authum_usize_t old_size, authum_usize_t 
         authum_memory_free(block);
         return authum_null;
     }
-    return lh_memory_allocator_try_realloc(lh_runtime_allocator(), block, old_size, new_size);
+    return lh_memory_allocator_try_realloc(lh_runtime_allocator_get_mut(), block, old_size, new_size);
 }
 
 void

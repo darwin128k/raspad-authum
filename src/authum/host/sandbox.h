@@ -9,7 +9,7 @@
 #ifndef AUTHUM_HOST_SANDBOX_H
 #define AUTHUM_HOST_SANDBOX_H
 
-#include <lh/util/ptr.h>
+#include <lh/core/util/ptr.h>
 #include <authum/sandbox/ops.h>
 
 AUTHUM_EXTERN_C_BEGIN

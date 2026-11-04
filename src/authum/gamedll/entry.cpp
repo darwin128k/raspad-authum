@@ -12,9 +12,9 @@
  */
 #include <authum/gamedll/engine.h>
 #include <authum/unused.h>
-#include <lh/cast/const.h>
-#include <lh/char/map.h>
-#include <lh/compiler/arch/family.h>
+#include <lh/core/cast/const.h>
+#include <lh/core/char/map.h>
+#include <lh/core/compiler/arch/family.h>
 #include <authum/gamedll/game.h>
 #include <authum/gamedll/hooks.h>
 
@@ -22,6 +22,7 @@
 #include <authum/host/gate.h>
 #include <authum/host/loader.h>
 #include <authum/host/log.h>
+#include <authum/runtime.h>
 #include <authum/cstr.h>
 
 #include <extdll.h>
@@ -170,6 +171,10 @@ shutdown(void)
 AUTHUM_ENTRY void AUTHUM_GIVE_CALL
 GiveFnptrsToDll(enginefuncs_t *engine_funcs, globalvars_t *globals)
 {
+    /* Authum is LH's host: LH's core starts with every runtime slot empty, so
+     * the allocator, terminate and log go in before anything else uses LH. */
+    authum_runtime_install();
+
     g_engfuncs = lh_ptr_deref(engine_funcs);
     gpGlobals = globals;
 

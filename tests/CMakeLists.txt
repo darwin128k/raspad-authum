@@ -12,7 +12,8 @@ endif ()
 
 add_library(authum_test_main STATIC "${AUTHUM_LH_DIR}/test/src/main.cpp")
 target_compile_features(authum_test_main PUBLIC cxx_std_20)
-target_link_libraries(authum_test_main PUBLIC gtest)
+# LH's runner fills LH's runtime slots over the C library before any test runs.
+target_link_libraries(authum_test_main PUBLIC gtest lh)
 
 # Authum GoogleTest suites run by CTest. Host pieces (sandbox, events,
 # commands, logs) are compiled from src/authum/host together with lh, exactly as

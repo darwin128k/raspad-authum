@@ -6,7 +6,7 @@
 #ifndef AUTHUM_HOST_COMMANDS_H
 #define AUTHUM_HOST_COMMANDS_H
 
-#include <lh/util/ptr.h>
+#include <lh/core/util/ptr.h>
 #include <authum/commands.h>
 
 AUTHUM_EXTERN_C_BEGIN

@@ -9,11 +9,11 @@
 #include <authum/host/events.h>
 #include <authum/event/name/limits.h>
 #include <authum/host/events/internal.h>
-#include <lh/assert/static.h>
-#include <lh/util/return.h>
+#include <lh/core/assert/static.h>
+#include <lh/core/util/return.h>
 #include <authum/null.h>
 #include <authum/unused.h>
-#include <lh/util/str/ptr.h>
+#include <lh/core/util/str/ptr.h>
 
 static lh_os_module_event_bus_t authum_events_bus;
 static authum_bool_t authum_events_initialized;

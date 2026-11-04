@@ -1,9 +1,9 @@
 #include <authum/net/address.h>
 #include <authum/null.h>
-#include <lh/net/port.h>
-#include <lh/char/digit.h>
-#include <lh/memory/std.h>
-#include <lh/util/str/ptr.h>
+#include <lh/core/net/port.h>
+#include <lh/core/char/digit.h>
+#include <lh/core/memory/std.h>
+#include <lh/core/util/str/ptr.h>
 
 authum_bool_t
 authum_net_address_copy_host(const authum_char_t *address, authum_char_t *out,

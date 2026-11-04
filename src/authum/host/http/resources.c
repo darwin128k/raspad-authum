@@ -1,7 +1,27 @@
 #include <authum/host/http/internal.h>
-#include <lh/char/letter.h>
-#include <lh/char/digit.h>
-#include <lh/memory/std.h>
+#include <lh/core/char/map.h>
+#include <lh/core/memory/std.h>
+
+/* ASCII case folding: policy names compare without case on every platform,
+ * because the Windows opener resolves names without case. */
+static authum_char_t
+authum_http_policy_fold(authum_char_t x)
+{
+    return (x >= 'A' && x <= 'Z') ? (authum_char_t)(x + ('a' - 'A')) : x;
+}
+
+static authum_bool_t
+authum_http_policy_equal_nocase(const authum_char_t *a, const authum_char_t *b, authum_usize_t n)
+{
+    for (authum_usize_t i = 0; i < n; ++i)
+    {
+        if (authum_http_policy_fold(a[i]) != authum_http_policy_fold(b[i]))
+        {
+            return authum_bool_false;
+        }
+    }
+    return authum_bool_true;
+}
 
 static authum_bool_t
 authum_http_policy_contains(const authum_char_t *list, const authum_char_t *value, authum_usize_t n,
@@ -16,9 +36,9 @@ authum_http_policy_contains(const authum_char_t *list, const authum_char_t *valu
         const authum_usize_t rest = lh_str_ptr_len(list);
         const authum_char_t *e = lh_str_ptr_find_of_char(list, rest, lh_char_map_space);
         authum_usize_t z = e ? (authum_usize_t)(lh_math_sub(e, list)) : rest;
-        if (z && (prefix ? lh_math_ge(n, z) && !lh_memory_std_compare(list, value, z) &&
+        if (z && (prefix ? lh_math_ge(n, z) && authum_http_policy_equal_nocase(list, value, z) &&
                                (lh_math_eq(n, z) || lh_math_eq(value[z], lh_char_map_slash))
-                         : lh_math_eq(z, n) && !lh_memory_std_compare(list, value, n)))
+                         : lh_math_eq(z, n) && authum_http_policy_equal_nocase(list, value, n)))
         {
             return authum_bool_true;
         }
@@ -31,68 +51,171 @@ authum_http_policy_contains(const authum_char_t *list, const authum_char_t *valu
     return authum_bool_false;
 }
 
+static authum_i32_t
+authum_http_hex(authum_char_t x)
+{
+    if (x >= '0' && x <= '9')
+    {
+        return x - '0';
+    }
+    x = authum_http_policy_fold(x);
+    return (x >= 'a' && x <= 'f') ? x - 'a' + 10 : -1;
+}
+
+/* A byte a published name may hold once decoded. Separators, controls and the
+ * characters Windows reserves are refused on every platform. */
+static authum_bool_t
+authum_http_name_byte(authum_byte_t x)
+{
+    if (x < 0x20 || x == 0x7f)
+    {
+        return authum_bool_false;
+    }
+    switch (x)
+    {
+    case '\\':
+    case ':':
+    case '*':
+    case '?':
+    case '"':
+    case '<':
+    case '>':
+    case '|':
+        return authum_bool_false;
+    default:
+        return authum_bool_true;
+    }
+}
+
+authum_usize_t
+authum_http_resource_check(const authum_http_options_t *options, const authum_char_t *url,
+                           authum_usize_t len, authum_char_t *out, authum_usize_t capacity,
+                           const authum_char_t **reason)
+{
+    /* The query and fragment never name a file. */
+    for (authum_usize_t i = 0; i < len; ++i)
+    {
+        if (url[i] == '?' || url[i] == '#')
+        {
+            len = i;
+            break;
+        }
+    }
+    if (len < 2 || url[0] != '/')
+    {
+        *reason = "bad_target";
+        return 0;
+    }
+    /* Decode exactly once; an encoded separator or NUL never becomes one. */
+    authum_usize_t n = 0;
+    for (authum_usize_t i = 1; i < len; ++i)
+    {
+        authum_byte_t x = (authum_byte_t)url[i];
+        if (x == '%')
+        {
+            authum_i32_t high = i + 2 < len ? authum_http_hex(url[i + 1]) : -1;
+            authum_i32_t low = high >= 0 ? authum_http_hex(url[i + 2]) : -1;
+            if (low < 0)
+            {
+                *reason = "bad_encoding";
+                return 0;
+            }
+            x = (authum_byte_t)(high * 16 + low);
+            i += 2;
+            if (x == '/' || x == 0)
+            {
+                *reason = "encoded_separator";
+                return 0;
+            }
+        }
+        if (x != '/' && !authum_http_name_byte(x))
+        {
+            *reason = "bad_char";
+            return 0;
+        }
+        if (n + 1 >= capacity)
+        {
+            *reason = "uri_too_long";
+            return 0;
+        }
+        out[n++] = (authum_char_t)x;
+    }
+    out[n] = 0;
+    /* Components: no empty ones, no hidden or dot names, nothing Windows would
+     * trim or alias (trailing dot/space, 8.3 short names like NAME~1). */
+    authum_usize_t start = 0;
+    for (authum_usize_t i = 0; i <= n; ++i)
+    {
+        if (i < n && out[i] != '/')
+        {
+            if (out[i] == '~' && i + 1 < n && out[i + 1] >= '0' && out[i + 1] <= '9')
+            {
+                *reason = "short_name";
+                return 0;
+            }
+            continue;
+        }
+        if (i == start)
+        {
+            *reason = "empty_component";
+            return 0;
+        }
+        if (out[start] == '.')
+        {
+            *reason = "hidden_or_dot";
+            return 0;
+        }
+        if (out[i - 1] == '.' || out[i - 1] == ' ')
+        {
+            *reason = "trailing_dot_or_space";
+            return 0;
+        }
+        start = i + 1;
+    }
+    if (authum_http_policy_contains(options->deny_prefixes, out, n, 1))
+    {
+        *reason = "denied_prefix";
+        return 0;
+    }
+    const authum_char_t *slash = lh_str_ptr_find_of_char(out, n, lh_char_map_slash);
+    if (slash && !authum_http_policy_contains(options->allow_dirs, out,
+                                              (authum_usize_t)(slash - out), 0))
+    {
+        *reason = "dir_not_allowed";
+        return 0;
+    }
+    /* The extension of the last component; root files have their own list. */
+    const authum_char_t *last = lh_str_ptr_rfind_of_char(out, n, lh_char_map_slash);
+    last = last ? last + 1 : out;
+    const authum_char_t *ext =
+        lh_str_ptr_rfind_of_char(last, (authum_usize_t)(out + n - last), lh_char_map_period);
+    authum_usize_t ext_len = ext ? (authum_usize_t)(out + n - ext - 1) : 0;
+    if (!ext || !ext_len ||
+        !authum_http_policy_contains(options->allow_extensions, ext + 1, ext_len, 0) ||
+        (!slash && !authum_http_policy_contains(options->root_extensions, ext + 1, ext_len, 0)))
+    {
+        *reason = "ext_not_allowed";
+        return 0;
+    }
+    return n;
+}
+
 lh_os_system_fs_file_handle_t
 authum_http_resource_open(lh_os_system_fs_file_handle_t root, const authum_http_options_t *options,
-                          const authum_char_t *url, authum_usize_t len, lh_u64_t *length)
+                          const authum_char_t *path, lh_u64_t *length, const authum_char_t **reason)
 {
-    authum_char_t path[2048];
-    if (lh_math_lt(len, 2) || lh_math_ge(len, sizeof path) || lh_math_ne(url[0], lh_char_map_slash))
-    {
-        return LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
-    }
-    for (authum_usize_t i = 1; lh_math_lt(i, len); i = lh_math_add_one(i))
-    {
-        authum_char_t x = url[i];
-        /* Hidden names are HTTP policy; LH only rejects dot traversal. */
-        if (lh_math_eq(x, lh_char_map_period) &&
-            lh_math_eq(url[lh_math_sub(i, 1)], lh_char_map_slash))
-        {
-            return LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
-        }
-        if (!(lh_char_is_letter(x) || lh_char_is_digit(x) ||
-              lh_math_eq(x, lh_char_map_underscore) || lh_math_eq(x, lh_char_map_minus) ||
-              lh_math_eq(x, lh_char_map_period) || lh_math_eq(x, lh_char_map_slash) ||
-              lh_math_eq(x, lh_char_map_dollar)))
-        {
-            return LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
-        }
-    }
-    lh_memory_std_copy(path, lh_math_add(url, 1), lh_math_sub(len, 1));
-    path[lh_math_sub(len, 1)] = 0;
-    if (authum_http_policy_contains(options->deny_prefixes, path, lh_math_sub(len, 1), 1))
-    {
-        return LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
-    }
-    const authum_char_t *slash =
-        lh_str_ptr_find_of_char(path, lh_math_sub(len, 1), lh_char_map_slash);
-    if (slash && !authum_http_policy_contains(options->allow_dirs, path,
-                                              (authum_usize_t)(lh_math_sub(slash, path)), 0))
-    {
-        return LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
-    }
-    /* Root files have a separate explicit extension allow-list. */
-    const authum_char_t *ext =
-        lh_str_ptr_rfind_of_char(path, lh_math_sub(len, 1), lh_char_map_period);
-    if (!ext ||
-        !authum_http_policy_contains(options->allow_extensions, lh_math_add(ext, 1),
-                                     lh_str_ptr_len(lh_math_add(ext, 1)),
-                                     0) ||
-        (!slash && !authum_http_policy_contains(
-                       options->root_extensions, lh_math_add(ext, 1),
-                       lh_str_ptr_len(lh_math_add(ext, 1)), 0)))
-    {
-        return LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
-    }
     lh_fs_size_t size;
     lh_os_system_fs_file_handle_t file =
         lh_os_system_fs_file_open_read_at(root, path, lh_addr_of(size));
     if (lh_math_eq(file, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID))
     {
+        *reason = "not_found";
         return LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
     }
     if (lh_math_gt(size, options->max_file_bytes))
     {
         lh_os_system_fs_file_close(file);
+        *reason = "too_large";
         return LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
     }
     lh_ptr_deref(length) = lh_cast_static(lh_u64_t, size);

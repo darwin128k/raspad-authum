@@ -6,7 +6,7 @@
 #include <authum/bool.h>
 #include <authum/crypto/rijndael.h>
 #include <authum/null.h>
-#include <lh/crypto/rijndael.h>
+#include <lh/core/crypto/rijndael.h>
 
 #if defined(__STDC_VERSION__) && lh_math_ge(__STDC_VERSION__, 201112L)
 _Static_assert(lh_math_le(sizeof(lh_crypto_rijndael_t), AUTHUM_CRYPTO_RIJNDAEL_STORAGE),

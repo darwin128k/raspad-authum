@@ -1,6 +1,6 @@
 #include <authum/host/console.h>
-#include <lh/char/map.h>
-#include <lh/memory/std.h>
+#include <lh/core/char/map.h>
+#include <lh/core/memory/std.h>
 
 #include <authum/host/commands.h>
 #include <authum/cstr.h>

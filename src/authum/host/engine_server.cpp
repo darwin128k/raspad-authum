@@ -3,11 +3,11 @@
  * @brief ::authum_engine_t ops — thin wrappers over host `g_engfuncs`.
  */
 
-#include <lh/cast/const.h>
-#include <lh/char/map.h>
-#include <lh/util/str/ptr.h>
+#include <lh/core/cast/const.h>
+#include <lh/core/char/map.h>
+#include <lh/core/util/str/ptr.h>
 #include <authum/memory.h>
-#include <lh/memory/std.h>
+#include <lh/core/memory/std.h>
 #include <authum/cstr.h>
 #include <authum/host/engine.h>
 

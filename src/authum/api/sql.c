@@ -1,10 +1,10 @@
 #include <authum/sql.h>
-#include <lh/char/map.h>
+#include <lh/core/char/map.h>
 #include <authum/memory.h>
-#include <lh/memory/std.h>
+#include <lh/core/memory/std.h>
 
-#include <lh/sql/mysql.h>
-#include <lh/sql/sqlite.h>
+#include <lh/os/sql/mysql.h>
+#include <lh/os/sql/sqlite.h>
 
 
 /* Private storage: keep the public SQL handle layout unchanged. */
@@ -188,7 +188,7 @@ authum_sql_open_sqlite(authum_sql_t *self, const authum_char_t *path)
     {
         return authum_bool_false;
     }
-    return authum_sql_end_open(self, lh_sql_db_open_sqlite(db, authum_sql_view(path)));
+    return authum_sql_end_open(self, lh_os_sql_sqlite_open(db, authum_sql_view(path)));
 }
 
 authum_bool_t
@@ -208,7 +208,7 @@ authum_sql_open_mysql(authum_sql_t *self, const authum_char_t *host, const authu
         return authum_bool_false;
     }
     return authum_sql_end_open(
-        self, lh_sql_db_open_mysql(db, authum_sql_view(host), authum_sql_view(user),
+        self, lh_os_sql_mysql_open(db, authum_sql_view(host), authum_sql_view(user),
                                    authum_sql_view(pass), authum_sql_view(db_name),
                                    lh_cast_static(lh_uint_t, port)));
 }
@@ -216,7 +216,7 @@ authum_sql_open_mysql(authum_sql_t *self, const authum_char_t *host, const authu
 authum_bool_t
 authum_sql_mysql_available(void)
 {
-    return authum_null_eq(lh_sql_mysql_api_get_default()) ? authum_bool_false : authum_bool_true;
+    return authum_null_eq(lh_os_sql_mysql_api_get_default()) ? authum_bool_false : authum_bool_true;
 }
 
 void

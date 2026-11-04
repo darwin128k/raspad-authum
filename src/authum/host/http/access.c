@@ -1,17 +1,12 @@
 #include <authum/host/http/internal.h>
-#include <lh/char/map.h>
-#include <lh/memory/std.h>
-#include <lh/str/format/sllong.h>
-#include <lh/str/format/ullong.h>
+#include <lh/core/char/map.h>
+#include <lh/core/memory/std.h>
+#include <lh/core/str/format/sllong.h>
+#include <lh/core/str/format/ullong.h>
 
 void
-authum_http_access_record(authum_http_server_t *server, const authum_http_client_t *client,
-                          const authum_char_t *event)
+authum_http_access_line(authum_http_server_t *server, const authum_char_t *line)
 {
-    if (!server->options.access_log)
-    {
-        return;
-    }
     authum_u32_t write_index =
         atomic_load_explicit(lh_addr_of(server->log_write), memory_order_relaxed);
     authum_u32_t read_index =
@@ -21,6 +16,21 @@ authum_http_access_record(authum_http_server_t *server, const authum_http_client
         atomic_fetch_add_explicit(lh_addr_of(server->log_dropped), 1, memory_order_relaxed);
         return;
     }
+    authum_unused(lh_str_ptr_format_cstr(
+        server->logs[lh_math_mod(write_index, AUTHUM_HTTP_LOG_CAPACITY)], sizeof server->logs[0],
+        "%s", line));
+    atomic_store_explicit(lh_addr_of(server->log_write), lh_math_add(write_index, 1),
+                          memory_order_release);
+}
+
+void
+authum_http_access_record(authum_http_server_t *server, const authum_http_client_t *client,
+                          const authum_char_t *event)
+{
+    if (!server->options.access_log)
+    {
+        return;
+    }
     authum_char_t bytes[24];
     bytes[lh_str_ptr_format_ullong(lh_cast_static(lh_ullong_t, client->body_bytes), bytes,
                                    sizeof bytes - 1u)] = lh_char_map_nul;
@@ -28,16 +38,44 @@ authum_http_access_record(authum_http_server_t *server, const authum_http_client
     duration[lh_str_ptr_format_sllong(
         lh_cast_static(lh_sllong_t, lh_math_sub(authum_http_now_ms(), client->born)), duration,
         sizeof duration - 1u)] = lh_char_map_nul;
+    authum_char_t line[AUTHUM_HTTP_LOG_LINE_CAPACITY];
     authum_unused(lh_str_ptr_format_cstr(
-        server->logs[lh_math_mod(write_index, AUTHUM_HTTP_LOG_CAPACITY)], sizeof server->logs[0],
+        line, sizeof line,
         "http event=%s id=%u ip=%s:%u method=%s path=\"%s\" status=%d bytes=%s source=%u "
-        "module=%s duration_ms=%s",
+        "module=%s duration_ms=%s%s%s%s%s",
         event, client->id, client->ip, client->port,
         lh_ptr_deref(client->method) ? client->method : "-",
         lh_ptr_deref(client->path) ? client->path : "-", client->status, bytes, client->source,
-        server->tag ? server->tag : "-", duration));
-    atomic_store_explicit(lh_addr_of(server->log_write), lh_math_add(write_index, 1),
-                          memory_order_release);
+        server->tag ? server->tag : "-", duration, client->reason ? " reason=" : "",
+        client->reason ? client->reason : "", lh_ptr_deref(client->via) ? " via=" : "",
+        client->via));
+    authum_http_access_line(server, line);
+}
+
+void
+authum_http_access_close(authum_http_server_t *server, const authum_http_client_t *client,
+                         const authum_char_t *event, authum_i64_t now)
+{
+    if (!server->options.access_log)
+    {
+        return;
+    }
+    /* Served files are always logged. Refusals, timeouts and empty
+     * connections share a per-second budget; the rest is only counted and
+     * reported in the summary line, so a flood cannot fill the queue. */
+    authum_bool_t refused = !client->status || lh_math_ge(client->status, 400) ||
+                            !lh_str_ptr_equals(event, "complete", lh_bool_false);
+    if (refused)
+    {
+        authum_http_refusals_flush(server, now);
+        if (lh_math_ge(server->refusals.logged, AUTHUM_HTTP_REFUSED_LINES_PER_SECOND))
+        {
+            server->refusals.unlogged = lh_math_add_one(server->refusals.unlogged);
+            return;
+        }
+        server->refusals.logged = lh_math_add_one(server->refusals.logged);
+    }
+    authum_http_access_record(server, client, event);
 }
 
 void

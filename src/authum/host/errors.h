@@ -9,7 +9,7 @@
 #ifndef AUTHUM_HOST_ERRORS_H
 #define AUTHUM_HOST_ERRORS_H
 
-#include <lh/error/code.h>
+#include <lh/core/error/code.h>
 
 /**
  * @def authum_error_code_ok

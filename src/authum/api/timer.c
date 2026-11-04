@@ -6,7 +6,7 @@
  */
 
 #include <authum/timer.h>
-#include <lh/util/ptr.h>
+#include <lh/core/util/ptr.h>
 
 #include <authum/array.h>
 #include <authum/event/server.h>

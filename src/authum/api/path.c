@@ -1,6 +1,6 @@
 #include <authum/path.h>
-#include <lh/char/map.h>
-#include <lh/memory/std.h>
+#include <lh/core/char/map.h>
+#include <lh/core/memory/std.h>
 
 #include <lh/os/fs/dir.h>
 #include <lh/os/system/fs/path.h>

@@ -1,6 +1,6 @@
 #include <authum/engine.h>
-#include <lh/char/map.h>
-#include <lh/str/format/text.h>
+#include <lh/core/char/map.h>
+#include <lh/core/str/format/text.h>
 
 #include <authum/cstr.h>
 

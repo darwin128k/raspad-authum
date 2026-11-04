@@ -1,11 +1,11 @@
 #include <authum/gamedll/game.h>
 #include <authum/unused.h>
-#include <lh/char/map.h>
-#include <lh/memory/std.h>
+#include <lh/core/char/map.h>
+#include <lh/core/memory/std.h>
 #include <lh/os/env.h>
 #include <lh/os/fs/file.h>
 #include <lh/os/system/fs/path.h>
-#include <lh/str/split/line.h>
+#include <lh/core/str/split/line.h>
 
 #include <authum/cstr.h>
 #include <authum/host/log.h>

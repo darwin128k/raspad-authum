@@ -5,7 +5,7 @@
 
 #include <authum/crypto/sha.h>
 #include <authum/null.h>
-#include <lh/crypto/sha.h>
+#include <lh/core/crypto/sha.h>
 
 #if defined(__STDC_VERSION__) && lh_math_ge(__STDC_VERSION__, 201112L)
 _Static_assert(lh_math_le(sizeof(lh_crypto_sha_t), AUTHUM_CRYPTO_SHA_STORAGE),

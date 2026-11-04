@@ -4,7 +4,7 @@
 #include <authum/null.h>
 
 #include <lh/os/net/interface.h>
-#include <lh/str/format/text.h>
+#include <lh/core/str/format/text.h>
 
 authum_bool_t
 authum_net_ipv4_is_loopback(authum_u32_t ip)

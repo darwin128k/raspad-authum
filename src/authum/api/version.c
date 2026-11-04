@@ -1,5 +1,5 @@
 #include <authum/version.h>
-#include <lh/math/ops.h>
+#include <lh/core/math/ops.h>
 
 authum_bool_t
 authum_version_is_compatible(const authum_version_t *have, const authum_version_t *need)

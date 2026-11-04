@@ -1,14 +1,14 @@
 #include <authum/cstr.h>
 #include <authum/unused.h>
-#include <lh/char/space.h>
-#include <lh/char/xdigit.h>
-#include <lh/util/str/case/map.h>
-#include <lh/memory/std.h>
+#include <lh/core/char/space.h>
+#include <lh/core/char/xdigit.h>
+#include <lh/core/util/str/case/map.h>
+#include <lh/core/memory/std.h>
 
-#include <lh/str.h>
-#include <lh/str/format/sllong.h>
-#include <lh/str/parse/real.h>
-#include <lh/str/parse/ullong.h>
+#include <lh/core/str.h>
+#include <lh/core/str/format/sllong.h>
+#include <lh/core/str/parse/real.h>
+#include <lh/core/str/parse/ullong.h>
 
 authum_char_t
 authum_char_to_lower(authum_char_t c)

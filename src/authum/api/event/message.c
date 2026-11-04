@@ -1,6 +1,6 @@
 #include <authum/event/message.h>
-#include <lh/util/str/ptr.h>
-#include <lh/memory/std.h>
+#include <lh/core/util/str/ptr.h>
+#include <lh/core/memory/std.h>
 
 #include <authum/null.h>
 

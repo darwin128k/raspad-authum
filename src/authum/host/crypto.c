@@ -4,7 +4,7 @@
  */
 
 #include <authum/crypto.h>
-#include <lh/util/ptr.h>
+#include <lh/core/util/ptr.h>
 
 authum_bool_t
 authum_crypto_rijndael_init_impl(authum_crypto_rijndael_t *self, authum_ptr key,

@@ -1,8 +1,10 @@
 #include <authum/host/http/internal.h>
-#include <lh/fs/path.h>
+#include <lh/core/fs/path.h>
 #include <lh/os/system/fs/path.h>
 #include <authum/null.h>
-#include <lh/char/map.h>
+#include <lh/core/char/map.h>
+#include <lh/core/memory/std.h>
+#include <authum/memory.h>
 
 static authum_bool_t
 owns_server(const authum_http_owner_t *owner, const authum_http_server_t *server)
@@ -27,6 +29,62 @@ terminated(const authum_char_t *string, authum_usize_t capacity)
     return lh_math_ne(lh_str_ptr_find_of_null_terminator_by_size(string, capacity), authum_null);
 }
 
+/* Defaults for fields a caller's struct may predate; keep in step with
+ * authum_http_options_init. */
+static void
+options_defaults(authum_http_options_t *options)
+{
+    lh_memory_std_set(options, 0, sizeof lh_ptr_deref(options));
+    options->struct_size = lh_cast_static(authum_u32_t, sizeof lh_ptr_deref(options));
+    options->per_ip_pending = 4;
+}
+
+authum_bool_t
+authum_http_options_read(const authum_http_options_t *in, authum_http_options_t *out)
+{
+    options_defaults(out);
+    if (!in)
+    {
+        return authum_bool_false;
+    }
+    /* The old layout starts with the bind text: a valid IPv4 address puts four
+     * printable bytes there, so its first word is at least 0x2e000000 in either
+     * byte order. A size is far below 0x01000000. */
+    const authum_u32_t size = in->struct_size;
+    if (lh_math_ge(size, 0x01000000u))
+    {
+        const authum_http_options_v0_t *old = lh_cast_reinterpret(const authum_http_options_v0_t *, in);
+        lh_memory_std_copy(out->bind, old->bind, sizeof out->bind);
+        out->port = old->port;
+        lh_memory_std_copy(out->sources, old->sources, sizeof out->sources);
+        out->source_count = old->source_count;
+        lh_memory_std_copy(out->allow_dirs, old->allow_dirs, sizeof out->allow_dirs);
+        lh_memory_std_copy(out->allow_extensions, old->allow_extensions,
+                           sizeof out->allow_extensions);
+        lh_memory_std_copy(out->root_extensions, old->root_extensions, sizeof out->root_extensions);
+        lh_memory_std_copy(out->deny_prefixes, old->deny_prefixes, sizeof out->deny_prefixes);
+        out->max_clients = old->max_clients;
+        out->per_ip = old->per_ip;
+        out->requests_per_second = old->requests_per_second;
+        out->timeout_seconds = old->timeout_seconds;
+        out->cpu = old->cpu;
+        out->access_log = old->access_log;
+        out->bytes_per_second = old->bytes_per_second;
+        out->max_file_bytes = old->max_file_bytes;
+        return authum_bool_true;
+    }
+    if (lh_math_lt(size, AUTHUM_HTTP_OPTIONS_MIN_SIZE))
+    {
+        return authum_bool_false;
+    }
+    /* Only the caller's bytes are read; fields past them keep the defaults,
+     * and fields of a newer caller that this host does not know are ignored. */
+    lh_memory_std_copy(out, in, lh_math_lt(size, sizeof lh_ptr_deref(out)) ? size
+                                                                         : sizeof lh_ptr_deref(out));
+    out->struct_size = lh_cast_static(authum_u32_t, sizeof lh_ptr_deref(out));
+    return authum_bool_true;
+}
+
 static authum_bool_t
 valid_options(const authum_http_options_t *options)
 {
@@ -47,6 +105,9 @@ valid_options(const authum_http_options_t *options)
         !terminated(options->allow_extensions, sizeof options->allow_extensions) ||
         !terminated(options->root_extensions, sizeof options->root_extensions) ||
         !terminated(options->deny_prefixes, sizeof options->deny_prefixes) ||
+        !terminated(options->trusted_proxies, sizeof options->trusted_proxies) ||
+        lh_math_lt(options->per_ip_pending, 1) || lh_math_gt(options->per_ip_pending, 64) ||
+        lh_math_gt(options->access_log, 2) ||
         !lh_ptr_deref(options->allow_extensions))
     {
         return authum_bool_false;
@@ -66,14 +127,48 @@ valid_options(const authum_http_options_t *options)
 }
 
 static authum_http_server_t *
-service_open(authum_ptr context, const authum_http_options_t *options, authum_char_t *error,
+service_open_read(authum_http_owner_t *owner, const authum_http_options_t *options,
+                  authum_char_t *error, authum_usize_t error_size);
+
+static authum_http_server_t *
+service_open(authum_ptr context, const authum_http_options_t *caller, authum_char_t *error,
              authum_usize_t error_size)
 {
-    authum_http_owner_t *owner = context;
+    authum_unused(authum_http_host_reap());
     if (!error)
     {
         error_size = 0;
     }
+    /* The caller's struct may be from an older module: read it into the
+     * current layout (kept off the stack: the struct is about 70 KiB). */
+    authum_http_options_t *options = authum_memory_alloc_zero(1, sizeof lh_ptr_deref(options));
+    if (!options)
+    {
+        if (error && error_size)
+        {
+            authum_unused(lh_str_ptr_format_cstr(error, error_size, "HTTP options allocation failed"));
+        }
+        return authum_null;
+    }
+    authum_http_server_t *server = authum_null;
+    if (authum_http_options_read(caller, options))
+    {
+        server = service_open_read(context, options, error, error_size);
+    }
+    else if (error && error_size)
+    {
+        authum_unused(lh_str_ptr_format_cstr(error, error_size,
+                                             "HTTP options struct_size %u is not supported",
+                                             caller ? caller->struct_size : 0u));
+    }
+    authum_memory_free(options);
+    return server;
+}
+
+static authum_http_server_t *
+service_open_read(authum_http_owner_t *owner, const authum_http_options_t *options,
+                  authum_char_t *error, authum_usize_t error_size)
+{
     if (!owner || !valid_options(options))
     {
         if (error && error_size)
@@ -96,13 +191,11 @@ service_open(authum_ptr context, const authum_http_options_t *options, authum_ch
         }
         return authum_null;
     }
-    authum_http_server_t *server = authum_http_server_create(options, error, error_size);
+    authum_http_server_t *server = authum_http_server_create(options, owner->tag, error, error_size);
     if (server)
     {
         server->next = owner->head;
         owner->head = server;
-        /* The access log says which module served the request. */
-        server->tag = owner->tag;
     }
     return server;
 }
@@ -171,6 +264,7 @@ authum_http_host_init(authum_http_owner_t *owner, authum_http_service_t *service
                                           .drain = service_drain,
                                           .memory_usage = service_memory};
     owner->head = authum_null;
+    owner->tag = authum_null;
     service->ops = lh_addr_of(ops);
     service->owner = owner;
 }
@@ -185,4 +279,5 @@ authum_http_host_drop_owner(authum_http_owner_t *owner)
             service_close(owner, owner->head);
         }
     }
+    authum_unused(authum_http_host_reap());
 }

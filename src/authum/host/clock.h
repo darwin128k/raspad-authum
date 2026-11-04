@@ -2,7 +2,7 @@
 #define AUTHUM_HOST_CLOCK_H
 
 #include <authum/clock.h>
-#include <lh/util/ptr.h>
+#include <lh/core/util/ptr.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **HTTP server hardening (from fastdl).** `authum_http_options_t` gained
+  `struct_size` (filled by `authum_http_options_init`; the host reads only that
+  many bytes, defaults the rest, and still reads the older layout without it),
+  `trusted_proxies` (IPv4 addresses or CIDR blocks whose X-Forwarded-For is
+  believed: the rightmost untrusted hop is the client) and `per_ip_pending`
+  (unfinished requests one address may hold; slow clients are evicted). Paths
+  are refused before the filesystem sees them when they leave the root, are
+  encoded `..`, or use a Windows 8.3 short name (`NAME~1`). The access log has
+  levels (`0` off, `1` one line per request plus a per-second summary of
+  refusals, `2` also connects). Unload waits at most 1 s for the worker: one
+  stuck in a file call (a source on a network share) is left to finish, frees
+  its memory itself, and the game thread joins it later. The stop, the give-up
+  and the later join are `lh_exec_loop_try_stop` / `_try_abandon` /
+  `_try_reap`; the reaper no longer waits a grace period.
+
+- **Background tasks run on `lh/exec`.** Each module owner gets an
+  `lh_exec_thread_t` (its tasks in order) and an `lh_exec_mailbox_t` (at most 64
+  outstanding, finished ones held for the game frame) instead of the removed
+  `lh_os_worker_t`. The module API (`authum_tasks_submit`) and its laws are
+  unchanged: `complete` and `destroy` run on the game thread, `destroy` exactly
+  once; unload cancels what has not started, waits for the running task and
+  runs the remaining destructors without `complete`. A destructor that submits
+  again during unload is refused, as before.
+
+- **Moved to lh 0.4.0 (`8673c267`).** lh's data bricks live under
+  `lh/core/` and the database drivers under `lh/os/sql/`: every
+  `#include <lh/...>` and every `lh_sql_mysql_*` / `lh_sql_sqlite_*` name
+  follows (`lh_os_sql_*`, `lh_os_sql_sqlite_open`, `lh_os_sql_mysql_open`).
+  lh's runtime slots are read through `lh_runtime_<slot>_get_mut()`.
+- **Authum fills lh's runtime slots.** lh's core now uses no C library and
+  starts with empty slots, and every image built with Authum carries its own lh
+  copy. The new `<authum/runtime.h>` (`authum_runtime_install`) binds
+  `malloc` / `free` / `realloc`, `abort` and a `stderr` logger; authum_client
+  runs it from a load-time constructor in every image — authum.so and each
+  module — and its link options always pull that object in. The host also
+  calls it first thing in `GiveFnptrsToDll`. `authum_log_deinit` falls back to
+  that `stderr` logger (`authum_runtime_use_stderr_logger`) instead of lh's
+  removed `lh_runtime_logger_stderr`. The test runner (`authum_test_main`, lh's
+  `test/src/main.cpp`) now links lh to fill the slots before any test.
+
 ### Added
 
 - `authum_cstr_format_u64` and `authum_cstr_format_i64`: a 64-bit number as

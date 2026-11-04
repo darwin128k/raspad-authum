@@ -4,7 +4,7 @@
  */
 
 #include <authum/command/def.h>
-#include <lh/assert/runtime.h>
+#include <lh/core/assert/runtime.h>
 
 const authum_char_t *
 authum_command_def_get_name(const authum_command_def_t *self)
