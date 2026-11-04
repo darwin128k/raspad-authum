@@ -318,6 +318,44 @@ scheduler_check(authum_bool_t reentrant, const authum_usize_t drop_order[3])
     EXPECT_EQ(test.count, expected);
 }
 
+/* Reads what sql_work left in the connection: only the same connection has it. */
+authum_bool_t
+sql_read(authum_sql_t *db, void *user)
+{
+    sql_case_t *test = static_cast<sql_case_t *>(user);
+    authum_sql_stmt_t stmt;
+    if (!authum_sql_prepare(db, &stmt, "SELECT value FROM t"))
+    {
+        return authum_bool_false;
+    }
+    const authum_bool_t row = authum_sql_stmt_step_row(&stmt);
+    if (row)
+    {
+        test->value = authum_sql_stmt_column_i32(&stmt, 0);
+    }
+    authum_sql_stmt_finalize(&stmt);
+    return row;
+}
+
+static std::atomic<int> exits;
+static thread_id_t exit_thread;
+static thread_id_t work_thread;
+
+void
+record_exit(void *user)
+{
+    authum_unused(user);
+    exits.fetch_add(1);
+    exit_thread = thread_id();
+}
+
+void
+record_work(void *user)
+{
+    authum_unused(user);
+    work_thread = thread_id();
+}
+
 static int owner;
 static authum_tasks_t tasks;
 static authum_host_t host;
@@ -456,6 +494,67 @@ TEST_F(authum_tasks, sql_connection_failure_still_disposes_payload)
     EXPECT_FALSE(sql.connected);
     EXPECT_FALSE(sql.success);
     EXPECT_EQ(destroyed, 1);
+}
+
+/* Two jobs on one module share its task thread's connection: a :memory: table
+   made by the first is there for the second. */
+TEST_F(authum_tasks, sql_jobs_share_the_thread_connection)
+{
+    sql_case_t first = {};
+    sql_case_t second = {};
+    ASSERT_TRUE(
+        authum_sql_thread_query(&host, &connection, sql_work, sql_complete, authum_null, &first));
+    ASSERT_TRUE(
+        authum_sql_thread_query(&host, &connection, sql_read, sql_complete, authum_null, &second));
+    pump_until(2);
+    EXPECT_TRUE(first.success);
+    EXPECT_TRUE(second.success);
+    EXPECT_EQ(second.value, 42);
+}
+
+/* A job for another connection closes the kept one and opens its own. */
+TEST_F(authum_tasks, sql_another_connection_reconnects)
+{
+    sql_case_t first = {};
+    sql_case_t second = {};
+    ASSERT_TRUE(
+        authum_sql_thread_query(&host, &connection, sql_work, sql_complete, authum_null, &first));
+    authum_sql_connection_t other = connection;
+    other.host = "another";
+    ASSERT_TRUE(
+        authum_sql_thread_query(&host, &other, sql_read, sql_complete, authum_null, &second));
+    pump_until(2);
+    EXPECT_TRUE(first.success);
+    EXPECT_TRUE(second.connected);
+    EXPECT_FALSE(second.success); /* a fresh :memory: database has no table */
+}
+
+/* Calls for the thread's end run on the module's task thread, once each, when
+   the owner is dropped. */
+TEST_F(authum_tasks, at_exit_runs_once_on_the_task_thread_at_drop)
+{
+    exits = 0;
+    ASSERT_TRUE(authum_tasks_at_exit(&tasks, record_exit, authum_null));
+    ASSERT_TRUE(authum_tasks_at_exit(&tasks, record_exit, authum_null)); /* same: one */
+    ASSERT_TRUE(authum_tasks_submit(&tasks, record_work, complete, authum_null, authum_null));
+    pump_until(1);
+    EXPECT_EQ(exits.load(), 0);
+    authum_tasks_host_drop_owner(&owner);
+    EXPECT_EQ(exits.load(), 1);
+    EXPECT_EQ(exit_thread, work_thread);
+    EXPECT_NE(exit_thread, main_thread);
+}
+
+TEST_F(authum_tasks, at_exit_refuses_null_and_past_its_limit)
+{
+    EXPECT_FALSE(authum_tasks_at_exit(&tasks, authum_null, authum_null));
+    EXPECT_FALSE(authum_tasks_at_exit(authum_null, record_exit, authum_null));
+    static int users[9];
+    for (int i = 0; i < 8; ++i)
+    {
+        EXPECT_TRUE(authum_tasks_at_exit(&tasks, record_exit, &users[i]));
+    }
+    EXPECT_FALSE(authum_tasks_at_exit(&tasks, record_exit, &users[8]));
 }
 
 class authum_tasks_drop_order : public authum_tasks, public ::testing::WithParamInterface<unsigned>

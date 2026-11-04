@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Asynchronous SQL keeps one connection per task thread.**
+  `authum_sql_thread_query` no longer opens and closes a connection for every
+  job: the first job on a module's task thread opens it, later jobs for the
+  same connection reuse it (errors cleared between jobs; a closed or
+  different connection is reopened), and when the module unloads the host
+  closes it on that thread and ends the MySQL client's thread state
+  (`mysql_thread_end`). New in the task service (module ABI 3.0.0):
+  `authum_tasks_at_exit(tasks, fn, user)` — calls run on the module's task
+  thread after its last task, before the module's stop. A host without it
+  gets the old one-connection-per-job behaviour.
+
 - **HTTP server hardening (from fastdl).** `authum_http_options_t` gained
   `struct_size` (filled by `authum_http_options_init`; the host reads only that
   many bytes, defaults the rest, and still reads the older layout without it),

@@ -11,6 +11,10 @@
  *
  * Authum's task has one-argument callbacks; a record per submission carries them
  * next to the LH task it is submitted as, and is freed by its own `destroy`.
+ *
+ * A module may ask for calls on its task thread when that thread ends
+ * (authum_tasks_at_exit): they are the close of the thread's LH context, so
+ * they run on that thread after its last task, during the owner's drop.
  */
 
 #include <authum/host/tasks.h>
@@ -29,22 +33,36 @@ typedef struct authum_task_record
     authum_ptr user;
 } authum_task_record_t;
 
-/** One owner: its executor thread and its mailbox. Allocated, so it never moves. */
+enum
+{
+    /** Calls one owner may ask to run when its task thread ends. */
+    authum_task_exit_max = 8,
+
+    authum_task_worker_capacity = 64,
+    authum_task_completion_budget = 16,
+    /** One wait of the unload's stop; it waits again until the running task returns. */
+    authum_task_stop_wait_ms = 1000
+};
+
+/** A call for the end of an owner's task thread. */
+typedef struct authum_task_exit
+{
+    authum_task_fn fn;
+    authum_ptr user;
+} authum_task_exit_t;
+
+/** One owner: its executor thread, its mailbox and the calls for the thread's end.
+ *  Allocated, so it never moves. The calls are written on the game thread and read
+ *  by the task thread only after its stop (ordered by the executor's mutex). */
 typedef struct authum_task_worker
 {
     struct authum_task_worker *next;
     authum_ptr owner;
     lh_exec_thread_t thread;
     lh_exec_mailbox_t mailbox;
+    authum_task_exit_t exits[authum_task_exit_max];
+    authum_usize_t exit_count;
 } authum_task_worker_t;
-
-enum
-{
-    authum_task_worker_capacity = 64,
-    authum_task_completion_budget = 16,
-    /** One wait of the unload's stop; it waits again until the running task returns. */
-    authum_task_stop_wait_ms = 1000
-};
 
 /* Both pointers are null when empty; a nonempty tail always has next == null. */
 static authum_task_worker_t *m_workers;
@@ -83,6 +101,18 @@ authum_task_record_destroy(lh_ptr user)
     authum_memory_free(record);
 }
 
+/** The close of an owner thread's context: the module's calls for the thread's end. */
+static void
+authum_task_worker_exit(lh_ptr user, lh_ptr local)
+{
+    authum_task_worker_t *w = user;
+    (void)local;
+    for (authum_usize_t i = 0; lh_math_lt(i, w->exit_count); i = lh_math_add_one(i))
+    {
+        w->exits[i].fn(w->exits[i].user);
+    }
+}
+
 /** The owner's worker, started on first use; null when it cannot be made. */
 static authum_task_worker_t *
 authum_task_worker_get(authum_ptr owner)
@@ -100,7 +130,8 @@ authum_task_worker_get(authum_ptr owner)
     {
         return authum_null;
     }
-    const lh_exec_context_t context = lh_exec_context_initializer(lh_null, lh_null, lh_null);
+    const lh_exec_context_t context =
+        lh_exec_context_initializer(lh_null, authum_task_worker_exit, w);
     lh_exec_mailbox_init(lh_addr_of(w->mailbox), authum_task_worker_capacity);
     if (!lh_exec_thread_try_start(lh_addr_of(w->thread), lh_addr_of(context)))
     {
@@ -148,6 +179,38 @@ authum_tasks_host_submit(authum_ptr owner, authum_task_fn work, authum_task_fn c
         authum_memory_free(record);
         return authum_bool_false;
     }
+    return authum_bool_true;
+}
+
+/**
+ * @brief Register fn(user) for the end of the owner's task thread (deduplicated).
+ */
+authum_bool_t
+authum_tasks_host_at_exit(authum_ptr owner, authum_task_fn fn, authum_ptr user)
+{
+    if (!owner || !fn)
+    {
+        return authum_bool_false;
+    }
+    authum_task_worker_t *w = authum_task_worker_get(owner);
+    if (!w)
+    {
+        return authum_bool_false;
+    }
+    for (authum_usize_t i = 0; lh_math_lt(i, w->exit_count); i = lh_math_add_one(i))
+    {
+        if (lh_math_eq(w->exits[i].fn, fn) && lh_math_eq(w->exits[i].user, user))
+        {
+            return authum_bool_true;
+        }
+    }
+    if (lh_math_ge(w->exit_count, authum_task_exit_max))
+    {
+        return authum_bool_false;
+    }
+    w->exits[w->exit_count].fn = fn;
+    w->exits[w->exit_count].user = user;
+    w->exit_count = lh_math_add_one(w->exit_count);
     return authum_bool_true;
 }
 
@@ -257,6 +320,7 @@ authum_tasks_host_drop_owner(authum_ptr owner)
 const authum_task_ops_t *
 authum_tasks_host_ops(void)
 {
-    static const authum_task_ops_t ops = {.submit = authum_tasks_host_submit};
+    static const authum_task_ops_t ops = {.submit = authum_tasks_host_submit,
+                                          .at_exit = authum_tasks_host_at_exit};
     return lh_addr_of(ops);
 }

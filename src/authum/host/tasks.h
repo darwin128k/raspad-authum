@@ -12,6 +12,12 @@ AUTHUM_EXTERN_C_BEGIN
 const authum_task_ops_t lh_ptr_deref(authum_tasks_host_ops(void));
 
 /**
+ * @brief Register a call for the end of the owner's task thread (authum_tasks_at_exit).
+ */
+authum_bool_t
+authum_tasks_host_at_exit(authum_ptr owner, authum_task_fn fn, authum_ptr user);
+
+/**
  * @brief Deliver a bounded batch of completions on the game thread.
  */
 void
