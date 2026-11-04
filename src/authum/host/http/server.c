@@ -3,7 +3,6 @@
 #include <authum/memory.h>
 #include <lh/os/net.h>
 #include <lh/os/system.h>
-#include <lh/os/thread.h>
 #include <lh/core/runtime/logger.h>
 
 void

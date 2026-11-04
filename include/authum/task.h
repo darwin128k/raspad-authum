@@ -16,8 +16,11 @@ struct authum_task_ops
 {
     authum_bool_t (*submit)(authum_ptr owner, authum_task_fn work, authum_task_fn complete,
                             authum_task_fn destroy, authum_ptr user);
+    /** Run fn(user) on the owner's task thread when it ends (see authum_tasks_at_exit). */
+    authum_bool_t (*at_exit)(authum_ptr owner, authum_task_fn fn, authum_ptr user);
 };
 typedef struct authum_task_ops authum_task_ops_t;
+
 struct authum_tasks
 {
     const authum_task_ops_t *ops;
@@ -40,6 +43,16 @@ AUTHUM_EXTERN_C_BEGIN
 authum_bool_t
 authum_tasks_submit(const authum_tasks_t *tasks, authum_task_fn work, authum_task_fn complete,
                     authum_task_fn destroy, authum_ptr user);
+
+/** Main-thread registration: run fn(user) on this module's task thread after its
+ * last task, when the module unloads (before its stop callback). For what the
+ * work keeps per thread: an open database connection, mysql_thread_end. The same
+ * fn and user registered again is one registration. At most 8 per module.
+ * Returns false when fn is null, the host has no such service or the limit is
+ * reached; the thread starts here if it was not running yet.
+ */
+authum_bool_t
+authum_tasks_at_exit(const authum_tasks_t *tasks, authum_task_fn fn, authum_ptr user);
 
 AUTHUM_EXTERN_C_END
 
