@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 
 #include <lh/os/thread.h>
-#include <lh/util/str/ptr.h>
+#include <lh/core/util/str/ptr.h>
 
 static char g_trace[64];
 static char g_a[] = "a";

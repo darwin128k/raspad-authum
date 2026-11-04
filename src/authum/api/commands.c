@@ -1,5 +1,5 @@
 #include <authum/commands.h>
-#include <lh/util/ptr.h>
+#include <lh/core/util/ptr.h>
 
 #include <authum/null.h>
 

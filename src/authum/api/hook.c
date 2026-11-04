@@ -1,6 +1,6 @@
 #include <authum/hook.h>
 
-#include <lh/math/ops.h>
+#include <lh/core/math/ops.h>
 
 /** The name of each point, in the order of ::authum_hook_point_t. */
 static const authum_char_t *const g_hook_point_names[authum_hook_point_count] = {

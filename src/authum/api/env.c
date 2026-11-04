@@ -1,5 +1,5 @@
 #include <authum/env.h>
-#include <lh/char/map.h>
+#include <lh/core/char/map.h>
 #include <lh/os/fs/file.h>
 #include <lh/os/system/fs/path.h>
 

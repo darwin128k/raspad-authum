@@ -7,6 +7,14 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 
 ## LH (first)
 
+- [ ] **Finish decomposing compression state machines.** The streaming DEFLATE
+  and gzip readers delegate individual phases to public tested operations. The
+  gzip header feed and whole-buffer DEFLATE decoder still combine several
+  transitions; split them into independently documented and tested bricks. The
+  DEFLATE reader requests compressed source bytes individually and retries
+  incomplete dynamic-table parsing; measure and improve the shared roots before
+  optimizing call sites.
+
 - [ ] **Recursive traversal has level cycles.**
   Every owning tree in `lh/web` has them. The node files (`json`, `html`, `js`):
   `clear` -> `destroy` -> `deinit` -> `clear`. `lh_web_json_reader_read_value` <->
@@ -42,11 +50,11 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   when it wants one — a desktop program has no use for it. Nothing is removed:
   the player becomes an application built on the transport. The target and the
   cost are in [lib/lh/docs/roadmap.md](../lib/lh/docs/roadmap.md) item 1.
-- [ ] **There is no XML.** `lh/web/html` is an owning tree (node, attribute,
+- [ ] **There is no XML.** `lh/core/web/html` is an owning tree (node, attribute,
   escaping, names, writer), but there is no XML in lh at all. What is wanted is an entity (the
   data) and a node (the same entity with the operations), with HTML as XML
   under different tagging rules. Roadmap item 2.
-- [ ] **There is no JS engine.** Scripts are built as a tree (`lh/web/js` node
+- [ ] **There is no JS engine.** Scripts are built as a tree (`lh/core/web/js` node
   and writer; `src/lh/ui/web/player/page.c` builds the player with it) and
   only serialized to text; nothing in lh runs them.
   The engine is QuickJS (C, MIT, no dependencies, ES2025; MuJS and Duktape are
@@ -54,8 +62,8 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   loaded from outside: its core (`quickjs.c`, `libregexp`, `libunicode`,
   `dtoa`) sits in `lib/` as third-party code, and `quickjs-libc.c` is not used.
   Memory goes through `JS_NewRuntime2` to the LH runtime allocator; output,
-  files, time and the module loader are LH bricks (`lh/os/*`, `lh/str/*`,
-  `lh_timer`). The rest of lh sees one brick of its own (`lh/web/js/engine`)
+  files, time and the module loader are LH bricks (`lh/os/*`, `lh/core/str/*`,
+  `lh_timer`). The rest of lh sees one brick of its own (`lh/core/web/js/engine`)
   that takes script text or precompiled bytecode (`JS_WriteObject` /
   `JS_ReadObject`), so an application serializes to text and still runs on a
   bytecode machine. The core's own libc calls go through LH wrappers too (owner,
@@ -132,21 +140,21 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 - [ ] **The OS is the whole, the parts sit under it today** (AGENTS.md 0.1.1).
   The portable filesystem, network, threads, windows live under `lh/os/*`
   (`lh/os/fs/file.h`, `lh/os/net/...`); by the owner's concept they are parts
-  (`lh/fs/...` beside the pure data already there) and `lh/os` assembles them.
+  (`lh/core/fs/...` beside the pure data already there) and `lh/os` assembles them.
   A large rename: plan the target tree with the owner first.
-- [ ] **`lh/sql/mysql/api.h`:** 17 function-type typedefs, the table struct and
+- [ ] **`lh/os/sql/mysql/api.h`:** 17 function-type typedefs, the table struct and
   its loader in one header (one file — one entity); `options` and
-  `thread_end` declared by hand beside `lh_sql_mysql_api_fields`. The name
+  `thread_end` declared by hand beside `lh_os_sql_mysql_api_fields`. The name
   `api` is to be discussed with the owner.
 - [ ] **LH does not use its own bricks** (AGENTS.md section 0). Done: 131
-  character literals → `lh/char/map.h` names (tests keep literals as data);
+  character literals → `lh/core/char/map.h` names (tests keep literals as data);
   `lh_ui_web_js_put_s64` → `lh_str_ptr_format_sllong`; the HTTP parser →
   `lh/char`, `lh_str_view_from_offset`, `lh_str_view_trim`,
   `lh_str_ptr_contains_char`. Left: sweep for hand-written digit loops,
   `switch` sets, min/max ternaries, open-coded trims and parses that have a
   brick; libc `str*` / `mem*` calls in portable code.
 - [ ] **Audit for monoliths.** Split heavy functions into public bricks
-  (decompose, delegate). Done: `lh/memory/allocator`. 64 functions exceed 60
+  (decompose, delegate). Done: `lh/core/memory/allocator`. 64 functions exceed 60
   lines, 13 exceed 100. Worst: `lh_ui_web_player_page_create_play` (446, `ui/web/player/page.c`; also
   `create_fit` 350, `create_emit` 310),
   `lh_os_system_window_open` (211, posix), `lh_os_system_win_window_proc` (207),
@@ -188,7 +196,7 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 - [ ] **`_v` for the safe forms** of ui setters and getters (a check or a side effect).
   The rule is the owner's (2026-10-30): the fast form has no suffix and does not
   check, the validating form has `_v`; `_unsafe` is gone from LH (the four pointer
-  arithmetic macros of `lh/util/ptr.h` are now `lh_ptr_{add,sub}[_by_offset][_v]`).
+  arithmetic macros of `lh/core/util/ptr.h` are now `lh_ptr_{add,sub}[_by_offset][_v]`).
   Left: the lower-layer collisions the tools report — `lh_datetime_get_date` /
   `_get_time`, `lh_io_stream_get_reader` / `_writer`, `lh_io_dgram_*`,
   `lh_net_*_get_ip`, `lh_os_fs_file_set_path` take an out parameter or a pointer
@@ -213,6 +221,12 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   cleanup completion criterion; retain manual control-flow review.
 
 ## Authum (after LH)
+
+- [ ] **`host/tasks.c` — сырые поля и static** (2026-11-04, шаг 4b исполнения).
+  Файл переехал на `lh/exec`, но сохранил стиль соседей (`host/threads.c`):
+  `authum_task_worker_t` / `authum_task_record_t` трогаются напрямую, колбэки и
+  поиск владельца — `static`. По AGENTS нужны геттеры/сеттеры уровня 1 и
+  публичные кирпичи; сделать вместе с остальным `host/`.
 
 - [ ] **Кто это сделал: выходы без метки источника** (аудит 2026-10-30).
   Логи и команды — эталон: owner → канал → tag, всё через одну точку
@@ -286,7 +300,7 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
      backends, UTC ↔ local on top; `lh_os_timestamp_now` → `_try_get_now`.
   2. [x] Log files and queue on LH: `lh/os/logger/{record,sink,queue,daily}`; Authum's
      `host/logs/writer.c` and `files.c` are gone, `host/logs.c` sends records.
-     `host/logs.c` has no libc call left (`lh/str/format`, `lh/os/env`, the runtime
+     `host/logs.c` has no libc call left (`lh/core/str/format`, `lh/os/env`, the runtime
      logger).
   3. [x] HTTP on LH handles and bricks: one transport for every OS, the "Linux only"
      `host/http_windows.c` stub is gone, its tests run on Windows too. Static files are
@@ -296,11 +310,11 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
      → LH bricks; a missing brick is added to LH first.
      `tools/check-native.py` now exists and reports the debt: **0 places**
      (the last 15 were closed 2026-10-30, all in `gamedll/`): 9 string calls
-     (`std::strlen` / `std::strcmp` / `std::strchr` → `lh/str/*`), 3 clock calls
+     (`std::strlen` / `std::strcmp` / `std::strchr` → `lh/core/str/*`), 3 clock calls
      (`lh/os/timestamp.h`), 2 platform branches (the LH compiler / OS macros),
      1 `getenv` (`lh/os/env.h`).
      The format, the files and the headers are done: `snprintf` →
-     `lh/str/format/text.h` (`lh_str_ptr_format_cstr`, `authum_cstr_format`), the
+     `lh/core/str/format/text.h` (`lh_str_ptr_format_cstr`, `authum_cstr_format`), the
      file calls → `lh/os/fs/file.h` (`api/cfg.c`, `api/env.c`, `gamedll/game.cpp`),
      the forbidden headers are gone. Done in this order: clock/env → the strings
      of `gamedll/`.
@@ -370,7 +384,7 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 - [ ] **Rename the sandbox** (item 3 of the next task). It is hierarchical memory
   ownership with destructors on the LH ownership tree, not isolation, and the name
   misleads. Candidates: `arena`, `region`, `scope`; the owner decides.
-- [ ] Authum has no named-character facade like `lh/char/map.h`; module code
+- [ ] Authum has no named-character facade like `lh/core/char/map.h`; module code
   (`examples/chatfilter/chatfilter.c`) still compares bare literals.
 
 - [ ] **Authum is a transparent facade over LH.** Inventory `include/authum/`:

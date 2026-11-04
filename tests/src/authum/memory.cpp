@@ -3,8 +3,8 @@
 #include <authum/null.h>
 #include <authum/unused.h>
 #include <gtest/gtest.h>
-#include <lh/runtime/allocator.h>
-#include <lh/memory/std.h>
+#include <lh/core/runtime/allocator.h>
+#include <lh/core/memory/std.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -56,16 +56,16 @@ class authum_memory : public ::testing::Test
         allocations = releases = resizes = 0;
         fail = authum_bool_false;
         block = authum_null;
-        lh_memory_allocator_assign(&saved_allocator, lh_runtime_allocator());
-        lh_memory_allocator_init(lh_runtime_allocator(), allocate, release);
-        lh_memory_allocator_set_realloc_cb(lh_runtime_allocator(), resize);
+        lh_memory_allocator_assign(&saved_allocator, lh_runtime_allocator_get_mut());
+        lh_memory_allocator_init(lh_runtime_allocator_get_mut(), allocate, release);
+        lh_memory_allocator_set_realloc_cb(lh_runtime_allocator_get_mut(), resize);
     }
 
     void
     TearDown() override
     {
         authum_memory_free(block);
-        lh_memory_allocator_assign(lh_runtime_allocator(), &saved_allocator);
+        lh_memory_allocator_assign(lh_runtime_allocator_get_mut(), &saved_allocator);
     }
 };
 
@@ -127,7 +127,7 @@ TEST_F(authum_memory, resize_without_callback_copies_and_releases)
     block = static_cast<authum_byte_t *>(authum_memory_alloc(64));
     ASSERT_NE(block, authum_null);
     lh_memory_std_copy(block, "keep", 5);
-    lh_memory_allocator_set_realloc_cb(lh_runtime_allocator(), lh_null);
+    lh_memory_allocator_set_realloc_cb(lh_runtime_allocator_get_mut(), lh_null);
     auto *grown = static_cast<authum_byte_t *>(authum_memory_realloc(block, 64, 96));
     ASSERT_NE(grown, authum_null);
     block = grown;

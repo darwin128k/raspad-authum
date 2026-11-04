@@ -10,8 +10,8 @@
 #include <authum/file.h>
 #include <authum/memory.h>
 
-#include <lh/cast/const.h>
-#include <lh/char/map.h>
+#include <lh/core/cast/const.h>
+#include <lh/core/char/map.h>
 #include <lh/os/fs/file.h>
 #include <lh/os/system/fs/path.h>
 

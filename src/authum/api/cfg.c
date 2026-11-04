@@ -6,12 +6,12 @@
 #include <authum/cfg.h>
 #include <authum/memory.h>
 #include <authum/unused.h>
-#include <lh/cast/const.h>
-#include <lh/char/map.h>
-#include <lh/memory/std.h>
+#include <lh/core/cast/const.h>
+#include <lh/core/char/map.h>
+#include <lh/core/memory/std.h>
 #include <lh/os/fs/file.h>
 #include <lh/os/system/fs/path.h>
-#include <lh/str/split/line.h>
+#include <lh/core/str/split/line.h>
 
 /** The bytes one read of the config file brings in. */
 enum

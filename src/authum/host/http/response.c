@@ -1,6 +1,6 @@
 #include <authum/host/http/internal.h>
-#include <lh/char/map.h>
-#include <lh/str/format/ullong.h>
+#include <lh/core/char/map.h>
+#include <lh/core/str/format/ullong.h>
 
 void
 authum_http_response_set(authum_http_client_t *client, authum_i32_t code,

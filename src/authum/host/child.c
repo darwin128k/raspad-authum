@@ -1,7 +1,7 @@
 #include <authum/host/commands.h>
 #include <authum/memory.h>
 #include <authum/unused.h>
-#include <lh/memory/std.h>
+#include <lh/core/memory/std.h>
 #include <authum/host/errors.h>
 #include <authum/host/events.h>
 #include <authum/host/hooks.h>
@@ -17,7 +17,7 @@
 #include <lh/os.h>
 #include <lh/os/error/code.h>
 #include <lh/os/system/fs/path.h>
-#include <lh/runtime/allocator.h>
+#include <lh/core/runtime/allocator.h>
 
 typedef struct authum_child_paths
 {

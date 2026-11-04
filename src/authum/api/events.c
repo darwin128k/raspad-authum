@@ -1,7 +1,7 @@
 #include <authum/events.h>
 #include <authum/null.h>
 
-#include <lh/str.h>
+#include <lh/core/str.h>
 
 const authum_events_ops_t *
 authum_events_get_ops(const authum_events_t *self)

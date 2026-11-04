@@ -143,13 +143,13 @@ runs on. It started at **143** and stands at **0**:
 
 | what | count | the brick that replaced it |
 |---|---|---|
-| `snprintf` / `vsnprintf` | 33 | `lh_str_ptr_format_cstr` / `..._cstr_v` (`lh/str/format/text.h`) |
+| `snprintf` / `vsnprintf` | 33 | `lh_str_ptr_format_cstr` / `..._cstr_v` (`lh/core/str/format/text.h`) |
 | forbidden headers | 23 | `stdio.h` 14, `stdlib.h` 8, `string.h` 1 |
 | file calls | 9 | `lh/os/system/fs/file.h` (`open`, `read`, `write`, `remove`) |
-| libc string calls | 9 | `lh/str/ptr.h` (`lh_str_ptr_len`, `..._equals`, `..._find_of_char`) |
+| libc string calls | 9 | `lh/core/str/ptr.h` (`lh_str_ptr_len`, `..._equals`, `..._find_of_char`) |
 | clock calls | 3 | `lh/os/tick.h`, `lh/os/timestamp.h` |
 | platform branches | 2 | the backend decides, not the caller |
-| numeric parses | 2 | `lh/str/parse/*` |
+| numeric parses | 2 | `lh/core/str/parse/*` |
 | `getenv` | 1 | `lh/os/env.h` |
 
 Every brick the table names already exists in lh — nothing had to be written

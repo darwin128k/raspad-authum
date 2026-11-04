@@ -13,8 +13,17 @@ enum
     AUTHUM_HTTP_PATH_CAPACITY = 4096
 };
 
+/**
+ * Options for one HTTP server. Fill them with ::authum_http_options_init, which
+ * also sets @c struct_size: the host reads only that many bytes and uses its
+ * defaults for fields a smaller (older) struct does not have. A struct from
+ * before @c struct_size existed (it starts with the bind text) is read in its
+ * old layout, so modules built against it keep working.
+ */
 typedef struct authum_http_options
 {
+    /** sizeof the caller's struct; set by ::authum_http_options_init. */
+    authum_u32_t struct_size;
     authum_char_t bind[64];
     authum_i32_t port;
     authum_char_t sources[AUTHUM_HTTP_MAX_SOURCES][AUTHUM_HTTP_PATH_CAPACITY];
@@ -28,9 +37,19 @@ typedef struct authum_http_options
     authum_i32_t requests_per_second;
     authum_i32_t timeout_seconds;
     authum_i32_t cpu;
+    /** 0 off; 1 one line per request plus a per-second summary of refusals;
+     *  2 also connect and request-start lines. */
     authum_bool_t access_log;
     authum_u64_t bytes_per_second;
     authum_u64_t max_file_bytes;
+    /** Space- or comma-separated IPv4 addresses or CIDR blocks of trusted
+     *  reverse proxies; empty trusts none. Only for a trusted peer is the
+     *  client taken from X-Forwarded-For (the rightmost untrusted hop). */
+    authum_char_t trusted_proxies[512];
+    /** Unfinished requests (connected, request not yet complete) one address
+     *  may hold at once. */
+    authum_i32_t per_ip_pending;
+    /* New fields go here, at the end; the host defaults them for smaller structs. */
 } authum_http_options_t;
 
 typedef struct authum_http_server authum_http_server_t;

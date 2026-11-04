@@ -11,11 +11,11 @@
 #    include <stdatomic.h>
 #endif
 #include <lh/os/wake.h>
-#include <lh/os/loop.h>
+#include <lh/exec/loop.h>
 #include <lh/os/net/socket.h>
 #include <lh/os/system/fs/file.h>
-#include <lh/str/format/text.h>
-#include <lh/util/str/ptr.h>
+#include <lh/core/str/format/text.h>
+#include <lh/core/str/view.h>
 #include <authum/unused.h>
 
 enum
@@ -27,8 +27,54 @@ enum
     AUTHUM_HTTP_LOG_CAPACITY = 256,
     AUTHUM_HTTP_LOG_LINE_CAPACITY = 768,
     AUTHUM_HTTP_REQUEST_CAPACITY = 8192,
-    AUTHUM_HTTP_RESPONSE_CAPACITY = 512
+    AUTHUM_HTTP_RESPONSE_CAPACITY = 512,
+    /** Longest wait for a complete request head. */
+    AUTHUM_HTTP_HEADER_TIMEOUT_MS = 5000,
+    /** A transfer older than this must average at least the minimum rate. */
+    AUTHUM_HTTP_RATE_GRACE_MS = 300000,
+    AUTHUM_HTTP_MIN_BYTES_PER_SECOND = 4096,
+    /** How long a reader with a partial request waits before its next read. */
+    AUTHUM_HTTP_MIN_STEP_US = 2000,
+    /** Partial reads of one request read at once, never deferred: a request
+     *  sent in a few segments is not slowed, whatever the timer resolution. */
+    AUTHUM_HTTP_FREE_PARTIALS = 4,
+    /** Trusted proxy entries (addresses or CIDR blocks). */
+    AUTHUM_HTTP_MAX_TRUSTED = 16,
+    /** With every slot taken, the oldest unfinished request at least this old
+     *  makes room for a new connection. */
+    AUTHUM_HTTP_EVICT_MIN_AGE_MS = 250,
+    /** Refused-request lines logged per second; the rest are only counted. */
+    AUTHUM_HTTP_REFUSED_LINES_PER_SECOND = 20,
+    /** Longest wait of the owner thread for the worker on stop. */
+    AUTHUM_HTTP_STOP_TIMEOUT_MS = 1000
 };
+
+typedef struct authum_http_orphan authum_http_orphan_t;
+
+/** authum_http_options_t as modules built before struct_size existed pass it.
+ *  Never change: it is what those binaries put in memory. */
+typedef struct authum_http_options_v0
+{
+    authum_char_t bind[64];
+    authum_i32_t port;
+    authum_char_t sources[AUTHUM_HTTP_MAX_SOURCES][AUTHUM_HTTP_PATH_CAPACITY];
+    authum_usize_t source_count;
+    authum_char_t allow_dirs[512];
+    authum_char_t allow_extensions[512];
+    authum_char_t root_extensions[512];
+    authum_char_t deny_prefixes[512];
+    authum_i32_t max_clients;
+    authum_i32_t per_ip;
+    authum_i32_t requests_per_second;
+    authum_i32_t timeout_seconds;
+    authum_i32_t cpu;
+    authum_bool_t access_log;
+    authum_u64_t bytes_per_second;
+    authum_u64_t max_file_bytes;
+} authum_http_options_v0_t;
+
+/** The smallest sized struct: struct_size plus every field of the old layout. */
+#define AUTHUM_HTTP_OPTIONS_MIN_SIZE (__builtin_offsetof(authum_http_options_t, trusted_proxies))
 
 typedef enum authum_http_client_state
 {
@@ -51,6 +97,10 @@ typedef struct authum_http_client
     lh_u64_t remaining;
     authum_i64_t born;
     authum_i64_t progress;
+    /** When a read last left the request incomplete (lh_os_tick_us). */
+    lh_u64_t partial_us;
+    /** Reads that left the request incomplete. */
+    authum_u32_t partials;
     authum_u32_t id;
     authum_u32_t source;
     authum_i32_t status;
@@ -60,6 +110,16 @@ typedef struct authum_http_client
     authum_char_t path[320];
     authum_u32_t port;
     const authum_char_t *close_reason;
+    /** Why the request was refused (access log), or null. */
+    const authum_char_t *reason;
+    /** The peer's address key (network byte order). */
+    authum_u32_t address;
+    /** Counted in its peer's unfinished requests. */
+    authum_bool_t pending;
+    /** The peer is a trusted proxy: the client comes from X-Forwarded-For. */
+    authum_bool_t proxied;
+    /** The proxy the request came through, or empty. */
+    authum_char_t via[AUTHUM_NET_IPV4_TEXT_SIZE];
 } authum_http_client_t;
 
 typedef struct authum_http_peer
@@ -68,8 +128,31 @@ typedef struct authum_http_peer
     authum_bool_t used;
     authum_u32_t active;
     authum_u32_t count;
+    /** Connections of this address whose request has not arrived yet. */
+    authum_u32_t pending;
     authum_i64_t window;
 } authum_http_peer_t;
+
+/** Refusals of the current second, logged as one summary line. */
+typedef struct authum_http_refusals
+{
+    authum_i64_t second;
+    authum_u32_t limit;
+    authum_u32_t pending;
+    authum_u32_t slots;
+    authum_u32_t evicted;
+    authum_u32_t logged;
+    authum_u32_t unlogged;
+} authum_http_refusals_t;
+
+/** A worker loop the owner gave up on (lh_exec_loop_try_abandon), waiting to be
+ *  reaped on the game thread. Allocated with the server, so that an abandon
+ *  never needs memory. */
+struct authum_http_orphan
+{
+    lh_exec_loop_t *loop;
+    authum_http_orphan_t *next;
+};
 
 struct authum_http_server
 {
@@ -77,14 +160,28 @@ struct authum_http_server
     authum_http_options_t options;
     /** The module that owns the server; it names the owner in the access log. */
     const authum_char_t *tag;
+    authum_char_t tag_text[32];
+    authum_u32_t trusted_net[AUTHUM_HTTP_MAX_TRUSTED];
+    authum_u32_t trusted_mask[AUTHUM_HTTP_MAX_TRUSTED];
+    authum_u32_t trusted_count;
+    authum_http_refusals_t refusals;
+    /** Set by a stop that gave up waiting: the worker frees the server when it
+     *  is done unless the owner drops it last (see authum_http_server_destroy). */
+    authum_bool_t abandoned;
+    /** The node the loop is reaped through if the stop gives up on it. */
+    authum_http_orphan_t *orphan;
     lh_os_system_fs_file_handle_t roots[AUTHUM_HTTP_MAX_SOURCES];
     lh_os_system_net_socket_handle_t listener;
     lh_os_wake_t wake;
     /** The worker: a loop that sleeps in poll on the sockets and the wake signal. */
-    lh_os_loop_t *loop;
+    lh_exec_loop_t *loop;
     /** What the next poll watches, and what the last one found ready. */
     lh_os_net_socket_poll_t events[AUTHUM_HTTP_MAX_CLIENTS + 2];
     authum_i64_t last_refill;
+    /** Readers the next poll leaves out because their request is still arriving. */
+    authum_u32_t deferred_readers;
+    /** Microseconds until the first deferred reader is due. */
+    lh_u64_t deferred_due_us;
     double tokens;
     authum_usize_t cursor;
     authum_http_client_t *clients;
@@ -97,10 +194,13 @@ struct authum_http_server
     std::atomic_uint log_read;
     std::atomic_uint log_write;
     std::atomic_uint log_dropped;
+    std::atomic_uint refs;
 #else
     atomic_uint log_read;
     atomic_uint log_write;
     atomic_uint log_dropped;
+    /** Holders of the server: the owner and the worker. */
+    atomic_uint refs;
 #endif
     authum_char_t logs[AUTHUM_HTTP_LOG_CAPACITY][AUTHUM_HTTP_LOG_LINE_CAPACITY];
 };
@@ -109,6 +209,10 @@ AUTHUM_EXTERN_C_BEGIN
 
 authum_i64_t
 authum_http_now_ms(void);
+
+/** Release call of an abandoned worker loop: drops the worker's hold on @p arg. */
+void
+authum_http_worker_release(authum_ptr arg);
 
 void
 authum_http_access_record(authum_http_server_t *s, const authum_http_client_t *c,
@@ -119,18 +223,77 @@ authum_http_access_token(authum_char_t *dst, authum_usize_t capacity, const auth
 void
 authum_http_client_close(authum_http_server_t *s, authum_http_client_t *c);
 
+/** Decode a request target once (%XX, query cut) and apply the publishing
+ *  policy. Writes the relative path to @p out and returns its length, or 0
+ *  with @p reason naming the refusal. */
+authum_usize_t
+authum_http_resource_check(const authum_http_options_t *options, const authum_char_t *url,
+                           authum_usize_t length, authum_char_t *out, authum_usize_t capacity,
+                           const authum_char_t **reason);
+/** Open a checked relative path below @p root. On failure @p reason says why. */
 lh_os_system_fs_file_handle_t
 authum_http_resource_open(lh_os_system_fs_file_handle_t root, const authum_http_options_t *options,
-                          const authum_char_t *url, authum_usize_t length, lh_u64_t *size);
+                          const authum_char_t *path, lh_u64_t *size, const authum_char_t **reason);
 void
 authum_http_response_set(authum_http_client_t *c, authum_i32_t code, const authum_char_t *reason,
                          lh_u64_t size, authum_i32_t head);
 void
-authum_http_request_read(authum_http_client_t *c, const lh_os_system_fs_file_handle_t *roots,
-                         const authum_http_options_t *options);
+authum_http_request_read(authum_http_server_t *s, authum_http_client_t *c, authum_i64_t now);
+
 authum_i32_t
 authum_http_peer_acquire(authum_http_server_t *s, authum_u32_t ip, authum_i64_t now,
                          const authum_http_options_t *options);
+/** Undo one acquire: the connection of @p slot is gone. */
+void
+authum_http_peer_release(authum_http_server_t *s, authum_i32_t slot);
+
+/** Parse options->trusted_proxies; false with @p error on a bad entry. */
+authum_bool_t
+authum_http_trusted_parse(authum_http_server_t *s, authum_char_t *error, authum_u32_t error_size);
+
+/** Whether an address key (network byte order) belongs to a trusted proxy. */
+authum_bool_t
+authum_http_trusted(const authum_http_server_t *s, authum_u32_t address);
+
+/** The client of a trusted proxy's request: the rightmost untrusted
+ *  X-Forwarded-For hop, or the proxy itself. */
+authum_u32_t
+authum_http_forwarded_client(const authum_http_server_t *s, const lh_str_view_t *const *values,
+                             authum_usize_t count, authum_u32_t proxy);
+/** Count a refused connection in this second's summary (kind: limit, pending, slots, evicted). */
+void
+authum_http_refusal_count(authum_http_server_t *s, authum_u32_t *counter, authum_i64_t now);
+
+/** Write the previous second's refusal summary once the second has passed. */
+void
+authum_http_refusals_flush(authum_http_server_t *s, authum_i64_t now);
+
+/** The end-of-connection access line, subject to the log level and the
+ *  per-second budget for refused requests. */
+void
+authum_http_access_close(authum_http_server_t *s, const authum_http_client_t *c,
+                         const authum_char_t *event, authum_i64_t now);
+/** Read a caller's options in whatever layout it was built with (old layout,
+ *  smaller or larger sized struct) into the current one, with host defaults for
+ *  missing fields. False when the struct cannot be read. */
+/** Frees what a server holds except its loop and its orphan node. */
+void
+authum_http_server_release_resources(authum_http_server_t *server);
+
+authum_bool_t
+authum_http_options_read(const authum_http_options_t *in, authum_http_options_t *out);
+
+/** Queue one preformatted line for the owner's drain (dropped and counted when full). */
+void
+authum_http_access_line(authum_http_server_t *s, const authum_char_t *line);
+
+/** Forget the last OS error, so a later message names only a new one. */
+void
+authum_http_error_reset(void);
+
+/** Test-only: called at the start of every worker step when set. */
+extern void (*authum_http_test_step_hook)(authum_http_server_t *server);
+
 authum_bool_t
 authum_http_client_expired(const authum_http_client_t *c, const authum_http_options_t *options,
                            authum_i64_t now);
@@ -157,8 +320,8 @@ void
 authum_http_server_release(authum_http_server_t *server);
 
 authum_http_server_t *
-authum_http_server_create(const authum_http_options_t *options, authum_char_t *error,
-                          authum_u32_t error_size);
+authum_http_server_create(const authum_http_options_t *options, const authum_char_t *tag,
+                          authum_char_t *error, authum_u32_t error_size);
 void
 authum_http_server_shutdown(authum_http_server_t *server);
 

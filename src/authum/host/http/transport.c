@@ -1,7 +1,8 @@
 #include <authum/host/http/internal.h>
-#include <lh/char/map.h>
-#include <lh/memory/std.h>
+#include <lh/core/char/map.h>
+#include <lh/core/memory/std.h>
 #include <lh/os.h>
+#include <lh/os/error/code.h>
 #include <authum/null.h>
 
 authum_i64_t
@@ -25,14 +26,19 @@ authum_http_listener_open(const authum_http_options_t *options, authum_char_t *e
     lh_net_ip4_socket_addr_init(lh_addr_of(address), lh_addr_of(ip),
                                 lh_cast_static(lh_net_port_t, options->port));
     lh_os_system_net_socket_handle_t listener =
-        lh_os_system_net_socket_open_nonblocking(lh_os_system_net_socket_type_tcp);
+        (authum_http_error_reset(),
+         lh_os_system_net_socket_open_nonblocking(lh_os_system_net_socket_type_tcp));
     if (lh_math_eq(listener, LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID))
     {
         authum_unused(lh_str_ptr_format_cstr(error, error_size, "HTTP socket: %s",
                                              authum_http_get_error_text()));
         return LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID;
     }
+    /* POSIX: SO_REUSEADDR only lets a new listener take the port over from
+     * connections still in TIME_WAIT. Windows: lh sets SO_EXCLUSIVEADDRUSE
+     * instead, so no other process can bind the same port next to us. */
     authum_unused(lh_os_system_net_socket_set_reuse_addr(listener, lh_bool_true));
+    authum_http_error_reset();
     if (!lh_os_system_net_socket_bind(listener, lh_addr_of(address)) ||
         !lh_os_system_net_socket_listen(listener, 64))
     {
@@ -84,10 +90,36 @@ authum_http_socket_send_file(lh_os_system_net_socket_handle_t socket, lh_os_syst
     return lh_os_system_net_socket_send_file(socket, file, offset, size);
 }
 
+void
+authum_http_error_reset(void)
+{
+    lh_os_system_error_t empty;
+    lh_os_system_error_init_by_empty(lh_addr_of(empty));
+    lh_os_system_set_last_error(empty);
+    lh_os_set_last_error_lit(lh_os_error_code_ok, "");
+}
+
 const authum_char_t *
 authum_http_get_error_text(void)
 {
-    const authum_char_t *text = lh_cast_reinterpret(const authum_char_t *, lh_os_get_last_error_desc());
-
-    return authum_null_eq(text) ? "unknown error" : text;
+    /* Only the owner thread (server create) asks; one buffer is enough. */
+    static authum_char_t text[320];
+    const lh_os_system_error_code_t code = lh_os_system_get_last_error_code();
+    const authum_char_t *native =
+        lh_cast_reinterpret(const authum_char_t *, lh_os_system_get_last_error_desc());
+    const authum_char_t *own = lh_cast_reinterpret(const authum_char_t *, lh_os_get_last_error_desc());
+    if (lh_math_ne(code, lh_os_system_error_code_ok))
+    {
+        authum_unused(lh_str_ptr_format_cstr(text, sizeof text, "%s (os error %u)",
+                                             native && *native ? native : "no description",
+                                             lh_cast_static(lh_uint_t, code)));
+        return text;
+    }
+    if (own && *own)
+    {
+        authum_unused(lh_str_ptr_format_cstr(text, sizeof text, "%s (code %u)", own,
+                                             lh_cast_static(lh_uint_t, lh_os_get_last_error_code())));
+        return text;
+    }
+    return "unknown error";
 }

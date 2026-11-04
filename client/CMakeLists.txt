@@ -49,6 +49,16 @@ target_include_directories(authum_client
 
 # lh brings the system libraries its os layer needs (dl, ws2_32, iphlpapi).
 target_link_libraries(authum_client PUBLIC lh)
+# Every image that links authum_client carries its own copy of LH, whose
+# runtime slots start empty: pull in src/authum/api/runtime.c in every one, so
+# its load-time constructor fills them (<authum/runtime.h>).
+if (MSVC)
+	target_link_options(authum_client INTERFACE "LINKER:/INCLUDE:authum_runtime_install")
+elseif (WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 4)
+	target_link_options(authum_client INTERFACE "LINKER:--undefined=_authum_runtime_install")
+else ()
+	target_link_options(authum_client INTERFACE "LINKER:--undefined=authum_runtime_install")
+endif ()
 find_package(Threads REQUIRED)
 target_link_libraries(authum_client PUBLIC Threads::Threads)
 # lh is linked into every module: keep its symbols local to that module.

@@ -1,8 +1,8 @@
-#include <lh/assert/static.h>
-#include <lh/char/map.h>
-#include <lh/logger/level.h>
-#include <lh/memory/std.h>
-#include <lh/str/format/text.h>
+#include <lh/core/assert/static.h>
+#include <lh/core/char/map.h>
+#include <lh/core/logger/level.h>
+#include <lh/core/memory/std.h>
+#include <lh/core/str/format/text.h>
 #include <authum/logger/buffer.h>
 
 

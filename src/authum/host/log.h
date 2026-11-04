@@ -12,7 +12,7 @@
 #define AUTHUM_HOST_LOG_H
 
 #include <authum/host/logs.h>
-#include <lh/fs/path.h>
+#include <lh/core/fs/path.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

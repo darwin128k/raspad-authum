@@ -1,6 +1,6 @@
 #include <authum/events/ops.h>
 #include <authum/null.h>
-#include <lh/math/ops.h>
+#include <lh/core/math/ops.h>
 
 authum_events_subscribe_cb
 authum_events_ops_get_subscribe(const authum_events_ops_t *self)

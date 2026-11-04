@@ -8,9 +8,9 @@
 #include <authum/gamedll/game.h>
 #include <authum/host/log.h>
 #include <authum/unused.h>
-#include <lh/cast/const.h>
-#include <lh/char/map.h>
-#include <lh/memory/std.h>
+#include <lh/core/cast/const.h>
+#include <lh/core/char/map.h>
+#include <lh/core/memory/std.h>
 #include <lh/os/timestamp.h>
 #include <authum/gamedll/hooks.h>
 
@@ -21,6 +21,7 @@
 #include <authum/event/server.h>
 #include <authum/host/events.h>
 #include <authum/host/tasks.h>
+#include <authum/host/http.h>
 
 #include <extdll.h>
 
@@ -366,6 +367,9 @@ void
 h_start_frame(void)
 {
     authum_tasks_host_pump();
+    /* Joins HTTP workers left to finish after a stop timed out; only ones
+     * that already said they are done, so it never waits. */
+    authum_unused(authum_http_host_reap());
     authum_event_server_t ev;
     server_fill(lh_addr_of(ev));
     authum_unused(

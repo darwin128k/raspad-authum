@@ -1,9 +1,9 @@
 #include <authum/host/placeholders.h>
 #include <authum/memory.h>
 #include <authum/unused.h>
-#include <lh/char/letter.h>
-#include <lh/char/digit.h>
-#include <lh/memory/std.h>
+#include <lh/core/char/letter.h>
+#include <lh/core/char/digit.h>
+#include <lh/core/memory/std.h>
 
 
 #include <lh/os/system/fs/path.h>

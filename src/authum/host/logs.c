@@ -7,9 +7,9 @@
 #include <authum/host/logs.h>
 #include <authum/memory.h>
 #include <authum/unused.h>
-#include <lh/char/letter.h>
-#include <lh/char/digit.h>
-#include <lh/memory/std.h>
+#include <lh/core/char/letter.h>
+#include <lh/core/char/digit.h>
+#include <lh/core/memory/std.h>
 #include <lh/os/logger/daily.h>
 #include <lh/os/logger/queue.h>
 #include <lh/os/timestamp.h>
@@ -17,10 +17,10 @@
 #include <authum/cfg.h>
 #include <authum/logger.h>
 
-#include <lh/runtime/allocator.h>
+#include <lh/core/runtime/allocator.h>
 
 #include <lh/os/env.h>
-#include <lh/runtime/logger.h>
+#include <lh/core/runtime/logger.h>
 
 enum
 {
@@ -494,7 +494,7 @@ authum_logs_write(authum_ptr owner, authum_logger_level_t level, const authum_ch
     }
     if (!authum_logs_ready)
     {
-        lh_logger_log(lh_runtime_logger(), level, "[authum] [%s] %s",
+        lh_logger_log(lh_runtime_logger_get_mut(), level, "[authum] [%s] %s",
                       authum_logger_level_get_name(level), text);
         return;
     }

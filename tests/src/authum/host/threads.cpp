@@ -17,7 +17,7 @@
 #include <authum/null.h>
 #include <authum/host/threads.h>
 #include <lh/os/condition.h>
-#include <lh/util/str/ptr.h>
+#include <lh/core/util/str/ptr.h>
 #include <atomic>
 #include <gtest/gtest.h>
 #if !defined(_WIN32)

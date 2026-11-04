@@ -13,13 +13,13 @@
 #include <authum/gamedll/engine.h>
 #include <authum/cstr.h>
 #include <authum/unused.h>
-#include <lh/cast/const.h>
-#include <lh/char/map.h>
-#include <lh/compiler/arch/family.h>
-#include <lh/memory/std.h>
+#include <lh/core/cast/const.h>
+#include <lh/core/char/map.h>
+#include <lh/core/compiler/arch/family.h>
+#include <lh/core/memory/std.h>
 #include <lh/os/timestamp.h>
-#include <lh/str/format/text.h>
-#include <lh/util/str/ptr.h>
+#include <lh/core/str/format/text.h>
+#include <lh/core/util/str/ptr.h>
 
 #include <authum/event/message.h>
 #include <authum/event/server.h>

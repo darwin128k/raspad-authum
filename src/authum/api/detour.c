@@ -1,6 +1,6 @@
 #include <authum/detour.h>
-#include <lh/util/ptr.h>
-#include <lh/memory/std.h>
+#include <lh/core/util/ptr.h>
+#include <lh/core/memory/std.h>
 
 #include <lh/os/memory.h>
 

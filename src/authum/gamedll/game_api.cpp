@@ -15,8 +15,8 @@
  */
 #include <authum/gamedll/game.h>
 #include <authum/null.h>
-#include <lh/cast/reinterpret.h>
-#include <lh/math/ops.h>
+#include <lh/core/cast/reinterpret.h>
+#include <lh/core/math/ops.h>
 
 #include <authum/export.h>
 

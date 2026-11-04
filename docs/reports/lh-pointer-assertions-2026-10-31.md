@@ -47,38 +47,38 @@ A supplemental source-wide first-parameter lookup found **50 distinct cross-file
 | `lib/lh/src/lh/os/window.c` | 81 |
 | `lib/lh/src/lh/ui/input.c` | 63 |
 | `lib/lh/src/lh/ui/canvas.c` | 57 |
-| `lib/lh/src/lh/net/modbus/link.c` | 54 |
-| `lib/lh/src/lh/crypto/sha.c` | 49 |
+| `lib/lh/src/lh/core/net/modbus/link.c` | 54 |
+| `lib/lh/src/lh/core/crypto/sha.c` | 49 |
 | `lib/lh/src/lh/ui/view.c` | 48 |
 | `lib/lh/src/lh/ui/entity.c` | 43 |
 | `lib/lh/src/lh/ui/frame/stats.c` | 29 |
 | `lib/lh/src/lh/ui/rects.c` | 23 |
 | `lib/lh/src/lh/ui/blur/window.c` | 22 |
 | `lib/lh/src/lh/ui/label.c` | 19 |
-| `lib/lh/src/lh/timer.c` | 17 |
+| `lib/lh/src/lh/core/timer.c` | 17 |
 | `lib/lh/src/lh/ui/style.c` | 17 |
 | `lib/lh/src/lh/ui/button.c` | 16 |
 | `lib/lh/src/lh/ui/transition.c` | 15 |
-| `lib/lh/src/lh/sql/mysql/api.c` | 13 |
+| `lib/lh/src/lh/os/sql/mysql/api.c` | 13 |
 | `lib/lh/src/lh/ui/toggle.c` | 13 |
 | `lib/lh/src/lh/ui/view/pointer.c` | 13 |
 | `lib/lh/src/lh/ui/gradient.c` | 12 |
 | `lib/lh/src/lh/ui/layout.c` | 12 |
 | `lib/lh/src/lh/ui/radii.c` | 12 |
 | `lib/lh/src/lh/ui/gradient/sampler/lerp.c` | 12 |
-| `lib/lh/src/lh/math/frect.c` | 11 |
-| `lib/lh/src/lh/math/rect.c` | 11 |
+| `lib/lh/src/lh/core/math/frect.c` | 11 |
+| `lib/lh/src/lh/core/math/rect.c` | 11 |
 | `lib/lh/src/lh/ui/scrollbar.c` | 11 |
-| `lib/lh/src/lh/logger.c` | 10 |
+| `lib/lh/src/lh/core/logger.c` | 10 |
 | `lib/lh/src/lh/ui/insets.c` | 10 |
 | `lib/lh/src/lh/ui/font/range.c` | 10 |
-| `lib/lh/src/lh/spsc.c` | 9 |
+| `lib/lh/src/lh/core/spsc.c` | 9 |
 | `lib/lh/src/lh/os/wake.c` | 9 |
 | `lib/lh/src/lh/ui/mask.c` | 9 |
-| `lib/lh/src/lh/numeric/big.c` | 8 |
+| `lib/lh/src/lh/core/numeric/big.c` | 8 |
 | `lib/lh/src/lh/os/input/queue.c` | 8 |
-| `lib/lh/src/lh/sql/driver.c` | 8 |
-| `lib/lh/src/lh/str/scanf/spec.c` | 8 |
+| `lib/lh/src/lh/core/sql/driver.c` | 8 |
+| `lib/lh/src/lh/core/str/scanf/spec.c` | 8 |
 | `lib/lh/src/lh/ui/font.c` | 8 |
 | `lib/lh/src/lh/ui/shadow.c` | 8 |
 | `lib/lh/src/lh/ui/surface.c` | 8 |
@@ -90,53 +90,53 @@ A supplemental source-wide first-parameter lookup found **50 distinct cross-file
 | `lib/lh/src/lh/ui/key.c` | 6 |
 | `lib/lh/src/lh/ui/pixmap.c` | 6 |
 | `lib/lh/src/lh/ui/layout/place.c` | 6 |
-| `lib/lh/src/lh/io/stream.c` | 5 |
+| `lib/lh/src/lh/core/io/stream.c` | 5 |
 | `lib/lh/src/lh/ui/container.c` | 5 |
 | `lib/lh/src/lh/ui/paint.c` | 5 |
 | `lib/lh/src/lh/ui/renderer3d.c` | 5 |
 | `lib/lh/src/lh/ui/canvas/state.c` | 5 |
-| `lib/lh/src/lh/crypto/rijndael.c` | 4 |
-| `lib/lh/src/lh/math/quat.c` | 4 |
-| `lib/lh/src/lh/math/vec4.c` | 4 |
+| `lib/lh/src/lh/core/crypto/rijndael.c` | 4 |
+| `lib/lh/src/lh/core/math/quat.c` | 4 |
+| `lib/lh/src/lh/core/math/vec4.c` | 4 |
 | `lib/lh/src/lh/os/render/backend/gdi.c` | 4 |
-| `lib/lh/src/lh/str/scanf/next.c` | 4 |
+| `lib/lh/src/lh/core/str/scanf/next.c` | 4 |
 | `lib/lh/src/lh/ui/pen.c` | 4 |
 | `lib/lh/src/lh/ui/renderer3d/camera.c` | 4 |
 | `lib/lh/src/lh/ui/shadow/shape.c` | 4 |
-| `lib/lh/src/lh/math/size.c` | 3 |
-| `lib/lh/src/lh/math/vec3.c` | 3 |
+| `lib/lh/src/lh/core/math/size.c` | 3 |
+| `lib/lh/src/lh/core/math/vec3.c` | 3 |
 | `lib/lh/src/lh/os/serial.c` | 3 |
 | `lib/lh/src/lh/os/worker.c` | 3 |
 | `lib/lh/src/lh/os/net/socket.c` | 3 |
 | `lib/lh/src/lh/ui/gradient/sampler.c` | 3 |
 | `lib/lh/src/lh/ui/shadow/ramp.c` | 3 |
 | `lib/lh/src/lh/ui/text/block.c` | 3 |
-| `lib/lh/src/lh/math/fpoint.c` | 2 |
-| `lib/lh/src/lh/math/fsize.c` | 2 |
-| `lib/lh/src/lh/math/point.c` | 2 |
-| `lib/lh/src/lh/math/vec2.c` | 2 |
-| `lib/lh/src/lh/memory/std.c` | 2 |
-| `lib/lh/src/lh/net/ip.c` | 2 |
+| `lib/lh/src/lh/core/math/fpoint.c` | 2 |
+| `lib/lh/src/lh/core/math/fsize.c` | 2 |
+| `lib/lh/src/lh/core/math/point.c` | 2 |
+| `lib/lh/src/lh/core/math/vec2.c` | 2 |
+| `lib/lh/src/lh/core/memory/std.c` | 2 |
+| `lib/lh/src/lh/core/net/ip.c` | 2 |
 | `lib/lh/src/lh/os/fs/dir.c` | 2 |
 | `lib/lh/src/lh/os/input/event.c` | 2 |
-| `lib/lh/src/lh/str/parse/uint.c` | 2 |
+| `lib/lh/src/lh/core/str/parse/uint.c` | 2 |
 | `lib/lh/src/lh/ui/canvas/sw.c` | 2 |
 | `lib/lh/src/lh/ui/entity/event.c` | 2 |
 | `lib/lh/src/lh/ui/entity/transform.c` | 2 |
-| `lib/lh/src/lh/io/dgram.c` | 1 |
-| `lib/lh/src/lh/net/socket/addr.c` | 1 |
+| `lib/lh/src/lh/core/io/dgram.c` | 1 |
+| `lib/lh/src/lh/core/net/socket/addr.c` | 1 |
 | `lib/lh/src/lh/os/input/contacts.c` | 1 |
-| `lib/lh/src/lh/str/format/text.c` | 1 |
-| `lib/lh/src/lh/str/parse/hex.c` | 1 |
+| `lib/lh/src/lh/core/str/format/text.c` | 1 |
+| `lib/lh/src/lh/core/str/parse/hex.c` | 1 |
 | `lib/lh/src/lh/ui/canvas/clip/round.c` | 1 |
 
 ## Cross-file candidates
 
 | Caller | Argument | Callee |
 | --- | --- | --- |
-| `lib/lh/src/lh/timestamp.c::lh_timestamp_from_datetime` | `self` | `lib/lh/src/lh/datetime.c::lh_datetime_get_date` |
-| `lib/lh/src/lh/timestamp.c::lh_timestamp_from_datetime` | `self` | `lib/lh/src/lh/datetime.c::lh_datetime_get_time` |
-| `lib/lh/src/lh/net/ip.c::lh_net_ip4_format` | `str` | `lib/lh/src/lh/memory/std.c::lh_memory_std_copy` |
+| `lib/lh/src/lh/core/timestamp.c::lh_timestamp_from_datetime` | `self` | `lib/lh/src/lh/core/datetime.c::lh_datetime_get_date` |
+| `lib/lh/src/lh/core/timestamp.c::lh_timestamp_from_datetime` | `self` | `lib/lh/src/lh/core/datetime.c::lh_datetime_get_time` |
+| `lib/lh/src/lh/core/net/ip.c::lh_net_ip4_format` | `str` | `lib/lh/src/lh/core/memory/std.c::lh_memory_std_copy` |
 | `lib/lh/src/lh/os/app.c::lh_os_app_get_next_window` | `window` | `lib/lh/src/lh/os/window.c::lh_os_window_get_link` |
 | `lib/lh/src/lh/ui/layout.c::lh_ui_layout_apply` | `parent` | `lib/lh/src/lh/ui/entity.c::lh_ui_entity_get_padding` |
 | `lib/lh/src/lh/ui/layout.c::lh_ui_layout_apply` | `parent` | `lib/lh/src/lh/ui/entity.c::lh_ui_entity_copy_rect` |
@@ -169,19 +169,19 @@ A supplemental source-wide first-parameter lookup found **50 distinct cross-file
 | `lib/lh/src/lh/ui/shadow/ramp.c::lh_ui_shadow_ramp_init` | `shape` | `lib/lh/src/lh/ui/shadow/shape.c::lh_ui_shadow_shape_get_step` |
 | `lib/lh/src/lh/ui/shadow/ramp.c::lh_ui_shadow_ramp_init` | `shape` | `lib/lh/src/lh/ui/shadow/shape.c::lh_ui_shadow_shape_get_spread` |
 | `lib/lh/src/lh/ui/shadow/ramp.c::lh_ui_shadow_ramp_init` | `shape` | `lib/lh/src/lh/ui/shadow/shape.c::lh_ui_shadow_shape_get_r` |
-| `lib/lh/src/lh/str/format/put.c::lh_str_ptr_format_put` | `str` | `lib/lh/src/lh/memory/std.c::lh_memory_std_copy` |
-| `lib/lh/src/lh/str/format/real.c::lh_str_ptr_format_real` | `str` | `lib/lh/src/lh/str/format/put.c::lh_str_ptr_format_put` |
-| `lib/lh/src/lh/str/format/uint.c::lh_str_ptr_format_uint` | `str` | `lib/lh/src/lh/memory/std.c::lh_memory_std_copy_rev` |
-| `lib/lh/src/lh/str/scanf/next.c::lh_str_ptr_scanf_next_literal` | `out` | `lib/lh/src/lh/str/scanf/spec.c::lh_str_scanf_spec_set_kind` |
-| `lib/lh/src/lh/str/scanf/next.c::lh_str_ptr_scanf_next_literal` | `out` | `lib/lh/src/lh/str/scanf/spec.c::lh_str_scanf_spec_set_literal` |
-| `lib/lh/src/lh/str/scanf/next.c::lh_str_ptr_scanf_next_literal` | `out` | `lib/lh/src/lh/str/scanf/spec.c::lh_str_scanf_spec_set_literal_size` |
-| `lib/lh/src/lh/str/scanf/next.c::lh_str_ptr_scanf_next_flags` | `out` | `lib/lh/src/lh/str/scanf/spec.c::lh_str_scanf_spec_set_zero_pad` |
-| `lib/lh/src/lh/str/scanf/next.c::lh_str_ptr_scanf_next_flags` | `out` | `lib/lh/src/lh/str/scanf/spec.c::lh_str_scanf_spec_set_left_justify` |
-| `lib/lh/src/lh/str/scanf/next.c::lh_str_ptr_scanf_next` | `out` | `lib/lh/src/lh/str/scanf/spec.c::lh_str_scanf_spec_set_literal` |
-| `lib/lh/src/lh/str/scanf/next.c::lh_str_ptr_scanf_next` | `out` | `lib/lh/src/lh/str/scanf/spec.c::lh_str_scanf_spec_set_conversion` |
-| `lib/lh/src/lh/str/scanf/next.c::lh_str_ptr_scanf_next` | `out` | `lib/lh/src/lh/str/scanf/spec.c::lh_str_scanf_spec_set_width` |
-| `lib/lh/src/lh/str/scanf/next.c::lh_str_ptr_scanf_next` | `out` | `lib/lh/src/lh/str/scanf/spec.c::lh_str_scanf_spec_set_have_precision` |
-| `lib/lh/src/lh/str/scanf/next.c::lh_str_ptr_scanf_next` | `out` | `lib/lh/src/lh/str/scanf/spec.c::lh_str_scanf_spec_set_precision` |
+| `lib/lh/src/lh/core/str/format/put.c::lh_str_ptr_format_put` | `str` | `lib/lh/src/lh/core/memory/std.c::lh_memory_std_copy` |
+| `lib/lh/src/lh/core/str/format/real.c::lh_str_ptr_format_real` | `str` | `lib/lh/src/lh/core/str/format/put.c::lh_str_ptr_format_put` |
+| `lib/lh/src/lh/core/str/format/uint.c::lh_str_ptr_format_uint` | `str` | `lib/lh/src/lh/core/memory/std.c::lh_memory_std_copy_rev` |
+| `lib/lh/src/lh/core/str/scanf/next.c::lh_str_ptr_scanf_next_literal` | `out` | `lib/lh/src/lh/core/str/scanf/spec.c::lh_str_scanf_spec_set_kind` |
+| `lib/lh/src/lh/core/str/scanf/next.c::lh_str_ptr_scanf_next_literal` | `out` | `lib/lh/src/lh/core/str/scanf/spec.c::lh_str_scanf_spec_set_literal` |
+| `lib/lh/src/lh/core/str/scanf/next.c::lh_str_ptr_scanf_next_literal` | `out` | `lib/lh/src/lh/core/str/scanf/spec.c::lh_str_scanf_spec_set_literal_size` |
+| `lib/lh/src/lh/core/str/scanf/next.c::lh_str_ptr_scanf_next_flags` | `out` | `lib/lh/src/lh/core/str/scanf/spec.c::lh_str_scanf_spec_set_zero_pad` |
+| `lib/lh/src/lh/core/str/scanf/next.c::lh_str_ptr_scanf_next_flags` | `out` | `lib/lh/src/lh/core/str/scanf/spec.c::lh_str_scanf_spec_set_left_justify` |
+| `lib/lh/src/lh/core/str/scanf/next.c::lh_str_ptr_scanf_next` | `out` | `lib/lh/src/lh/core/str/scanf/spec.c::lh_str_scanf_spec_set_literal` |
+| `lib/lh/src/lh/core/str/scanf/next.c::lh_str_ptr_scanf_next` | `out` | `lib/lh/src/lh/core/str/scanf/spec.c::lh_str_scanf_spec_set_conversion` |
+| `lib/lh/src/lh/core/str/scanf/next.c::lh_str_ptr_scanf_next` | `out` | `lib/lh/src/lh/core/str/scanf/spec.c::lh_str_scanf_spec_set_width` |
+| `lib/lh/src/lh/core/str/scanf/next.c::lh_str_ptr_scanf_next` | `out` | `lib/lh/src/lh/core/str/scanf/spec.c::lh_str_scanf_spec_set_have_precision` |
+| `lib/lh/src/lh/core/str/scanf/next.c::lh_str_ptr_scanf_next` | `out` | `lib/lh/src/lh/core/str/scanf/spec.c::lh_str_scanf_spec_set_precision` |
 | `lib/lh/src/lh/os/system/str.c::lh_os_system_str_ptr_to_utf8` | `text` | `lib/lh/src/lh/os/system/posix/str.c::lh_os_system_str_to_utf8` |
 | `lib/lh/src/lh/os/system/str.c::lh_os_system_str_ptr_to_utf8` | `text` | `lib/lh/src/lh/os/system/win/str.c::lh_os_system_str_to_utf8` |
 
@@ -531,19 +531,19 @@ lib/lh\src\lh\sql\driver.c: lh_sql_driver_bind_null checks self and calls lh_sql
 lib/lh\src\lh\sql\driver.c: lh_sql_driver_step checks self and calls lh_sql_driver_get_step_fn(self), which checks it again
 lib/lh\src\lh\sql\driver.c: lh_sql_driver_reset checks self and calls lh_sql_driver_get_reset_fn(self), which checks it again
 lib/lh\src\lh\sql\driver.c: lh_sql_driver_get_column_count checks self and calls lh_sql_driver_get_column_count_fn(self), which checks it again
-lib/lh\src\lh\sql\mysql\api.c: lh_sql_mysql_api_init_native checks self and calls lh_sql_mysql_api_get_init(self), which checks it again
-lib/lh\src\lh\sql\mysql\api.c: lh_sql_mysql_api_close checks self and calls lh_sql_mysql_api_get_close(self), which checks it again
-lib/lh\src\lh\sql\mysql\api.c: lh_sql_mysql_api_error checks self and calls lh_sql_mysql_api_get_error(self), which checks it again
-lib/lh\src\lh\sql\mysql\api.c: lh_sql_mysql_api_error_code checks self and calls lh_sql_mysql_api_get_error_code(self), which checks it again
-lib/lh\src\lh\sql\mysql\api.c: lh_sql_mysql_api_store_result checks self and calls lh_sql_mysql_api_get_store_result(self), which checks it again
-lib/lh\src\lh\sql\mysql\api.c: lh_sql_mysql_api_free_result checks self and calls lh_sql_mysql_api_get_free_result(self), which checks it again
-lib/lh\src\lh\sql\mysql\api.c: lh_sql_mysql_api_fetch_row checks self and calls lh_sql_mysql_api_get_fetch_row(self), which checks it again
-lib/lh\src\lh\sql\mysql\api.c: lh_sql_mysql_api_fetch_lengths checks self and calls lh_sql_mysql_api_get_fetch_lengths(self), which checks it again
-lib/lh\src\lh\sql\mysql\api.c: lh_sql_mysql_api_num_fields checks self and calls lh_sql_mysql_api_get_num_fields(self), which checks it again
-lib/lh\src\lh\sql\mysql\api.c: lh_sql_mysql_api_field_count checks self and calls lh_sql_mysql_api_get_field_count(self), which checks it again
-lib/lh\src\lh\sql\mysql\api.c: lh_sql_mysql_api_insert_id checks self and calls lh_sql_mysql_api_get_insert_id(self), which checks it again
-lib/lh\src\lh\sql\mysql\api.c: lh_sql_mysql_api_thread_end checks self and calls lh_sql_mysql_api_get_thread_end(self), which checks it again
-lib/lh\src\lh\sql\mysql\api.c: lh_sql_mysql_api_thread_end checks self and calls lh_sql_mysql_api_get_thread_end(self), which checks it again
+lib/lh\src\lh\sql\mysql\api.c: lh_os_sql_mysql_api_init_native checks self and calls lh_os_sql_mysql_api_get_init(self), which checks it again
+lib/lh\src\lh\sql\mysql\api.c: lh_os_sql_mysql_api_close checks self and calls lh_os_sql_mysql_api_get_close(self), which checks it again
+lib/lh\src\lh\sql\mysql\api.c: lh_os_sql_mysql_api_error checks self and calls lh_os_sql_mysql_api_get_error(self), which checks it again
+lib/lh\src\lh\sql\mysql\api.c: lh_os_sql_mysql_api_error_code checks self and calls lh_os_sql_mysql_api_get_error_code(self), which checks it again
+lib/lh\src\lh\sql\mysql\api.c: lh_os_sql_mysql_api_store_result checks self and calls lh_os_sql_mysql_api_get_store_result(self), which checks it again
+lib/lh\src\lh\sql\mysql\api.c: lh_os_sql_mysql_api_free_result checks self and calls lh_os_sql_mysql_api_get_free_result(self), which checks it again
+lib/lh\src\lh\sql\mysql\api.c: lh_os_sql_mysql_api_fetch_row checks self and calls lh_os_sql_mysql_api_get_fetch_row(self), which checks it again
+lib/lh\src\lh\sql\mysql\api.c: lh_os_sql_mysql_api_fetch_lengths checks self and calls lh_os_sql_mysql_api_get_fetch_lengths(self), which checks it again
+lib/lh\src\lh\sql\mysql\api.c: lh_os_sql_mysql_api_num_fields checks self and calls lh_os_sql_mysql_api_get_num_fields(self), which checks it again
+lib/lh\src\lh\sql\mysql\api.c: lh_os_sql_mysql_api_field_count checks self and calls lh_os_sql_mysql_api_get_field_count(self), which checks it again
+lib/lh\src\lh\sql\mysql\api.c: lh_os_sql_mysql_api_insert_id checks self and calls lh_os_sql_mysql_api_get_insert_id(self), which checks it again
+lib/lh\src\lh\sql\mysql\api.c: lh_os_sql_mysql_api_thread_end checks self and calls lh_os_sql_mysql_api_get_thread_end(self), which checks it again
+lib/lh\src\lh\sql\mysql\api.c: lh_os_sql_mysql_api_thread_end checks self and calls lh_os_sql_mysql_api_get_thread_end(self), which checks it again
 lib/lh\src\lh\str\format\text.c: lh_str_ptr_format_cstr_v checks str and calls lh_str_ptr_format_text_v(str), which checks it again
 lib/lh\src\lh\str\parse\hex.c: lh_str_ptr_parse_hex_prefix checks str and calls lh_str_ptr_parse_hex(str), which checks it again
 lib/lh\src\lh\str\parse\uint.c: lh_str_ptr_parse_uint checks str and calls lh_str_ptr_parse_uint_digits(str), which checks it again

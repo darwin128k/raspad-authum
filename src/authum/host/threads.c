@@ -6,10 +6,10 @@
 #include <authum/host/threads.h>
 #include <authum/null.h>
 #include <authum/unused.h>
-#include <lh/assert/static.h>
+#include <lh/core/assert/static.h>
 #include <lh/os/system.h>
-#include <lh/str/format/text.h>
-#include <lh/util/return.h>
+#include <lh/core/str/format/text.h>
+#include <lh/core/util/return.h>
 
 enum
 {

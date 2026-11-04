@@ -1,7 +1,7 @@
 #include <authum/thread.h>
 #include <authum/null.h>
 #include <authum/unused.h>
-#include <lh/str/format/text.h>
+#include <lh/core/str/format/text.h>
 
 authum_thread_t *
 authum_thread_start(const authum_threads_t *threads, authum_thread_fn run, authum_thread_fn wake,

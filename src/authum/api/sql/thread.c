@@ -1,7 +1,7 @@
 #include <authum/sql/thread.h>
 #include <authum/memory.h>
-#include <lh/memory/std.h>
-#include <lh/sql/mysql/api.h>
+#include <lh/core/memory/std.h>
+#include <lh/os/sql/mysql/api.h>
 #include <authum/crypto/ed25519.h>
 
 typedef struct authum_sql_thread_job
@@ -41,8 +41,8 @@ authum_sql_thread_run(authum_ptr arg)
 {
     authum_sql_thread_job_t *job = arg;
     authum_sql_t db;
-    const lh_sql_mysql_api_t *api = lh_math_eq(job->connection.driver, authum_sql_driver_mysql)
-                                        ? lh_sql_mysql_api_get_default()
+    const lh_os_sql_mysql_api_t *api = lh_math_eq(job->connection.driver, authum_sql_driver_mysql)
+                                        ? lh_os_sql_mysql_api_get_default()
                                         : authum_null;
     authum_sql_init(lh_addr_of(db));
     job->result.connected = authum_sql_connect(lh_addr_of(db), lh_addr_of(job->connection));
@@ -64,7 +64,7 @@ authum_sql_thread_run(authum_ptr arg)
     authum_sql_close(lh_addr_of(db));
     if (api)
     {
-        lh_sql_mysql_api_thread_end(api);
+        lh_os_sql_mysql_api_thread_end(api);
     }
 }
 

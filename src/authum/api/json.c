@@ -1,8 +1,8 @@
 #include <authum/json.h>
-#include <lh/char/map.h>
-#include <lh/memory/std.h>
+#include <lh/core/char/map.h>
+#include <lh/core/memory/std.h>
 
-#include <lh/web/json.h>
+#include <lh/core/web/json.h>
 
 /* Read @p json into @p root; the caller deinits @p root whatever this returns. */
 static authum_bool_t

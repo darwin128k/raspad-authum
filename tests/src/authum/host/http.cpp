@@ -21,6 +21,26 @@
 /* A size no resource has: what a refused open must leave untouched. */
 static const lh_u64_t k_unset = ~0ULL;
 
+/* What the worker does with a request target: decode and check it, then open
+ * the checked path. @p reason (optional) receives why it was refused. */
+static lh_os_system_fs_file_handle_t
+resource_open(lh_os_system_fs_file_handle_t root, const authum_http_options_t *options,
+              const char *url, size_t length, lh_u64_t *size, const char **reason = nullptr)
+{
+    char path[2048];
+    const char *why = nullptr;
+    lh_os_system_fs_file_handle_t file = LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
+    if (authum_http_resource_check(options, url, length, path, sizeof path, &why))
+    {
+        file = authum_http_resource_open(root, options, path, size, &why);
+    }
+    if (reason)
+    {
+        *reason = why;
+    }
+    return file;
+}
+
 /* 127.0.0.1:port. */
 static lh_net_ip4_socket_addr_t
 loopback(lh_net_port_t port)
@@ -309,6 +329,156 @@ TEST_F(authum_http, callback_may_close_server_during_log_drain)
     EXPECT_EQ(lh_os_thread_group_get_count(&thread_owner.group), 0u);
 }
 
+/* A module built before struct_size: its struct starts with the bind text. */
+TEST_F(authum_http, old_layout_options_are_read_with_defaults)
+{
+    options.port = available_port();
+    ASSERT_GT(options.port, 0);
+    /* Exactly the old size on the heap: reading past it is an ASan error. */
+    auto *old = static_cast<authum_http_options_v0_t *>(malloc(sizeof(authum_http_options_v0_t)));
+    ASSERT_NE(old, authum_null);
+    memset(old, 0, sizeof *old);
+    memcpy(old->bind, options.bind, sizeof old->bind);
+    old->port = options.port;
+    memcpy(old->sources, options.sources, sizeof old->sources);
+    old->source_count = options.source_count;
+    strcpy(old->allow_dirs, options.allow_dirs);
+    strcpy(old->allow_extensions, options.allow_extensions);
+    strcpy(old->root_extensions, options.root_extensions);
+    old->max_clients = 3;
+    old->per_ip = 5;
+    old->requests_per_second = 7;
+    old->timeout_seconds = 11;
+    old->cpu = -1;
+    old->access_log = 1;
+    old->bytes_per_second = 123456;
+    old->max_file_bytes = 654321;
+    server = authum_http_open(&service, reinterpret_cast<const authum_http_options_t *>(old),
+                              error, sizeof error);
+    free(old);
+    ASSERT_NE(server, authum_null) << error;
+    EXPECT_EQ(server->options.port, options.port);
+    EXPECT_EQ(server->options.source_count, 1u);
+    EXPECT_STREQ(server->options.allow_dirs, "maps alias");
+    EXPECT_EQ(server->options.max_clients, 3);
+    EXPECT_EQ(server->options.per_ip, 5);
+    EXPECT_EQ(server->options.requests_per_second, 7);
+    EXPECT_EQ(server->options.timeout_seconds, 11);
+    EXPECT_EQ(server->options.access_log, 1);
+    EXPECT_EQ(server->options.bytes_per_second, 123456u);
+    EXPECT_EQ(server->options.max_file_bytes, 654321u);
+    EXPECT_EQ(server->options.per_ip_pending, 4);
+    EXPECT_EQ(server->options.trusted_proxies[0], 0);
+    char response[512] = {0};
+    ASSERT_NO_FATAL_FAILURE(request_resource(response, sizeof response));
+    EXPECT_NE(strstr(response, "\r\n\r\nshared-http"), authum_null);
+}
+
+TEST_F(authum_http, smaller_sized_options_use_defaults_for_missing_fields)
+{
+    options.port = available_port();
+    options.per_ip_pending = 9;
+    strcpy(options.trusted_proxies, "not an address");
+    const size_t size = AUTHUM_HTTP_OPTIONS_MIN_SIZE;
+    auto *small = static_cast<unsigned char *>(malloc(size));
+    ASSERT_NE(small, authum_null);
+    memcpy(small, &options, size);
+    const authum_u32_t declared = static_cast<authum_u32_t>(size);
+    memcpy(small, &declared, sizeof declared);
+    server = authum_http_open(&service, reinterpret_cast<const authum_http_options_t *>(small),
+                              error, sizeof error);
+    free(small);
+    ASSERT_NE(server, authum_null) << error;
+    EXPECT_EQ(server->options.port, options.port);
+    EXPECT_EQ(server->options.per_ip_pending, 4);
+    EXPECT_EQ(server->options.trusted_proxies[0], 0);
+}
+
+TEST_F(authum_http, larger_options_from_newer_module_are_accepted)
+{
+    options.port = available_port();
+    options.per_ip_pending = 9;
+    const size_t size = sizeof options + 64;
+    auto *large = static_cast<unsigned char *>(malloc(size));
+    ASSERT_NE(large, authum_null);
+    memcpy(large, &options, sizeof options);
+    memset(large + sizeof options, 0xA5, 64);
+    const authum_u32_t declared = static_cast<authum_u32_t>(size);
+    memcpy(large, &declared, sizeof declared);
+    server = authum_http_open(&service, reinterpret_cast<const authum_http_options_t *>(large),
+                              error, sizeof error);
+    free(large);
+    ASSERT_NE(server, authum_null) << error;
+    EXPECT_EQ(server->options.per_ip_pending, 9);
+}
+
+TEST_F(authum_http, options_init_sets_size_and_defaults)
+{
+    EXPECT_EQ(options.struct_size, sizeof options);
+    EXPECT_EQ(options.per_ip_pending, 4);
+}
+
+TEST_F(authum_http, too_small_struct_size_is_refused)
+{
+    options.port = available_port();
+    for (authum_u32_t size : {0u, 16u, static_cast<authum_u32_t>(AUTHUM_HTTP_OPTIONS_MIN_SIZE - 1)})
+    {
+        options.struct_size = size;
+        EXPECT_EQ(authum_http_open(&service, &options, error, sizeof error), authum_null);
+        EXPECT_NE(strstr(error, "struct_size"), authum_null) << error;
+    }
+}
+
+static unsigned stall_on_stop_ms;
+
+static void
+stall_on_stop(authum_http_server_t *server)
+{
+    if (stall_on_stop_ms && server->loop && lh_exec_loop_is_stopping(server->loop))
+    {
+        lh_os_thread_sleep(stall_on_stop_ms);
+    }
+}
+
+/* A worker stuck past the stop timeout frees its server when the call
+ * returns; the reaper then joins it without waiting. */
+TEST_F(authum_http, detached_worker_frees_itself_and_is_reaped)
+{
+    for (unsigned owner_waits : {0u, 1u})
+    {
+        ASSERT_NO_FATAL_FAILURE(open_server());
+        stall_on_stop_ms = 1500;
+        authum_http_test_step_hook = stall_on_stop;
+        const authum_i64_t start = authum_http_now_ms();
+        authum_http_shutdown(&service, server);
+        const authum_i64_t waited = authum_http_now_ms() - start;
+        EXPECT_GE(waited, 900);
+        EXPECT_LT(waited, 1400);
+        if (owner_waits)
+        {
+            /* The worker finishes first: the owner frees the server. */
+            lh_os_thread_sleep(800);
+        }
+        authum_http_close(&service, server);
+        server = authum_null;
+        EXPECT_EQ(owner.head, authum_null);
+        /* A worker that ended while the owner slept is reaped at once. */
+        authum_usize_t left = authum_http_host_reap();
+        EXPECT_EQ(left, owner_waits ? 0u : 1u);
+        while (left && authum_http_now_ms() - start < 4000)
+        {
+            const authum_i64_t before = authum_http_now_ms();
+            left = authum_http_host_reap();
+            /* Never waits: only threads that said they are done are joined. */
+            EXPECT_LT(authum_http_now_ms() - before, 50);
+            lh_os_thread_sleep(1);
+        }
+        EXPECT_EQ(left, 0u);
+        authum_http_test_step_hook = authum_null;
+        stall_on_stop_ms = 0;
+    }
+}
+
 TEST_F(authum_http, owner_cleanup_reclaims_forgotten_server)
 {
     ASSERT_NO_FATAL_FAILURE(open_server());
@@ -322,7 +492,7 @@ TEST_F(authum_http, opens_allowed_nested_resource)
 {
     const char *url = "/maps/nested.bsp";
     lh_u64_t size = k_unset;
-    lh_os_system_fs_file_handle_t fd = authum_http_resource_open(root_fd, &options, url, strlen(url), &size);
+    lh_os_system_fs_file_handle_t fd = resource_open(root_fd, &options, url, strlen(url), &size);
     ASSERT_NE(fd, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
     EXPECT_EQ(size, 6U);
     lh_os_system_fs_file_close(fd);
@@ -337,7 +507,7 @@ TEST_P(authum_http_denied_path, refuses_unsafe_path_without_changing_size)
 {
     lh_u64_t size = k_unset;
     const char *url = GetParam();
-    lh_os_system_fs_file_handle_t fd = authum_http_resource_open(root_fd, &options, url, strlen(url), &size);
+    lh_os_system_fs_file_handle_t fd = resource_open(root_fd, &options, url, strlen(url), &size);
     EXPECT_EQ(fd, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
     EXPECT_EQ(size, k_unset);
     if (fd != LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID)
@@ -350,16 +520,75 @@ INSTANTIATE_TEST_SUITE_P(unsafe_paths, authum_http_denied_path,
                          ::testing::Values("/link.bsp", "/alias/nested.bsp", "/.hidden.bsp",
                                            "/fifo.bsp", "/maps/../shared.bsp", "/maps//nested.bsp",
                                            "/maps/.nested.bsp", "/maps/nested.txt",
-                                           "/maps/nested.bsp/", "/shared.bsp?x=1"));
+                                           "/maps/nested.bsp/", "/maps/nested.bsp%00",
+                                           "/maps%2fnested.bsp", "/maps/%2e%2e/shared.bsp",
+                                           "/maps/nested.bsp.", "/maps/nested.bsp%20",
+                                           "/maps/NESTED~1.BSP", "/maps/nested.bsp::$DATA",
+                                           "/maps/a%5cnested.bsp", "/maps/nested.bsp%",
+                                           "/maps/nested%zz.bsp", "/maps/%252e%252e/shared.bsp"));
+
+TEST_F(authum_http, target_is_decoded_once_and_query_ignored)
+{
+    for (const char *url : {"/shared.bsp?x=1", "/maps/nested.bsp#f", "/maps/%6eested%2Ebsp",
+                            "/maps/nested.bsp?..%2f..%2f"})
+    {
+        lh_u64_t size = k_unset;
+        lh_os_system_fs_file_handle_t fd = resource_open(root_fd, &options, url, strlen(url), &size);
+        ASSERT_NE(fd, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID) << url;
+        lh_os_system_fs_file_close(fd);
+    }
+}
+
+TEST_F(authum_http, policy_lists_compare_without_case)
+{
+    /* The deny list must hold however the request spells the name: the
+     * Windows opener resolves names without case. */
+    strcpy(options.deny_prefixes, "maps/nested.bsp");
+    lh_u64_t size = k_unset;
+    const char *reason = nullptr;
+    for (const char *url : {"/MAPS/nested.bsp", "/maps/NESTED.BSP", "/Maps/Nested.Bsp"})
+    {
+        EXPECT_EQ(resource_open(root_fd, &options, url, strlen(url), &size, &reason),
+                  LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID)
+            << url;
+        EXPECT_STREQ(reason, "denied_prefix") << url;
+    }
+    /* Allow lists match without case too; the file name itself is left to
+     * the filesystem. */
+    options.deny_prefixes[0] = 0;
+    const char *url = "/MAPS/nested.BSP";
+    char path[64];
+    EXPECT_NE(authum_http_resource_check(&options, url, strlen(url), path, sizeof path, &reason), 0u);
+}
+
+TEST_F(authum_http, refusals_name_their_reason)
+{
+    const struct
+    {
+        const char *url;
+        const char *reason;
+    } cases[] = {{"/maps/missing.bsp", "not_found"},    {"/maps/nested.txt", "ext_not_allowed"},
+                 {"/other/x.bsp", "dir_not_allowed"},   {"/maps/.x.bsp", "hidden_or_dot"},
+                 {"/maps/a%5cb.bsp", "bad_char"},       {"/maps/x.bsp%", "bad_encoding"},
+                 {"/maps%2fx.bsp", "encoded_separator"}, {"/maps//x.bsp", "empty_component"}};
+    for (const auto &c : cases)
+    {
+        lh_u64_t size = k_unset;
+        const char *reason = nullptr;
+        EXPECT_EQ(resource_open(root_fd, &options, c.url, strlen(c.url), &size, &reason),
+                  LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
+        EXPECT_STREQ(reason, c.reason) << c.url;
+    }
+}
 
 TEST_F(authum_http, file_size_limit_accepts_exact_boundary)
 {
     const char *url = "/maps/nested.bsp";
     lh_u64_t size = k_unset;
     options.max_file_bytes = 5;
-    EXPECT_EQ(authum_http_resource_open(root_fd, &options, url, strlen(url), &size), LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
+    EXPECT_EQ(resource_open(root_fd, &options, url, strlen(url), &size), LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
     options.max_file_bytes = 6;
-    lh_os_system_fs_file_handle_t fd = authum_http_resource_open(root_fd, &options, url, strlen(url), &size);
+    lh_os_system_fs_file_handle_t fd = resource_open(root_fd, &options, url, strlen(url), &size);
     ASSERT_NE(fd, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
     EXPECT_EQ(size, 6U);
     lh_os_system_fs_file_close(fd);
@@ -370,7 +599,7 @@ TEST_F(authum_http, deny_prefix_overrides_allowed_directory)
     strcpy(options.deny_prefixes, "maps");
     const char *url = "/maps/nested.bsp";
     lh_u64_t size = k_unset;
-    EXPECT_EQ(authum_http_resource_open(root_fd, &options, url, strlen(url), &size), LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
+    EXPECT_EQ(resource_open(root_fd, &options, url, strlen(url), &size), LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
 }
 
 TEST_F(authum_http, empty_directory_allow_list_refuses_nested_file)
@@ -378,7 +607,7 @@ TEST_F(authum_http, empty_directory_allow_list_refuses_nested_file)
     options.allow_dirs[0] = 0;
     const char *url = "/maps/nested.bsp";
     lh_u64_t size = k_unset;
-    EXPECT_EQ(authum_http_resource_open(root_fd, &options, url, strlen(url), &size), LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
+    EXPECT_EQ(resource_open(root_fd, &options, url, strlen(url), &size), LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
 }
 
 TEST_F(authum_http, root_file_requires_root_extension_permission)
@@ -386,7 +615,7 @@ TEST_F(authum_http, root_file_requires_root_extension_permission)
     options.root_extensions[0] = 0;
     const char *url = "/shared.bsp";
     lh_u64_t size = k_unset;
-    EXPECT_EQ(authum_http_resource_open(root_fd, &options, url, strlen(url), &size), LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
+    EXPECT_EQ(resource_open(root_fd, &options, url, strlen(url), &size), LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
 }
 
 } // namespace tests

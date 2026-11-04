@@ -1,5 +1,5 @@
 #include <authum/logger/buffer.h>
-#include <lh/util/ptr.h>
+#include <lh/core/util/ptr.h>
 #include <authum/memory.h>
 
 typedef struct authum_logger_buffer_line

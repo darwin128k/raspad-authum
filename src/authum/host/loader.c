@@ -3,12 +3,12 @@
 #include <authum/host/loader.h>
 #include <authum/host/tasks.h>
 #include <authum/host/log.h>
-#include <lh/char/map.h>
+#include <lh/core/char/map.h>
 #include <lh/os.h>
 #include <lh/os/error/code.h>
 #include <lh/os/system/fs/path.h>
 #include <lh/os/system/shared.h>
-#include <lh/str/line/reader.h>
+#include <lh/core/str/line/reader.h>
 
 enum
 {

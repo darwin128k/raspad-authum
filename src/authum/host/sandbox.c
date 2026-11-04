@@ -5,13 +5,13 @@
 
 #include <authum/host/sandbox.h>
 #include <authum/memory.h>
-#include <lh/memory/std.h>
+#include <lh/core/memory/std.h>
 #include <authum/unused.h>
 
-#include <lh/memory/allocator/initializer.h>
-#include <lh/memory/tree.h>
-#include <lh/runtime/allocator.h>
-#include <lh/size/limits.h>
+#include <lh/core/memory/allocator/initializer.h>
+#include <lh/core/memory/tree.h>
+#include <lh/core/runtime/allocator.h>
+#include <lh/core/size/limits.h>
 
 /* lh treats a failed allocation as fatal and ends the process. A size no heap
  * could ever give (half the address space or more — a module's arithmetic gone

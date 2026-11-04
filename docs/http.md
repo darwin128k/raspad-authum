@@ -37,16 +37,39 @@ does not run arbitrary module callbacks in the HTTP worker. No TLS, compression,
 directory listing or request bodies. One transport serves on Windows and Linux,
 over LH sockets, file handles and handle-relative file lookup.
 
-URL names use ASCII letters, digits, underscores, hyphens, dots, slashes and
-dollar signs. Escapes, query strings, hidden components and symlink traversal
-are refused. Lists are case-sensitive. Responses use application/octet-stream;
+The target is %-decoded once and `?query`/`#fragment` are ignored. After
+decoding, an encoded `/` or NUL, `\`, control characters, `: * ? " < > |`,
+empty components, names starting with `.`, names ending in `.` or space,
+8.3 short names (`NAME~1`) and symlink traversal are refused. The directory,
+extension and deny lists compare without ASCII case; the file name itself is
+matched by the filesystem. Refusals carry a reason in the access log.
+
+`trusted_proxies` (addresses or CIDR blocks) is the only case in which
+`X-Forwarded-For` is read: the client is the rightmost hop that is not itself
+trusted, and the per-IP limits apply to it. `per_ip_pending` caps connections
+per address whose request has not arrived; with every slot taken, the oldest
+such connection (older than 250 ms) is evicted (default 4).
+
+`authum_http_options_t` starts with `struct_size`, set by
+`authum_http_options_init`. The host reads only that many bytes and uses its
+defaults for fields a smaller struct lacks; new fields are only appended. A
+struct from before `struct_size` (it starts with the bind text) is read in
+that old layout, so modules built against it keep working with a newer host.
+A request that keeps arriving in many fragments is read in batches: after
+its fourth incomplete read, its socket is polled again about 2 ms later. The
+first fragments of a request are always read at once. Responses use application/octet-stream;
 Range requests receive the complete representation. These deliberate limits
 keep the current static-resource service small and explicit.
 
 ## Lifecycle and logs
 
-Call open/shutdown/close/drain on the owner/game thread. Shutdown joins the
-worker but retains queued access records:
+Call open/shutdown/close/drain on the owner/game thread. Shutdown waits at
+most one second for the worker and retains queued access records. A worker
+stuck in a file call (a source on a network share that stopped answering) is
+left to finish on its own: a warning `http event=stop_timeout` is logged, the
+worker closes the port, frees the server and leaves its loop when the call
+returns. `authum_http_host_reap` (called by the host each frame) joins such a
+worker only after it has said it is done, so it never waits.
 
     authum_http_shutdown(service, server);
     authum_http_drain(service, server, write_access_log, user, 257);

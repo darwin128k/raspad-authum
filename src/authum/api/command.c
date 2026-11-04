@@ -8,11 +8,11 @@
  */
 
 #include <authum/command.h>
-#include <lh/assert/static.h>
-#include <lh/bool.h>
-#include <lh/console/call.h>
-#include <lh/util/offset.h>
-#include <lh/util/return.h>
+#include <lh/core/assert/static.h>
+#include <lh/core/bool.h>
+#include <lh/core/console/call.h>
+#include <lh/core/util/offset.h>
+#include <lh/core/util/return.h>
 
 #include <authum/cstr.h>
 

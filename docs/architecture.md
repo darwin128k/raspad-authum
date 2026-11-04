@@ -52,7 +52,7 @@ the module's subscriptions and frees its sandbox.
 
 **Escape hatch:** link your own static lh (from Authum’s `lib/lh`) or any
 other library into *your* `.so` for private code. That is not the host runtime;
-`lh_runtime_logger()` there is not Authum's log.
+`lh_runtime_logger_get_mut()` there is not Authum's log.
 
 ## Tests
 
@@ -75,7 +75,7 @@ facade, an `authum.client.connect` subscription, a sandbox array.
 ## Background execution and log buffering
 
 LH supplies a bounded serial worker (`lh/os/worker.h`) and a fixed-record
-single-producer/single-consumer queue (`lh/spsc.h`). Neither knows module identities
+single-producer/single-consumer queue (`lh/core/spsc.h`). Neither knows module identities
 or server frames. Worker completions are explicitly taken by its caller.
 
 Authum owns the per-module worker registry, the limit of 64 outstanding jobs,
