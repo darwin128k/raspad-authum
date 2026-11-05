@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Find unique masked byte patterns in loaded engine code and copy command arguments and info values through the engine facade (module ABI 3.3.0).
 
+### Changed
+
+- LH's execution part is `lh/rail` now (was `lh/exec`): the host's tasks and HTTP server use `lh_rail_*`. `authum_runtime_install` also fills LH's rail base slot with the OS base (`lh/os/rail/base.h`), which rail's threads and loops now need in every image.
+- `lib/lh` moves to lh 0.5.0 at `bcc36c44`: rail with its base slot, the loop pass, critical-section atomics, Ed25519 on lh's own bricks (the vendored Monocypher is gone), and SQLite beside its driver (`src/lh/os/sql/sqlite/third_party`).
+
 ## [4.0.0] - 2026-11-05
 
 ### Changed

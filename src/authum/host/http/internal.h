@@ -11,7 +11,7 @@
 #    include <stdatomic.h>
 #endif
 #include <lh/os/wake.h>
-#include <lh/exec/loop.h>
+#include <lh/rail/loop.h>
 #include <lh/os/net/socket.h>
 #include <lh/os/system/fs/file.h>
 #include <lh/core/str/format/text.h>
@@ -145,12 +145,12 @@ typedef struct authum_http_refusals
     authum_u32_t unlogged;
 } authum_http_refusals_t;
 
-/** A worker loop the owner gave up on (lh_exec_loop_try_abandon), waiting to be
+/** A worker loop the owner gave up on (lh_rail_loop_try_abandon), waiting to be
  *  reaped on the game thread. Allocated with the server, so that an abandon
  *  never needs memory. */
 struct authum_http_orphan
 {
-    lh_exec_loop_t *loop;
+    lh_rail_loop_t *loop;
     authum_http_orphan_t *next;
 };
 
@@ -174,7 +174,7 @@ struct authum_http_server
     lh_os_system_net_socket_handle_t listener;
     lh_os_wake_t wake;
     /** The worker: a loop that sleeps in poll on the sockets and the wake signal. */
-    lh_exec_loop_t *loop;
+    lh_rail_loop_t *loop;
     /** What the next poll watches, and what the last one found ready. */
     lh_os_net_socket_poll_t events[AUTHUM_HTTP_MAX_CLIENTS + 2];
     authum_i64_t last_refill;

@@ -3,6 +3,7 @@
 #include <authum/memory.h>
 #include <lh/os/net.h>
 #include <lh/os/system.h>
+#include <lh/os/thread.h>
 #include <lh/core/runtime/logger.h>
 
 void
@@ -29,7 +30,7 @@ void
 authum_http_server_release(authum_http_server_t *server)
 {
     /* A loop that never started is just freed; a running one is joined first. */
-    lh_exec_loop_destroy(server->loop);
+    lh_rail_loop_destroy(server->loop);
     authum_memory_free(server->orphan);
     authum_http_server_release_resources(server);
 }
@@ -152,10 +153,10 @@ authum_http_server_create(const authum_http_options_t *options, const authum_cha
     authum_http_prepare_first_poll(server);
     /* The poll timeout of the worker: client timeouts and the byte budget tick on it. */
     authum_http_error_reset();
-    server->loop = lh_exec_loop_try_create_waiting(20U, authum_http_step, server, authum_http_wait,
+    server->loop = lh_rail_loop_try_create_waiting(20U, authum_http_step, server, authum_http_wait,
                                                  authum_http_wake, server);
     if (authum_null_eq(server->loop) ||
-        !lh_exec_loop_try_start_on(server->loop, options->cpu, lh_os_thread_block_sigpipe))
+        !lh_rail_loop_try_start_on(server->loop, options->cpu, lh_os_thread_block_sigpipe))
     {
         authum_unused(lh_str_ptr_format_cstr(error, error_size, "cannot start the HTTP worker: %s",
                                              authum_http_get_error_text()));
@@ -187,8 +188,8 @@ authum_http_server_shutdown(authum_http_server_t *server)
      * a file call (a source on a slow network share) is given up instead of
      * freezing the server on unload: the loop has it free its hold on the
      * server when it ends, and the reaper frees the loop later. */
-    if (server->loop && !lh_exec_loop_try_stop(server->loop, AUTHUM_HTTP_STOP_TIMEOUT_MS) &&
-        lh_exec_loop_try_abandon(server->loop, authum_http_worker_release, server))
+    if (server->loop && !lh_rail_loop_try_stop(server->loop, AUTHUM_HTTP_STOP_TIMEOUT_MS) &&
+        lh_rail_loop_try_abandon(server->loop, authum_http_worker_release, server))
     {
         server->abandoned = authum_bool_true;
         authum_unused(lh_logger_log(
@@ -200,7 +201,7 @@ authum_http_server_shutdown(authum_http_server_t *server)
             lh_cast_static(int, AUTHUM_HTTP_STOP_TIMEOUT_MS)));
         return;
     }
-    lh_exec_loop_destroy(server->loop);
+    lh_rail_loop_destroy(server->loop);
     server->loop = authum_null;
     server->joined = 1;
 }
@@ -227,7 +228,7 @@ authum_http_host_reap(void)
     {
         authum_http_orphan_t *orphan = lh_ptr_deref(slot);
         /* Never waits: the loop is freed only once its thread has ended. */
-        if (lh_exec_loop_try_reap(orphan->loop))
+        if (lh_rail_loop_try_reap(orphan->loop))
         {
             lh_ptr_deref(slot) = orphan->next;
             authum_memory_free(orphan);

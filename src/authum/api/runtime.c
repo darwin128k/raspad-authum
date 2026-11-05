@@ -6,6 +6,8 @@
 #include <lh/core/runtime/terminate.h>
 #include <lh/core/str/format/text.h>
 #include <lh/core/util/str/ptr.h>
+#include <lh/os/rail/base.h>
+#include <lh/rail/runtime/base.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -79,6 +81,8 @@ authum_runtime_install(void)
     lh_memory_allocator_set_realloc_cb(lh_runtime_allocator_get_mut(), authum_runtime_realloc);
     lh_runtime_terminate_handler_init(lh_runtime_terminate_get_mut(), authum_runtime_abort,
                                       lh_null);
+    /* rail (threads, loops) runs on the OS here. */
+    lh_rail_base_assign(lh_rail_runtime_base_get_mut(), lh_os_rail_base_get());
     authum_runtime_use_stderr_logger();
 }
 

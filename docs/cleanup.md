@@ -223,7 +223,7 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 ## Authum (after LH)
 
 - [ ] **`host/tasks.c` — сырые поля и static** (2026-11-04, шаг 4b исполнения).
-  Файл переехал на `lh/exec`, но сохранил стиль соседей (`host/threads.c`):
+  Файл переехал на `lh/rail`, но сохранил стиль соседей (`host/threads.c`):
   `authum_task_worker_t` / `authum_task_record_t` трогаются напрямую, колбэки и
   поиск владельца — `static`. По AGENTS нужны геттеры/сеттеры уровня 1 и
   публичные кирпичи; сделать вместе с остальным `host/`.
