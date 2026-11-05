@@ -3,9 +3,9 @@
  * @brief Ed25519 signatures (RFC 8032) for Authum modules.
  *
  * Unlike Rijndael / SHA, this is not a host facade: the code ships inside
- * `authum_client` (lh's `lh/core/crypto/ed25519.h`, Monocypher inside), so a module gets
- * it without a newer `authum` and without an ABI bump. Modules never
- * include `monocypher.h`.
+ * `authum_client` (lh's `lh/core/crypto/ed25519.h`, built on LH's own field, scalar
+ * and point bricks), so a module gets it without a newer `authum` and without an
+ * ABI bump.
  */
 
 #ifndef AUTHUM_CRYPTO_ED25519_H

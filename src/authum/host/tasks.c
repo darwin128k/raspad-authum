@@ -2,8 +2,8 @@
  * @file tasks.c
  * @brief Modules' background tasks: one LH thread executor and one mailbox per owner.
  *
- * Each owner (a loaded module) gets an `lh_exec_thread_t` that runs its tasks in
- * order and an `lh_exec_mailbox_t` that bounds them (queued, running and finished
+ * Each owner (a loaded module) gets an `lh_rail_thread_t` that runs its tasks in
+ * order and an `lh_rail_mailbox_t` that bounds them (queued, running and finished
  * until delivered) and holds the finished ones for the game frame. The pump
  * delivers `complete` then `destroy` on the game thread, fairly across owners.
  * Dropping an owner cancels what has not started, joins the running task, and
@@ -20,13 +20,13 @@
 #include <authum/host/tasks.h>
 #include <authum/memory.h>
 #include <authum/null.h>
-#include <lh/exec/context/initializer.h>
-#include <lh/exec/thread.h>
+#include <lh/rail/context/initializer.h>
+#include <lh/rail/thread.h>
 
 /** One submission: the LH task and the module's callbacks it runs. */
 typedef struct authum_task_record
 {
-    lh_exec_task_t task;
+    lh_rail_task_t task;
     authum_task_fn work;
     authum_task_fn complete;
     authum_task_fn destroy;
@@ -58,8 +58,8 @@ typedef struct authum_task_worker
 {
     struct authum_task_worker *next;
     authum_ptr owner;
-    lh_exec_thread_t thread;
-    lh_exec_mailbox_t mailbox;
+    lh_rail_thread_t thread;
+    lh_rail_mailbox_t mailbox;
     authum_task_exit_t exits[authum_task_exit_max];
     authum_usize_t exit_count;
 } authum_task_worker_t;
@@ -130,10 +130,10 @@ authum_task_worker_get(authum_ptr owner)
     {
         return authum_null;
     }
-    const lh_exec_context_t context =
-        lh_exec_context_initializer(lh_null, authum_task_worker_exit, w);
-    lh_exec_mailbox_init(lh_addr_of(w->mailbox), authum_task_worker_capacity);
-    if (!lh_exec_thread_try_start(lh_addr_of(w->thread), lh_addr_of(context)))
+    const lh_rail_context_t context =
+        lh_rail_context_initializer(lh_null, authum_task_worker_exit, w);
+    lh_rail_mailbox_init(lh_addr_of(w->mailbox), authum_task_worker_capacity);
+    if (!lh_rail_thread_try_start(lh_addr_of(w->thread), lh_addr_of(context)))
     {
         authum_memory_free(w);
         return authum_null;
@@ -170,9 +170,9 @@ authum_tasks_host_submit(authum_ptr owner, authum_task_fn work, authum_task_fn c
     record->complete = complete;
     record->destroy = destroy;
     record->user = user;
-    lh_exec_task_init(lh_addr_of(record->task), authum_task_record_work,
+    lh_rail_task_init(lh_addr_of(record->task), authum_task_record_work,
                       authum_task_record_complete, authum_task_record_destroy, record);
-    if (!lh_exec_executor_try_submit(lh_exec_thread_get_executor(lh_addr_of(w->thread)),
+    if (!lh_rail_executor_try_submit(lh_rail_thread_get_executor(lh_addr_of(w->thread)),
                                      lh_addr_of(record->task), lh_addr_of(w->mailbox)))
     {
         /* Refused: nothing ran, the payload stays the caller's; only the record goes. */
@@ -225,11 +225,11 @@ authum_tasks_host_pump(void)
     while (lh_math_is_positive(budget))
     {
         budget = lh_math_sub_one(budget);
-        lh_exec_task_t *task = authum_null;
+        lh_rail_task_t *task = authum_null;
         authum_task_worker_t **link = lh_addr_of(m_workers);
         for (; lh_ptr_deref(link); link = lh_addr_of((lh_ptr_deref(link))->next))
         {
-            task = lh_exec_mailbox_try_take(lh_addr_of((lh_ptr_deref(link))->mailbox));
+            task = lh_rail_mailbox_try_take(lh_addr_of((lh_ptr_deref(link))->mailbox));
             if (task)
             {
                 break;
@@ -250,7 +250,7 @@ authum_tasks_host_pump(void)
             m_workers_tail = w;
         }
         m_dispatching = lh_math_add_one(m_dispatching);
-        lh_exec_mailbox_deliver(lh_addr_of(w->mailbox), task);
+        lh_rail_mailbox_deliver(lh_addr_of(w->mailbox), task);
         m_dispatching = lh_math_sub_one(m_dispatching);
     }
 }
@@ -282,21 +282,21 @@ authum_tasks_host_drop_owner(authum_ptr owner)
     /* Refuse new tasks, cancel the ones not started and wait for the running one.
      * The executor stays alive (stopped) until the destructors below returned, so
      * one that submits again is refused instead of reaching a released thread. */
-    while (!lh_exec_thread_try_stop(lh_addr_of(w->thread), lh_exec_stop_kind_cancel,
+    while (!lh_rail_thread_try_stop(lh_addr_of(w->thread), lh_rail_stop_kind_cancel,
                                     authum_task_stop_wait_ms))
     {
     }
     /* Every accepted task is in the mailbox now. None gets complete during unload:
      * finished ones are cancelled too, so only their destructors run, here. */
     m_dispatching = lh_math_add_one(m_dispatching);
-    for (lh_exec_task_t *task = lh_exec_mailbox_try_take(lh_addr_of(w->mailbox)); task;
-         task = lh_exec_mailbox_try_take(lh_addr_of(w->mailbox)))
+    for (lh_rail_task_t *task = lh_rail_mailbox_try_take(lh_addr_of(w->mailbox)); task;
+         task = lh_rail_mailbox_try_take(lh_addr_of(w->mailbox)))
     {
-        lh_exec_task_set_cancelled(task, lh_bool_true);
-        lh_exec_mailbox_deliver(lh_addr_of(w->mailbox), task);
+        lh_rail_task_set_cancelled(task, lh_bool_true);
+        lh_rail_mailbox_deliver(lh_addr_of(w->mailbox), task);
     }
     m_dispatching = lh_math_sub_one(m_dispatching);
-    lh_exec_thread_destroy(lh_addr_of(w->thread));
+    lh_rail_thread_destroy(lh_addr_of(w->thread));
     /* Keep the stopped owner registered, with its worker, until all payload
      * destructors return. They must not resurrect a worker during unload. */
     authum_task_worker_t *previous = authum_null;

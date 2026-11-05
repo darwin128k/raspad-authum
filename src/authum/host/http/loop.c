@@ -77,7 +77,7 @@ dispatch_connection(authum_http_server_t *server, authum_http_client_t *client, 
     }
 }
 
-/* The release call of an abandoned worker loop (lh_exec_loop_try_abandon): it
+/* The release call of an abandoned worker loop (lh_rail_loop_try_abandon): it
  * runs on the worker after its last step. The owner may still hold the server
  * (between its shutdown and its destroy): whoever of the two lets go last frees it. */
 void
@@ -132,7 +132,7 @@ authum_http_step(authum_ptr arg)
     }
     authum_i64_t now = authum_http_now_ms();
 
-    if (lh_exec_loop_is_last_step(server->loop))
+    if (lh_rail_loop_is_last_step(server->loop))
     {
         for (authum_i32_t index = 0; lh_math_lt(index, server->options.max_clients);
              index = lh_math_add_one(index))

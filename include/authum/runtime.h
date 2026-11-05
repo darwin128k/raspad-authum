@@ -12,9 +12,10 @@ AUTHUM_EXTERN_C_BEGIN
  * image built with Authum carries its own copy of LH — authum.so and each
  * module (authum_client links LH statically and keeps it private) — and each
  * copy needs its slots filled: `malloc` / `free` / `realloc` for the allocator,
- * `abort` for the terminate handler, and a one-line-per-record `stderr` sink
+ * `abort` for the terminate handler, a one-line-per-record `stderr` sink
  * for the logger (in authum.so the log, until authum_log_init routes it to the
- * channels).
+ * channels), and the OS rail base for rail's threads and loops
+ * (lh/os/rail/base.h).
  *
  * authum_client does this by itself when an image loads, before any of its
  * code runs (a load-time constructor in this object, which authum_client's

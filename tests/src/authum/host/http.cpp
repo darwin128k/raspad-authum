@@ -434,7 +434,7 @@ static unsigned stall_on_stop_ms;
 static void
 stall_on_stop(authum_http_server_t *server)
 {
-    if (stall_on_stop_ms && server->loop && lh_exec_loop_is_stopping(server->loop))
+    if (stall_on_stop_ms && server->loop && lh_rail_loop_is_stopping(server->loop))
     {
         lh_os_thread_sleep(stall_on_stop_ms);
     }
