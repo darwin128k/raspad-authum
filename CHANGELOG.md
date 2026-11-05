@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Windows: the HTTP server's listening socket now holds its port exclusively (`SO_EXCLUSIVEADDRUSE`, through lh's `lh_os_system_net_socket_set_exclusive_addr`). It used to set `SO_REUSEADDR`, which on Windows lets another process bind the same port and take FastDL's connections. Linux is unchanged. `lib/lh` moves to `76949087`.
+
 ### Added
 
 - Find unique masked byte patterns in loaded engine code and copy command arguments and info values through the engine facade (module ABI 3.3.0).
