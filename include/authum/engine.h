@@ -89,8 +89,7 @@ typedef struct authum_engine
      * Show @p text to player @p index (0 = every player) as
      * `authum_engine_print_*` @p kind. Add the `\n` yourself.
      */
-    authum_bool_t (*client_print)(authum_i32_t index, authum_i32_t kind,
-                                  const authum_char_t *text);
+    authum_bool_t (*client_print)(authum_i32_t index, authum_i32_t kind, const authum_char_t *text);
     /** Run @p cmd in the player's own console (a `\n` is added). */
     authum_bool_t (*client_command)(authum_i32_t index, const authum_char_t *cmd);
     /**
@@ -100,8 +99,7 @@ typedef struct authum_engine
     authum_bool_t (*query_client_cvar)(authum_i32_t index, const authum_char_t *cvar,
                                        authum_i32_t request_id);
     /** Ping (ms) and packet loss (%) of the player. */
-    authum_bool_t (*client_get_stats)(authum_i32_t index, authum_i32_t *ping,
-                                      authum_i32_t *loss);
+    authum_bool_t (*client_get_stats)(authum_i32_t index, authum_i32_t *ping, authum_i32_t *loss);
     /** Set @p key in the player's userinfo (`setinfo`). */
     authum_bool_t (*client_set_info)(authum_i32_t index, const authum_char_t *key,
                                      const authum_char_t *value);
@@ -150,18 +148,19 @@ typedef struct authum_engine
      * The next entity after @p start (0 = from the first) whose class is
      * @p classname; 0 when there is none.
      */
-    authum_i32_t (*entity_find_by_classname)(authum_i32_t start,
-                                             const authum_char_t *classname);
-    authum_bool_t (*entity_get_float)(authum_i32_t index, authum_i32_t field,
-                                      authum_float_t *out);
-    authum_bool_t (*entity_set_float)(authum_i32_t index, authum_i32_t field,
-                                      authum_float_t value);
+    authum_i32_t (*entity_find_by_classname)(authum_i32_t start, const authum_char_t *classname);
+    authum_bool_t (*entity_get_float)(authum_i32_t index, authum_i32_t field, authum_float_t *out);
+    authum_bool_t (*entity_set_float)(authum_i32_t index, authum_i32_t field, authum_float_t value);
     authum_bool_t (*entity_get_i32)(authum_i32_t index, authum_i32_t field, authum_i32_t *out);
     authum_bool_t (*entity_set_i32)(authum_i32_t index, authum_i32_t field, authum_i32_t value);
     authum_bool_t (*entity_get_vector)(authum_i32_t index, authum_i32_t field,
                                        authum_float_t out[3]);
     authum_bool_t (*entity_set_vector)(authum_i32_t index, authum_i32_t field,
                                        const authum_float_t value[3]);
+    /* ABI 3.3: */
+    authum_bool_t (*cmd_copy_argv)(authum_i32_t index, authum_char_t *buf, authum_usize_t buf_size);
+    authum_bool_t (*info_copy_value)(const authum_char_t *info, const authum_char_t *key,
+                                     authum_char_t *buf, authum_usize_t buf_size);
 } authum_engine_t;
 
 /** Flags for ::authum_engine_cvar_register (the engine's FCVAR_*). */
@@ -214,8 +213,7 @@ authum_engine_cvar_set(const authum_engine_t *engine, const authum_char_t *name,
  * replaced with spaces so the command cannot be split or injected.
  */
 void
-authum_engine_kick(const authum_engine_t *engine, authum_i32_t userid,
-                   const authum_char_t *reason);
+authum_engine_kick(const authum_engine_t *engine, authum_i32_t userid, const authum_char_t *reason);
 
 /* --- players ----------------------------------------------------------- */
 
@@ -278,8 +276,8 @@ authum_engine_client_set_info(const authum_engine_t *engine, authum_i32_t index,
  * the game has no `SayText` or nobody received it.
  */
 authum_bool_t
-authum_engine_client_chat(const authum_engine_t *engine, authum_i32_t index,
-                          authum_i32_t sender, const authum_char_t *text);
+authum_engine_client_chat(const authum_engine_t *engine, authum_i32_t index, authum_i32_t sender,
+                          const authum_char_t *text);
 
 /* --- cvars ------------------------------------------------------------- */
 
@@ -304,8 +302,8 @@ authum_engine_message_get_id(const authum_engine_t *engine, const authum_char_t 
 
 /** Every _write_* and _end after a false begin does nothing. */
 authum_bool_t
-authum_engine_message_begin(const authum_engine_t *engine, authum_i32_t dest,
-                            authum_i32_t msg_id, authum_i32_t index);
+authum_engine_message_begin(const authum_engine_t *engine, authum_i32_t dest, authum_i32_t msg_id,
+                            authum_i32_t index);
 
 void
 authum_engine_message_write_byte(const authum_engine_t *engine, authum_i32_t value);
@@ -364,8 +362,8 @@ authum_engine_entity_try_get_i32(const authum_engine_t *engine, authum_i32_t ind
                                  authum_i32_t field, authum_i32_t *out);
 
 authum_bool_t
-authum_engine_entity_set_i32(const authum_engine_t *engine, authum_i32_t index,
-                             authum_i32_t field, authum_i32_t value);
+authum_engine_entity_set_i32(const authum_engine_t *engine, authum_i32_t index, authum_i32_t field,
+                             authum_i32_t value);
 
 authum_bool_t
 authum_engine_entity_copy_vector(const authum_engine_t *engine, authum_i32_t index,
@@ -382,6 +380,23 @@ authum_engine_client_is_alive(const authum_engine_t *engine, authum_i32_t index)
 /** Connected and a bot (fake client). */
 authum_bool_t
 authum_engine_client_is_bot(const authum_engine_t *engine, authum_i32_t index);
+
+/* --- the command being run, info strings (ABI 3.3) --------------------- */
+
+/** Argument @p index of the command the engine is running now (its Cmd_Argv):
+ *  a console command, or a connectionless packet such as `connect` while the
+ *  engine handles it. False on a host without it (before ABI 3.3) or a bad index. */
+authum_bool_t
+authum_engine_cmd_copy_argv(const authum_engine_t *engine, authum_i32_t index, authum_char_t *buf,
+                            authum_usize_t buf_size);
+
+/** The value of @p key in an info string (`\key\value...`, the engine's
+ *  Info_ValueForKey); an empty value when the key is absent. False on a host
+ *  without it (before ABI 3.3). */
+authum_bool_t
+authum_engine_info_copy_value(const authum_engine_t *engine, const authum_char_t *info,
+                              const authum_char_t *key, authum_char_t *buf,
+                              authum_usize_t buf_size);
 
 /* --- precache: call from an authum.server.precache handler ------------- */
 

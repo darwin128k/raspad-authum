@@ -32,8 +32,16 @@
  * major and the same or a later minor, which
  * ::authum_version_is_abi_compatible checks at load.
  *
+ * 3.3.0 — the command being run and info strings in the engine table:
+ * `authum_engine_cmd_copy_argv` and `authum_engine_info_copy_value` (the
+ * engine's Cmd_Argv and Info_ValueForKey, which Windows engines do not export);
+ * and, client-side, `authum_symbol_find_pattern` /
+ * `authum_symbol_find_engine_pattern` (engine code found by its bytes).
+ *
  * 3.2.0 — the 64-bit numbers: `authum_cstr_format_u64` and
- * `authum_cstr_format_i64` (the mask formatter has no length modifiers).
+ * `authum_cstr_format_i64` (the mask formatter has no length modifiers); and
+ * `authum_task_ops.at_exit` (`authum_tasks_at_exit`): calls run on a module's
+ * task thread when it ends.
  *
  * 3.1.0 — the module string, byte and wall-clock bricks: `authum_cstr_len`,
  * `authum_cstr_is_equal_n`, `authum_cstr_starts_with`, `authum_cstr_ends_with`,
@@ -43,7 +51,7 @@
  * `authum_memory_is_equal`, `authum_memory_find`, `authum_time_now_seconds`,
  * `authum_time_format_utc`.
  */
-#define AUTHUM_MODULE_ABI AUTHUM_VERSION(3, 2, 0)
+#define AUTHUM_MODULE_ABI AUTHUM_VERSION(3, 3, 0)
 
 struct authum_module_info
 {

@@ -251,3 +251,43 @@ TEST(authum_engine, reads_and_updates_entity_state)
     EXPECT_EQ(authum_engine_entity_get_max(authum_null), 0);
     EXPECT_FALSE(authum_engine_client_is_alive(authum_null, 1));
 }
+
+static authum_bool_t
+test_copy_argv(authum_i32_t index, authum_char_t *buf, authum_usize_t size)
+{
+    if (index != 3 || size < 4)
+    {
+        return authum_bool_false;
+    }
+    memcpy(buf, "abc", 4);
+    return authum_bool_true;
+}
+
+static authum_bool_t
+test_copy_info(const authum_char_t *info, const authum_char_t *key, authum_char_t *buf,
+               authum_usize_t size)
+{
+    if (strcmp(info, "input") || strcmp(key, "key") || size < 6)
+    {
+        return authum_bool_false;
+    }
+    memcpy(buf, "value", 6);
+    return authum_bool_true;
+}
+
+TEST(authum_engine, copies_arguments_and_info_through_host)
+{
+    authum_engine_t engine = {};
+    char buf[16] = {};
+    EXPECT_FALSE(authum_engine_cmd_copy_argv(&engine, 3, buf, sizeof buf));
+    EXPECT_FALSE(authum_engine_info_copy_value(&engine, "input", "key", buf, sizeof buf));
+    engine.cmd_copy_argv = test_copy_argv;
+    engine.info_copy_value = test_copy_info;
+    EXPECT_TRUE(authum_engine_cmd_copy_argv(&engine, 3, buf, sizeof buf));
+    EXPECT_STREQ(buf, "abc");
+    EXPECT_FALSE(authum_engine_cmd_copy_argv(&engine, -1, buf, sizeof buf));
+    EXPECT_TRUE(authum_engine_info_copy_value(&engine, "input", "key", buf, sizeof buf));
+    EXPECT_STREQ(buf, "value");
+    EXPECT_FALSE(authum_engine_info_copy_value(&engine, nullptr, "key", buf, sizeof buf));
+    EXPECT_FALSE(authum_engine_info_copy_value(nullptr, "input", "key", buf, sizeof buf));
+}
