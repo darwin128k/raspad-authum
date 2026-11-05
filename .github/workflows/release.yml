@@ -79,7 +79,7 @@ jobs:
           fi
           NOTES=$(mktemp)
           python3 scripts/release_notes.py --tag "$TAG" \
-            --package "Download **\`authum-linux32.zip\`** and unpack into the game dir → \`addons/authum/\`." \
+            --package "Download **\`authum-linux32.zip\`** (Linux) or **\`authum-win32.zip\`** (Windows) and unpack into the game dir → \`addons/authum/\`." \
             --highlight "Authum as the HLDS game library (i386) — authum.so + modules.list" \
             --highlight "The real game is named in \`addons/authum/gamedll.txt\`; see docs/gamedll.md" \
             > "$NOTES"
@@ -89,3 +89,69 @@ jobs:
             gh release edit "$TAG" --notes-file "$NOTES"
           fi
           gh release upload "$TAG" authum-linux32.zip --clobber
+
+  win32:
+    name: Build and publish the Windows zip
+    # The Linux job creates the release; this one adds its zip to it.
+    needs: linux32
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - name: Install MSYS2 MINGW32
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW32
+          update: true
+          install: >-
+            mingw-w64-i686-gcc
+            mingw-w64-i686-cmake
+            mingw-w64-i686-ninja
+            zip
+
+      - name: Configure
+        run: cmake -S . -B build-win32 -G Ninja -DCMAKE_BUILD_TYPE=Release -DAUTHUM_LH_LINK_MODE=needed
+
+      - name: Build
+        run: cmake --build build-win32 -j"$(nproc)"
+
+      - name: Test
+        run: ctest --test-dir build-win32 --output-on-failure
+
+      - name: Pack game-library layout
+        run: |
+          rm -rf dist-win && mkdir -p dist-win/addons/authum/configs dist-win/addons/authum/modules
+          cp build-win32/authum.dll dist-win/addons/authum/authum.dll
+          printf 'dlls\\mp.dll\n' > dist-win/addons/authum/gamedll.txt
+          cp deploy/configs/modules.list dist-win/addons/authum/configs/modules.list
+          cp deploy/configs/authum.cfg dist-win/addons/authum/configs/authum.cfg
+          cat > dist-win/addons/authum/INSTALL.txt <<'EOF'
+          Unpack into the game dir (cstrike\ or mod root) so you get:
+
+            addons\authum\authum.dll           the game library itself
+            addons\authum\gamedll.txt          the real game library (dlls\mp.dll)
+            addons\authum\configs\modules.list  (which modules to load)
+            addons\authum\configs\authum.cfg    (log levels; logs go to addons\authum\logs\)
+
+          In liblist.gam point the engine at Authum:
+            gamedll "addons\authum\authum.dll"
+
+          Each module is a folder addons\authum\modules\<name>\ (<name>.dll, configs\,
+          lang\, data\); list it in configs\modules.list.
+          EOF
+          sed -i 's/^          //' dist-win/addons/authum/INSTALL.txt
+          (cd dist-win && zip -r ../authum-win32.zip addons)
+
+      - name: Upload to the release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = if ("${{ github.event_name }}" -eq "workflow_dispatch") { "${{ inputs.tag }}" } else { "${{ github.ref_name }}" }
+          gh release upload $tag authum-win32.zip --clobber
