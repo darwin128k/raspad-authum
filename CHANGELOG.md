@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.1] - 2026-11-05
+
+### Fixed
+
+- Windows: the HTTP server's listening socket (FastDL's) now holds its port
+  exclusively (`SO_EXCLUSIVEADDRUSE`, through lh's
+  `lh_os_system_net_socket_set_exclusive_addr`). It used to set
+  `SO_REUSEADDR`, which on Windows lets another process bind the same port and
+  take the connections. Linux is unchanged. `lib/lh` moves to `3db378ae`
+  (lh 0.4.0 with that fix).
+
 ## [4.0.0] - 2026-11-05
 
 ### Changed
