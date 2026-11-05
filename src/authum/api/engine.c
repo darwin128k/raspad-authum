@@ -4,7 +4,6 @@
 
 #include <authum/cstr.h>
 
-
 /** Empty @p buf so a refused call still leaves a valid string. */
 authum_bool_t
 authum_engine_buf_reset(authum_char_t *buf, authum_usize_t buf_size)
@@ -15,19 +14,6 @@ authum_engine_buf_reset(authum_char_t *buf, authum_usize_t buf_size)
     }
     buf[0] = lh_char_map_nul;
     return authum_bool_true;
-}
-
-/* --- server --------------------------------------------------------------- */
-
-void
-authum_engine_copy_game_dir(const authum_engine_t *engine, authum_char_t *buf,
-                            authum_usize_t buf_size)
-{
-    if (authum_engine_buf_reset(buf, buf_size) && !authum_null_eq(engine) &&
-        !authum_null_eq((engine)->get_game_dir))
-    {
-        engine->get_game_dir(buf, buf_size);
-    }
 }
 
 void
@@ -64,30 +50,6 @@ authum_engine_get_game_time(const authum_engine_t *engine)
                                                                              : 0.0f;
 }
 
-void
-authum_engine_copy_map_name(const authum_engine_t *engine, authum_char_t *buf,
-                            authum_usize_t buf_size)
-{
-    if (authum_engine_buf_reset(buf, buf_size) && !authum_null_eq(engine) &&
-        !authum_null_eq((engine)->get_map_name))
-    {
-        engine->get_map_name(buf, buf_size);
-    }
-}
-
-authum_bool_t
-authum_engine_cvar_copy(const authum_engine_t *engine, const authum_char_t *name,
-                        authum_char_t *buf, authum_usize_t buf_size)
-{
-    if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
-        authum_null_eq((engine)->cvar_get) || authum_null_eq(name) ||
-        lh_math_eq(name[0], lh_char_map_nul))
-    {
-        return authum_bool_false;
-    }
-    return engine->cvar_get(name, buf, buf_size);
-}
-
 authum_bool_t
 authum_engine_cvar_set(const authum_engine_t *engine, const authum_char_t *name,
                        const authum_char_t *value)
@@ -98,39 +60,6 @@ authum_engine_cvar_set(const authum_engine_t *engine, const authum_char_t *name,
         return authum_bool_false;
     }
     return engine->cvar_set(name, value);
-}
-
-void
-authum_engine_kick(const authum_engine_t *engine, authum_i32_t userid, const authum_char_t *reason)
-{
-    authum_char_t clean[128];
-    authum_usize_t n = 0u;
-
-    if (!authum_null_eq(reason))
-    {
-        for (;
-             lh_math_ne(reason[n], lh_char_map_nul) && lh_math_lt(n, lh_math_sub(sizeof clean, 1u));
-             n = lh_math_add_one(n))
-        {
-            authum_char_t c = reason[n];
-            clean[n] = (lh_math_eq(c, lh_char_map_dquot) || lh_math_eq(c, lh_char_map_semicolon) ||
-                        lh_math_eq(c, lh_char_map_lf) || lh_math_eq(c, lh_char_map_cr))
-                           ? lh_char_map_space
-                           : c;
-        }
-    }
-    clean[n] = lh_char_map_nul;
-    authum_char_t cmd[192];
-    if (lh_math_gt(n, 0u))
-    {
-        lh_str_ptr_format_cstr(cmd, sizeof cmd, "kick #%d \"%s\"\n",
-                               lh_cast_static(authum_i32_t, userid), clean);
-    }
-    else
-    {
-        lh_str_ptr_format_cstr(cmd, sizeof cmd, "kick #%d\n", lh_cast_static(authum_i32_t, userid));
-    }
-    authum_engine_server_command(engine, cmd);
 }
 
 /* --- players -------------------------------------------------------------- */
@@ -157,56 +86,6 @@ authum_engine_client_get_index_by_userid(const authum_engine_t *engine, authum_i
     return (!authum_null_eq(engine) && !authum_null_eq((engine)->client_index_by_userid))
                ? engine->client_index_by_userid(userid)
                : 0;
-}
-
-authum_bool_t
-authum_engine_client_copy_name(const authum_engine_t *engine, authum_i32_t index,
-                               authum_char_t *buf, authum_usize_t buf_size)
-{
-    if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
-        authum_null_eq((engine)->client_get_name))
-    {
-        return authum_bool_false;
-    }
-    return engine->client_get_name(index, buf, buf_size);
-}
-
-authum_bool_t
-authum_engine_client_copy_auth_id(const authum_engine_t *engine, authum_i32_t index,
-                                  authum_char_t *buf, authum_usize_t buf_size)
-{
-    if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
-        authum_null_eq((engine)->client_get_auth_id))
-    {
-        return authum_bool_false;
-    }
-    return engine->client_get_auth_id(index, buf, buf_size);
-}
-
-authum_bool_t
-authum_engine_client_copy_address(const authum_engine_t *engine, authum_i32_t index,
-                                  authum_char_t *buf, authum_usize_t buf_size)
-{
-    if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
-        authum_null_eq((engine)->client_get_address))
-    {
-        return authum_bool_false;
-    }
-    return engine->client_get_address(index, buf, buf_size);
-}
-
-authum_bool_t
-authum_engine_client_copy_info(const authum_engine_t *engine, authum_i32_t index,
-                               const authum_char_t *key, authum_char_t *buf,
-                               authum_usize_t buf_size)
-{
-    if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
-        authum_null_eq((engine)->client_get_info) || authum_null_eq(key) ||
-        lh_math_eq(key[0], lh_char_map_nul))
-    {
-        return authum_bool_false;
-    }
-    return engine->client_get_info(index, key, buf, buf_size);
 }
 
 authum_bool_t
@@ -274,28 +153,6 @@ authum_engine_client_set_info(const authum_engine_t *engine, authum_i32_t index,
     return engine->client_set_info(index, key, value);
 }
 
-authum_bool_t
-authum_engine_client_chat(const authum_engine_t *engine, authum_i32_t index, authum_i32_t sender,
-                          const authum_char_t *text)
-{
-    authum_i32_t say_text = authum_engine_message_get_id(engine, "SayText");
-    authum_i32_t dest = lh_math_eq(index, 0) ? authum_message_dest_all : authum_message_dest_one;
-
-    if (lh_math_eq(say_text, 0) || authum_null_eq(text))
-    {
-        return authum_bool_false;
-    }
-    /* SayText carries the sender's index first; its team picks the \x03 color. */
-    if (!authum_engine_message_begin(engine, dest, say_text, index))
-    {
-        return authum_bool_false;
-    }
-    authum_engine_message_write_byte(engine, sender);
-    authum_engine_message_write_string(engine, text);
-    authum_engine_message_end(engine);
-    return authum_bool_true;
-}
-
 /* --- cvars ------------------------------------------------------------------ */
 
 authum_bool_t
@@ -308,34 +165,6 @@ authum_engine_cvar_register(const authum_engine_t *engine, const authum_char_t *
         return authum_bool_false;
     }
     return engine->cvar_register(name, authum_null_eq(value) ? "" : value, flags);
-}
-
-authum_i32_t
-authum_engine_cvar_get_i32(const authum_engine_t *engine, const authum_char_t *name,
-                           authum_i32_t fallback)
-{
-    authum_char_t text[64];
-
-    if (!authum_engine_cvar_copy(engine, name, text, sizeof text))
-    {
-        return fallback;
-    }
-    authum_i32_t value;
-    return authum_cstr_parse_i32(text, lh_addr_of(value)) ? value : fallback;
-}
-
-authum_float_t
-authum_engine_cvar_get_float(const authum_engine_t *engine, const authum_char_t *name,
-                             authum_float_t fallback)
-{
-    authum_char_t text[64];
-
-    if (!authum_engine_cvar_copy(engine, name, text, sizeof text))
-    {
-        return fallback;
-    }
-    authum_float_t value;
-    return authum_cstr_parse_float(text, lh_addr_of(value)) ? value : fallback;
 }
 
 /* --- user messages ---------------------------------------------------------- */
@@ -377,55 +206,6 @@ authum_engine_message_write(const authum_engine_t *engine, authum_i32_t kind, au
     {
         engine->message_write(kind, value, real, text);
     }
-}
-
-void
-authum_engine_message_write_byte(const authum_engine_t *engine, authum_i32_t value)
-{
-    authum_engine_message_write(engine, authum_message_arg_byte, value, 0.0f, authum_null);
-}
-
-void
-authum_engine_message_write_char(const authum_engine_t *engine, authum_i32_t value)
-{
-    authum_engine_message_write(engine, authum_message_arg_char, value, 0.0f, authum_null);
-}
-
-void
-authum_engine_message_write_short(const authum_engine_t *engine, authum_i32_t value)
-{
-    authum_engine_message_write(engine, authum_message_arg_short, value, 0.0f, authum_null);
-}
-
-void
-authum_engine_message_write_long(const authum_engine_t *engine, authum_i32_t value)
-{
-    authum_engine_message_write(engine, authum_message_arg_long, value, 0.0f, authum_null);
-}
-
-void
-authum_engine_message_write_entity(const authum_engine_t *engine, authum_i32_t index)
-{
-    authum_engine_message_write(engine, authum_message_arg_entity, index, 0.0f, authum_null);
-}
-
-void
-authum_engine_message_write_angle(const authum_engine_t *engine, authum_float_t value)
-{
-    authum_engine_message_write(engine, authum_message_arg_angle, 0, value, authum_null);
-}
-
-void
-authum_engine_message_write_coord(const authum_engine_t *engine, authum_float_t value)
-{
-    authum_engine_message_write(engine, authum_message_arg_coord, 0, value, authum_null);
-}
-
-void
-authum_engine_message_write_string(const authum_engine_t *engine, const authum_char_t *text)
-{
-    authum_engine_message_write(engine, authum_message_arg_string, 0, 0.0f,
-                                authum_null_eq(text) ? "" : text);
 }
 
 void
@@ -488,18 +268,6 @@ authum_engine_entity_is_valid(const authum_engine_t *engine, authum_i32_t index)
     return (!authum_null_eq(engine) && !authum_null_eq((engine)->entity_is_valid))
                ? engine->entity_is_valid(index)
                : authum_bool_false;
-}
-
-authum_bool_t
-authum_engine_entity_copy_classname(const authum_engine_t *engine, authum_i32_t index,
-                                    authum_char_t *buf, authum_usize_t buf_size)
-{
-    if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
-        authum_null_eq((engine)->entity_get_classname))
-    {
-        return authum_bool_false;
-    }
-    return engine->entity_get_classname(index, buf, buf_size);
 }
 
 authum_i32_t
@@ -584,6 +352,187 @@ authum_engine_entity_set_vector(const authum_engine_t *engine, authum_i32_t inde
                : authum_bool_false;
 }
 
+/* --- server --------------------------------------------------------------- */
+
+void
+authum_engine_copy_game_dir(const authum_engine_t *engine, authum_char_t *buf,
+                            authum_usize_t buf_size)
+{
+    if (authum_engine_buf_reset(buf, buf_size) && !authum_null_eq(engine) &&
+        !authum_null_eq((engine)->get_game_dir))
+    {
+        engine->get_game_dir(buf, buf_size);
+    }
+}
+
+void
+authum_engine_copy_map_name(const authum_engine_t *engine, authum_char_t *buf,
+                            authum_usize_t buf_size)
+{
+    if (authum_engine_buf_reset(buf, buf_size) && !authum_null_eq(engine) &&
+        !authum_null_eq((engine)->get_map_name))
+    {
+        engine->get_map_name(buf, buf_size);
+    }
+}
+
+authum_bool_t
+authum_engine_cvar_copy(const authum_engine_t *engine, const authum_char_t *name,
+                        authum_char_t *buf, authum_usize_t buf_size)
+{
+    if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
+        authum_null_eq((engine)->cvar_get) || authum_null_eq(name) ||
+        lh_math_eq(name[0], lh_char_map_nul))
+    {
+        return authum_bool_false;
+    }
+    return engine->cvar_get(name, buf, buf_size);
+}
+
+void
+authum_engine_kick(const authum_engine_t *engine, authum_i32_t userid, const authum_char_t *reason)
+{
+    authum_char_t clean[128];
+    authum_usize_t n = 0u;
+
+    if (!authum_null_eq(reason))
+    {
+        for (;
+             lh_math_ne(reason[n], lh_char_map_nul) && lh_math_lt(n, lh_math_sub(sizeof clean, 1u));
+             n = lh_math_add_one(n))
+        {
+            authum_char_t c = reason[n];
+            clean[n] = (lh_math_eq(c, lh_char_map_dquot) || lh_math_eq(c, lh_char_map_semicolon) ||
+                        lh_math_eq(c, lh_char_map_lf) || lh_math_eq(c, lh_char_map_cr))
+                           ? lh_char_map_space
+                           : c;
+        }
+    }
+    clean[n] = lh_char_map_nul;
+    authum_char_t cmd[192];
+    if (lh_math_gt(n, 0u))
+    {
+        lh_str_ptr_format_cstr(cmd, sizeof cmd, "kick #%d \"%s\"\n",
+                               lh_cast_static(authum_i32_t, userid), clean);
+    }
+    else
+    {
+        lh_str_ptr_format_cstr(cmd, sizeof cmd, "kick #%d\n", lh_cast_static(authum_i32_t, userid));
+    }
+    authum_engine_server_command(engine, cmd);
+}
+
+authum_bool_t
+authum_engine_client_copy_name(const authum_engine_t *engine, authum_i32_t index,
+                               authum_char_t *buf, authum_usize_t buf_size)
+{
+    if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
+        authum_null_eq((engine)->client_get_name))
+    {
+        return authum_bool_false;
+    }
+    return engine->client_get_name(index, buf, buf_size);
+}
+
+authum_bool_t
+authum_engine_client_copy_auth_id(const authum_engine_t *engine, authum_i32_t index,
+                                  authum_char_t *buf, authum_usize_t buf_size)
+{
+    if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
+        authum_null_eq((engine)->client_get_auth_id))
+    {
+        return authum_bool_false;
+    }
+    return engine->client_get_auth_id(index, buf, buf_size);
+}
+
+authum_bool_t
+authum_engine_client_copy_address(const authum_engine_t *engine, authum_i32_t index,
+                                  authum_char_t *buf, authum_usize_t buf_size)
+{
+    if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
+        authum_null_eq((engine)->client_get_address))
+    {
+        return authum_bool_false;
+    }
+    return engine->client_get_address(index, buf, buf_size);
+}
+
+authum_bool_t
+authum_engine_client_copy_info(const authum_engine_t *engine, authum_i32_t index,
+                               const authum_char_t *key, authum_char_t *buf,
+                               authum_usize_t buf_size)
+{
+    if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
+        authum_null_eq((engine)->client_get_info) || authum_null_eq(key) ||
+        lh_math_eq(key[0], lh_char_map_nul))
+    {
+        return authum_bool_false;
+    }
+    return engine->client_get_info(index, key, buf, buf_size);
+}
+
+void
+authum_engine_message_write_byte(const authum_engine_t *engine, authum_i32_t value)
+{
+    authum_engine_message_write(engine, authum_message_arg_byte, value, 0.0f, authum_null);
+}
+
+void
+authum_engine_message_write_char(const authum_engine_t *engine, authum_i32_t value)
+{
+    authum_engine_message_write(engine, authum_message_arg_char, value, 0.0f, authum_null);
+}
+
+void
+authum_engine_message_write_short(const authum_engine_t *engine, authum_i32_t value)
+{
+    authum_engine_message_write(engine, authum_message_arg_short, value, 0.0f, authum_null);
+}
+
+void
+authum_engine_message_write_long(const authum_engine_t *engine, authum_i32_t value)
+{
+    authum_engine_message_write(engine, authum_message_arg_long, value, 0.0f, authum_null);
+}
+
+void
+authum_engine_message_write_entity(const authum_engine_t *engine, authum_i32_t index)
+{
+    authum_engine_message_write(engine, authum_message_arg_entity, index, 0.0f, authum_null);
+}
+
+void
+authum_engine_message_write_angle(const authum_engine_t *engine, authum_float_t value)
+{
+    authum_engine_message_write(engine, authum_message_arg_angle, 0, value, authum_null);
+}
+
+void
+authum_engine_message_write_coord(const authum_engine_t *engine, authum_float_t value)
+{
+    authum_engine_message_write(engine, authum_message_arg_coord, 0, value, authum_null);
+}
+
+void
+authum_engine_message_write_string(const authum_engine_t *engine, const authum_char_t *text)
+{
+    authum_engine_message_write(engine, authum_message_arg_string, 0, 0.0f,
+                                authum_null_eq(text) ? "" : text);
+}
+
+authum_bool_t
+authum_engine_entity_copy_classname(const authum_engine_t *engine, authum_i32_t index,
+                                    authum_char_t *buf, authum_usize_t buf_size)
+{
+    if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
+        authum_null_eq((engine)->entity_get_classname))
+    {
+        return authum_bool_false;
+    }
+    return engine->entity_get_classname(index, buf, buf_size);
+}
+
 authum_bool_t
 authum_engine_client_is_alive(const authum_engine_t *engine, authum_i32_t index)
 {
@@ -619,4 +568,78 @@ authum_engine_client_is_bot(const authum_engine_t *engine, authum_i32_t index)
             lh_math_ne((lh_math_bit_and(flags, authum_entity_flag_fake_client)), 0))
                ? authum_bool_true
                : authum_bool_false;
+}
+
+authum_bool_t
+authum_engine_cmd_copy_argv(const authum_engine_t *engine, authum_i32_t index, authum_char_t *buf,
+                            authum_usize_t buf_size)
+{
+    if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
+        authum_null_eq((engine)->cmd_copy_argv) || lh_math_lt(index, 0))
+    {
+        return authum_bool_false;
+    }
+    return engine->cmd_copy_argv(index, buf, buf_size);
+}
+
+authum_bool_t
+authum_engine_info_copy_value(const authum_engine_t *engine, const authum_char_t *info,
+                              const authum_char_t *key, authum_char_t *buf, authum_usize_t buf_size)
+{
+    if (!authum_engine_buf_reset(buf, buf_size) || authum_null_eq(engine) ||
+        authum_null_eq((engine)->info_copy_value) || authum_null_eq(info) || authum_null_eq(key))
+    {
+        return authum_bool_false;
+    }
+    return engine->info_copy_value(info, key, buf, buf_size);
+}
+
+authum_bool_t
+authum_engine_client_chat(const authum_engine_t *engine, authum_i32_t index, authum_i32_t sender,
+                          const authum_char_t *text)
+{
+    authum_i32_t say_text = authum_engine_message_get_id(engine, "SayText");
+    authum_i32_t dest = lh_math_eq(index, 0) ? authum_message_dest_all : authum_message_dest_one;
+
+    if (lh_math_eq(say_text, 0) || authum_null_eq(text))
+    {
+        return authum_bool_false;
+    }
+    /* SayText carries the sender's index first; its team picks the \x03 color. */
+    if (!authum_engine_message_begin(engine, dest, say_text, index))
+    {
+        return authum_bool_false;
+    }
+    authum_engine_message_write_byte(engine, sender);
+    authum_engine_message_write_string(engine, text);
+    authum_engine_message_end(engine);
+    return authum_bool_true;
+}
+
+authum_i32_t
+authum_engine_cvar_get_i32(const authum_engine_t *engine, const authum_char_t *name,
+                           authum_i32_t fallback)
+{
+    authum_char_t text[64];
+
+    if (!authum_engine_cvar_copy(engine, name, text, sizeof text))
+    {
+        return fallback;
+    }
+    authum_i32_t value;
+    return authum_cstr_parse_i32(text, lh_addr_of(value)) ? value : fallback;
+}
+
+authum_float_t
+authum_engine_cvar_get_float(const authum_engine_t *engine, const authum_char_t *name,
+                             authum_float_t fallback)
+{
+    authum_char_t text[64];
+
+    if (!authum_engine_cvar_copy(engine, name, text, sizeof text))
+    {
+        return fallback;
+    }
+    authum_float_t value;
+    return authum_cstr_parse_float(text, lh_addr_of(value)) ? value : fallback;
 }

@@ -799,6 +799,32 @@ authum_engine_entity_set_vector_impl(authum_i32_t index, authum_i32_t field,
     return authum_bool_true;
 }
 
+authum_bool_t
+authum_engine_cmd_copy_argv_impl(authum_i32_t index, authum_char_t *buf, authum_usize_t buf_size)
+{
+    if (lh_math_eq(g_engfuncs.pfnCmd_Argv, authum_null) || lh_math_lt(index, 0))
+    {
+        return authum_bool_false;
+    }
+    authum_engine_copy(buf, buf_size, g_engfuncs.pfnCmd_Argv(index));
+    return authum_bool_true;
+}
+
+authum_bool_t
+authum_engine_info_copy_value_impl(const authum_char_t *info, const authum_char_t *key,
+                                   authum_char_t *buf, authum_usize_t buf_size)
+{
+    if (lh_math_eq(g_engfuncs.pfnInfoKeyValue, authum_null))
+    {
+        return authum_bool_false;
+    }
+    /* The engine reads the info string only; its prototype predates const. */
+    authum_engine_copy(buf, buf_size,
+                       g_engfuncs.pfnInfoKeyValue(lh_cast_const(authum_char_t *, info),
+                                                  lh_cast_const(authum_char_t *, key)));
+    return authum_bool_true;
+}
+
 const authum_engine_t authum_engine_ops = {
     authum_engine_get_game_dir_impl,
     authum_engine_server_print_impl,
@@ -838,6 +864,8 @@ const authum_engine_t authum_engine_ops = {
     authum_engine_entity_set_i32_impl,
     authum_engine_entity_get_vector_impl,
     authum_engine_entity_set_vector_impl,
+    authum_engine_cmd_copy_argv_impl,
+    authum_engine_info_copy_value_impl,
 };
 
 } // namespace

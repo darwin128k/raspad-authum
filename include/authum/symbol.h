@@ -15,15 +15,16 @@
 #define AUTHUM_SYMBOL_H
 
 #include <authum/bool.h>
+#include <authum/size.h>
 #include <authum/char.h>
 #include <authum/extern.h>
 #include <authum/null.h>
 
 /** File name (no directory) of the HLDS engine library. */
 #if defined(_WIN32)
-#define AUTHUM_SYMBOL_ENGINE_LIBRARY "swds.dll"
+#    define AUTHUM_SYMBOL_ENGINE_LIBRARY "swds.dll"
 #else
-#define AUTHUM_SYMBOL_ENGINE_LIBRARY "engine_i486.so"
+#    define AUTHUM_SYMBOL_ENGINE_LIBRARY "engine_i486.so"
 #endif
 
 AUTHUM_EXTERN_C_BEGIN
@@ -43,6 +44,29 @@ authum_symbol_find(const authum_char_t *library, const authum_char_t *name,
 /** ::authum_symbol_find on ::AUTHUM_SYMBOL_ENGINE_LIBRARY. */
 authum_ptr
 authum_symbol_find_engine(const authum_char_t *name, authum_bool_t *out_via_dynsym);
+
+/**
+ * Find code in a loaded @p library by its bytes, for a function that has no
+ * symbol at all (Windows: an engine internal is neither exported nor in the
+ * image). @p mask says which bits of @p pattern count, byte by byte: 0xFF the
+ * whole byte, 0x00 any byte (an address that differs from build to build).
+ * Only the image's executable code is searched. Never loads the library.
+ *
+ * @p out_count (optional) receives how many places match, counted up to 2:
+ * a pattern meant to name one function should match exactly once, and a
+ * caller should refuse 0 or 2.
+ *
+ * Returns the first match, or null (library not loaded, no code, no match).
+ */
+authum_ptr
+authum_symbol_find_pattern(const authum_char_t *library, const authum_byte_t *pattern,
+                           const authum_byte_t *mask, authum_usize_t size,
+                           authum_usize_t *out_count);
+
+/** authum_symbol_find_pattern in AUTHUM_SYMBOL_ENGINE_LIBRARY. */
+authum_ptr
+authum_symbol_find_engine_pattern(const authum_byte_t *pattern, const authum_byte_t *mask,
+                                  authum_usize_t size, authum_usize_t *out_count);
 
 AUTHUM_EXTERN_C_END
 
