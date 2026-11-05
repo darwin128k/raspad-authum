@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [4.0.0] - 2026-11-05
 
 ### Changed
 
@@ -233,8 +233,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   every handler looked like it had overrun its budget: it ran once, was dropped
   from the chain and the core reported an overrun. The counter is 64-bit now, so
   a handler that keeps to the budget stays where it is.
-
-## [4.0.0] - 2026-10-24
 
 ### Changed
 
