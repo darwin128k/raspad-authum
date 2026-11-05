@@ -35,10 +35,10 @@ jobs:
             -DAUTHUM_LH_LINK_MODE=needed
 
       - name: Build
-        run: cmake --build build --target authum.so -j"$(nproc)"
+        run: cmake --build build -j"$(nproc)"
 
       - name: Test
-        run: ctest --test-dir build --output-on-failure || true
+        run: ctest --test-dir build --output-on-failure
 
       - name: Pack game-library layout
         run: |
