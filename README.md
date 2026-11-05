@@ -5,7 +5,7 @@
 <h1 align="center">Authum</h1>
 
 <p align="center">
-  <b>4.0.0</b> — Metamod-P plugin host for classic HLDS<br>
+  <b>4.1.0</b> — Metamod-P plugin host for classic HLDS<br>
   loads child modules from <code>modules.list</code> / <code>modules/</code>
 </p>
 
@@ -126,7 +126,7 @@ If you already cloned without submodules:
 git submodule update --init --recursive
 ```
 
-`lib/lh` is a **required** submodule on branch **`0.4.0`** of
+`lib/lh` is a **required** submodule on branch **`0.5.0`** of
 [darwin128K/lh](https://github.com/darwin128K/lh). Not `main`. CMake refuses
 any other `lib/lh/VERSION`. To build against another lh tree (one being
 worked on next to Authum), pass `-DAUTHUM_LH_DIR=/path/to/lh`.
@@ -171,7 +171,7 @@ The game library the image wraps is named by file name — `cs.so` for
 Counter-Strike (`-DAUTHUM_GAME_DLL_NAME=cs.so`); at run time it is found in
 the game directory’s `dlls/`.
 
-Linux CI builds `authum.so` on `master` and `4.0.0`. Tag `v*` publishes
+Linux CI builds `authum.so` on `master` and `4.1.0`. Tag `v*` publishes
 `authum-linux32.zip` (the whole `addons/authum/` layout) as a release asset.
 Output: `build-linux32/authum.so`.
 
@@ -183,7 +183,7 @@ Authum builds on (and vendors where noted) the following:
 | Component | Role | License / upstream |
 |-----------|------|--------------------|
 | **HLSDK** | Engine / game headers (`lib/hlsdk`, vendored) | Valve HLSDK |
-| **lh** | Host internals; JSON and SQL behind `<authum/json.h>` / `<authum/sql.h>` (`lib/lh` submodule, branch `0.4.0`) | [darwin128K/lh](https://github.com/darwin128K/lh) |
+| **lh** | Host internals; JSON and SQL behind `<authum/json.h>` / `<authum/sql.h>` (`lib/lh` submodule, branch `0.5.0`) | [darwin128K/lh](https://github.com/darwin128K/lh) |
 | **SQLite** | 3.46.1 amalgamation for `<authum/sql.h>`, vendored in lh (`lib/lh/lib/sqlite`) | [sqlite.org](https://www.sqlite.org/) ([copyright](https://www.sqlite.org/copyright.html)) |
 | **Monocypher** | 4.0.2, Ed25519 signatures behind `<authum/crypto/ed25519.h>`, vendored in lh (`lib/lh/lib/monocypher`) | BSD-2-Clause / CC0 — [monocypher.org](https://monocypher.org/) |
 

@@ -58,29 +58,29 @@ if (AUTHUM_FORCE_32BIT)
     endif ()
 endif ()
 
-# Authum is locked to lh 0.4.0 (INI, JSON, SQL + LH_STATIC_LIBGCC). Clone with
-# --recurse-submodules; .gitmodules tracks branch 0.4.0. Refuse any other VERSION.
+# Authum is locked to lh 0.5.0 (INI, JSON, SQL + LH_STATIC_LIBGCC). Clone with
+# --recurse-submodules; .gitmodules tracks branch 0.5.0. Refuse any other VERSION.
 #
 # AUTHUM_LH_DIR points the build at another lh tree (an lh checkout being worked
 # on alongside Authum); it defaults to the submodule.
 set(AUTHUM_LH_DIR "${CMAKE_SOURCE_DIR}/lib/lh" CACHE PATH "lh source tree Authum builds with")
-set(AUTHUM_LH_REQUIRED_VERSION "0.4.0")
+set(AUTHUM_LH_REQUIRED_VERSION "0.5.0")
 set(_authum_lh_version_file "${AUTHUM_LH_DIR}/VERSION")
 if (NOT EXISTS "${_authum_lh_version_file}")
     message(FATAL_ERROR
             "${AUTHUM_LH_DIR} is missing (no VERSION). Run:\n"
             "  git submodule update --init --recursive\n"
-            "Authum requires lh ${AUTHUM_LH_REQUIRED_VERSION} (branch 0.4.0).")
+            "Authum requires lh ${AUTHUM_LH_REQUIRED_VERSION} (branch 0.5.0).")
 endif ()
 file(READ "${_authum_lh_version_file}" _authum_lh_version)
 string(STRIP "${_authum_lh_version}" _authum_lh_version)
 if (NOT _authum_lh_version STREQUAL AUTHUM_LH_REQUIRED_VERSION)
     message(FATAL_ERROR
             "${AUTHUM_LH_DIR} VERSION is '${_authum_lh_version}', Authum requires "
-            "${AUTHUM_LH_REQUIRED_VERSION} (git branch 0.4.0).\n"
+            "${AUTHUM_LH_REQUIRED_VERSION} (git branch 0.5.0).\n"
             "Fix with:\n"
             "  git -C lib/lh fetch origin\n"
-            "  git -C lib/lh checkout 0.4.0\n"
+            "  git -C lib/lh checkout 0.5.0\n"
             "  git submodule update --init lib/lh")
 endif ()
 
