@@ -34,10 +34,11 @@ authum_http_listener_open(const authum_http_options_t *options, authum_char_t *e
                                              authum_http_get_error_text()));
         return LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID;
     }
-    /* POSIX: SO_REUSEADDR only lets a new listener take the port over from
-     * connections still in TIME_WAIT. Windows: lh sets SO_EXCLUSIVEADDRUSE
-     * instead, so no other process can bind the same port next to us. */
-    authum_unused(lh_os_system_net_socket_set_reuse_addr(listener, lh_bool_true));
+    /* The port is ours alone, and a restart may take it over from connections
+     * still in TIME_WAIT: SO_REUSEADDR on POSIX, SO_EXCLUSIVEADDRUSE on Windows,
+     * where SO_REUSEADDR would let another process bind the same port and take
+     * the connections. */
+    authum_unused(lh_os_system_net_socket_set_exclusive_addr(listener, lh_bool_true));
     authum_http_error_reset();
     if (!lh_os_system_net_socket_bind(listener, lh_addr_of(address)) ||
         !lh_os_system_net_socket_listen(listener, 64))
