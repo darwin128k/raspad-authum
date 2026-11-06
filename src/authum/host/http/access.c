@@ -2,7 +2,6 @@
 #include <lh/core/char/map.h>
 #include <lh/core/memory/std.h>
 #include <lh/core/str/format/sllong.h>
-#include <lh/core/str/format/ullong.h>
 
 void
 authum_http_access_line(authum_http_server_t *server, const authum_char_t *line)

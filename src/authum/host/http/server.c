@@ -6,14 +6,31 @@
 #include <lh/os/thread.h>
 #include <lh/core/runtime/logger.h>
 
+lh_os_fs_file_t *
+authum_http_server_get_roots_mut(authum_http_server_t *server)
+{
+    return server->roots;
+}
+
+authum_http_client_t *
+authum_http_server_get_clients_mut(authum_http_server_t *server)
+{
+    return server->clients;
+}
+
 void
 authum_http_server_release_resources(authum_http_server_t *server)
 {
     for (authum_usize_t i = 0; lh_math_lt(i, AUTHUM_HTTP_MAX_SOURCES); i = lh_math_add_one(i))
     {
-        if (lh_math_ne(server->roots[i], LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID))
+        lh_os_fs_file_deinit(lh_addr_of(authum_http_server_get_roots_mut(server)[i]));
+    }
+    if (authum_http_server_get_clients_mut(server))
+    {
+        for (authum_i32_t i = 0; lh_math_lt(i, server->options.max_clients); i = lh_math_add_one(i))
         {
-            lh_os_system_fs_file_close(server->roots[i]);
+            lh_os_fs_file_deinit(authum_http_client_get_file_mut(
+                lh_addr_of(authum_http_server_get_clients_mut(server)[i])));
         }
     }
     lh_os_net_socket_close(lh_addr_of(server->listener));
@@ -90,7 +107,7 @@ authum_http_server_create(const authum_http_options_t *options, const authum_cha
     atomic_init(lh_addr_of(server->refs), 2);
     for (authum_usize_t i = 0; lh_math_lt(i, AUTHUM_HTTP_MAX_SOURCES); i = lh_math_add_one(i))
     {
-        server->roots[i] = LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
+        lh_os_fs_file_init(lh_addr_of(authum_http_server_get_roots_mut(server)[i]));
     }
     if (!options->source_count || lh_math_gt(options->source_count, AUTHUM_HTTP_MAX_SOURCES) ||
         lh_math_lt(options->max_clients, 1) ||
@@ -110,7 +127,8 @@ authum_http_server_create(const authum_http_options_t *options, const authum_cha
     for (authum_i32_t i = 0; lh_math_lt(i, options->max_clients); i = lh_math_add_one(i))
     {
         lh_os_net_socket_init(lh_addr_of(server->clients[i].fd));
-        server->clients[i].file = LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
+        lh_os_fs_file_init(authum_http_client_get_file_mut(
+            lh_addr_of(authum_http_server_get_clients_mut(server)[i])));
         server->clients[i].ip_slot = -1;
     }
     if (!authum_http_trusted_parse(server, error, error_size))
@@ -120,8 +138,8 @@ authum_http_server_create(const authum_http_options_t *options, const authum_cha
     for (authum_usize_t i = 0; lh_math_lt(i, options->source_count); i = lh_math_add_one(i))
     {
         authum_http_error_reset();
-        server->roots[i] = lh_os_system_fs_file_open_root(options->sources[i]);
-        if (lh_math_eq(server->roots[i], LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID))
+        if (!lh_os_fs_file_try_open_root_cstr(
+                lh_addr_of(authum_http_server_get_roots_mut(server)[i]), options->sources[i]))
         {
             authum_unused(lh_str_ptr_format_cstr(
                 error, error_size, "cannot open source[%u] '%.140s': %s",
