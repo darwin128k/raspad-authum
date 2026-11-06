@@ -57,20 +57,20 @@ authum_i32_t
 available_port(void)
 {
     lh_net_ip4_socket_addr_t address = loopback(0);
-    const lh_os_system_net_socket_handle_t socket =
-        lh_os_system_net_socket_open(lh_os_system_net_socket_type_tcp);
+    lh_os_net_socket_t socket;
 
-    if (socket == LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID)
+    lh_os_net_socket_init(&socket);
+    if (!lh_os_net_socket_open(&socket, lh_net_socket_type_tcp))
     {
         return -1;
     }
-    if (!lh_os_system_net_socket_bind(socket, &address) ||
-        !lh_os_system_net_socket_get_local_addr(socket, &address))
+    if (!lh_os_net_socket_bind(&socket, &address) ||
+        !lh_os_net_socket_get_local_addr(&socket, &address))
     {
-        lh_os_system_net_socket_close(socket);
+        lh_os_net_socket_close(&socket);
         return -1;
     }
-    lh_os_system_net_socket_close(socket);
+    lh_os_net_socket_close(&socket);
     return lh_net_ip4_socket_addr_get_port(&address);
 }
 
@@ -112,7 +112,7 @@ static authum_http_service_t service, foreign_service;
 static authum_http_options_t options;
 static char directory[200], filename[256], error[512];
 static lh_os_system_fs_file_handle_t root_fd;
-static lh_os_system_net_socket_handle_t client_fd;
+static lh_os_net_socket_t client_fd;
 static authum_http_server_t *server;
 
 void
@@ -141,7 +141,7 @@ class authum_http : public ::testing::Test
         ASSERT_TRUE(lh_os_net_init());
         server = authum_null;
         root_fd = LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
-        client_fd = LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID;
+        lh_os_net_socket_init(&client_fd);
 #if defined(_WIN32)
         /* An absolute directory of this run: sources must be absolute. */
         test_mkdir("authum-http-test");
@@ -184,10 +184,7 @@ class authum_http : public ::testing::Test
     void
     TearDown() override
     {
-        if (client_fd != LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID)
-        {
-            lh_os_system_net_socket_close(client_fd);
-        }
+        lh_os_net_socket_close(&client_fd);
         authum_threads_host_stop_owner(&thread_owner);
         authum_http_host_drop_owner(&owner);
         authum_http_host_drop_owner(&foreign_owner);
@@ -225,19 +222,19 @@ request_resource(char *response, size_t capacity)
 {
     const lh_net_ip4_socket_addr_t address =
         loopback(static_cast<lh_net_port_t>(options.port));
-    client_fd = lh_os_system_net_socket_open(lh_os_system_net_socket_type_tcp);
-    ASSERT_NE(client_fd, LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID);
-    ASSERT_TRUE(lh_os_system_net_socket_connect(client_fd, &address));
+    ASSERT_TRUE(lh_os_net_socket_open(&client_fd, lh_net_socket_type_tcp));
+    ASSERT_TRUE(lh_os_net_socket_connect(&client_fd, &address));
     const char *request = "GET /shared.bsp HTTP/1.1\r\nHost: localhost\r\n\r\n";
-    ASSERT_GT(lh_os_system_net_socket_send(client_fd, request, strlen(request)), 0);
+    ASSERT_GT(lh_os_net_socket_send(&client_fd, request, strlen(request)), 0);
+    lh_os_net_socket_t *const readable[1] = {&client_fd};
     size_t received = 0;
     for (;;)
     {
         ASSERT_LT(received, capacity - 1);
         /* Two seconds for each piece of the answer. */
-        ASSERT_GT(lh_os_system_net_socket_wait(&client_fd, 1U, nullptr, 0U, 2000U), 0);
+        ASSERT_GT(lh_os_net_socket_wait(readable, 1U, nullptr, 0U, 2000U), 0);
         lh_ssize_t size =
-            lh_os_system_net_socket_recv(client_fd, response + received, capacity - 1 - received);
+            lh_os_net_socket_recv(&client_fd, response + received, capacity - 1 - received);
         ASSERT_GE(size, 0);
         if (!size)
         {
@@ -246,8 +243,7 @@ request_resource(char *response, size_t capacity)
         received += static_cast<size_t>(size);
     }
     response[received] = 0;
-    lh_os_system_net_socket_close(client_fd);
-    client_fd = LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID;
+    lh_os_net_socket_close(&client_fd);
 }
 
 TEST_F(authum_http, rejects_relative_and_null_sources)
