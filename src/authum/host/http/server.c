@@ -16,10 +16,7 @@ authum_http_server_release_resources(authum_http_server_t *server)
             lh_os_system_fs_file_close(server->roots[i]);
         }
     }
-    if (lh_math_ne(server->listener, LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID))
-    {
-        lh_os_system_net_socket_close(server->listener);
-    }
+    lh_os_net_socket_close(lh_addr_of(server->listener));
     lh_os_wake_close(lh_addr_of(server->wake));
     lh_os_net_deinit();
     authum_memory_free(server->clients);
@@ -39,16 +36,13 @@ authum_http_server_release(authum_http_server_t *server)
 void
 authum_http_prepare_first_poll(authum_http_server_t *server)
 {
-    server->events[0] =
-        (lh_os_net_socket_poll_t){.handle = server->listener, .events = lh_os_net_socket_poll_read};
-    server->events[1] =
-        (lh_os_net_socket_poll_t){.handle = lh_os_wake_get_handle(lh_addr_of(server->wake)),
-                                  .events = lh_os_net_socket_poll_read};
+    lh_os_net_socket_get_poll(lh_addr_of(server->listener), lh_os_net_socket_poll_read,
+                              lh_addr_of(server->events[0]));
+    lh_os_wake_get_poll(lh_addr_of(server->wake), lh_addr_of(server->events[1]));
     for (authum_i32_t index = 0; lh_math_lt(index, server->options.max_clients);
          index = lh_math_add_one(index))
     {
-        server->events[lh_math_add(index, 2)] =
-            (lh_os_net_socket_poll_t){.handle = LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID};
+        lh_os_net_socket_poll_init_empty(lh_addr_of(server->events[lh_math_add(index, 2)]));
     }
 }
 
@@ -88,7 +82,7 @@ authum_http_server_create(const authum_http_options_t *options, const authum_cha
         authum_unused(lh_str_ptr_format_cstr(server->tag_text, sizeof server->tag_text, "%s", tag));
         server->tag = server->tag_text;
     }
-    server->listener = LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID;
+    lh_os_net_socket_init(lh_addr_of(server->listener));
     lh_os_wake_init(lh_addr_of(server->wake));
     atomic_init(lh_addr_of(server->log_read), 0);
     atomic_init(lh_addr_of(server->log_write), 0);
@@ -115,7 +109,7 @@ authum_http_server_create(const authum_http_options_t *options, const authum_cha
     }
     for (authum_i32_t i = 0; lh_math_lt(i, options->max_clients); i = lh_math_add_one(i))
     {
-        server->clients[i].fd = LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID;
+        lh_os_net_socket_init(lh_addr_of(server->clients[i].fd));
         server->clients[i].file = LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
         server->clients[i].ip_slot = -1;
     }
@@ -143,8 +137,7 @@ authum_http_server_create(const authum_http_options_t *options, const authum_cha
                                              authum_http_get_error_text()));
         goto failed;
     }
-    server->listener = authum_http_listener_open(options, error, error_size);
-    if (lh_math_eq(server->listener, LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID))
+    if (!authum_http_listener_open(lh_addr_of(server->listener), options, error, error_size))
     {
         goto failed;
     }

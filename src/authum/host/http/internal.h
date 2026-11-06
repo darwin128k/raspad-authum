@@ -2,7 +2,6 @@
 #define AUTHUM_HOST_HTTP_INTERNAL_H
 
 #include <authum/host/http.h>
-#include <lh/os/system/net/socket.h>
 #include <authum/net.h>
 #include <authum/host/clock.h>
 #ifdef __cplusplus
@@ -84,7 +83,7 @@ typedef enum authum_http_client_state
 
 typedef struct authum_http_client
 {
-    lh_os_system_net_socket_handle_t fd;
+    lh_os_net_socket_t fd;
     lh_os_system_fs_file_handle_t file;
     authum_i32_t ip_slot;
     authum_http_client_state_t state;
@@ -171,7 +170,7 @@ struct authum_http_server
     /** The node the loop is reaped through if the stop gives up on it. */
     authum_http_orphan_t *orphan;
     lh_os_system_fs_file_handle_t roots[AUTHUM_HTTP_MAX_SOURCES];
-    lh_os_system_net_socket_handle_t listener;
+    lh_os_net_socket_t listener;
     lh_os_wake_t wake;
     /** The worker: a loop that sleeps in poll on the sockets and the wake signal. */
     lh_rail_loop_t *loop;
@@ -334,21 +333,25 @@ authum_http_server_memory(const authum_http_server_t *server);
 authum_u32_t
 authum_http_server_drain(authum_http_server_t *server, authum_http_log_fn sink, authum_ptr user,
                          authum_u32_t limit);
-lh_os_system_net_socket_handle_t
-authum_http_listener_open(const authum_http_options_t *options, authum_char_t *error,
-                          authum_u32_t error_size);
-lh_os_system_net_socket_handle_t
-authum_http_socket_accept(lh_os_system_net_socket_handle_t listener, authum_http_client_t *peer, authum_u32_t *address);
+authum_bool_t
+authum_http_listener_open(lh_os_net_socket_t *listener, const authum_http_options_t *options,
+                          authum_char_t *error, authum_u32_t error_size);
+
+/** Accept one connection into @p peer's socket (left empty when none waits). */
+authum_bool_t
+authum_http_socket_accept(lh_os_net_socket_t *listener, authum_http_client_t *peer,
+                          authum_u32_t *address);
 
 authum_i64_t
-authum_http_socket_receive(lh_os_system_net_socket_handle_t fd, authum_char_t *buffer, authum_usize_t size);
+authum_http_socket_receive(lh_os_net_socket_t *socket, authum_char_t *buffer, authum_usize_t size);
 
 authum_i64_t
-authum_http_socket_send(lh_os_system_net_socket_handle_t fd, const authum_char_t *buffer, authum_usize_t size);
+authum_http_socket_send(lh_os_net_socket_t *socket, const authum_char_t *buffer,
+                        authum_usize_t size);
 
 authum_i64_t
-authum_http_socket_send_file(lh_os_system_net_socket_handle_t socket, lh_os_system_fs_file_handle_t file, lh_u64_t *offset,
-                             authum_usize_t size);
+authum_http_socket_send_file(lh_os_net_socket_t *socket, lh_os_system_fs_file_handle_t file,
+                             lh_u64_t *offset, authum_usize_t size);
 /** The last OS error as text, for an error message. */
 const authum_char_t *
 authum_http_get_error_text(void);

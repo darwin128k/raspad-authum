@@ -8,17 +8,16 @@ static void
 prepare_connections(authum_http_server_t *server, lh_os_net_socket_poll_t *events, authum_i64_t now,
                     double tokens)
 {
-    events[0] =
-        (lh_os_net_socket_poll_t){.handle = server->listener, .events = lh_os_net_socket_poll_read};
-    events[1] = (lh_os_net_socket_poll_t){.handle = lh_os_wake_get_handle(lh_addr_of(server->wake)),
-                                          .events = lh_os_net_socket_poll_read};
+    lh_os_net_socket_get_poll(lh_addr_of(server->listener), lh_os_net_socket_poll_read,
+                              lh_addr_of(events[0]));
+    lh_os_wake_get_poll(lh_addr_of(server->wake), lh_addr_of(events[1]));
     server->deferred_readers = 0;
     const lh_u64_t now_us = lh_os_tick_us();
     for (authum_i32_t index = 0; lh_math_lt(index, server->options.max_clients);
          index = lh_math_add_one(index))
     {
         authum_http_client_t *client = lh_addr_of(server->clients[index]);
-        if (lh_math_ne(client->fd, LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID) &&
+        if (lh_os_net_socket_is_valid(lh_addr_of(client->fd)) &&
             authum_http_client_expired(client, lh_addr_of(server->options), now))
         {
             client->close_reason = "timeout";
@@ -44,8 +43,8 @@ prepare_connections(authum_http_server_t *server, lh_os_net_socket_poll_t *event
                 server->deferred_readers = lh_math_add_one(server->deferred_readers);
             }
         }
-        events[lh_math_add(index, 2)] =
-            (lh_os_net_socket_poll_t){.handle = client->fd, .events = interest};
+        lh_os_net_socket_get_poll(lh_addr_of(client->fd), interest,
+                                  lh_addr_of(events[lh_math_add(index, 2)]));
     }
 }
 
@@ -53,7 +52,7 @@ static void
 dispatch_connection(authum_http_server_t *server, authum_http_client_t *client, lh_uint_t events,
                     authum_i64_t now, double *tokens)
 {
-    if (lh_math_eq(client->fd, LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID))
+    if (!lh_os_net_socket_is_valid(lh_addr_of(client->fd)))
     {
         return;
     }
@@ -71,7 +70,8 @@ dispatch_connection(authum_http_server_t *server, authum_http_client_t *client, 
     {
         authum_http_client_write(server, client, now, tokens);
     }
-    if (lh_math_ne(client->fd, LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID) && (lh_math_bit_and(events, lh_os_net_socket_poll_hangup)))
+    if (lh_os_net_socket_is_valid(lh_addr_of(client->fd)) &&
+        (lh_math_bit_and(events, lh_os_net_socket_poll_hangup)))
     {
         authum_http_client_close(server, client);
     }
@@ -117,7 +117,7 @@ authum_http_wait(authum_ptr arg, lh_u32_t timeout_ms)
         /* Nothing is known ready: the next step only prepares the next poll. */
         for (lh_usize_t index = 0; lh_math_lt(index, count); index = lh_math_add_one(index))
         {
-            server->events[index].ready = 0;
+            lh_os_net_socket_poll_set_ready(lh_addr_of(server->events[index]), 0);
         }
     }
 }
@@ -142,17 +142,13 @@ authum_http_step(authum_ptr arg)
         }
         authum_http_refusals_flush(server, lh_math_add(now, 1000));
         /* Free the port here: after a stop that stopped waiting, nobody else will. */
-        if (lh_math_ne(server->listener, LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID))
-        {
-            lh_os_system_net_socket_close(server->listener);
-            server->listener = LH_OS_SYSTEM_NET_SOCKET_HANDLE_INVALID;
-        }
+        lh_os_net_socket_close(lh_addr_of(server->listener));
         return;
     }
     authum_http_refusals_flush(server, now);
     authum_http_budget_refill(lh_addr_of(server->tokens), lh_addr_of(server->last_refill), now,
                               lh_addr_of(server->options));
-    if (server->events[1].ready)
+    if (lh_os_net_socket_poll_get_ready(lh_addr_of(server->events[1])))
     {
         authum_unused(lh_os_wake_reset(lh_addr_of(server->wake)));
     }
@@ -163,12 +159,13 @@ authum_http_step(authum_ptr arg)
     {
         authum_usize_t index =
             lh_math_mod((lh_math_add(server->cursor, count)), server->options.max_clients);
-        dispatch_connection(server, lh_addr_of(server->clients[index]),
-                            server->events[lh_math_add(index, 2)].ready, now,
-                            lh_addr_of(server->tokens));
+        dispatch_connection(
+            server, lh_addr_of(server->clients[index]),
+            lh_os_net_socket_poll_get_ready(lh_addr_of(server->events[lh_math_add(index, 2)])), now,
+            lh_addr_of(server->tokens));
     }
     server->cursor = lh_math_mod((lh_math_add(server->cursor, 1)), server->options.max_clients);
-    if (lh_math_bit_and(server->events[0].ready, lh_os_net_socket_poll_read))
+    if (lh_os_net_socket_poll_is_readable(lh_addr_of(server->events[0])))
     {
         authum_http_clients_accept(server, now);
     }
