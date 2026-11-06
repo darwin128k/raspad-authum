@@ -17,8 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The HTTP server opens source roots and files through LH filesystem objects; handle-relative lookup still refuses links and path escapes.
 - LH's execution part is `lh/rail` now (was `lh/exec`): the host's tasks and HTTP server use `lh_rail_*`. `authum_runtime_install` also fills LH's rail base slot with the OS base (`lh/os/rail/base.h`), which rail's threads and loops now need in every image.
-- `lib/lh` moves to lh 0.5.0 at `bcc36c44`: rail with its base slot, the loop pass, critical-section atomics, Ed25519 on lh's own bricks (the vendored Monocypher is gone), and SQLite beside its driver (`src/lh/os/sql/sqlite/third_party`).
+- `lib/lh` moves to lh 0.5.0 at `af1c75dc`: rail with its base slot, the loop pass, critical-section atomics, Ed25519 on lh's own bricks (the vendored Monocypher is gone), SQLite beside its driver (`src/lh/os/sql/sqlite/third_party`), listeners that own their port, and portable sockets and files that the HTTP server now uses instead of `lh_os_system_net_*` / `lh_os_system_fs_file_*`.
 
 ## [4.0.0] - 2026-11-05
 

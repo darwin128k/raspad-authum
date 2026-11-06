@@ -194,15 +194,15 @@ authum_http_request_read(authum_http_server_t *server, authum_http_client_t *cli
     lh_u64_t length = 0;
     for (authum_usize_t i = 0; lh_math_lt(i, options->source_count); i = lh_math_add_one(i))
     {
-        client->file = authum_http_resource_open(server->roots[i], options, relative,
-                                                 lh_addr_of(length), lh_addr_of(reason));
-        if (lh_math_ne(client->file, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID))
+        if (authum_http_resource_open(authum_http_client_get_file_mut(client),
+                                      lh_addr_of(authum_http_server_get_roots_mut(server)[i]),
+                                      options, relative, lh_addr_of(length), lh_addr_of(reason)))
         {
             client->source = lh_math_add(i, 1);
             break;
         }
     }
-    if (lh_math_eq(client->file, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID))
+    if (!lh_os_fs_file_is_valid(authum_http_client_get_file_mut(client)))
     {
         refuse(client, 404, "Not Found", reason);
     }

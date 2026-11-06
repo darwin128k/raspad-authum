@@ -3,6 +3,12 @@
 #include <lh/core/memory/std.h>
 #include <lh/core/char/map.h>
 
+lh_os_fs_file_t *
+authum_http_client_get_file_mut(authum_http_client_t *client)
+{
+    return lh_addr_of(client->file);
+}
+
 void
 authum_http_client_close(authum_http_server_t *server, authum_http_client_t *client)
 {
@@ -24,13 +30,10 @@ authum_http_client_close(authum_http_server_t *server, authum_http_client_t *cli
         }
         authum_http_peer_release(server, client->ip_slot);
     }
-    if (lh_math_ne(client->file, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID))
-    {
-        lh_os_system_fs_file_close(client->file);
-    }
+    lh_os_fs_file_deinit(authum_http_client_get_file_mut(client));
     lh_memory_std_set(client, 0, sizeof lh_ptr_deref(client));
     lh_os_net_socket_init(lh_addr_of(client->fd));
-    client->file = LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
+    lh_os_fs_file_init(authum_http_client_get_file_mut(client));
     client->ip_slot = -1;
 }
 
@@ -120,7 +123,7 @@ authum_http_clients_accept(authum_http_server_t *server, authum_i64_t now)
             continue;
         }
 
-        peer.file = LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
+        lh_os_fs_file_init(authum_http_client_get_file_mut(lh_addr_of(peer)));
         peer.ip_slot = ip;
         peer.address = address;
         peer.proxied = proxied;
@@ -219,7 +222,8 @@ authum_http_client_write(authum_http_server_t *server, authum_http_client_t *cli
         {
             budget = lh_cast_static(authum_usize_t, client->remaining);
         }
-        sent = authum_http_socket_send_file(lh_addr_of(client->fd), client->file,
+        sent = authum_http_socket_send_file(lh_addr_of(client->fd),
+                                            authum_http_client_get_file_mut(client),
                                             lh_addr_of(client->offset), budget);
         if (lh_math_gt(sent, 0))
         {

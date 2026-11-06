@@ -200,24 +200,31 @@ authum_http_resource_check(const authum_http_options_t *options, const authum_ch
     return n;
 }
 
-lh_os_system_fs_file_handle_t
-authum_http_resource_open(lh_os_system_fs_file_handle_t root, const authum_http_options_t *options,
-                          const authum_char_t *path, lh_u64_t *length, const authum_char_t **reason)
+authum_bool_t
+authum_http_resource_open(lh_os_fs_file_t *file, const lh_os_fs_file_t *root,
+                          const authum_http_options_t *options, const authum_char_t *path,
+                          lh_u64_t *length, const authum_char_t **reason)
 {
+    lh_fs_path_t relative;
+    lh_fs_path_init(lh_addr_of(relative));
+    lh_str_view_t text;
+    lh_str_view_init(lh_addr_of(text), path);
+    lh_fs_path_set(lh_addr_of(relative), text, lh_fs_path_style_posix);
     lh_fs_size_t size;
-    lh_os_system_fs_file_handle_t file =
-        lh_os_system_fs_file_open_read_at(root, path, lh_addr_of(size));
-    if (lh_math_eq(file, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID))
+    authum_bool_t opened =
+        lh_os_fs_file_try_open_read_at(file, root, lh_addr_of(relative), lh_addr_of(size));
+    lh_fs_path_deinit(lh_addr_of(relative));
+    if (!opened)
     {
         *reason = "not_found";
-        return LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
+        return authum_bool_false;
     }
     if (lh_math_gt(size, options->max_file_bytes))
     {
-        lh_os_system_fs_file_close(file);
+        lh_os_fs_file_close(file);
         *reason = "too_large";
-        return LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
+        return authum_bool_false;
     }
     lh_ptr_deref(length) = lh_cast_static(lh_u64_t, size);
-    return file;
+    return authum_bool_true;
 }

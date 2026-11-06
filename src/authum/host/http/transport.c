@@ -84,7 +84,7 @@ authum_http_socket_send(lh_os_net_socket_t *socket, const authum_char_t *buffer,
 }
 
 authum_i64_t
-authum_http_socket_send_file(lh_os_net_socket_t *socket, lh_os_system_fs_file_handle_t file,
+authum_http_socket_send_file(lh_os_net_socket_t *socket, const lh_os_fs_file_t *file,
                              lh_u64_t *offset, authum_usize_t size)
 {
     return lh_os_net_socket_send_file(socket, file, offset, size);

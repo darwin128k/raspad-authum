@@ -23,22 +23,25 @@ static const lh_u64_t k_unset = ~0ULL;
 
 /* What the worker does with a request target: decode and check it, then open
  * the checked path. @p reason (optional) receives why it was refused. */
-static lh_os_system_fs_file_handle_t
-resource_open(lh_os_system_fs_file_handle_t root, const authum_http_options_t *options,
-              const char *url, size_t length, lh_u64_t *size, const char **reason = nullptr)
+static bool
+resource_open(const lh_os_fs_file_t *root, const authum_http_options_t *options, const char *url,
+              size_t length, lh_u64_t *size, const char **reason = nullptr)
 {
     char path[2048];
     const char *why = nullptr;
-    lh_os_system_fs_file_handle_t file = LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
+    lh_os_fs_file_t file;
+    lh_os_fs_file_init(&file);
+    bool opened = false;
     if (authum_http_resource_check(options, url, length, path, sizeof path, &why))
     {
-        file = authum_http_resource_open(root, options, path, size, &why);
+        opened = authum_http_resource_open(&file, root, options, path, size, &why);
     }
     if (reason)
     {
         *reason = why;
     }
-    return file;
+    lh_os_fs_file_deinit(&file);
+    return opened;
 }
 
 /* 127.0.0.1:port. */
@@ -111,7 +114,7 @@ static authum_http_owner_t owner, foreign_owner;
 static authum_http_service_t service, foreign_service;
 static authum_http_options_t options;
 static char directory[200], filename[256], error[512];
-static lh_os_system_fs_file_handle_t root_fd;
+static lh_os_fs_file_t source_root;
 static lh_os_net_socket_t client_fd;
 static authum_http_server_t *server;
 
@@ -140,7 +143,7 @@ class authum_http : public ::testing::Test
         authum_http_host_init(&foreign_owner, &foreign_service);
         ASSERT_TRUE(lh_os_net_init());
         server = authum_null;
-        root_fd = LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID;
+        lh_os_fs_file_init(&source_root);
         lh_os_net_socket_init(&client_fd);
 #if defined(_WIN32)
         /* An absolute directory of this run: sources must be absolute. */
@@ -171,8 +174,7 @@ class authum_http : public ::testing::Test
         snprintf(path, sizeof path, "%s/fifo.bsp", directory);
         ASSERT_EQ(mkfifo(path, 0600), 0);
 #endif
-        root_fd = lh_os_system_fs_file_open_root(directory);
-        ASSERT_NE(root_fd, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
+        ASSERT_TRUE(lh_os_fs_file_try_open_root_cstr(&source_root, directory));
         authum_http_options_init(&options);
         ASSERT_TRUE(authum_http_source_add(&options, directory));
         strcpy(options.allow_extensions, "bsp");
@@ -189,10 +191,7 @@ class authum_http : public ::testing::Test
         authum_http_host_drop_owner(&owner);
         authum_http_host_drop_owner(&foreign_owner);
         authum_threads_host_drop_owner(&thread_owner);
-        if (root_fd != LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID)
-        {
-            lh_os_system_fs_file_close(root_fd);
-        }
+        lh_os_fs_file_deinit(&source_root);
         const char *files[] = {"maps/nested.bsp", "link.bsp", "alias",
                                ".hidden.bsp",     "fifo.bsp", "shared.bsp"};
         char path[256];
@@ -488,10 +487,8 @@ TEST_F(authum_http, opens_allowed_nested_resource)
 {
     const char *url = "/maps/nested.bsp";
     lh_u64_t size = k_unset;
-    lh_os_system_fs_file_handle_t fd = resource_open(root_fd, &options, url, strlen(url), &size);
-    ASSERT_NE(fd, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
+    ASSERT_TRUE(resource_open(&source_root, &options, url, strlen(url), &size));
     EXPECT_EQ(size, 6U);
-    lh_os_system_fs_file_close(fd);
 }
 
 class authum_http_denied_path : public authum_http,
@@ -503,13 +500,8 @@ TEST_P(authum_http_denied_path, refuses_unsafe_path_without_changing_size)
 {
     lh_u64_t size = k_unset;
     const char *url = GetParam();
-    lh_os_system_fs_file_handle_t fd = resource_open(root_fd, &options, url, strlen(url), &size);
-    EXPECT_EQ(fd, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
+    EXPECT_FALSE(resource_open(&source_root, &options, url, strlen(url), &size));
     EXPECT_EQ(size, k_unset);
-    if (fd != LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID)
-    {
-        lh_os_system_fs_file_close(fd);
-    }
 }
 
 INSTANTIATE_TEST_SUITE_P(unsafe_paths, authum_http_denied_path,
@@ -529,9 +521,7 @@ TEST_F(authum_http, target_is_decoded_once_and_query_ignored)
                             "/maps/nested.bsp?..%2f..%2f"})
     {
         lh_u64_t size = k_unset;
-        lh_os_system_fs_file_handle_t fd = resource_open(root_fd, &options, url, strlen(url), &size);
-        ASSERT_NE(fd, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID) << url;
-        lh_os_system_fs_file_close(fd);
+        ASSERT_TRUE(resource_open(&source_root, &options, url, strlen(url), &size)) << url;
     }
 }
 
@@ -544,8 +534,7 @@ TEST_F(authum_http, policy_lists_compare_without_case)
     const char *reason = nullptr;
     for (const char *url : {"/MAPS/nested.bsp", "/maps/NESTED.BSP", "/Maps/Nested.Bsp"})
     {
-        EXPECT_EQ(resource_open(root_fd, &options, url, strlen(url), &size, &reason),
-                  LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID)
+        EXPECT_FALSE(resource_open(&source_root, &options, url, strlen(url), &size, &reason))
             << url;
         EXPECT_STREQ(reason, "denied_prefix") << url;
     }
@@ -571,8 +560,7 @@ TEST_F(authum_http, refusals_name_their_reason)
     {
         lh_u64_t size = k_unset;
         const char *reason = nullptr;
-        EXPECT_EQ(resource_open(root_fd, &options, c.url, strlen(c.url), &size, &reason),
-                  LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
+        EXPECT_FALSE(resource_open(&source_root, &options, c.url, strlen(c.url), &size, &reason));
         EXPECT_STREQ(reason, c.reason) << c.url;
     }
 }
@@ -582,12 +570,10 @@ TEST_F(authum_http, file_size_limit_accepts_exact_boundary)
     const char *url = "/maps/nested.bsp";
     lh_u64_t size = k_unset;
     options.max_file_bytes = 5;
-    EXPECT_EQ(resource_open(root_fd, &options, url, strlen(url), &size), LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
+    EXPECT_FALSE(resource_open(&source_root, &options, url, strlen(url), &size));
     options.max_file_bytes = 6;
-    lh_os_system_fs_file_handle_t fd = resource_open(root_fd, &options, url, strlen(url), &size);
-    ASSERT_NE(fd, LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
+    ASSERT_TRUE(resource_open(&source_root, &options, url, strlen(url), &size));
     EXPECT_EQ(size, 6U);
-    lh_os_system_fs_file_close(fd);
 }
 
 TEST_F(authum_http, deny_prefix_overrides_allowed_directory)
@@ -595,7 +581,7 @@ TEST_F(authum_http, deny_prefix_overrides_allowed_directory)
     strcpy(options.deny_prefixes, "maps");
     const char *url = "/maps/nested.bsp";
     lh_u64_t size = k_unset;
-    EXPECT_EQ(resource_open(root_fd, &options, url, strlen(url), &size), LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
+    EXPECT_FALSE(resource_open(&source_root, &options, url, strlen(url), &size));
 }
 
 TEST_F(authum_http, empty_directory_allow_list_refuses_nested_file)
@@ -603,7 +589,7 @@ TEST_F(authum_http, empty_directory_allow_list_refuses_nested_file)
     options.allow_dirs[0] = 0;
     const char *url = "/maps/nested.bsp";
     lh_u64_t size = k_unset;
-    EXPECT_EQ(resource_open(root_fd, &options, url, strlen(url), &size), LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
+    EXPECT_FALSE(resource_open(&source_root, &options, url, strlen(url), &size));
 }
 
 TEST_F(authum_http, root_file_requires_root_extension_permission)
@@ -611,7 +597,7 @@ TEST_F(authum_http, root_file_requires_root_extension_permission)
     options.root_extensions[0] = 0;
     const char *url = "/shared.bsp";
     lh_u64_t size = k_unset;
-    EXPECT_EQ(resource_open(root_fd, &options, url, strlen(url), &size), LH_OS_SYSTEM_FS_FILE_HANDLE_INVALID);
+    EXPECT_FALSE(resource_open(&source_root, &options, url, strlen(url), &size));
 }
 
 } // namespace tests

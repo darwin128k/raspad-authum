@@ -12,9 +12,7 @@
 #include <lh/os/wake.h>
 #include <lh/rail/loop.h>
 #include <lh/os/net/socket.h>
-#include <lh/os/system/fs/file.h>
-#include <lh/core/str/format/text.h>
-#include <lh/core/str/view.h>
+#include <lh/os/fs/file.h>
 #include <authum/unused.h>
 
 enum
@@ -84,7 +82,7 @@ typedef enum authum_http_client_state
 typedef struct authum_http_client
 {
     lh_os_net_socket_t fd;
-    lh_os_system_fs_file_handle_t file;
+    lh_os_fs_file_t file;
     authum_i32_t ip_slot;
     authum_http_client_state_t state;
     authum_char_t input[AUTHUM_HTTP_REQUEST_CAPACITY];
@@ -169,7 +167,7 @@ struct authum_http_server
     authum_bool_t abandoned;
     /** The node the loop is reaped through if the stop gives up on it. */
     authum_http_orphan_t *orphan;
-    lh_os_system_fs_file_handle_t roots[AUTHUM_HTTP_MAX_SOURCES];
+    lh_os_fs_file_t roots[AUTHUM_HTTP_MAX_SOURCES];
     lh_os_net_socket_t listener;
     lh_os_wake_t wake;
     /** The worker: a loop that sleeps in poll on the sockets and the wake signal. */
@@ -206,6 +204,35 @@ struct authum_http_server
 
 AUTHUM_EXTERN_C_BEGIN
 
+/**
+ * @brief Return the file owned by an HTTP client for modification.
+ *
+ * @param client Initialized client, borrowed.
+ * @return The initialized file, borrowed until the client is reset or released.
+ */
+lh_os_fs_file_t *
+authum_http_client_get_file_mut(authum_http_client_t *client);
+
+/**
+ * @brief Return the server's initialized source-root array for modification.
+ *
+ * @param server Initialized server, borrowed.
+ * @return The borrowed array of ::AUTHUM_HTTP_MAX_SOURCES roots; it does not
+ *         outlive the server.
+ */
+lh_os_fs_file_t *
+authum_http_server_get_roots_mut(authum_http_server_t *server);
+
+/**
+ * @brief Return the server's client array for modification.
+ *
+ * @param server Initialized server, borrowed.
+ * @return The borrowed client array, or null before allocation; the array does
+ *         not outlive the server.
+ */
+authum_http_client_t *
+authum_http_server_get_clients_mut(authum_http_server_t *server);
+
 authum_i64_t
 authum_http_now_ms(void);
 
@@ -230,9 +257,10 @@ authum_http_resource_check(const authum_http_options_t *options, const authum_ch
                            authum_usize_t length, authum_char_t *out, authum_usize_t capacity,
                            const authum_char_t **reason);
 /** Open a checked relative path below @p root. On failure @p reason says why. */
-lh_os_system_fs_file_handle_t
-authum_http_resource_open(lh_os_system_fs_file_handle_t root, const authum_http_options_t *options,
-                          const authum_char_t *path, lh_u64_t *size, const authum_char_t **reason);
+authum_bool_t
+authum_http_resource_open(lh_os_fs_file_t *file, const lh_os_fs_file_t *root,
+                          const authum_http_options_t *options, const authum_char_t *path,
+                          lh_u64_t *size, const authum_char_t **reason);
 void
 authum_http_response_set(authum_http_client_t *c, authum_i32_t code, const authum_char_t *reason,
                          lh_u64_t size, authum_i32_t head);
@@ -350,7 +378,7 @@ authum_http_socket_send(lh_os_net_socket_t *socket, const authum_char_t *buffer,
                         authum_usize_t size);
 
 authum_i64_t
-authum_http_socket_send_file(lh_os_net_socket_t *socket, lh_os_system_fs_file_handle_t file,
+authum_http_socket_send_file(lh_os_net_socket_t *socket, const lh_os_fs_file_t *file,
                              lh_u64_t *offset, authum_usize_t size);
 /** The last OS error as text, for an error message. */
 const authum_char_t *

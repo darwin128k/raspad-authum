@@ -5,7 +5,23 @@ LH comes first; Authum follows once LH provides the bricks.
 Rules behind every item: [AGENTS.md](../AGENTS.md), [lib/lh/AGENTS.md](../lib/lh/AGENTS.md).
 Close an item by deleting it; add new debt here instead of fixing it silently.
 
+- [ ] **`check-native.py` flags the host's own libc binding.** `src/authum/api/runtime.c`
+  fills LH's runtime slots (allocator, writer, logger, terminate) over libc: that is
+  the host's job, since LH's core starts with the slots empty and knows no libc. The
+  checker reports its four places as debt; teach it that this file is the binding
+  rather than moving the calls.
+
 ## LH (first)
+
+- [ ] **GCC 16 LTO warns inside SQLite.** The Windows i686 Release build with
+  `LH_LIBRARY_OPTION_SQL_SQLITE=ON` reports `-Wstringop-overread` in
+  `sqlite3Strlen30`, inlined into `sqlite3ColumnSetColl`. Investigate the
+  upstream code and compiler diagnosis before changing the bundled amalgamation.
+
+- [ ] **Declaration piles in gzip and chunked decoder tests.**
+  `check-decls.py` reports 11 existing candidate blocks in
+  `test/src/lh/core/compress/gzip.cpp` and `test/src/lh/core/http/chunked/decoder.cpp`;
+  review lifetimes before moving declarations.
 
 - [ ] **Finish decomposing compression state machines.** The streaming DEFLATE
   and gzip readers delegate individual phases to public tested operations. The
@@ -113,6 +129,10 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   in `lh_crypto_sha_put_digest` looks unbounded to it. The same noise appears
   for `lh_memory_std_set` under `lh_str_ptr_format_ullong`. Silence it in the
   source (a size the compiler can see), not by dropping the warning.
+  The formatter now checks the chunk length and remaining capacity explicitly;
+  GCC 16.2 i686 and 16.1 x86-64 Release/FAT LTO did not reproduce its warning
+  even on the original source. Keep this open until the original configuration
+  reproduces it and confirms the fix.
 - [ ] **Order every module by level** (AGENTS.md 0.0, `tools/order-levels.py`).
   The tool refuses a file whose definitions sit between `#if` blocks (it would
   move code in or out of them): `crypto/rijndael.c` (AES-NI) is ordered by hand or
@@ -304,8 +324,9 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
      logger).
   3. [x] HTTP on LH handles and bricks: one transport for every OS, the "Linux only"
      `host/http_windows.c` stub is gone, its tests run on Windows too. Static files are
-     looked up below each root by `lh_os_system_fs_file_open_read_at`, now also on
-     Windows (`NtCreateFile` relative to each directory, reparse points refused).
+     looked up below each root through `lh_os_fs_file_try_open_read_at`, backed by
+     handle-relative system operations on Windows and POSIX. The Windows backend
+     uses `NtCreateFile` relative to each directory and refuses reparse points.
   4. [x] The remaining libc calls in `api/` and `host/` (157 in 31 files at the start)
      → LH bricks; a missing brick is added to LH first.
      `tools/check-native.py` now exists and reports the debt: **0 places**

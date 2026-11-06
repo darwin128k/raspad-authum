@@ -23,7 +23,7 @@ TREES = (
     ('src/authum/api', 'include/authum'),
     ('tests/src/authum', 'include/authum'),
 )
-BACKENDS = ('win', 'windows', 'linux', 'posix', 'unix', 'darwin', 'native')
+BACKENDS = ('win', 'windows', 'linux', 'posix', 'unix', 'darwin', 'native', 'cortexm')
 SOURCES = ('.c', '.cpp')
 
 
