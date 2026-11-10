@@ -7,12 +7,7 @@
  * as empty and prints nothing.
  */
 
-#include <authum/command.h>
-#include <lh/core/assert/static.h>
-#include <lh/core/bool.h>
-#include <lh/core/console/call.h>
-#include <lh/core/util/offset.h>
-#include <lh/core/util/return.h>
+#include <authum/api/command/private.h>
 
 #include <authum/cstr.h>
 
@@ -30,7 +25,7 @@ lh_assert_static(sizeof(authum_usize_t) == sizeof(lh_usize_t) &&
                  "authum and lh sizes and booleans must match");
 
 /* The console call @p cmd is. */
-static const lh_console_call_t *
+const lh_console_call_t *
 authum_command_get_call(const authum_command_t *cmd)
 {
     return lh_ptr_rcast(const lh_console_call_t, cmd);

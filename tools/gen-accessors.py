@@ -172,9 +172,9 @@ def main():
 
     if stext is None:
         name = re.sub(r'^(?:.*/)?include/', '', header.replace(os.sep, '/'), count=1)
-        stext, snl = f'#include <{name}>\n#include <lh/assert/runtime.h>\n\n', hnl
-    elif '#include <lh/assert.h>' not in stext and '#include <lh/assert/runtime.h>' not in stext:
-        stext = stext.replace('\n\n', '\n#include <lh/assert.h>\n\n', 1)
+        stext, snl = f'#include <{name}>\n#include <lh/core/assert/runtime.h>\n\n', hnl
+    elif '#include <lh/core/assert.h>' not in stext and '#include <lh/core/assert/runtime.h>' not in stext:
+        stext = stext.replace('\n\n', '\n#include <lh/core/assert.h>\n\n', 1)
     write(source, stext.rstrip('\n') + '\n\n' + '\n'.join(defs), snl)
     print(f'{struct}: {len(decls)} accessor(s) added')
     if placeholders:

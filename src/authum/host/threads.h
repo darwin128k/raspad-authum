@@ -11,6 +11,10 @@
 
 #include <authum/thread.h>
 #include <lh/os/thread/group.h>
+#include <lh/core/assert/static.h>
+#include <lh/os/system.h>
+#include <lh/core/str/format/text.h>
+#include <lh/core/util/return.h>
 
 /** @brief The threads one module owns. */
 typedef struct authum_thread_owner
@@ -37,6 +41,26 @@ authum_threads_host_stop_owner(authum_thread_owner_t *owner);
  */
 void
 authum_threads_host_drop_owner(authum_thread_owner_t *owner);
+
+/**
+ * @brief Write @p text as the refusal, when the caller gave room for one.
+ */
+void
+authum_threads_refuse(authum_char_t *error, authum_usize_t error_size, const authum_char_t *text);
+
+/**
+ * @brief * Validate owner limits and register a worker only after LH startup succeeds.
+ */
+authum_thread_t *
+authum_threads_host_start(authum_ptr context, authum_thread_fn run, authum_thread_fn wake,
+                          authum_ptr user, authum_i32_t cpu, authum_u32_t flags,
+                          authum_char_t *error, authum_usize_t error_size);
+
+/**
+ * @brief * Stop, join and release a handle belonging to the requesting owner.
+ */
+authum_bool_t
+authum_threads_host_stop(authum_ptr context, authum_thread_t *thread);
 
 AUTHUM_EXTERN_C_END
 

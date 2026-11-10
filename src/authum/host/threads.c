@@ -6,10 +6,6 @@
 #include <authum/host/threads.h>
 #include <authum/null.h>
 #include <authum/unused.h>
-#include <lh/core/assert/static.h>
-#include <lh/os/system.h>
-#include <lh/core/str/format/text.h>
-#include <lh/core/util/return.h>
 
 enum
 {
@@ -21,7 +17,7 @@ lh_assert_static(AUTHUM_THREAD_BLOCK_SIGPIPE == lh_os_thread_block_sigpipe,
                  "authum and lh sigpipe flags must have the same value");
 
 /** Write @p text as the refusal, when the caller gave room for one. */
-static void
+void
 authum_threads_refuse(authum_char_t *error, authum_usize_t error_size, const authum_char_t *text)
 {
     if (!authum_null_eq(error) && lh_math_ne(error_size, 0u))
@@ -33,9 +29,10 @@ authum_threads_refuse(authum_char_t *error, authum_usize_t error_size, const aut
 /**
  * @brief Validate owner limits and register a worker only after LH startup succeeds.
  */
-static authum_thread_t *
-start_thread(authum_ptr context, authum_thread_fn run, authum_thread_fn wake, authum_ptr user,
-             authum_i32_t cpu, authum_u32_t flags, authum_char_t *error, authum_usize_t error_size)
+authum_thread_t *
+authum_threads_host_start(authum_ptr context, authum_thread_fn run, authum_thread_fn wake,
+                          authum_ptr user, authum_i32_t cpu, authum_u32_t flags,
+                          authum_char_t *error, authum_usize_t error_size)
 {
     authum_thread_owner_t *owner = context;
     lh_os_thread_group_member_t *member;
@@ -63,8 +60,8 @@ start_thread(authum_ptr context, authum_thread_fn run, authum_thread_fn wake, au
 /**
  * @brief Stop, join and release a handle belonging to the requesting owner.
  */
-static authum_bool_t
-stop_thread(authum_ptr context, authum_thread_t *thread)
+authum_bool_t
+authum_threads_host_stop(authum_ptr context, authum_thread_t *thread)
 {
     authum_thread_owner_t *owner = context;
 
@@ -73,7 +70,8 @@ stop_thread(authum_ptr context, authum_thread_t *thread)
                                    lh_ptr_rcast(lh_os_thread_group_member_t, thread));
 }
 
-static const authum_thread_ops_t ops = {.start = start_thread, .stop = stop_thread};
+static const authum_thread_ops_t ops = {.start = authum_threads_host_start,
+                                        .stop = authum_threads_host_stop};
 
 /**
  * @brief Initialize an owner and bind its public thread facade.

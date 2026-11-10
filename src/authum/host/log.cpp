@@ -1,13 +1,11 @@
 #include <authum/host/log.h>
 #include <authum/runtime.h>
-#include <authum/null.h>
 #include <authum/unused.h>
-#include <lh/core/char/map.h>
 
 #include <extdll.h>
 
+#include <lh/os/debug.h>
 #include <lh/config.h>
-#include <lh/core/runtime/logger.h>
 
 #include <cstdarg>
 #include <cstring>
@@ -31,10 +29,13 @@ authum_log_emit(lh_self_ptr /* self */, lh_logger_level_t level, lh_str_cptr fmt
     if (lh_math_eq(n, 0u))
     {
         authum_logs_write(authum_null, lh_cast_static(authum_logger_level_t, level), fmt);
+        authum_unused(lh_os_debug_print_line(fmt));
         return lh_cast_static(lh_ssize_t, lh_str_ptr_len(fmt));
     }
     line[n] = lh_char_map_nul;
     authum_logs_write(authum_null, lh_cast_static(authum_logger_level_t, level), line);
+    /* Under a debugger (Visual Studio's Output on Windows) the line shows there too. */
+    authum_unused(lh_os_debug_print_line(line));
     return lh_cast_static(lh_ssize_t, n);
 }
 

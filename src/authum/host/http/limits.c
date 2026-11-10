@@ -100,7 +100,7 @@ authum_http_peer_release(authum_http_server_t *server, authum_i32_t slot)
 }
 
 /* An address key (octets in network order) as a host-order number. */
-static authum_u32_t
+authum_u32_t
 authum_http_host_order(authum_u32_t key)
 {
     const authum_byte_t *o = (const authum_byte_t *)&key;
@@ -108,7 +108,7 @@ authum_http_host_order(authum_u32_t key)
            (authum_u32_t)o[3];
 }
 
-static authum_bool_t
+authum_bool_t
 authum_http_parse_key(const authum_char_t *text, authum_usize_t size, authum_u32_t *key)
 {
     lh_net_ip4_t ip;

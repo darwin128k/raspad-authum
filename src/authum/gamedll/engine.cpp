@@ -271,7 +271,17 @@ engine_alert_message(ALERT_TYPE type, authum_char_t *fmt, ...)
         return;
     }
     va_start(args, fmt);
-    authum_cstr_format_v(line, sizeof line, fmt, args);
+    /* The game's mask may hold a conversion lh does not format (%e, %g, %o): the
+       line then carries the mask itself, so it still says something, rather than
+       coming out empty. */
+    if (lh_math_eq(lh_str_ptr_format_text_size_v(fmt, args), LH_STR_PTR_INVALID))
+    {
+        authum_cstr_copy(line, sizeof line, fmt);
+    }
+    else
+    {
+        authum_cstr_format_v(line, sizeof line, fmt, args);
+    }
     va_end(args);
     g_engfuncs.pfnAlertMessage(type, lh_cast_const(authum_char_t *, "%s"), line);
 

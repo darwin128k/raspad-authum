@@ -36,6 +36,9 @@ def main():
         text = raw.decode("utf-8")
         uncommented, code = mask(text, False), mask(text, True)
         active = list(rules)
+        if relative == "src/authum/api/runtime.c":
+            # The host's libc binding fills LH's allocator slot from libc on purpose.
+            active = [rule for rule in active if "malloc" not in rule[0]]
         if relative.startswith("src/authum/"):
             active.append((r'\b(?:const\s+)?void\s*\*', "use authum_ptr/authum_cptr"))
         if relative.startswith("src/authum/") and relative != "src/authum/api/memory.c":

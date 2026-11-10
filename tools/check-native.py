@@ -6,9 +6,11 @@ types belong to lh (and, under `lh/os/system/`, to the backend).  A module of
 Authum that opens a file, prints, sleeps or resolves a symbol on its own is a
 brick in the wrong layer.
 
-Two headers are exempt and the exemption is the point of them: `export.h` and
+Three files are exempt and the exemption is the point of them: `export.h` and
 `symbol.h` sit on the ABI boundary with the host process (a DLL export macro
-and a symbol lookup), so the platform is named there on purpose.
+and a symbol lookup), and `api/runtime.c` is the host's libc binding: lh's core
+starts with its runtime slots (allocator, logger, terminate) empty and knows no
+libc, so filling them from libc is the host's job, named there on purpose.
 """
 from pathlib import Path
 import re
@@ -66,7 +68,7 @@ FORBIDDEN_MACROS = [
      "branch on the platform: the platform belongs to lh"),
 ]
 # The ABI boundary with the host process: the platform is named there on purpose.
-EXEMPT = ("include/authum/export.h", "include/authum/symbol.h")
+EXEMPT = ("include/authum/export.h", "include/authum/symbol.h", "src/authum/api/runtime.c")
 
 
 def mask(text, strings):

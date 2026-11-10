@@ -13,7 +13,6 @@
 #include <authum/gamedll/engine.h>
 #include <authum/unused.h>
 #include <lh/core/cast/const.h>
-#include <lh/core/char/map.h>
 #include <lh/core/compiler/arch/family.h>
 #include <authum/gamedll/game.h>
 #include <authum/gamedll/hooks.h>
@@ -23,7 +22,6 @@
 #include <authum/host/loader.h>
 #include <authum/host/log.h>
 #include <authum/runtime.h>
-#include <authum/cstr.h>
 
 #include <extdll.h>
 #include <eiface.h>

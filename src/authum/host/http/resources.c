@@ -4,13 +4,13 @@
 
 /* ASCII case folding: policy names compare without case on every platform,
  * because the Windows opener resolves names without case. */
-static authum_char_t
+authum_char_t
 authum_http_policy_fold(authum_char_t x)
 {
     return (x >= 'A' && x <= 'Z') ? (authum_char_t)(x + ('a' - 'A')) : x;
 }
 
-static authum_bool_t
+authum_bool_t
 authum_http_policy_equal_nocase(const authum_char_t *a, const authum_char_t *b, authum_usize_t n)
 {
     for (authum_usize_t i = 0; i < n; ++i)
@@ -23,7 +23,7 @@ authum_http_policy_equal_nocase(const authum_char_t *a, const authum_char_t *b, 
     return authum_bool_true;
 }
 
-static authum_bool_t
+authum_bool_t
 authum_http_policy_contains(const authum_char_t *list, const authum_char_t *value, authum_usize_t n,
                             authum_bool_t prefix)
 {
@@ -51,7 +51,7 @@ authum_http_policy_contains(const authum_char_t *list, const authum_char_t *valu
     return authum_bool_false;
 }
 
-static authum_i32_t
+authum_i32_t
 authum_http_hex(authum_char_t x)
 {
     if (x >= '0' && x <= '9')
@@ -64,7 +64,7 @@ authum_http_hex(authum_char_t x)
 
 /* A byte a published name may hold once decoded. Separators, controls and the
  * characters Windows reserves are refused on every platform. */
-static authum_bool_t
+authum_bool_t
 authum_http_name_byte(authum_byte_t x)
 {
     if (x < 0x20 || x == 0x7f)

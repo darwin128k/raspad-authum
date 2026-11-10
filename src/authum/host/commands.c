@@ -9,14 +9,11 @@
 
 #include <authum/host/commands.h>
 #include <authum/null.h>
-#include <lh/core/char/map.h>
-#include <lh/core/console.h>
-#include <lh/core/util/return.h>
 
 static lh_console_t authum_commands_console;
 static authum_bool_t authum_commands_initialized;
 
-static lh_console_t *
+lh_console_t *
 authum_commands_host_get_console(void)
 {
     if (!authum_commands_initialized)
@@ -75,7 +72,7 @@ authum_commands_host_ops(void)
     return lh_addr_of(authum_commands_host_ops_table);
 }
 
-static void
+void
 authum_commands_host_print_entry(const lh_console_entry_t *entry, authum_command_print_fn print,
                                  authum_ptr out, const authum_char_t *prefix)
 {

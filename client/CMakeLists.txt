@@ -46,6 +46,8 @@ target_include_directories(authum_client
 	PUBLIC
 	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>"
 )
+# The private headers of the api sources (src/authum/api/<x>/private.h): never installed.
+target_include_directories(authum_client PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../src")
 
 # lh brings the system libraries its os layer needs (dl, ws2_32, iphlpapi).
 target_link_libraries(authum_client PUBLIC lh)

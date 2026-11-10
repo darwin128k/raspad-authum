@@ -1,11 +1,7 @@
-#include <authum/json.h>
-#include <lh/core/char/map.h>
-#include <lh/core/memory/std.h>
-
-#include <lh/core/web/json.h>
+#include <authum/api/json/private.h>
 
 /* Read @p json into @p root; the caller deinits @p root whatever this returns. */
-static authum_bool_t
+authum_bool_t
 authum_json_read(const authum_char_t *json, lh_web_json_node_t *root)
 {
     lh_web_json_node_init(root);
@@ -21,7 +17,7 @@ authum_json_read(const authum_char_t *json, lh_web_json_node_t *root)
 }
 
 /* The member @p key of the object @p root, or null. */
-static const lh_web_json_node_t *
+const lh_web_json_node_t *
 authum_json_object_find(const lh_web_json_node_t *root, const authum_char_t *key)
 {
     lh_str_view_t name;

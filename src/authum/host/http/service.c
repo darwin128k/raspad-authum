@@ -5,8 +5,8 @@
 #include <lh/core/memory/std.h>
 #include <authum/memory.h>
 
-static authum_bool_t
-owns_server(const authum_http_owner_t *owner, const authum_http_server_t *server)
+authum_bool_t
+authum_http_owner_has_server(const authum_http_owner_t *owner, const authum_http_server_t *server)
 {
     if (!owner || !server)
     {
@@ -22,16 +22,16 @@ owns_server(const authum_http_owner_t *owner, const authum_http_server_t *server
     return authum_bool_false;
 }
 
-static authum_bool_t
-terminated(const authum_char_t *string, authum_usize_t capacity)
+authum_bool_t
+authum_http_is_terminated(const authum_char_t *string, authum_usize_t capacity)
 {
     return lh_math_ne(lh_str_ptr_find_of_null_terminator_by_size(string, capacity), authum_null);
 }
 
 /* Defaults for fields a caller's struct may predate; keep in step with
  * authum_http_options_init. */
-static void
-options_defaults(authum_http_options_t *options)
+void
+authum_http_options_fill_defaults(authum_http_options_t *options)
 {
     lh_memory_std_set(options, 0, sizeof lh_ptr_deref(options));
     options->struct_size = lh_cast_static(authum_u32_t, sizeof lh_ptr_deref(options));
@@ -41,7 +41,7 @@ options_defaults(authum_http_options_t *options)
 authum_bool_t
 authum_http_options_read(const authum_http_options_t *in, authum_http_options_t *out)
 {
-    options_defaults(out);
+    authum_http_options_fill_defaults(out);
     if (!in)
     {
         return authum_bool_false;
@@ -84,8 +84,8 @@ authum_http_options_read(const authum_http_options_t *in, authum_http_options_t 
     return authum_bool_true;
 }
 
-static authum_bool_t
-valid_options(const authum_http_options_t *options)
+authum_bool_t
+authum_http_options_is_valid(const authum_http_options_t *options)
 {
     if (!options || !options->source_count ||
         lh_math_gt(options->source_count, AUTHUM_HTTP_MAX_SOURCES) ||
@@ -99,25 +99,24 @@ valid_options(const authum_http_options_t *options)
         lh_math_gt(options->cpu, 1023) || lh_math_lt(options->bytes_per_second, 1024) ||
         lh_math_gt(options->bytes_per_second, 1073741824) ||
         lh_math_lt(options->max_file_bytes, 1) || lh_math_gt(options->max_file_bytes, 1073741824) ||
-        !terminated(options->bind, sizeof options->bind) ||
-        !terminated(options->allow_dirs, sizeof options->allow_dirs) ||
-        !terminated(options->allow_extensions, sizeof options->allow_extensions) ||
-        !terminated(options->root_extensions, sizeof options->root_extensions) ||
-        !terminated(options->deny_prefixes, sizeof options->deny_prefixes) ||
-        !terminated(options->trusted_proxies, sizeof options->trusted_proxies) ||
+        !authum_http_is_terminated(options->bind, sizeof options->bind) ||
+        !authum_http_is_terminated(options->allow_dirs, sizeof options->allow_dirs) ||
+        !authum_http_is_terminated(options->allow_extensions, sizeof options->allow_extensions) ||
+        !authum_http_is_terminated(options->root_extensions, sizeof options->root_extensions) ||
+        !authum_http_is_terminated(options->deny_prefixes, sizeof options->deny_prefixes) ||
+        !authum_http_is_terminated(options->trusted_proxies, sizeof options->trusted_proxies) ||
         lh_math_lt(options->per_ip_pending, 1) || lh_math_gt(options->per_ip_pending, 64) ||
-        lh_math_gt(options->access_log, 2) ||
-        !lh_ptr_deref(options->allow_extensions))
+        lh_math_gt(options->access_log, 2) || !lh_ptr_deref(options->allow_extensions))
     {
         return authum_bool_false;
     }
     for (authum_usize_t index = 0; lh_math_lt(index, options->source_count);
          index = lh_math_add_one(index))
     {
-        if (!terminated(options->sources[index], sizeof options->sources[index]) ||
+        if (!authum_http_is_terminated(options->sources[index], sizeof options->sources[index]) ||
             !lh_fs_path_is_text_absolute(options->sources[index],
                                          lh_os_system_fs_path_style_native()) ||
-            !terminated(options->sources[index], sizeof options->sources[index]))
+            !authum_http_is_terminated(options->sources[index], sizeof options->sources[index]))
         {
             return authum_bool_false;
         }
@@ -125,13 +124,9 @@ valid_options(const authum_http_options_t *options)
     return authum_bool_true;
 }
 
-static authum_http_server_t *
-service_open_read(authum_http_owner_t *owner, const authum_http_options_t *options,
-                  authum_char_t *error, authum_usize_t error_size);
-
-static authum_http_server_t *
-service_open(authum_ptr context, const authum_http_options_t *caller, authum_char_t *error,
-             authum_usize_t error_size)
+authum_http_server_t *
+authum_http_service_open(authum_ptr context, const authum_http_options_t *caller,
+                         authum_char_t *error, authum_usize_t error_size)
 {
     authum_unused(authum_http_host_reap());
     if (!error)
@@ -152,7 +147,7 @@ service_open(authum_ptr context, const authum_http_options_t *caller, authum_cha
     authum_http_server_t *server = authum_null;
     if (authum_http_options_read(caller, options))
     {
-        server = service_open_read(context, options, error, error_size);
+        server = authum_http_service_open_read(context, options, error, error_size);
     }
     else if (error && error_size)
     {
@@ -164,11 +159,11 @@ service_open(authum_ptr context, const authum_http_options_t *caller, authum_cha
     return server;
 }
 
-static authum_http_server_t *
-service_open_read(authum_http_owner_t *owner, const authum_http_options_t *options,
-                  authum_char_t *error, authum_usize_t error_size)
+authum_http_server_t *
+authum_http_service_open_read(authum_http_owner_t *owner, const authum_http_options_t *options,
+                              authum_char_t *error, authum_usize_t error_size)
 {
-    if (!owner || !valid_options(options))
+    if (!owner || !authum_http_options_is_valid(options))
     {
         if (error && error_size)
         {
@@ -199,20 +194,20 @@ service_open_read(authum_http_owner_t *owner, const authum_http_options_t *optio
     return server;
 }
 
-static void
-service_shutdown(authum_ptr context, authum_http_server_t *server)
+void
+authum_http_service_shutdown(authum_ptr context, authum_http_server_t *server)
 {
-    if (owns_server(context, server))
+    if (authum_http_owner_has_server(context, server))
     {
         authum_http_server_shutdown(server);
     }
 }
 
-static void
-service_close(authum_ptr context, authum_http_server_t *server)
+void
+authum_http_service_close(authum_ptr context, authum_http_server_t *server)
 {
     authum_http_owner_t *owner = context;
-    if (!owns_server(owner, server))
+    if (!authum_http_owner_has_server(owner, server))
     {
         return;
     }
@@ -230,11 +225,11 @@ service_close(authum_ptr context, authum_http_server_t *server)
     authum_http_server_destroy(server);
 }
 
-static authum_usize_t
-service_drain(authum_ptr owner, authum_http_server_t *server, authum_http_log_fn sink,
-              authum_ptr user, authum_usize_t limit)
+authum_usize_t
+authum_http_service_drain(authum_ptr owner, authum_http_server_t *server, authum_http_log_fn sink,
+                          authum_ptr user, authum_usize_t limit)
 {
-    if (!owns_server(owner, server) || server->close_pending)
+    if (!authum_http_owner_has_server(owner, server) || server->close_pending)
     {
         return 0;
     }
@@ -243,25 +238,25 @@ service_drain(authum_ptr owner, authum_http_server_t *server, authum_http_log_fn
     server->drain_depth = lh_math_sub_one(server->drain_depth);
     if (!server->drain_depth && server->close_pending)
     {
-        service_close(owner, server);
+        authum_http_service_close(owner, server);
     }
     return drained;
 }
 
-static authum_usize_t
-service_memory(authum_ptr owner, const authum_http_server_t *server)
+authum_usize_t
+authum_http_service_get_memory(authum_ptr owner, const authum_http_server_t *server)
 {
-    return owns_server(owner, server) ? authum_http_server_memory(server) : 0;
+    return authum_http_owner_has_server(owner, server) ? authum_http_server_memory(server) : 0;
 }
 
 void
 authum_http_host_init(authum_http_owner_t *owner, authum_http_service_t *service)
 {
-    static const authum_http_ops_t ops = {.open = service_open,
-                                          .shutdown = service_shutdown,
-                                          .close = service_close,
-                                          .drain = service_drain,
-                                          .memory_usage = service_memory};
+    static const authum_http_ops_t ops = {.open = authum_http_service_open,
+                                          .shutdown = authum_http_service_shutdown,
+                                          .close = authum_http_service_close,
+                                          .drain = authum_http_service_drain,
+                                          .memory_usage = authum_http_service_get_memory};
     owner->head = authum_null;
     owner->tag = authum_null;
     service->ops = lh_addr_of(ops);
@@ -275,7 +270,7 @@ authum_http_host_drop_owner(authum_http_owner_t *owner)
     {
         while (owner->head)
         {
-            service_close(owner, owner->head);
+            authum_http_service_close(owner, owner->head);
         }
     }
     authum_unused(authum_http_host_reap());

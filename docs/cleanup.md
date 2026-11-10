@@ -5,12 +5,6 @@ LH comes first; Authum follows once LH provides the bricks.
 Rules behind every item: [AGENTS.md](../AGENTS.md), [lib/lh/AGENTS.md](../lib/lh/AGENTS.md).
 Close an item by deleting it; add new debt here instead of fixing it silently.
 
-- [ ] **`check-native.py` flags the host's own libc binding.** `src/authum/api/runtime.c`
-  fills LH's runtime slots (allocator, writer, logger, terminate) over libc: that is
-  the host's job, since LH's core starts with the slots empty and knows no libc. The
-  checker reports its four places as debt; teach it that this file is the binding
-  rather than moving the calls.
-
 ## LH (first)
 
 - [ ] **GCC 16 LTO warns inside SQLite.** The Windows i686 Release build with
@@ -316,7 +310,7 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   библиотека скриптов (`authum.cn`, `rules.cn`).
 - [ ] **Authum on LH rails: it does not know which OS it runs on.** No `#if _WIN32`,
   no native or libc call outside LH (owner, 2026-10-29). In order:
-  1. [ ] LH local time: the zone offset of a UTC moment (DST included) in the OS
+  1. [x] LH local time: the zone offset of a UTC moment (DST included) in the OS
      backends, UTC ↔ local on top; `lh_os_timestamp_now` → `_try_get_now`.
   2. [x] Log files and queue on LH: `lh/os/logger/{record,sink,queue,daily}`; Authum's
      `host/logs/writer.c` and `files.c` are gone, `host/logs.c` sends records.
@@ -347,13 +341,10 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
      (`pthread_sigmask`, `SIGPIPE`) осталась POSIX-only, на Windows добавлен
      тест, что флаг `SIGPIPE` принимается и маскировать нечего. Тест идёт на
      обеих платформах.
-- [ ] **The formatter cannot report an unknown conversion.** `lh_str_ptr_format_cstr`
-  writes an empty string when the mask holds a conversion lh does not know
-  (`%f`, `%p`, `%zu`), so a game line that formats a mask at runtime
-  (`gamedll/engine.cpp`, the `ALERT_LOGGED` mask) can come out empty instead of
-  formatted. The lh formatter needs a form that says what went wrong, and
-  `authum_cstr_format` needs to pass it on; until then a runtime mask must stay
-  within `%% %c %s %d %i %u %x %X`.
+- [ ] **lh formats no `%e`, `%g`, `%o`, `+`/space flags or `*`.** Length modifiers,
+  `%f` (over `lh_str_ptr_format_real_fixed`) and `%p` are in. A game mask with what is
+  left is logged as the mask itself (`gamedll/engine.cpp`). `%f` rounds the shortest
+  digits, not the exact binary value (`0.125` → `0.13`; printf gives `0.12`).
 - [ ] **`gamedll/` and `include/authum/{export,symbol}.h`: calling convention, export
      and the engine library name through LH compiler / OS macros, no `_WIN32`.
   A check (`tools/check-native.py`) keeps it at 0.
@@ -375,14 +366,11 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   queue, `lh/os/worker` and Authum's HTTP worker run on it (HTTP with a waiter:
   `poll` on its sockets and an `lh/os/wake` signal); Authum's module threads are an
   `lh/os/thread/group` (their body is the module's own code, not a step).
-- [ ] **Static functions in Authum.** `lib/lh/AGENTS.md` 2 forbids them and the LH
-  rules apply to Authum; the new LH files are clean, Authum's host and api sources
-  still have many (`http/loop.c`, `logs.c`, `commands.c`, ...).
-- [ ] **Runtime output.** `lh_runtime_logger` writes to stderr with `fwrite` itself,
-  past `lh_runtime_writer`: give it a writer of its own that a host can rebind (stderr
-  by default). A Windows debugger writer (`OutputDebugStringW`, Visual Studio's Output)
-  in the win backend. Authum binds the runtime writer and logger to the engine console
-  (`ServerPrint`) and its log files, so what LH reports reaches the server.
+- [ ] **Generated briefs of the former static functions.** 85 functions in 21 Authum
+  sources lost `static` (lib/lh/AGENTS.md 2) and are declared in private headers
+  (`src/authum/api/<x>/private.h`, `host/http/internal.h`, `host/logs.h`, ...). A
+  helper that had no comment got a brief made from its name ("Authum sql fail."):
+  write real ones.
 - [ ] `tools/order-levels.py` and `check-levels.py` count a function taken by address
   (a callback) like a call: `order-levels` then puts it below its user, which C does
   not compile. Teach both that an address-taken function must come first. A thread that

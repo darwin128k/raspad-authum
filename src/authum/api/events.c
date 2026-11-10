@@ -1,7 +1,5 @@
-#include <authum/events.h>
+#include <authum/api/events/private.h>
 #include <authum/null.h>
-
-#include <lh/core/str.h>
 
 const authum_events_ops_t *
 authum_events_get_ops(const authum_events_t *self)
@@ -69,7 +67,7 @@ authum_events_unsubscribe(const authum_events_t *self, const authum_char_t *name
 }
 
 /** Whether @p name is one of the module's own names (`<prefix>.<what>`). */
-static authum_bool_t
+authum_bool_t
 authum_events_name_is_own(const authum_events_t *self, const authum_char_t *name)
 {
     const authum_char_t *prefix = authum_events_get_prefix(self);

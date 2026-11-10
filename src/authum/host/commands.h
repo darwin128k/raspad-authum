@@ -6,8 +6,10 @@
 #ifndef AUTHUM_HOST_COMMANDS_H
 #define AUTHUM_HOST_COMMANDS_H
 
-#include <lh/core/util/ptr.h>
 #include <authum/commands.h>
+#include <lh/core/char/map.h>
+#include <lh/core/console.h>
+#include <lh/core/util/return.h>
 
 AUTHUM_EXTERN_C_BEGIN
 
@@ -46,6 +48,19 @@ authum_commands_host_count(void);
 
 void
 authum_commands_host_clear(void);
+
+/**
+ * @brief Authum commands host get console.
+ */
+lh_console_t *
+authum_commands_host_get_console(void);
+
+/**
+ * @brief Authum commands host print entry.
+ */
+void
+authum_commands_host_print_entry(const lh_console_entry_t *entry, authum_command_print_fn print,
+                                 authum_ptr out, const authum_char_t *prefix);
 
 AUTHUM_EXTERN_C_END
 

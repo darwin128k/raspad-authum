@@ -1,5 +1,4 @@
-#include <lh/core/util/ptr.h>
-#include <lh/core/memory/std.h>
+#include <authum/api/host/private.h>
 #include <authum/logger.h>
 
 
@@ -275,9 +274,9 @@ enum
  * A host that is not a module, or a module that named no mark, writes the text
  * as it is.
  */
-static void
-authum_host_marked_text(const authum_host_t *host, const authum_char_t *text,
-                         authum_char_t *buf, authum_usize_t buf_size)
+void
+authum_host_marked_text(const authum_host_t *host, const authum_char_t *text, authum_char_t *buf,
+                        authum_usize_t buf_size)
 {
     const authum_char_t *tag = authum_host_get_tag(host);
 

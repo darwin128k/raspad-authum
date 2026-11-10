@@ -1,11 +1,5 @@
-#include <authum/sql.h>
-#include <lh/core/char/map.h>
+#include <authum/api/sql/private.h>
 #include <authum/memory.h>
-#include <lh/core/memory/std.h>
-
-#include <lh/os/sql/mysql.h>
-#include <lh/os/sql/sqlite.h>
-
 
 /* Private storage: keep the public SQL handle layout unchanged. */
 struct authum_sql_db_impl
@@ -51,19 +45,19 @@ struct authum_sql_stmt_impl
     authum_usize_t column_count;
 };
 
-static lh_sql_db_t *
+lh_sql_db_t *
 authum_sql_get_db(const authum_sql_t *self)
 {
     return lh_cast_reinterpret(lh_sql_db_t *, self->db);
 }
 
-static struct authum_sql_stmt_impl *
+struct authum_sql_stmt_impl *
 authum_sql_stmt_get_impl(const authum_sql_stmt_t *stmt)
 {
     return lh_cast_reinterpret(struct authum_sql_stmt_impl *, stmt->stmt);
 }
 
-static void
+void
 authum_sql_set_errmsg(authum_sql_t *self, lh_str_view_t text)
 {
     authum_usize_t n = lh_cast_static(authum_usize_t, lh_str_view_get_size(lh_addr_of(text)));
@@ -88,13 +82,13 @@ authum_sql_set_errmsg(authum_sql_t *self, lh_str_view_t text)
 }
 
 /* The connection's last message (empty after a success) into errmsg. */
-static void
+void
 authum_sql_sync_errmsg(authum_sql_t *self)
 {
     authum_sql_set_errmsg(self, lh_sql_db_get_error(authum_sql_get_db(self)));
 }
 
-static lh_str_view_t
+lh_str_view_t
 authum_sql_view(const authum_char_t *text)
 {
     lh_str_view_t view;
@@ -103,7 +97,7 @@ authum_sql_view(const authum_char_t *text)
     return view;
 }
 
-static authum_bool_t
+authum_bool_t
 authum_sql_fail(authum_sql_t *self, const authum_char_t *message)
 {
     if (self)
@@ -114,7 +108,7 @@ authum_sql_fail(authum_sql_t *self, const authum_char_t *message)
 }
 
 /* Forget the column copies of the row a step is about to leave. */
-static void
+void
 authum_sql_stmt_drop_columns(struct authum_sql_stmt_impl *impl)
 {
     for (authum_usize_t i = 0u; lh_math_lt(i, impl->column_count); i = lh_math_add_one(i))
@@ -139,7 +133,7 @@ authum_sql_init(authum_sql_t *self)
 }
 
 /* A closed lh connection for @p self, ready for a backend to open. */
-static lh_sql_db_t *
+lh_sql_db_t *
 authum_sql_begin_open(authum_sql_t *self, authum_sql_driver_t driver)
 {
     lh_sql_db_t *db;
@@ -160,7 +154,7 @@ authum_sql_begin_open(authum_sql_t *self, authum_sql_driver_t driver)
 }
 
 /* Keep the connection if @p opened, drop it otherwise; the message either way. */
-static authum_bool_t
+authum_bool_t
 authum_sql_end_open(authum_sql_t *self, lh_bool_t opened)
 {
     authum_sql_sync_errmsg(self);
@@ -333,7 +327,7 @@ authum_sql_stmt_finalize(authum_sql_stmt_t *stmt)
 }
 
 /* The lh statement behind @p stmt for a parameter @p index, or null. */
-static lh_sql_stmt_t *
+lh_sql_stmt_t *
 authum_sql_stmt_for_bind(authum_sql_stmt_t *stmt, authum_i32_t index)
 {
     if (authum_null_eq(stmt) || authum_null_eq(stmt->stmt) || lh_math_lt(index, 1))
@@ -390,7 +384,7 @@ authum_sql_stmt_bind_cstr(authum_sql_stmt_t *stmt, authum_i32_t index, const aut
 }
 
 /* One step, column copies of the old row dropped, errmsg kept current. */
-static lh_sql_step_t
+lh_sql_step_t
 authum_sql_stmt_step(authum_sql_stmt_t *stmt)
 {
     struct authum_sql_stmt_impl *impl;

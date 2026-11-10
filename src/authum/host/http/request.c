@@ -10,17 +10,17 @@ enum
     AUTHUM_HTTP_MAX_FORWARDED = 8
 };
 
-static void
-refuse(authum_http_client_t *client, authum_i32_t code, const authum_char_t *status,
-       const authum_char_t *reason)
+void
+authum_http_request_refuse(authum_http_client_t *client, authum_i32_t code,
+                           const authum_char_t *status, const authum_char_t *reason)
 {
     client->reason = reason;
     authum_http_response_set(client, code, status, 0, 1);
 }
 
 /* Content-Length is accepted only as an empty body: digits that are all zero. */
-static authum_bool_t
-zero_length(const lh_str_view_t *value)
+authum_bool_t
+authum_http_request_is_zero_length(const lh_str_view_t *value)
 {
     const authum_char_t *text = lh_str_view_get_data(value);
     authum_usize_t size = lh_str_view_get_size(value);
@@ -40,8 +40,9 @@ zero_length(const lh_str_view_t *value)
     return digits ? authum_bool_true : authum_bool_false;
 }
 
-static void
-format_address(authum_u32_t address, authum_char_t *text, authum_usize_t capacity)
+void
+authum_http_request_format_address(authum_u32_t address, authum_char_t *text,
+                                   authum_usize_t capacity)
 {
     const authum_byte_t *octets = (const authum_byte_t *)&address;
     lh_net_ip4_t ip;
@@ -73,11 +74,12 @@ authum_http_request_read(authum_http_server_t *server, authum_http_client_t *cli
          * anything after it is a header block over its budget. */
         if (!lh_str_ptr_find_of_char(client->input, client->used, lh_char_map_lf))
         {
-            refuse(client, 414, "URI Too Long", "uri_too_long");
+            authum_http_request_refuse(client, 414, "URI Too Long", "uri_too_long");
         }
         else
         {
-            refuse(client, 431, "Request Header Fields Too Large", "header_too_large");
+            authum_http_request_refuse(client, 431, "Request Header Fields Too Large",
+                                       "header_too_large");
         }
         return;
     }
@@ -90,26 +92,27 @@ authum_http_request_read(authum_http_server_t *server, authum_http_client_t *cli
         if (error == lh_http_error_header_capacity ||
             ((error == lh_http_error_head_size || error == lh_http_error_line_size) && line_ended))
         {
-            refuse(client, 431, "Request Header Fields Too Large", "header_too_large");
+            authum_http_request_refuse(client, 431, "Request Header Fields Too Large",
+                                       "header_too_large");
         }
         else if (error == lh_http_error_head_size || error == lh_http_error_line_size)
         {
-            refuse(client, 414, "URI Too Long", "uri_too_long");
+            authum_http_request_refuse(client, 414, "URI Too Long", "uri_too_long");
         }
         else
         {
-            refuse(client, 400, "Bad Request", "malformed");
+            authum_http_request_refuse(client, 400, "Bad Request", "malformed");
         }
         return;
     }
     if (lh_math_ne(lh_http_parser_get_consumed(lh_addr_of(parser)), client->used))
     {
-        refuse(client, 400, "Bad Request", "data_after_head");
+        authum_http_request_refuse(client, 400, "Bad Request", "data_after_head");
         return;
     }
     if (lh_math_gt(lh_http_request_get_version_minor(lh_addr_of(request)), 1))
     {
-        refuse(client, 400, "Bad Request", "version");
+        authum_http_request_refuse(client, 400, "Bad Request", "version");
         return;
     }
     const lh_str_view_t *method = lh_http_request_get_method(lh_addr_of(request));
@@ -124,7 +127,7 @@ authum_http_request_read(authum_http_server_t *server, authum_http_client_t *cli
     authum_i32_t head = lh_str_view_equals(method, lh_addr_of(head_method), lh_bool_false);
     if (!head && !lh_str_view_equals(method, lh_addr_of(get), lh_bool_false))
     {
-        refuse(client, 405, "Method Not Allowed", "method");
+        authum_http_request_refuse(client, 405, "Method Not Allowed", "method");
         return;
     }
     /* Field names compare without ASCII case. A body is never read: chunked
@@ -141,16 +144,16 @@ authum_http_request_read(authum_http_server_t *server, authum_http_client_t *cli
         const lh_str_view_t *value = lh_http_header_get_value(lh_addr_of(headers[i]));
         if (lh_str_view_equals(name, lh_addr_of(transfer_encoding), lh_bool_true) ||
             (lh_str_view_equals(name, lh_addr_of(content_length), lh_bool_true) &&
-             !zero_length(value)))
+             !authum_http_request_is_zero_length(value)))
         {
-            refuse(client, 400, "Bad Request", "body_framing");
+            authum_http_request_refuse(client, 400, "Bad Request", "body_framing");
             return;
         }
         if (client->proxied && lh_str_view_equals(name, lh_addr_of(forwarded_for), lh_bool_true))
         {
             if (forwarded_count == AUTHUM_HTTP_MAX_FORWARDED)
             {
-                refuse(client, 400, "Bad Request", "forwarded_for");
+                authum_http_request_refuse(client, 400, "Bad Request", "forwarded_for");
                 return;
             }
             forwarded[forwarded_count++] = value;
@@ -163,11 +166,11 @@ authum_http_request_read(authum_http_server_t *server, authum_http_client_t *cli
             authum_http_forwarded_client(server, forwarded, forwarded_count, client->address);
         authum_i32_t slot = authum_http_peer_acquire(server, address, now, options);
         lh_memory_std_copy(client->via, client->ip, sizeof client->via);
-        format_address(address, client->ip, sizeof client->ip);
+        authum_http_request_format_address(address, client->ip, sizeof client->ip);
         client->address = address;
         if (lh_math_lt(slot, 0))
         {
-            refuse(client, 429, "Too Many Requests", "rate_limited");
+            authum_http_request_refuse(client, 429, "Too Many Requests", "rate_limited");
             return;
         }
         client->ip_slot = slot;
@@ -179,15 +182,15 @@ authum_http_request_read(authum_http_server_t *server, authum_http_client_t *cli
     {
         if (reason && (lh_str_ptr_equals(reason, "bad_encoding", lh_bool_false) || lh_str_ptr_equals(reason, "bad_target", lh_bool_false)))
         {
-            refuse(client, 400, "Bad Request", reason);
+            authum_http_request_refuse(client, 400, "Bad Request", reason);
         }
         else if (reason && lh_str_ptr_equals(reason, "uri_too_long", lh_bool_false))
         {
-            refuse(client, 414, "URI Too Long", reason);
+            authum_http_request_refuse(client, 414, "URI Too Long", reason);
         }
         else
         {
-            refuse(client, 404, "Not Found", reason);
+            authum_http_request_refuse(client, 404, "Not Found", reason);
         }
         return;
     }
@@ -204,7 +207,7 @@ authum_http_request_read(authum_http_server_t *server, authum_http_client_t *cli
     }
     if (!lh_os_fs_file_is_valid(authum_http_client_get_file_mut(client)))
     {
-        refuse(client, 404, "Not Found", reason);
+        authum_http_request_refuse(client, 404, "Not Found", reason);
     }
     else
     {

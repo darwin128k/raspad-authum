@@ -1,5 +1,4 @@
 #include <authum/host/console.h>
-#include <lh/core/char/map.h>
 #include <lh/core/memory/std.h>
 
 #include <authum/host/commands.h>

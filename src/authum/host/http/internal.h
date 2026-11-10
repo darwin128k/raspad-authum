@@ -394,6 +394,163 @@ void
 authum_http_client_write(authum_http_server_t *server, authum_http_client_t *client,
                          authum_i64_t now, double *tokens);
 
+/**
+ * @brief With every slot taken, the connection that has waited longest without finishing its
+ * request makes room, if it is old enough not to be a client whose request is simply still on the
+ * way.
+ */
+authum_i32_t
+evict_oldest_reader(authum_http_server_t *server, authum_i64_t now);
+
+/**
+ * @brief Authum http client partial.
+ */
+void
+authum_http_client_partial(authum_http_client_t *client);
+
+/**
+ * @brief An address key (octets in network order) as a host-order number.
+ */
+authum_u32_t
+authum_http_host_order(authum_u32_t key);
+
+/**
+ * @brief Authum http parse key.
+ */
+authum_bool_t
+authum_http_parse_key(const authum_char_t *text, authum_usize_t size, authum_u32_t *key);
+
+/**
+ * @brief Authum http prepare connections.
+ */
+void
+authum_http_prepare_connections(authum_http_server_t *server, lh_os_net_socket_poll_t *events,
+                                authum_i64_t now, double tokens);
+
+/**
+ * @brief Authum http dispatch connection.
+ */
+void
+authum_http_dispatch_connection(authum_http_server_t *server, authum_http_client_t *client,
+                                lh_uint_t events, authum_i64_t now, double *tokens);
+
+/**
+ * @brief Authum http request refuse.
+ */
+void
+authum_http_request_refuse(authum_http_client_t *client, authum_i32_t code,
+                           const authum_char_t *status, const authum_char_t *reason);
+
+/**
+ * @brief Content-Length is accepted only as an empty body: digits that are all zero.
+ */
+authum_bool_t
+authum_http_request_is_zero_length(const lh_str_view_t *value);
+
+/**
+ * @brief Authum http request format address.
+ */
+void
+authum_http_request_format_address(authum_u32_t address, authum_char_t *text,
+                                   authum_usize_t capacity);
+
+/**
+ * @brief ASCII case folding: policy names compare without case on every platform, because the
+ * Windows opener resolves names without case.
+ */
+authum_char_t
+authum_http_policy_fold(authum_char_t x);
+
+/**
+ * @brief Authum http policy equal nocase.
+ */
+authum_bool_t
+authum_http_policy_equal_nocase(const authum_char_t *a, const authum_char_t *b, authum_usize_t n);
+
+/**
+ * @brief Authum http policy contains.
+ */
+authum_bool_t
+authum_http_policy_contains(const authum_char_t *list, const authum_char_t *value, authum_usize_t n,
+                            authum_bool_t prefix);
+
+/**
+ * @brief Authum http hex.
+ */
+authum_i32_t
+authum_http_hex(authum_char_t x);
+
+/**
+ * @brief A byte a published name may hold once decoded. Separators, controls and the characters
+ * Windows reserves are refused on every platform.
+ */
+authum_bool_t
+authum_http_name_byte(authum_byte_t x);
+
+/**
+ * @brief Authum http owner has server.
+ */
+authum_bool_t
+authum_http_owner_has_server(const authum_http_owner_t *owner, const authum_http_server_t *server);
+
+/**
+ * @brief Authum http is terminated.
+ */
+authum_bool_t
+authum_http_is_terminated(const authum_char_t *string, authum_usize_t capacity);
+
+/**
+ * @brief Defaults for fields a caller's struct may predate; keep in step with
+ * authum_http_options_init.
+ */
+void
+authum_http_options_fill_defaults(authum_http_options_t *options);
+
+/**
+ * @brief Authum http options is valid.
+ */
+authum_bool_t
+authum_http_options_is_valid(const authum_http_options_t *options);
+
+/**
+ * @brief Authum http service open.
+ */
+authum_http_server_t *
+authum_http_service_open(authum_ptr context, const authum_http_options_t *caller,
+                         authum_char_t *error, authum_usize_t error_size);
+
+/**
+ * @brief Authum http service open read.
+ */
+authum_http_server_t *
+authum_http_service_open_read(authum_http_owner_t *owner, const authum_http_options_t *options,
+                              authum_char_t *error, authum_usize_t error_size);
+
+/**
+ * @brief Authum http service shutdown.
+ */
+void
+authum_http_service_shutdown(authum_ptr context, authum_http_server_t *server);
+
+/**
+ * @brief Authum http service close.
+ */
+void
+authum_http_service_close(authum_ptr context, authum_http_server_t *server);
+
+/**
+ * @brief Authum http service drain.
+ */
+authum_usize_t
+authum_http_service_drain(authum_ptr owner, authum_http_server_t *server, authum_http_log_fn sink,
+                          authum_ptr user, authum_usize_t limit);
+
+/**
+ * @brief Authum http service get memory.
+ */
+authum_usize_t
+authum_http_service_get_memory(authum_ptr owner, const authum_http_server_t *server);
+
 AUTHUM_EXTERN_C_END
 
 #endif

@@ -4,9 +4,9 @@
 
 void (*authum_http_test_step_hook)(authum_http_server_t *server) = authum_null;
 
-static void
-prepare_connections(authum_http_server_t *server, lh_os_net_socket_poll_t *events, authum_i64_t now,
-                    double tokens)
+void
+authum_http_prepare_connections(authum_http_server_t *server, lh_os_net_socket_poll_t *events,
+                                authum_i64_t now, double tokens)
 {
     lh_os_net_socket_get_poll(lh_addr_of(server->listener), lh_os_net_socket_poll_read,
                               lh_addr_of(events[0]));
@@ -48,9 +48,9 @@ prepare_connections(authum_http_server_t *server, lh_os_net_socket_poll_t *event
     }
 }
 
-static void
-dispatch_connection(authum_http_server_t *server, authum_http_client_t *client, lh_uint_t events,
-                    authum_i64_t now, double *tokens)
+void
+authum_http_dispatch_connection(authum_http_server_t *server, authum_http_client_t *client,
+                                lh_uint_t events, authum_i64_t now, double *tokens)
 {
     if (!lh_os_net_socket_is_valid(lh_addr_of(client->fd)))
     {
@@ -98,7 +98,7 @@ authum_http_wait(authum_ptr arg, lh_u32_t timeout_ms)
         lh_math_add(lh_cast_static(lh_usize_t, server->options.max_clients), 2);
 
     /* A reader that is still sending its request in pieces is left out of the
-     * poll for a moment (see prepare_connections); wake when the first one is
+     * poll for a moment (see authum_http_prepare_connections); wake when the first one is
      * due (rounded up, so it is not taken back early and re-deferred). Only
      * drips wait: other sockets in the poll still wake it at once, so on a
      * coarse timer (Windows' default 15.6 ms) the rounding delays nobody else. */
@@ -159,7 +159,7 @@ authum_http_step(authum_ptr arg)
     {
         authum_usize_t index =
             lh_math_mod((lh_math_add(server->cursor, count)), server->options.max_clients);
-        dispatch_connection(
+        authum_http_dispatch_connection(
             server, lh_addr_of(server->clients[index]),
             lh_os_net_socket_poll_get_ready(lh_addr_of(server->events[lh_math_add(index, 2)])), now,
             lh_addr_of(server->tokens));
@@ -169,5 +169,5 @@ authum_http_step(authum_ptr arg)
     {
         authum_http_clients_accept(server, now);
     }
-    prepare_connections(server, server->events, now, server->tokens);
+    authum_http_prepare_connections(server, server->events, now, server->tokens);
 }

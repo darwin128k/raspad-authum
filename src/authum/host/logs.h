@@ -37,6 +37,52 @@
 #define AUTHUM_HOST_LOGS_H
 
 #include <authum/logger/ops.h>
+#include <lh/core/char/letter.h>
+#include <lh/core/char/digit.h>
+#include <lh/core/memory/std.h>
+#include <lh/os/logger/daily.h>
+#include <lh/os/logger/queue.h>
+#include <lh/os/timestamp.h>
+#include <lh/core/runtime/allocator.h>
+#include <lh/os/env.h>
+#include <lh/core/runtime/logger.h>
+#include <authum/cfg.h>
+
+enum
+{
+    authum_logs_name_max = 64,
+    /** Channel level that lets nothing through. */
+    authum_logs_level_off = -1
+};
+
+typedef struct authum_logs_channel authum_logs_channel_t;
+
+struct authum_logs_channel
+{
+    authum_logs_channel_t *next;
+    /** The id its records carry in the queue; 0 is the host. */
+    lh_u32_t id;
+    authum_ptr owner;
+    /** The module channel this journal belongs to; null for a module or the host. */
+    authum_logs_channel_t *parent;
+    /** Opens of a journal by name; it closes when the last one does. */
+    authum_usize_t refs;
+    /** Folder name: `qproto`, or `bans` under `qproto/` for a journal. */
+    authum_char_t name[authum_logs_name_max];
+    /** The source mark of the records: `QPROTO`, `QPROTO/bans` for a journal. */
+    authum_char_t tag[lh_math_mul(authum_logs_name_max, 2)];
+    /** Most verbose level written to the file, or ::authum_logs_level_off. */
+    authum_i32_t level;
+    authum_i32_t console_level;
+    authum_i32_t host_level;
+    long keep_days;
+    authum_bool_t file_enabled;
+    authum_logger_format_t format;
+    authum_logger_format_t default_format;
+    authum_path_t config;
+    /** Where the daily files go: logs/, modules/<module>/logs/, or a journal's folder in it. */
+    authum_path_t dir;
+};
 
 AUTHUM_EXTERN_C_BEGIN
 
@@ -101,6 +147,92 @@ authum_logs_close_journal(authum_ptr journal);
 
 void
 authum_logs_set_clock(authum_logs_clock_fn clock);
+
+/**
+ * @brief Now, in Unix seconds: the test clock when one is set.
+ */
+lh_timestamp_t
+authum_logs_now(void);
+
+/**
+ * @brief The daily files' clock: the same one lines are stamped with.
+ */
+lh_bool_t
+authum_logs_files_clock(lh_ptr user, lh_timestamp_t *out);
+
+/**
+ * @brief The game server's own line: `L MM/DD/YYYY - HH:MM:SS: [level] [tag] text`.
+ */
+lh_void
+authum_logs_files_format(lh_ptr user, const lh_os_logger_record_t *record, lh_timestamp_t local,
+                         lh_str_t *out);
+
+/**
+ * @brief Authum logs sink emit.
+ */
+lh_void
+authum_logs_sink_emit(lh_ptr user, const lh_os_logger_record_t *record);
+
+/**
+ * @brief Authum logs sink flush.
+ */
+lh_void
+authum_logs_sink_flush(lh_ptr user);
+
+/**
+ * @brief Authum logs sink close.
+ */
+lh_void
+authum_logs_sink_close(lh_ptr user);
+
+/**
+ * @brief A full queue is told in the host's own file, from the worker, so it is not lost too.
+ */
+lh_void
+authum_logs_sink_dropped(lh_ptr user, lh_u32_t count);
+
+/**
+ * @brief Tell the files where @p channel writes, how long it keeps and how its lines read.
+ */
+void
+authum_logs_send_channel(const authum_logs_channel_t *channel);
+
+/**
+ * @brief Apply only present, valid keys. Missing/invalid values preserve inheritance.
+ */
+void
+authum_logs_apply(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authum_char_t *prefix);
+
+/**
+ * @brief Authum logs inherit.
+ */
+void
+authum_logs_inherit(authum_logs_channel_t *channel, const authum_logs_channel_t *parent);
+
+/**
+ * @brief Authum logs admin.
+ */
+void
+authum_logs_admin(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authum_char_t *name);
+
+/**
+ * @brief Authum logs read channel level.
+ */
+void
+authum_logs_read_channel_level(authum_logs_channel_t *channel, authum_cfg_t *admin);
+
+/**
+ * @brief Copy caller-owned data before returning to the game thread.
+ */
+void
+authum_logs_emit(authum_logs_channel_t *channel, authum_logger_level_t level,
+                 const authum_char_t *text, const authum_char_t *from);
+
+/**
+ * @brief Authum logs construct.
+ */
+authum_ptr
+authum_logs_construct(authum_ptr owner, const authum_logger_options_t *options);
 
 AUTHUM_EXTERN_C_END
 

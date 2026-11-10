@@ -1,13 +1,6 @@
 #include <authum/host/placeholders.h>
 #include <authum/memory.h>
 #include <authum/unused.h>
-#include <lh/core/char/letter.h>
-#include <lh/core/char/digit.h>
-#include <lh/core/memory/std.h>
-
-
-#include <lh/os/system/fs/path.h>
-#include <lh/os/fs/path.h>
 
 /** The standard names, indexed by ::authum_placeholder_standard_t. */
 static const authum_char_t *const
@@ -70,7 +63,7 @@ authum_placeholder_canonical(const authum_char_t *input, authum_char_t *out, aut
     return fits;
 }
 
-static authum_bool_t
+authum_bool_t
 authum_placeholder_absolute(const authum_char_t *path)
 {
     lh_fs_path_t parsed;
@@ -100,7 +93,7 @@ authum_placeholder_is_standard(const authum_char_t *name, authum_usize_t length)
     return authum_bool_false;
 }
 
-static authum_bool_t
+authum_bool_t
 authum_placeholder_name_valid(const authum_char_t *name)
 {
     authum_usize_t length = lh_str_ptr_len(name);
@@ -125,7 +118,7 @@ authum_placeholder_name_valid(const authum_char_t *name)
  * Reads ::authum_path_t directly: this file is also compiled into hosts that
  * do not link the whole SDK (the FastDL test host).
  */
-static const authum_char_t *
+const authum_char_t *
 authum_placeholder_path_text(const authum_path_t *path)
 {
     return (path && path->size) ? path->data : authum_null;
@@ -137,7 +130,7 @@ authum_placeholder_path_text(const authum_path_t *path)
  * Standard names resolve against the calling module; registered names are
  * shared by every module.
  */
-static const authum_char_t *
+const authum_char_t *
 authum_placeholder_lookup(authum_placeholder_owner_t *owner, const authum_char_t *name,
                           authum_usize_t length)
 {
@@ -164,8 +157,8 @@ authum_placeholder_lookup(authum_placeholder_owner_t *owner, const authum_char_t
     return authum_null;
 }
 
-static authum_bool_t
-authum_placeholder_expand_impl(authum_ptr owner_ptr, const authum_char_t *template,
+authum_bool_t
+authum_placeholder_expand_impl(authum_ptr owner_ptr, const authum_char_t *pattern,
                                authum_char_t *out, authum_usize_t out_size)
 {
     authum_placeholder_owner_t *owner = owner_ptr;
@@ -173,12 +166,12 @@ authum_placeholder_expand_impl(authum_ptr owner_ptr, const authum_char_t *templa
     authum_usize_t used = 0;
     const authum_char_t *template_end;
 
-    if (authum_null_eq(owner) || !template || !lh_ptr_deref(template) || !out || !out_size)
+    if (authum_null_eq(owner) || !pattern || !lh_ptr_deref(pattern) || !out || !out_size)
     {
         return authum_bool_false;
     }
-    template_end = lh_math_add(template, lh_str_ptr_len(template));
-    for (const authum_char_t *cursor = template; lh_ptr_deref(cursor);)
+    template_end = lh_math_add(pattern, lh_str_ptr_len(pattern));
+    for (const authum_char_t *cursor = pattern; lh_ptr_deref(cursor);)
     {
         if (lh_math_eq(lh_ptr_deref(cursor), lh_char_map_lbrace))
         {
@@ -247,7 +240,7 @@ authum_placeholder_expand_impl(authum_ptr owner_ptr, const authum_char_t *templa
     return authum_bool_true;
 }
 
-static authum_bool_t
+authum_bool_t
 authum_placeholder_register_impl(authum_ptr owner, const authum_char_t *name,
                                  const authum_char_t *value)
 {
@@ -290,7 +283,7 @@ authum_placeholder_register_impl(authum_ptr owner, const authum_char_t *name,
     return authum_bool_true;
 }
 
-static authum_bool_t
+authum_bool_t
 authum_placeholder_unregister_impl(authum_ptr owner, const authum_char_t *name)
 {
     authum_placeholder_entry_t **link = lh_addr_of(authum_placeholder_entries);

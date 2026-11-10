@@ -27,6 +27,11 @@
 
 #include <authum/env.h>
 #include <authum/placeholders.h>
+#include <lh/core/char/letter.h>
+#include <lh/core/char/digit.h>
+#include <lh/core/memory/std.h>
+#include <lh/os/system/fs/path.h>
+#include <lh/os/fs/path.h>
 
 enum
 {
@@ -116,6 +121,53 @@ authum_placeholder_standard_name(authum_placeholder_standard_t standard);
  */
 authum_bool_t
 authum_placeholder_canonical(const authum_char_t *input, authum_char_t *out, authum_usize_t size);
+
+/**
+ * @brief Authum placeholder absolute.
+ */
+authum_bool_t
+authum_placeholder_absolute(const authum_char_t *path);
+
+/**
+ * @brief Authum placeholder name valid.
+ */
+authum_bool_t
+authum_placeholder_name_valid(const authum_char_t *name);
+
+/**
+ * @brief * The text of @p path, or null when it is empty.  Reads ::authum_path_t directly: this
+ * file is also compiled into hosts that do not link the whole SDK (the FastDL test host).
+ */
+const authum_char_t *
+authum_placeholder_path_text(const authum_path_t *path);
+
+/**
+ * @brief * The value of @p name, or null when nobody published it.  Standard names resolve against
+ * the calling module; registered names are shared by every module.
+ */
+const authum_char_t *
+authum_placeholder_lookup(authum_placeholder_owner_t *owner, const authum_char_t *name,
+                          authum_usize_t length);
+
+/**
+ * @brief Authum placeholder expand impl.
+ */
+authum_bool_t
+authum_placeholder_expand_impl(authum_ptr owner_ptr, const authum_char_t *pattern,
+                               authum_char_t *out, authum_usize_t out_size);
+
+/**
+ * @brief Authum placeholder register impl.
+ */
+authum_bool_t
+authum_placeholder_register_impl(authum_ptr owner, const authum_char_t *name,
+                                 const authum_char_t *value);
+
+/**
+ * @brief Authum placeholder unregister impl.
+ */
+authum_bool_t
+authum_placeholder_unregister_impl(authum_ptr owner, const authum_char_t *name);
 
 AUTHUM_EXTERN_C_END
 

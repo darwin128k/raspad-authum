@@ -7,56 +7,8 @@
 #include <authum/host/logs.h>
 #include <authum/memory.h>
 #include <authum/unused.h>
-#include <lh/core/char/letter.h>
-#include <lh/core/char/digit.h>
-#include <lh/core/memory/std.h>
-#include <lh/os/logger/daily.h>
-#include <lh/os/logger/queue.h>
-#include <lh/os/timestamp.h>
 
-#include <authum/cfg.h>
 #include <authum/logger.h>
-
-#include <lh/core/runtime/allocator.h>
-
-#include <lh/os/env.h>
-#include <lh/core/runtime/logger.h>
-
-enum
-{
-    authum_logs_name_max = 64,
-    /** Channel level that lets nothing through. */
-    authum_logs_level_off = -1
-};
-
-typedef struct authum_logs_channel authum_logs_channel_t;
-
-struct authum_logs_channel
-{
-    authum_logs_channel_t *next;
-    /** The id its records carry in the queue; 0 is the host. */
-    lh_u32_t id;
-    authum_ptr owner;
-    /** The module channel this journal belongs to; null for a module or the host. */
-    authum_logs_channel_t *parent;
-    /** Opens of a journal by name; it closes when the last one does. */
-    authum_usize_t refs;
-    /** Folder name: `qproto`, or `bans` under `qproto/` for a journal. */
-    authum_char_t name[authum_logs_name_max];
-    /** The source mark of the records: `QPROTO`, `QPROTO/bans` for a journal. */
-    authum_char_t tag[lh_math_mul(authum_logs_name_max, 2)];
-    /** Most verbose level written to the file, or ::authum_logs_level_off. */
-    authum_i32_t level;
-    authum_i32_t console_level;
-    authum_i32_t host_level;
-    long keep_days;
-    authum_bool_t file_enabled;
-    authum_logger_format_t format;
-    authum_logger_format_t default_format;
-    authum_path_t config;
-    /** Where the daily files go: logs/, modules/<module>/logs/, or a journal's folder in it. */
-    authum_path_t dir;
-};
 
 authum_path_t authum_logs_root;
 authum_logs_mirror_fn authum_logs_mirror;
@@ -82,7 +34,7 @@ enum
 /* --- the queue ------------------------------------------------------------ */
 
 /** Now, in Unix seconds: the test clock when one is set. */
-static lh_timestamp_t
+lh_timestamp_t
 authum_logs_now(void)
 {
     lh_timestamp_t now = 0;
@@ -96,7 +48,7 @@ authum_logs_now(void)
 }
 
 /** The daily files' clock: the same one lines are stamped with. */
-static lh_bool_t
+lh_bool_t
 authum_logs_files_clock(lh_ptr user, lh_timestamp_t *out)
 {
     authum_unused(user);
@@ -105,7 +57,7 @@ authum_logs_files_clock(lh_ptr user, lh_timestamp_t *out)
 }
 
 /** The game server's own line: `L MM/DD/YYYY - HH:MM:SS: [level] [tag] text`. */
-static lh_void
+lh_void
 authum_logs_files_format(lh_ptr user, const lh_os_logger_record_t *record, lh_timestamp_t local,
                          lh_str_t *out)
 {
@@ -133,7 +85,7 @@ authum_logs_files_format(lh_ptr user, const lh_os_logger_record_t *record, lh_ti
     lh_os_logger_daily_append_text(out, lh_os_logger_record_get_text(record));
 }
 
-static lh_void
+lh_void
 authum_logs_sink_emit(lh_ptr user, const lh_os_logger_record_t *record)
 {
     authum_unused(user);
@@ -141,7 +93,7 @@ authum_logs_sink_emit(lh_ptr user, const lh_os_logger_record_t *record)
         lh_os_logger_sink_get_user(lh_addr_of(authum_logs_files)), record);
 }
 
-static lh_void
+lh_void
 authum_logs_sink_flush(lh_ptr user)
 {
     authum_unused(user);
@@ -149,7 +101,7 @@ authum_logs_sink_flush(lh_ptr user)
         lh_os_logger_sink_get_user(lh_addr_of(authum_logs_files)));
 }
 
-static lh_void
+lh_void
 authum_logs_sink_close(lh_ptr user)
 {
     authum_unused(user);
@@ -158,7 +110,7 @@ authum_logs_sink_close(lh_ptr user)
 }
 
 /** A full queue is told in the host's own file, from the worker, so it is not lost too. */
-static lh_void
+lh_void
 authum_logs_sink_dropped(lh_ptr user, lh_u32_t count)
 {
     lh_str_t text;
@@ -175,7 +127,7 @@ authum_logs_sink_dropped(lh_ptr user, lh_u32_t count)
 }
 
 /** Tell the files where @p channel writes, how long it keeps and how its lines read. */
-static void
+void
 authum_logs_send_channel(const authum_logs_channel_t *channel)
 {
     lh_os_logger_record_t record;
@@ -226,7 +178,7 @@ authum_logs_cfg_open(authum_cfg_t *cfg)
 }
 
 /** Apply only present, valid keys. Missing/invalid values preserve inheritance. */
-static void
+void
 authum_logs_apply(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authum_char_t *prefix)
 {
     authum_char_t key[160];
@@ -273,7 +225,7 @@ authum_logs_apply(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authu
 #undef LOG_VALUE
 }
 
-static void
+void
 authum_logs_inherit(authum_logs_channel_t *channel, const authum_logs_channel_t *parent)
 {
     channel->level = parent->level;
@@ -284,7 +236,7 @@ authum_logs_inherit(authum_logs_channel_t *channel, const authum_logs_channel_t 
     channel->format = channel->default_format ? channel->default_format : parent->format;
 }
 
-static void
+void
 authum_logs_admin(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authum_char_t *name)
 {
     authum_char_t prefix[144];
@@ -299,7 +251,7 @@ authum_logs_admin(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authu
     authum_logs_apply(channel, cfg, prefix);
 }
 
-static void
+void
 authum_logs_read_channel_level(authum_logs_channel_t *channel, authum_cfg_t *admin)
 {
     authum_cfg_t local;
@@ -407,7 +359,7 @@ authum_logs_set_name(authum_char_t *out, authum_usize_t out_size, const authum_c
 }
 
 /** Copy caller-owned data before returning to the game thread. */
-static void
+void
 authum_logs_emit(authum_logs_channel_t *channel, authum_logger_level_t level,
                  const authum_char_t *text, const authum_char_t *from)
 {
@@ -707,7 +659,7 @@ authum_logs_close_journal(authum_ptr journal)
     }
 }
 
-static authum_ptr
+authum_ptr
 authum_logs_construct(authum_ptr owner, const authum_logger_options_t *options)
 {
     if (!options || lh_math_lt(options->format, authum_logger_format_inherit) ||

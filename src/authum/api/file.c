@@ -7,16 +7,11 @@
  * module's path is an ::authum_path_t, the lh path is built from it here.
  */
 
-#include <authum/file.h>
+#include <authum/api/file/private.h>
 #include <authum/memory.h>
 
-#include <lh/core/cast/const.h>
-#include <lh/core/char/map.h>
-#include <lh/os/fs/file.h>
-#include <lh/os/system/fs/path.h>
-
 /** The lh file behind @p self, or null when the file is closed. */
-static lh_os_fs_file_t *
+lh_os_fs_file_t *
 authum_file_backend(const authum_file_t *self)
 {
     return lh_cast_static(lh_os_fs_file_t *, authum_file_get_state(self));

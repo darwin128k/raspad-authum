@@ -3,15 +3,9 @@
  * @brief Flat cfg reader — part of the `authum_client` static library.
  */
 
-#include <authum/cfg.h>
+#include <authum/api/cfg/private.h>
 #include <authum/memory.h>
 #include <authum/unused.h>
-#include <lh/core/cast/const.h>
-#include <lh/core/char/map.h>
-#include <lh/core/memory/std.h>
-#include <lh/os/fs/file.h>
-#include <lh/os/system/fs/path.h>
-#include <lh/core/str/split/line.h>
 
 /** The bytes one read of the config file brings in. */
 enum
@@ -26,7 +20,7 @@ enum
  * its first line again, the way the old stream was rewound and read. A file
  * that cannot be opened or read leaves the config closed.
  */
-static authum_bool_t
+authum_bool_t
 authum_cfg_read_file(const lh_fs_path_t *path, authum_char_t **out_text, authum_usize_t *out_size)
 {
     lh_str_t text;
@@ -191,7 +185,7 @@ authum_cfg_rtrim(authum_char_t *s)
  * At most authum_cfg_line_max - 1 bytes; a longer line continues in the next
  * call. @p pos is the offset of the line to read.
  */
-static authum_bool_t
+authum_bool_t
 authum_cfg_next_line(authum_cfg_t *self, const lh_str_view_t *text, lh_usize_t *pos)
 {
     lh_usize_t start = *pos;

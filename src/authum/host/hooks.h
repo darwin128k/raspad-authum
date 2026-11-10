@@ -12,6 +12,7 @@
 
 #include <authum/hook.h>
 #include <authum/size.h>
+#include <lh/core/util/ptr.h>
 
 /** @brief How many handlers one point may hold. */
 enum
@@ -115,6 +116,20 @@ authum_hook_registry_drop_owner(authum_hook_registry_t *self, authum_ptr owner);
 authum_bool_t
 authum_hook_registry_call(authum_hook_registry_t *self, authum_hook_point_t point,
                           authum_hook_call_t *call, authum_bool_t *overran);
+
+/**
+ * @brief Authum hooks host add.
+ */
+authum_bool_t
+authum_hooks_host_add(authum_ptr owner, const authum_char_t *tag, authum_hook_point_t point,
+                      authum_hook_fn fn, authum_ptr user);
+
+/**
+ * @brief Authum hooks host remove.
+ */
+authum_bool_t
+authum_hooks_host_remove(authum_ptr owner, authum_hook_point_t point, authum_hook_fn fn,
+                         authum_ptr user);
 
 AUTHUM_EXTERN_C_END
 

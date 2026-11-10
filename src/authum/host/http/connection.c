@@ -40,7 +40,7 @@ authum_http_client_close(authum_http_server_t *server, authum_http_client_t *cli
 /* With every slot taken, the connection that has waited longest without
  * finishing its request makes room, if it is old enough not to be a client
  * whose request is simply still on the way. */
-static authum_i32_t
+authum_i32_t
 evict_oldest_reader(authum_http_server_t *server, authum_i64_t now)
 {
     authum_i32_t victim = -1;
@@ -140,7 +140,7 @@ authum_http_clients_accept(authum_http_server_t *server, authum_i64_t now)
     }
 }
 
-static void
+void
 authum_http_client_partial(authum_http_client_t *client)
 {
     client->partial_us = lh_os_tick_us();

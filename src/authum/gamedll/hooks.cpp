@@ -9,14 +9,10 @@
 #include <authum/host/log.h>
 #include <authum/unused.h>
 #include <lh/core/cast/const.h>
-#include <lh/core/char/map.h>
-#include <lh/core/memory/std.h>
-#include <lh/os/timestamp.h>
 #include <authum/gamedll/hooks.h>
 
 #include <authum/host/engine.h>
 #include <authum/host/hooks.h>
-#include <authum/cstr.h>
 #include <authum/event/client.h>
 #include <authum/event/server.h>
 #include <authum/host/events.h>

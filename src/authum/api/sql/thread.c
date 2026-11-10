@@ -11,11 +11,8 @@
  * that service gets the older behaviour: one connection per job.
  */
 
-#include <authum/sql/thread.h>
+#include <authum/api/sql/thread/private.h>
 #include <authum/memory.h>
-#include <lh/core/attribute/thread_local.h>
-#include <lh/core/memory/std.h>
-#include <lh/os/sql/mysql/api.h>
 #include <authum/crypto/ed25519.h>
 
 #if !LH_LIBRARY_OPTION_THREAD_LOCAL
@@ -24,36 +21,6 @@
 #endif
 
 /** A connection description with its strings copied after it. */
-typedef struct authum_sql_thread_copy
-{
-    authum_sql_connection_t connection;
-    authum_usize_t strings_size;
-    authum_char_t strings[];
-} authum_sql_thread_copy_t;
-
-typedef struct authum_sql_thread_job
-{
-    authum_sql_thread_work_fn work;
-    authum_sql_thread_complete_fn complete;
-    authum_task_fn destroy;
-    authum_ptr user;
-    /** No end-of-thread call on this host: the job closes its own connection. */
-    authum_bool_t own_connection;
-    authum_sql_thread_result_t result;
-    authum_sql_connection_t connection;
-    authum_usize_t strings_size;
-    authum_char_t strings[];
-} authum_sql_thread_job_t;
-
-/** The connection a task thread keeps between jobs; that thread's alone. */
-typedef struct authum_sql_thread_cache
-{
-    authum_sql_t db;
-    /** The description db was opened with (null: no connection kept). */
-    authum_sql_thread_copy_t *key;
-    /** The MySQL client was used on this thread: mysql_thread_end at its end. */
-    authum_bool_t used_mysql;
-} authum_sql_thread_cache_t;
 
 static LH_ATTRIBUTE_THREAD_LOCAL authum_sql_thread_cache_t m_cache;
 
@@ -78,7 +45,7 @@ authum_sql_connect(authum_sql_t *db, const authum_sql_connection_t *c)
 }
 
 /** Bytes the strings of @p c take with their terminators; 0 on overflow past @p limit. */
-static authum_usize_t
+authum_usize_t
 authum_sql_thread_strings_size(const authum_sql_connection_t *c, authum_usize_t limit)
 {
     const authum_char_t *values[] = {c->path, c->host, c->user, c->database, c->password};
@@ -100,7 +67,7 @@ authum_sql_thread_strings_size(const authum_sql_connection_t *c, authum_usize_t 
 }
 
 /** Copy @p c into @p dst, its strings into @p strings (sized by authum_sql_thread_strings_size). */
-static void
+void
 authum_sql_thread_copy_init(authum_sql_connection_t *dst, authum_char_t *strings,
                             const authum_sql_connection_t *c)
 {
@@ -124,7 +91,7 @@ authum_sql_thread_copy_init(authum_sql_connection_t *dst, authum_char_t *strings
 }
 
 /** Whether two optional strings are equal (both absent counts as equal). */
-static authum_bool_t
+authum_bool_t
 authum_sql_thread_same_text(const authum_char_t *a, const authum_char_t *b)
 {
     if (!a || !b)
@@ -135,7 +102,7 @@ authum_sql_thread_same_text(const authum_char_t *a, const authum_char_t *b)
 }
 
 /** Whether @p a and @p b describe the same connection. */
-static authum_bool_t
+authum_bool_t
 authum_sql_thread_same(const authum_sql_connection_t *a, const authum_sql_connection_t *b)
 {
     return lh_math_eq(a->driver, b->driver) && lh_math_eq(a->port, b->port) &&
@@ -147,7 +114,7 @@ authum_sql_thread_same(const authum_sql_connection_t *a, const authum_sql_connec
 }
 
 /** Close the connection this thread keeps, if any, and forget its description. */
-static void
+void
 authum_sql_thread_drop(authum_sql_thread_cache_t *cache)
 {
     if (!cache->key)
@@ -162,7 +129,7 @@ authum_sql_thread_drop(authum_sql_thread_cache_t *cache)
 }
 
 /** The connection this thread keeps for @p c: kept, reopened, or opened now. */
-static authum_sql_t *
+authum_sql_t *
 authum_sql_thread_connection(authum_sql_thread_cache_t *cache, const authum_sql_connection_t *c,
                              authum_usize_t strings_size)
 {
