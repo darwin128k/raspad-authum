@@ -15,6 +15,7 @@
 #include <lh/os/fs/file.h>
 #include <lh/os/system/fs/path.h>
 #include <lh/core/str/split/line.h>
+#include <lh/core/ini/parser.h>
 
 AUTHUM_EXTERN_C_BEGIN
 
@@ -25,14 +26,6 @@ AUTHUM_EXTERN_C_BEGIN
  */
 authum_bool_t
 authum_cfg_read_file(const lh_fs_path_t *path, authum_char_t **out_text, authum_usize_t *out_size);
-
-/**
- * @brief * The next line of the config, the way the old stream read it.  At most
- * authum_cfg_line_max - 1 bytes; a longer line continues in the next call. @p pos is the offset of
- * the line to read.
- */
-authum_bool_t
-authum_cfg_next_line(authum_cfg_t *self, const lh_str_view_t *text, lh_usize_t *pos);
 
 AUTHUM_EXTERN_C_END
 

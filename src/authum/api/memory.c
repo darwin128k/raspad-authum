@@ -1,6 +1,5 @@
 #include <authum/memory.h>
 #include <authum/null.h>
-#include <lh/config.h>
 #include <lh/core/cast/const.h>
 #include <lh/core/memory/std.h>
 #include <lh/core/runtime/allocator.h>
@@ -8,30 +7,17 @@
 authum_ptr
 authum_memory_alloc(authum_usize_t size)
 {
-    if (lh_math_is_zero(size))
-    {
-        return authum_null;
-    }
-    return lh_memory_allocator_try_alloc(lh_runtime_allocator_get_mut(), size);
+    /* Authum's own policy: a zero size is no block. */
+    return lh_math_is_zero(size) ? authum_null : lh_runtime_allocator_try_alloc(size);
 }
 
 authum_ptr
 authum_memory_alloc_zero(authum_usize_t count, authum_usize_t item_size)
 {
-    if (lh_math_is_zero(count) || lh_math_is_zero(item_size) ||
-        lh_math_gt(count, lh_math_div(LH_U32_T_MAX, item_size)))
-    {
-        return authum_null;
-    }
-    const authum_usize_t size = lh_math_mul(count, item_size);
-    authum_ptr block = authum_memory_alloc(size);
-#if LH_LIBRARY_OPTION_MEMORY_ALLOCATOR_INIT_ALLOCATED != LH_LIBRARY_OPTION_ON
-    if (!authum_null_eq(block))
-    {
-        lh_memory_std_set(block, 0, size);
-    }
-#endif
-    return block;
+    /* lh checks the product for overflow and zeroes the block. */
+    return lh_math_is_zero(count) || lh_math_is_zero(item_size)
+               ? authum_null
+               : lh_runtime_allocator_try_alloc_zero(count, item_size);
 }
 
 authum_ptr
@@ -42,7 +28,7 @@ authum_memory_realloc(authum_ptr block, authum_usize_t old_size, authum_usize_t 
         authum_memory_free(block);
         return authum_null;
     }
-    return lh_memory_allocator_try_realloc(lh_runtime_allocator_get_mut(), block, old_size, new_size);
+    return lh_runtime_allocator_try_realloc(block, old_size, new_size);
 }
 
 void

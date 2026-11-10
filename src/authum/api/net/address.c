@@ -1,92 +1,36 @@
+/**
+ * @file address.c
+ * @brief The host of a network address, over ::lh_net_authority_try_split.
+ */
+
 #include <authum/net/address.h>
 #include <authum/null.h>
-#include <lh/core/net/port.h>
-#include <lh/core/char/digit.h>
+#include <lh/core/char/map.h>
 #include <lh/core/memory/std.h>
-#include <lh/core/util/str/ptr.h>
+#include <lh/core/net/authority.h>
 
 authum_bool_t
 authum_net_address_copy_host(const authum_char_t *address, authum_char_t *out,
                              authum_usize_t capacity)
 {
-    const authum_char_t *begin = address, *end, *port = authum_null, *p;
-    authum_u32_t colons = 0, number = 0;
-    authum_usize_t length;
-    if (!out || !capacity)
+    lh_str_view_t host;
+    lh_net_port_t port;
+
+    if (authum_null_eq(out) || lh_math_eq(capacity, 0u))
     {
         return authum_bool_false;
     }
-
-    if (!address || !address[0])
+    if (authum_null_eq(address) ||
+        !lh_net_authority_try_split(address, lh_str_ptr_len(address), lh_addr_of(host),
+                                    lh_addr_of(port), authum_null) ||
+        lh_math_ge(lh_str_view_get_size(lh_addr_of(host)), capacity))
     {
-        goto invalid;
+        out[0] = lh_char_map_nul;
+        return authum_bool_false;
     }
-    end = lh_math_add(address, lh_str_ptr_len(address));
-    if (lh_math_eq(lh_ptr_deref(begin), lh_char_map_lbracket))
-    {
-        begin = lh_math_add_one(begin);
-        end = lh_str_ptr_find_of_char(begin, lh_math_sub(end, begin), lh_char_map_rbracket);
-        if (!end || lh_math_eq(end, begin) || (end[1] && lh_math_ne(end[1], lh_char_map_colon)))
-        {
-            goto invalid;
-        }
-        if (end[1])
-        {
-            port = lh_math_add(end, 2);
-        }
-    }
-    else
-    {
-        for (p = begin; lh_math_lt(p, end); p = lh_math_add_one(p))
-        {
-            if (lh_math_eq(lh_ptr_deref(p), lh_char_map_colon))
-            {
-                colons = lh_math_add_one(colons);
-            }
-        }
-        if (lh_math_eq(colons, 1))
-        {
-            end = lh_str_ptr_find_of_char(begin, lh_math_sub(end, begin), lh_char_map_colon);
-            port = lh_math_add(end, 1);
-        }
-    }
-    if (port)
-    {
-        if (!lh_ptr_deref(port))
-        {
-            goto invalid;
-        }
-        for (p = port; lh_ptr_deref(p); p = lh_math_add_one(p))
-        {
-            if (!lh_char_is_digit(lh_ptr_deref(p)) ||
-                !lh_char_digit_accumulate(lh_addr_of(number), lh_char_to_digit(lh_ptr_deref(p))))
-            {
-                goto invalid;
-            }
-            if (lh_math_gt(number, LH_NET_PORT_MAX))
-            {
-                goto invalid;
-            }
-        }
-    }
-    for (p = begin; lh_math_lt(p, end); p = lh_math_add_one(p))
-    {
-        if (lh_math_le(lh_cast_static(authum_byte_t, lh_ptr_deref(p)), lh_char_map_space) ||
-            lh_math_eq(lh_ptr_deref(p), lh_char_map_lbracket) ||
-            lh_math_eq(lh_ptr_deref(p), lh_char_map_rbracket))
-        {
-            goto invalid;
-        }
-    }
-    length = lh_cast_static(authum_usize_t, (lh_math_sub(end, begin)));
-    if (!length || lh_math_ge(length, capacity))
-    {
-        goto invalid;
-    }
-    lh_memory_std_move(out, begin, length);
-    out[length] = lh_char_map_nul;
+    /* @p out may be @p address itself: the host moves left, never right. */
+    lh_memory_std_move(out, lh_str_view_get_data(lh_addr_of(host)),
+                       lh_str_view_get_size(lh_addr_of(host)));
+    out[lh_str_view_get_size(lh_addr_of(host))] = lh_char_map_nul;
     return authum_bool_true;
-invalid:
-    out[0] = lh_char_map_nul;
-    return authum_bool_false;
 }

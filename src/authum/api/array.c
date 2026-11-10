@@ -1,6 +1,7 @@
 #include <authum/array.h>
-#include <lh/core/util/ptr.h>
+#include <lh/core/array.h>
 #include <lh/core/memory/std.h>
+#include <lh/core/util/interval.h>
 
 #include <authum/null.h>
 
@@ -59,7 +60,7 @@ authum_array_reserve(authum_array_t *self, authum_usize_t capacity)
     {
         return authum_bool_true;
     }
-    if (lh_math_gt(capacity, lh_math_div((LH_U32_T_MAX), self->item_size)))
+    if (lh_interval_closed_is_mul_overflow(capacity, self->item_size, 0u, LH_USIZE_T_MAX))
     {
         return authum_bool_false;
     }
@@ -86,7 +87,8 @@ authum_array_push(authum_array_t *self, authum_cptr item)
     }
     if (lh_math_eq(self->size, self->capacity))
     {
-        want = (lh_math_eq(self->capacity, 0u)) ? 4u : lh_math_mul(self->capacity, 2u);
+        /* lh's growth policy, the same an lh_array_t follows. */
+        want = lh_array_get_grown_capacity(self->capacity, lh_math_add_one(self->capacity));
         if (!authum_array_reserve(self, want))
         {
             return authum_null;

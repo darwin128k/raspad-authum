@@ -149,111 +149,55 @@ authum_cfg_open_text(authum_cfg_t *self, const authum_char_t *text, authum_usize
     return authum_bool_true;
 }
 
-authum_char_t *
-authum_cfg_skip_spaces(authum_char_t *s)
-{
-    while (!authum_null_eq(s) && (lh_math_eq(lh_ptr_deref(s), lh_char_map_space) ||
-                                  lh_math_eq(lh_ptr_deref(s), lh_char_map_ht)))
-    {
-        s = lh_math_add_one(s);
-    }
-    return s;
-}
-
-void
-authum_cfg_rtrim(authum_char_t *s)
-{
-    authum_usize_t n;
-
-    if (authum_null_eq(s))
-    {
-        return;
-    }
-    n = lh_cast_static(authum_usize_t, lh_str_ptr_len(s));
-    while (lh_math_gt(n, 0u) && (lh_math_eq(s[lh_math_sub(n, 1u)], lh_char_map_lf) ||
-                                 lh_math_eq(s[lh_math_sub(n, 1u)], lh_char_map_cr) ||
-                                 lh_math_eq(s[lh_math_sub(n, 1u)], lh_char_map_space) ||
-                                 lh_math_eq(s[lh_math_sub(n, 1u)], lh_char_map_ht)))
-    {
-        s[--n] = lh_char_map_nul;
-    }
-}
-
-/**
- * @brief The next line of the config, the way the old stream read it.
- *
- * At most authum_cfg_line_max - 1 bytes; a longer line continues in the next
- * call. @p pos is the offset of the line to read.
- */
-authum_bool_t
-authum_cfg_next_line(authum_cfg_t *self, const lh_str_view_t *text, lh_usize_t *pos)
-{
-    lh_usize_t start = *pos;
-    lh_str_view_t line;
-    if (!lh_str_view_split_next_line(text, pos, lh_addr_of(line)))
-    {
-        return authum_bool_false;
-    }
-    lh_usize_t chunk = lh_str_view_get_size(lh_addr_of(line));
-    lh_usize_t limit = lh_math_sub(lh_cast_static(lh_usize_t, sizeof(self->line)), 1u);
-    if (chunk > limit)
-    {
-        /* The line is longer than the buffer: the rest of it is the next line. */
-        chunk = limit;
-        *pos = lh_math_add(start, limit);
-    }
-    lh_memory_std_copy(self->line, lh_str_view_get_data(lh_addr_of(line)), chunk);
-    self->line[chunk] = lh_char_map_nul;
-    return authum_bool_true;
-}
-
 const authum_char_t *
 authum_cfg_get_value(authum_cfg_t *self, const authum_char_t *key)
 {
+    lh_str_view_t text;
+    lh_str_view_t wanted;
+    lh_str_view_t line;
+    lh_usize_t pos = 0u;
+
     if (authum_null_eq(self) || authum_null_eq(self->text) || authum_null_eq(key) ||
         lh_math_eq(key[0], lh_char_map_nul))
     {
         return authum_null;
     }
-
-    lh_str_view_t text;
     lh_str_view_init_by_size(lh_addr_of(text), self->text, self->size);
-    lh_usize_t pos = 0u;
-    while (authum_cfg_next_line(self, lh_addr_of(text), lh_addr_of(pos)))
+    lh_str_view_init(lh_addr_of(wanted), key);
+    while (lh_str_view_split_next_line(lh_addr_of(text), lh_addr_of(pos), lh_addr_of(line)))
     {
-        authum_char_t *p = authum_cfg_skip_spaces(self->line);
-        authum_cfg_rtrim(p);
-        if (lh_math_eq(p[0], lh_char_map_nul) || lh_math_eq(p[0], lh_char_map_hash) ||
-            lh_math_eq(p[0], lh_char_map_semicolon))
-        {
-            continue;
-        }
+        lh_str_view_t name;
+        lh_str_view_t value;
+        lh_usize_t eq;
+        lh_usize_t size;
 
-        authum_char_t *eq = lh_cast_const(
-            authum_char_t *, lh_str_ptr_find_of_char(p, lh_str_ptr_len(p), lh_char_map_equals));
-        if (authum_null_eq(eq))
+        /* The ini dialect's lines: trimmed, empty and `#` / `;` comments skipped. */
+        lh_str_view_trim(lh_addr_of(line));
+        if (lh_ini_parser_is_skipped(lh_addr_of(line)))
         {
             continue;
         }
-        lh_ptr_deref(eq) = lh_char_map_nul;
-        authum_char_t *key_end = eq;
-        while (lh_math_gt(key_end, p) && (lh_math_eq(key_end[-1], lh_char_map_space) ||
-                                          lh_math_eq(key_end[-1], lh_char_map_ht)))
-        {
-            key_end = lh_math_sub_one(key_end);
-            lh_ptr_deref(key_end) = lh_char_map_nul;
-        }
-        if (lh_math_eq(p[0], lh_char_map_nul) || !authum_cstr_is_equal(p, key, authum_bool_true))
+        eq = lh_str_view_find_char(lh_addr_of(line), lh_char_map_equals);
+        if (lh_math_eq(eq, LH_STR_VIEW_INVALID))
         {
             continue;
         }
-
-        authum_char_t *value = authum_cfg_skip_spaces(lh_math_add(eq, 1));
-        if (lh_math_ne(value, self->line))
+        lh_str_view_from_offset(lh_addr_of(line), 0u, eq, lh_addr_of(name));
+        lh_str_view_rtrim(lh_addr_of(name));
+        if (!lh_str_view_equals(lh_addr_of(name), lh_addr_of(wanted), lh_bool_true))
         {
-            authum_usize_t n = lh_cast_static(authum_usize_t, lh_str_ptr_len(value));
-            lh_memory_std_move(self->line, value, lh_math_add(n, 1u));
+            continue;
         }
+        lh_str_view_from_offset(
+            lh_addr_of(line), lh_math_add_one(eq),
+            lh_math_sub(lh_math_sub(lh_str_view_get_size(lh_addr_of(line)), eq), 1u),
+            lh_addr_of(value));
+        lh_str_view_ltrim(lh_addr_of(value));
+        /* The value is handed out NUL-terminated, cut to the line buffer. */
+        size = lh_math_min(lh_str_view_get_size(lh_addr_of(value)),
+                           lh_math_sub(lh_cast_static(lh_usize_t, sizeof(self->line)), 1u));
+        lh_memory_std_copy(self->line, lh_str_view_get_data(lh_addr_of(value)), size);
+        self->line[size] = lh_char_map_nul;
         return self->line;
     }
     return authum_null;
