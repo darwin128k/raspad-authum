@@ -118,14 +118,14 @@ authum_hook_registry_call(authum_hook_registry_t *self, authum_hook_point_t poin
                           authum_hook_call_t *call, authum_bool_t *overran);
 
 /**
- * @brief Authum hooks host add.
+ * @brief Register @p fn of module @p owner at hook @p point: the hook table's add.
  */
 authum_bool_t
 authum_hooks_host_add(authum_ptr owner, const authum_char_t *tag, authum_hook_point_t point,
                       authum_hook_fn fn, authum_ptr user);
 
 /**
- * @brief Authum hooks host remove.
+ * @brief Remove @p owner's @p fn from hook @p point: the hook table's remove.
  */
 authum_bool_t
 authum_hooks_host_remove(authum_ptr owner, authum_hook_point_t point, authum_hook_fn fn,

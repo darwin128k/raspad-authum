@@ -403,7 +403,7 @@ authum_i32_t
 evict_oldest_reader(authum_http_server_t *server, authum_i64_t now);
 
 /**
- * @brief Authum http client partial.
+ * @brief Note that @p client sent part of a request: when, and how many times.
  */
 void
 authum_http_client_partial(authum_http_client_t *client);
@@ -415,27 +415,27 @@ authum_u32_t
 authum_http_host_order(authum_u32_t key);
 
 /**
- * @brief Authum http parse key.
+ * @brief Read an IPv4 address of @p size characters into the 4-byte peer key @p key.
  */
 authum_bool_t
 authum_http_parse_key(const authum_char_t *text, authum_usize_t size, authum_u32_t *key);
 
 /**
- * @brief Authum http prepare connections.
+ * @brief Fill @p events with what the next poll watches: the listener, the wake signal and each client, closing the timed-out ones.
  */
 void
 authum_http_prepare_connections(authum_http_server_t *server, lh_os_net_socket_poll_t *events,
                                 authum_i64_t now, double tokens);
 
 /**
- * @brief Authum http dispatch connection.
+ * @brief Act on what poll found for @p client: read, write within the byte budget, or close.
  */
 void
 authum_http_dispatch_connection(authum_http_server_t *server, authum_http_client_t *client,
                                 lh_uint_t events, authum_i64_t now, double *tokens);
 
 /**
- * @brief Authum http request refuse.
+ * @brief Answer @p client with error @p code and close after it.
  */
 void
 authum_http_request_refuse(authum_http_client_t *client, authum_i32_t code,
@@ -448,37 +448,18 @@ authum_bool_t
 authum_http_request_is_zero_length(const lh_str_view_t *value);
 
 /**
- * @brief Authum http request format address.
+ * @brief Write the IPv4 address @p address (network order) as text, NUL-terminated.
  */
 void
 authum_http_request_format_address(authum_u32_t address, authum_char_t *text,
                                    authum_usize_t capacity);
 
 /**
- * @brief ASCII case folding: policy names compare without case on every platform, because the
- * Windows opener resolves names without case.
- */
-authum_char_t
-authum_http_policy_fold(authum_char_t x);
-
-/**
- * @brief Authum http policy equal nocase.
- */
-authum_bool_t
-authum_http_policy_equal_nocase(const authum_char_t *a, const authum_char_t *b, authum_usize_t n);
-
-/**
- * @brief Authum http policy contains.
+ * @brief Whether the space-separated @p list holds @p value (or a prefix of it, with @p prefix), without case.
  */
 authum_bool_t
 authum_http_policy_contains(const authum_char_t *list, const authum_char_t *value, authum_usize_t n,
                             authum_bool_t prefix);
-
-/**
- * @brief Authum http hex.
- */
-authum_i32_t
-authum_http_hex(authum_char_t x);
 
 /**
  * @brief A byte a published name may hold once decoded. Separators, controls and the characters
@@ -488,13 +469,13 @@ authum_bool_t
 authum_http_name_byte(authum_byte_t x);
 
 /**
- * @brief Authum http owner has server.
+ * @brief Whether @p server belongs to @p owner.
  */
 authum_bool_t
 authum_http_owner_has_server(const authum_http_owner_t *owner, const authum_http_server_t *server);
 
 /**
- * @brief Authum http is terminated.
+ * @brief Whether @p string has a NUL within its @p capacity.
  */
 authum_bool_t
 authum_http_is_terminated(const authum_char_t *string, authum_usize_t capacity);
@@ -507,46 +488,46 @@ void
 authum_http_options_fill_defaults(authum_http_options_t *options);
 
 /**
- * @brief Authum http options is valid.
+ * @brief Whether @p options are in bounds and their text fields terminated.
  */
 authum_bool_t
 authum_http_options_is_valid(const authum_http_options_t *options);
 
 /**
- * @brief Authum http service open.
+ * @brief Open a server for module @p context: the service table's open.
  */
 authum_http_server_t *
 authum_http_service_open(authum_ptr context, const authum_http_options_t *caller,
                          authum_char_t *error, authum_usize_t error_size);
 
 /**
- * @brief Authum http service open read.
+ * @brief Open a server for @p owner from options already copied and checked.
  */
 authum_http_server_t *
 authum_http_service_open_read(authum_http_owner_t *owner, const authum_http_options_t *options,
                               authum_char_t *error, authum_usize_t error_size);
 
 /**
- * @brief Authum http service shutdown.
+ * @brief Stop @p server's worker, keeping its state: the service table's shutdown.
  */
 void
 authum_http_service_shutdown(authum_ptr context, authum_http_server_t *server);
 
 /**
- * @brief Authum http service close.
+ * @brief Stop and free @p server, or mark it when a drain is running: the service table's close.
  */
 void
 authum_http_service_close(authum_ptr context, authum_http_server_t *server);
 
 /**
- * @brief Authum http service drain.
+ * @brief Hand at most @p limit access-log lines of @p server to @p sink: the service table's drain.
  */
 authum_usize_t
 authum_http_service_drain(authum_ptr owner, authum_http_server_t *server, authum_http_log_fn sink,
                           authum_ptr user, authum_usize_t limit);
 
 /**
- * @brief Authum http service get memory.
+ * @brief Bytes @p server takes: the service table's memory usage.
  */
 authum_usize_t
 authum_http_service_get_memory(authum_ptr owner, const authum_http_server_t *server);

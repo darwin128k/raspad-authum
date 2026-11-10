@@ -123,13 +123,7 @@ authum_bool_t
 authum_placeholder_canonical(const authum_char_t *input, authum_char_t *out, authum_usize_t size);
 
 /**
- * @brief Authum placeholder absolute.
- */
-authum_bool_t
-authum_placeholder_absolute(const authum_char_t *path);
-
-/**
- * @brief Authum placeholder name valid.
+ * @brief Whether @p name may be a placeholder name.
  */
 authum_bool_t
 authum_placeholder_name_valid(const authum_char_t *name);
@@ -150,21 +144,21 @@ authum_placeholder_lookup(authum_placeholder_owner_t *owner, const authum_char_t
                           authum_usize_t length);
 
 /**
- * @brief Authum placeholder expand impl.
+ * @brief Expand the placeholders in @p pattern into @p out: the placeholder table's expand.
  */
 authum_bool_t
 authum_placeholder_expand_impl(authum_ptr owner_ptr, const authum_char_t *pattern,
                                authum_char_t *out, authum_usize_t out_size);
 
 /**
- * @brief Authum placeholder register impl.
+ * @brief Register placeholder @p name for @p owner: the placeholder table's register.
  */
 authum_bool_t
 authum_placeholder_register_impl(authum_ptr owner, const authum_char_t *name,
                                  const authum_char_t *value);
 
 /**
- * @brief Authum placeholder unregister impl.
+ * @brief Remove @p owner's placeholder @p name: the placeholder table's unregister.
  */
 authum_bool_t
 authum_placeholder_unregister_impl(authum_ptr owner, const authum_char_t *name);

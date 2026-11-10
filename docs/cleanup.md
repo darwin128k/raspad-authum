@@ -366,18 +366,6 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   queue, `lh/os/worker` and Authum's HTTP worker run on it (HTTP with a waiter:
   `poll` on its sockets and an `lh/os/wake` signal); Authum's module threads are an
   `lh/os/thread/group` (their body is the module's own code, not a step).
-- [ ] **Generated briefs of the former static functions.** 85 functions in 21 Authum
-  sources lost `static` (lib/lh/AGENTS.md 2) and are declared in private headers
-  (`src/authum/api/<x>/private.h`, `host/http/internal.h`, `host/logs.h`, ...). A
-  helper that had no comment got a brief made from its name ("Authum sql fail."):
-  write real ones.
-- [ ] `tools/order-levels.py` and `check-levels.py` count a function taken by address
-  (a callback) like a call: `order-levels` then puts it below its user, which C does
-  not compile. Teach both that an address-taken function must come first. A thread that
-  sleeps until it is woken, its nearest `lh_timer_group` deadline comes or it is asked
-  to stop, then runs one step; it waits on a condition (queues) or on `poll` with
-  `lh/os/wake` (sockets). Today the same is written four times: `lh/os/worker`,
-  `lh/os/logger/queue`, Authum's `http/loop.c` and `threads.c`. Move them onto it.
 
 - [x] **Console and commands become LH bricks.** `lh/console` (`lh_console_t`,
   commands, entries, calls, the reply sink) owns the registry; `host/commands.c` is a

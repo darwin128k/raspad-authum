@@ -50,13 +50,13 @@ void
 authum_commands_host_clear(void);
 
 /**
- * @brief Authum commands host get console.
+ * @brief The host's lh console, started on first use.
  */
 lh_console_t *
 authum_commands_host_get_console(void);
 
 /**
- * @brief Authum commands host print entry.
+ * @brief Print one command as `authum <scope> <name> <usage>  - <help>`, after @p prefix.
  */
 void
 authum_commands_host_print_entry(const lh_console_entry_t *entry, authum_command_print_fn print,

@@ -168,19 +168,19 @@ authum_logs_files_format(lh_ptr user, const lh_os_logger_record_t *record, lh_ti
                          lh_str_t *out);
 
 /**
- * @brief Authum logs sink emit.
+ * @brief Hand a record to the daily files: the log queue's emit.
  */
 lh_void
 authum_logs_sink_emit(lh_ptr user, const lh_os_logger_record_t *record);
 
 /**
- * @brief Authum logs sink flush.
+ * @brief Flush the daily files: the log queue's flush.
  */
 lh_void
 authum_logs_sink_flush(lh_ptr user);
 
 /**
- * @brief Authum logs sink close.
+ * @brief Close the daily files: the log queue's close.
  */
 lh_void
 authum_logs_sink_close(lh_ptr user);
@@ -204,19 +204,19 @@ void
 authum_logs_apply(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authum_char_t *prefix);
 
 /**
- * @brief Authum logs inherit.
+ * @brief Copy the levels, retention and format @p channel takes from @p parent.
  */
 void
 authum_logs_inherit(authum_logs_channel_t *channel, const authum_logs_channel_t *parent);
 
 /**
- * @brief Authum logs admin.
+ * @brief Apply the `<name>.log_*` keys of the admin config @p cfg to @p channel.
  */
 void
 authum_logs_admin(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authum_char_t *name);
 
 /**
- * @brief Authum logs read channel level.
+ * @brief Resolve @p channel's settings: defaults, its module config, then the admin's keys.
  */
 void
 authum_logs_read_channel_level(authum_logs_channel_t *channel, authum_cfg_t *admin);
@@ -229,7 +229,7 @@ authum_logs_emit(authum_logs_channel_t *channel, authum_logger_level_t level,
                  const authum_char_t *text, const authum_char_t *from);
 
 /**
- * @brief Authum logs construct.
+ * @brief Open a journal of @p owner as @p options say: the logger table's construct.
  */
 authum_ptr
 authum_logs_construct(authum_ptr owner, const authum_logger_options_t *options);

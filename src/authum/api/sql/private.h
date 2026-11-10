@@ -17,19 +17,19 @@
 AUTHUM_EXTERN_C_BEGIN
 
 /**
- * @brief Authum sql get db.
+ * @brief The lh database @p self wraps, or ::authum_null when it is closed.
  */
 lh_sql_db_t *
 authum_sql_get_db(const authum_sql_t *self);
 
 /**
- * @brief Authum sql stmt get impl.
+ * @brief The private state of @p stmt, or ::authum_null when it is finished.
  */
 struct authum_sql_stmt_impl *
 authum_sql_stmt_get_impl(const authum_sql_stmt_t *stmt);
 
 /**
- * @brief Authum sql set errmsg.
+ * @brief Copy @p text into @p self's error message, cut to its room.
  */
 void
 authum_sql_set_errmsg(authum_sql_t *self, lh_str_view_t text);
@@ -41,13 +41,13 @@ void
 authum_sql_sync_errmsg(authum_sql_t *self);
 
 /**
- * @brief Authum sql view.
+ * @brief A view of @p text; an empty one for ::authum_null.
  */
 lh_str_view_t
 authum_sql_view(const authum_char_t *text);
 
 /**
- * @brief Authum sql fail.
+ * @brief Store @p message as @p self's error and return false, for a failing call to return.
  */
 authum_bool_t
 authum_sql_fail(authum_sql_t *self, const authum_char_t *message);

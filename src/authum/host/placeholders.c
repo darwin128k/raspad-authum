@@ -64,20 +64,6 @@ authum_placeholder_canonical(const authum_char_t *input, authum_char_t *out, aut
 }
 
 authum_bool_t
-authum_placeholder_absolute(const authum_char_t *path)
-{
-    lh_fs_path_t parsed;
-    lh_fs_path_init(lh_addr_of(parsed));
-    lh_str_view_t text;
-    lh_str_view_init(lh_addr_of(text), path);
-    lh_fs_path_set(lh_addr_of(parsed), text, lh_os_system_fs_path_style_native());
-    const authum_bool_t absolute =
-        lh_fs_path_is_absolute(lh_addr_of(parsed)) ? authum_bool_true : authum_bool_false;
-    lh_fs_path_deinit(lh_addr_of(parsed));
-    return absolute;
-}
-
-authum_bool_t
 authum_placeholder_is_standard(const authum_char_t *name, authum_usize_t length)
 {
     for (authum_usize_t index = 0; lh_math_lt(index, authum_placeholder_standard_count);
@@ -217,7 +203,7 @@ authum_placeholder_expand_impl(authum_ptr owner_ptr, const authum_char_t *patter
         return authum_bool_false;
     }
     /* A relative result belongs to the module that asked for it. */
-    if (!authum_placeholder_absolute(result))
+    if (!lh_fs_path_is_text_absolute(result, lh_os_system_fs_path_style_native()))
     {
         const authum_char_t *base = owner->standard[authum_placeholder_module];
         authum_usize_t base_length = base ? lh_str_ptr_len(base) : 0;
@@ -254,7 +240,7 @@ authum_placeholder_register_impl(authum_ptr owner, const authum_char_t *name,
     {
         return authum_bool_false;
     }
-    if (!authum_placeholder_absolute(value))
+    if (!lh_fs_path_is_text_absolute(value, lh_os_system_fs_path_style_native()))
     {
         return authum_bool_false;
     }

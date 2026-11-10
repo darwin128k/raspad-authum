@@ -1,27 +1,6 @@
 #include <authum/host/http/internal.h>
-#include <lh/core/char/map.h>
+#include <lh/core/char/xdigit.h>
 #include <lh/core/memory/std.h>
-
-/* ASCII case folding: policy names compare without case on every platform,
- * because the Windows opener resolves names without case. */
-authum_char_t
-authum_http_policy_fold(authum_char_t x)
-{
-    return (x >= 'A' && x <= 'Z') ? (authum_char_t)(x + ('a' - 'A')) : x;
-}
-
-authum_bool_t
-authum_http_policy_equal_nocase(const authum_char_t *a, const authum_char_t *b, authum_usize_t n)
-{
-    for (authum_usize_t i = 0; i < n; ++i)
-    {
-        if (authum_http_policy_fold(a[i]) != authum_http_policy_fold(b[i]))
-        {
-            return authum_bool_false;
-        }
-    }
-    return authum_bool_true;
-}
 
 authum_bool_t
 authum_http_policy_contains(const authum_char_t *list, const authum_char_t *value, authum_usize_t n,
@@ -36,9 +15,9 @@ authum_http_policy_contains(const authum_char_t *list, const authum_char_t *valu
         const authum_usize_t rest = lh_str_ptr_len(list);
         const authum_char_t *e = lh_str_ptr_find_of_char(list, rest, lh_char_map_space);
         authum_usize_t z = e ? (authum_usize_t)(lh_math_sub(e, list)) : rest;
-        if (z && (prefix ? lh_math_ge(n, z) && authum_http_policy_equal_nocase(list, value, z) &&
+        if (z && (prefix ? lh_math_ge(n, z) && lh_str_ptr_equals_by_size(list, z, value, z, lh_bool_true) &&
                                (lh_math_eq(n, z) || lh_math_eq(value[z], lh_char_map_slash))
-                         : lh_math_eq(z, n) && authum_http_policy_equal_nocase(list, value, n)))
+                         : lh_math_eq(z, n) && lh_str_ptr_equals_by_size(list, n, value, n, lh_bool_true)))
         {
             return authum_bool_true;
         }
@@ -49,17 +28,6 @@ authum_http_policy_contains(const authum_char_t *list, const authum_char_t *valu
         }
     }
     return authum_bool_false;
-}
-
-authum_i32_t
-authum_http_hex(authum_char_t x)
-{
-    if (x >= '0' && x <= '9')
-    {
-        return x - '0';
-    }
-    x = authum_http_policy_fold(x);
-    return (x >= 'a' && x <= 'f') ? x - 'a' + 10 : -1;
 }
 
 /* A byte a published name may hold once decoded. Separators, controls and the
@@ -113,14 +81,12 @@ authum_http_resource_check(const authum_http_options_t *options, const authum_ch
         authum_byte_t x = (authum_byte_t)url[i];
         if (x == '%')
         {
-            authum_i32_t high = i + 2 < len ? authum_http_hex(url[i + 1]) : -1;
-            authum_i32_t low = high >= 0 ? authum_http_hex(url[i + 2]) : -1;
-            if (low < 0)
+            if (i + 2 >= len || !lh_char_is_xdigit(url[i + 1]) || !lh_char_is_xdigit(url[i + 2]))
             {
                 *reason = "bad_encoding";
                 return 0;
             }
-            x = (authum_byte_t)(high * 16 + low);
+            x = (authum_byte_t)(lh_char_to_xdigit(url[i + 1]) * 16 + lh_char_to_xdigit(url[i + 2]));
             i += 2;
             if (x == '/' || x == 0)
             {

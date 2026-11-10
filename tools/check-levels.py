@@ -23,7 +23,9 @@ def functions(path, prefix):
     for m in re.finditer(r'^(' + re.escape(prefix) + r'\w+)\((?:[^;{]|\n)*?\)\n\{\n(.*?)\n\}\n',
                          text, re.S | re.M):
         name, body = m.group(1), m.group(2)
-        calls = set(re.findall(r'\b(' + re.escape(prefix) + r'\w+)\s*\(', body)) - {name}
+        # A call and a use by address (a callback handed on) both need the function
+        # defined first: C compiles neither before it is declared.
+        calls = set(re.findall(r'\b(' + re.escape(prefix) + r'\w+)\b', body)) - {name}
         found[name] = calls
         order.append(name)
     for name in found:

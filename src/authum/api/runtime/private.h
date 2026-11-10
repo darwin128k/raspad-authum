@@ -29,19 +29,19 @@ lh_ptr
 authum_runtime_alloc(lh_self_ptr self, lh_usize_t size);
 
 /**
- * @brief Authum runtime dealloc.
+ * @brief Free @p ptr with libc `free`: the runtime allocator's release callback.
  */
 lh_void
 authum_runtime_dealloc(lh_self_ptr self, lh_ptr ptr);
 
 /**
- * @brief Authum runtime realloc.
+ * @brief Resize @p ptr with libc `realloc`: the runtime allocator's resize callback.
  */
 lh_ptr
 authum_runtime_realloc(lh_self_ptr self, lh_ptr ptr, lh_usize_t old_size, lh_usize_t new_size);
 
 /**
- * @brief Authum runtime abort.
+ * @brief End the process with libc `abort`: the runtime terminate handler.
  */
 lh_void
 authum_runtime_abort(lh_self_ptr self);
