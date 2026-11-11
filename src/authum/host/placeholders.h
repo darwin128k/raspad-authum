@@ -103,9 +103,9 @@ authum_placeholder_host_init_env(authum_placeholder_owner_t *owner, const authum
 void
 authum_placeholder_host_drop_owner(authum_placeholder_owner_t *owner);
 
-/** True when @p name is one of the standard names. */
+/** True when @p name is one of the standard names (compared case-sensitively). */
 authum_bool_t
-authum_placeholder_is_standard(const authum_char_t *name, authum_usize_t length);
+authum_placeholder_is_standard(const lh_str_view_t *name);
 
 /** The standard name for @p standard, or null when there is none. */
 const authum_char_t *
@@ -145,11 +145,11 @@ lh_str_template_registry_t *
 authum_placeholder_get_registry(void);
 
 /**
- * @brief The index of the standard name @p name (@p length characters), or
+ * @brief The index of the standard name @p name, or
  *        ::authum_placeholder_standard_count when it is none.
  */
 authum_usize_t
-authum_placeholder_find_standard(const authum_char_t *name, authum_usize_t length);
+authum_placeholder_find_standard(const lh_str_view_t *name);
 
 /**
  * @brief lh's template lookup for one module: a standard name resolves against the

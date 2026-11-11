@@ -203,8 +203,9 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
     `lh_os_module_event_entry_try_create` / `_create` take an `lh_str_view_t`;
     `authum_http_policy_contains` takes the value as a view (its callers cut the
     directory and the extension with `lh_str_view_from_offset`);
-    `authum_http_parse_key` had no caller and is gone. Left: the
-    `(text, size)` pairs in `host/placeholders.c/.h` and `host/http/internal.h`.
+    `authum_http_parse_key` had no caller and is gone; `authum_placeholder_find_standard` /
+    `_is_standard` take an `lh_str_view_t` (the lookup already held one). Kept:
+    `authum_http_is_terminated(buffer, capacity)` — a buffer and its capacity, not text.
   - [x] **Hand-NUL-terminated copies** (done 2026-11-11): the brick is
     `lh_str_ptr_copy_cstr`; the JS lexer, the web player's page, `cfg.c`,
     `authum_cstr_copy`, `json.c`, `path.c`, `sql.c`, `http/limits.c` use it. Left on
@@ -228,9 +229,17 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
     `_lower_one` in `util/str/case/map.c`) is hidden and exists only under the table
     option. Make `lh_char_to_upper` / `lh_char_to_lower` public bricks in
     `lh/core/char/`, the string forms built on them.
-  - `host/http/resources.c` is a generic URL-path check (decode once, refuse encoded
-    separators, dot and short names) — a candidate for `lh/core/http` next to
-    `lh_http_is_target_char`.
+  - [x] `host/http/resources.c`'s URL-path check is in lh (2026-11-11):
+    `lh_http_target_try_copy_path`, `lh_http_is_name_char`; Authum keeps its policy
+    (`deny_prefixes`, `allow_dirs`, extensions) and logs the same reason names.
+  - Copies that rewrite characters on the way (`api/engine.c` blanks `" ; CR LF`,
+    `host/http/access.c` keeps visible ASCII but `"` `\`, `host/logs.c` keeps word
+    characters, `-` and `.`): left as loops on purpose (owner, 2026-11-11). A shared
+    brick would take a predicate callback, and each caller would then need a public
+    predicate function of its own (no `static`) — more surface for no gain.
+- [ ] `lh_test_os` failed once under `ctest -j8` on Windows (2026-11-11) and passed
+  alone and in two full runs after; probably a socket test sharing a port with a
+  parallel one. Find the test and give it its own port.
   - [x] `ui/shadow/shape.c`: the zero-fill loop is `lh_memory_set`, `|px - cx|` is
     `lh_math_abs` (2026-11-11).
   - **Plain operators and `!ptr`** (`==`, `+`, `++`, `!self`) instead of

@@ -67,17 +67,14 @@ authum_placeholder_get_registry(void)
 }
 
 authum_usize_t
-authum_placeholder_find_standard(const authum_char_t *name, authum_usize_t length)
+authum_placeholder_find_standard(const lh_str_view_t *name)
 {
-    lh_str_view_t wanted;
-
-    lh_str_view_init_by_size(lh_addr_of(wanted), name, length);
     for (authum_usize_t index = 0u; lh_math_lt(index, authum_placeholder_standard_count); ++index)
     {
         lh_str_view_t standard;
 
         lh_str_view_init(lh_addr_of(standard), authum_placeholder_standard_names[index]);
-        if (lh_str_view_equals(lh_addr_of(standard), lh_addr_of(wanted), lh_bool_false))
+        if (lh_str_view_equals(lh_addr_of(standard), name, lh_bool_false))
         {
             return index;
         }
@@ -110,10 +107,9 @@ authum_placeholder_path_text(const authum_path_t *path)
 }
 
 authum_bool_t
-authum_placeholder_is_standard(const authum_char_t *name, authum_usize_t length)
+authum_placeholder_is_standard(const lh_str_view_t *name)
 {
-    return lh_math_lt(authum_placeholder_find_standard(name, length),
-                      authum_placeholder_standard_count)
+    return lh_math_lt(authum_placeholder_find_standard(name), authum_placeholder_standard_count)
                ? authum_bool_true
                : authum_bool_false;
 }
@@ -122,8 +118,7 @@ lh_bool_t
 authum_placeholder_lookup(lh_ptr user, const lh_str_view_t *name, lh_str_view_t *value)
 {
     const authum_placeholder_owner_t *owner = user;
-    const authum_usize_t index =
-        authum_placeholder_find_standard(lh_str_view_get_data(name), lh_str_view_get_size(name));
+    const authum_usize_t index = authum_placeholder_find_standard(name);
 
     if (lh_math_lt(index, authum_placeholder_standard_count))
     {
@@ -272,11 +267,15 @@ authum_bool_t
 authum_placeholder_register_impl(authum_ptr owner, const authum_char_t *name,
                                  const authum_char_t *value)
 {
-    authum_char_t canonical[authum_placeholder_value_max];
-
     if (authum_null_eq(name) || authum_null_eq(value) || lh_math_eq(value[0], lh_char_map_nul) ||
-        !authum_placeholder_name_valid(name) ||
-        authum_placeholder_is_standard(name, lh_str_ptr_len(name)) ||
+        !authum_placeholder_name_valid(name))
+    {
+        return authum_bool_false;
+    }
+    lh_str_view_t text;
+    lh_str_view_init(lh_addr_of(text), name);
+    authum_char_t canonical[authum_placeholder_value_max];
+    if (authum_placeholder_is_standard(lh_addr_of(text)) ||
         !lh_fs_path_is_text_absolute(value, lh_os_system_fs_path_style_native()) ||
         !authum_placeholder_canonical(value, canonical, sizeof canonical))
     {

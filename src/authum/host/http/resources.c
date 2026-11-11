@@ -1,14 +1,7 @@
 #include <authum/host/http/internal.h>
-#include <lh/core/char/digit.h>
+#include <lh/core/char/map.h>
+#include <lh/core/http/target.h>
 #include <lh/core/memory/std.h>
-
-/* The characters Windows reserves in a name; refused on every platform. */
-static const lh_char_t m_http_name_reserved[] = {
-    lh_char_map_backslash, lh_char_map_colon, lh_char_map_asterisk, lh_char_map_question,
-    lh_char_map_dquot,     lh_char_map_less,  lh_char_map_greater,  lh_char_map_pipe};
-
-/* Where the path of a request target ends: the query or the fragment. */
-static const lh_char_t m_http_target_ends[] = {lh_char_map_question, lh_char_map_hash};
 
 authum_bool_t
 authum_http_policy_contains(const authum_char_t *list, lh_str_view_t value, authum_bool_t prefix)
@@ -42,99 +35,21 @@ authum_http_policy_contains(const authum_char_t *list, lh_str_view_t value, auth
     return authum_bool_false;
 }
 
-/* A byte a published name may hold once decoded. Separators, controls and the
- * characters Windows reserves are refused on every platform. */
-authum_bool_t
-authum_http_name_byte(authum_byte_t x)
-{
-    const lh_char_t ch = lh_cast_static(lh_char_t, x);
-
-    return lh_cast_static(authum_bool_t,
-                          lh_math_gt(x, lh_char_map_us) && lh_math_ne(x, lh_char_map_del) &&
-                              !lh_str_ptr_contains_char(m_http_name_reserved,
-                                                        lh_array_ptr_get_size(m_http_name_reserved),
-                                                        ch));
-}
-
 authum_usize_t
 authum_http_resource_check(const authum_http_options_t *options, const authum_char_t *url,
                            authum_usize_t len, authum_char_t *out, authum_usize_t capacity,
                            const authum_char_t **reason)
 {
-    /* The query and fragment never name a file. */
-    const authum_char_t *end = lh_str_ptr_find_of_chars(url, len, m_http_target_ends,
-                                                        lh_array_ptr_get_size(m_http_target_ends));
-    if (end)
+    /* The target as a safe relative path: lh's rules, the same on every platform. */
+    lh_str_view_t target;
+    lh_str_view_init_by_size(lh_addr_of(target), url, len);
+    lh_http_target_error_t error;
+    const authum_usize_t n =
+        lh_http_target_try_copy_path(lh_addr_of(target), out, capacity, lh_addr_of(error));
+    if (lh_math_is_zero(n))
     {
-        len = lh_cast_static(authum_usize_t, lh_ptr_udiff(end, url));
-    }
-    if (len < 2 || url[0] != lh_char_map_slash)
-    {
-        *reason = "bad_target";
+        lh_ptr_deref(reason) = lh_http_target_error_get_name(error);
         return 0;
-    }
-    /* Decode exactly once; an encoded separator or NUL never becomes one. */
-    authum_usize_t n = 0;
-    for (authum_usize_t i = 1; i < len; ++i)
-    {
-        authum_byte_t x = lh_cast_static(authum_byte_t, url[i]);
-        if (x == lh_char_map_percent)
-        {
-            if (i + 2 >= len || !lh_str_ptr_parse_hex_bytes(url + i + 1, 2, lh_addr_of(x), 1))
-            {
-                *reason = "bad_encoding";
-                return 0;
-            }
-            i += 2;
-            if (x == lh_char_map_slash || x == lh_char_map_nul)
-            {
-                *reason = "encoded_separator";
-                return 0;
-            }
-        }
-        if (x != lh_char_map_slash && !authum_http_name_byte(x))
-        {
-            *reason = "bad_char";
-            return 0;
-        }
-        if (n + 1 >= capacity)
-        {
-            *reason = "uri_too_long";
-            return 0;
-        }
-        out[n++] = lh_cast_static(authum_char_t, x);
-    }
-    lh_str_ptr_erase(out, n);
-    /* Components: no empty ones, no hidden or dot names, nothing Windows would
-     * trim or alias (trailing dot/space, 8.3 short names like NAME~1). */
-    authum_usize_t start = 0;
-    for (authum_usize_t i = 0; i <= n; ++i)
-    {
-        if (i < n && out[i] != lh_char_map_slash)
-        {
-            if (out[i] == lh_char_map_tilde && i + 1 < n && lh_char_is_digit(out[i + 1]))
-            {
-                *reason = "short_name";
-                return 0;
-            }
-            continue;
-        }
-        if (i == start)
-        {
-            *reason = "empty_component";
-            return 0;
-        }
-        if (out[start] == lh_char_map_period)
-        {
-            *reason = "hidden_or_dot";
-            return 0;
-        }
-        if (out[i - 1] == lh_char_map_period || out[i - 1] == lh_char_map_space)
-        {
-            *reason = "trailing_dot_or_space";
-            return 0;
-        }
-        start = i + 1;
     }
     lh_str_view_t path;
     lh_str_view_init_by_size(lh_addr_of(path), out, n);

@@ -460,13 +460,6 @@ authum_bool_t
 authum_http_policy_contains(const authum_char_t *list, lh_str_view_t value, authum_bool_t prefix);
 
 /**
- * @brief A byte a published name may hold once decoded. Separators, controls and the characters
- * Windows reserves are refused on every platform.
- */
-authum_bool_t
-authum_http_name_byte(authum_byte_t x);
-
-/**
  * @brief Whether @p server belongs to @p owner.
  */
 authum_bool_t
