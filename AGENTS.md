@@ -42,6 +42,16 @@ session; do not make the owner repeat them again.
   `lh/core/char/map.h`, a `switch` instead of `lh_str_ptr_contains_char`, a digit
   loop instead of `lh/core/str/format`) is a defect. Search first; fix the brick if
   it does not fit; never write a local copy.
+- **Operators are not bricks; meanings are** (owner, 2026-11-11). A plain
+  comparison or arithmetic is written with its operator: `a == b`, `a + b * c`,
+  `++i`. A wrapper that is only the operator again (`lh_math_eq`, `lh_math_add`,
+  `lh_math_add_one`) is allowed but not required, and existing ones are not
+  rewritten either way. What has a brick of its own is always written with it:
+  min / max / abs / clamp (`lh/math`), overflow (`lh_interval_*_is_*_overflow`),
+  pointer arithmetic and comparison (`lh_ptr_*`), a null check of a pointer
+  (`lh_ptr_is_null` / `lh_null_eq`, `authum_null_eq` — never `!p`, which does not
+  say whether `p` is a pointer or a flag), characters (`lh_char_map_*`,
+  `lh_char_is_*`), and casts (`lh_cast_*`).
 - **Sources mirror headers, exactly.** `include/lh/<path>.h` is implemented by
   `src/lh/<path>.c`, `include/authum/<path>.h` by `src/authum/api/<path>.c`: the same
   folders, the same names. Nesting is a folder, never a name glued with `_`
