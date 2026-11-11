@@ -5,6 +5,7 @@
 
 #include <lh/os/net/interface.h>
 #include <lh/core/char/map.h>
+#include <lh/core/util/str/ptr.h>
 
 authum_bool_t
 authum_net_ipv4_is_loopback(authum_u32_t ip)
@@ -39,7 +40,7 @@ authum_net_ipv4_format(authum_u32_t ip, authum_char_t *buf, authum_usize_t buf_s
     const lh_usize_t written =
         lh_net_ip4_format(lh_addr_of(address), buf, lh_math_sub(buf_size, 1u));
 
-    buf[written] = lh_char_map_nul;
+    lh_str_ptr_erase(buf, written);
     return lh_math_gt(written, 0u) ? authum_bool_true : authum_bool_false;
 }
 

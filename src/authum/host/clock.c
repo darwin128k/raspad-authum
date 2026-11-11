@@ -1,11 +1,8 @@
 #include <authum/host/clock.h>
 #include <lh/os/tick.h>
 
-/**
- * @brief Read monotonic milliseconds through LH without platform code in Authum.
- */
-static authum_i64_t
-monotonic_ms(void)
+authum_i64_t
+authum_clock_host_get_monotonic_ms(void)
 {
     return lh_cast_static(authum_i64_t, lh_os_tick_ms64());
 }
@@ -16,6 +13,6 @@ monotonic_ms(void)
 const authum_clock_t *
 authum_clock_host(void)
 {
-    static const authum_clock_t clock = {.monotonic_ms = monotonic_ms};
+    static const authum_clock_t clock = {.monotonic_ms = authum_clock_host_get_monotonic_ms};
     return lh_addr_of(clock);
 }

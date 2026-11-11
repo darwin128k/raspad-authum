@@ -43,7 +43,7 @@ authum_json_object_copy_cstr(const authum_char_t *json, const authum_char_t *key
     {
         return authum_bool_false;
     }
-    out[0] = lh_char_map_nul;
+    lh_str_ptr_clear(out);
 
     if (authum_json_read(json, lh_addr_of(root)))
     {

@@ -44,7 +44,7 @@ authum_http_request_format_address(authum_u32_t address, authum_char_t *text,
     lh_net_ip4_t ip;
     lh_net_ip4_init(lh_addr_of(ip), octets[0], octets[1], octets[2], octets[3]);
     authum_usize_t size = lh_net_ip4_format(lh_addr_of(ip), text, lh_math_sub(capacity, 1));
-    text[size] = lh_char_map_nul;
+    lh_str_ptr_erase(text, size);
 }
 
 void

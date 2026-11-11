@@ -185,7 +185,8 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
     (char / str / view), `ui/frame/stats.h` (callback typedef → `stats/cb.h`).
   - The split headers copy every include of their parent; trim to what each
     one needs.
-- [ ] **`static` functions: 55 in 9 files** (`ui/renderer3d.c`, `http/parser.c`,
+- [x] **`static` functions** — none left, LH and Authum (2026-11-11; see lh's CHANGELOG
+  for the A/B measurement of the memory kernel). Was: **55 in 9 files** (`ui/renderer3d.c`, `http/parser.c`,
   `os/worker.c`, and on 2026-11-11 `os/mutex.c` / `thread.c` / `condition.c` done —
   `lh_os_fail`). `memory/std/x86/sse2.h` 12, `memory/std/words.h` 10,
   `memory/std/x86/avx2.h` 9, `crypto/rijndael.c` 8 (AES-NI), `memory/std.c` 7,

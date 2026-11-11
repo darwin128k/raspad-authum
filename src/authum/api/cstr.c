@@ -58,7 +58,7 @@ authum_char_to_upper(authum_char_t c)
     authum_char_t text[2];
 
     text[0] = c;
-    text[1] = lh_char_map_nul;
+    lh_str_ptr_erase(text, 1);
     lh_str_ptr_to_upper(text, 1u);
     return text[0];
 }
@@ -389,7 +389,7 @@ authum_cstr_format_u64(authum_u64_t value, authum_char_t *dst, authum_usize_t ds
     {
         return 0u;
     }
-    dst[n] = lh_char_map_nul;
+    lh_str_ptr_erase(dst, n);
     return n;
 }
 
@@ -407,6 +407,6 @@ authum_cstr_format_i64(authum_i64_t value, authum_char_t *dst, authum_usize_t ds
     {
         return 0u;
     }
-    dst[n] = lh_char_map_nul;
+    lh_str_ptr_erase(dst, n);
     return n;
 }

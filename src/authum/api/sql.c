@@ -29,11 +29,11 @@ authum_sql_clear_errors(authum_sql_t *self)
     {
         return;
     }
-    self->errmsg[0] = lh_char_map_nul;
+    lh_str_ptr_clear(self->errmsg);
     if (self->db)
     {
         struct authum_sql_db_impl *impl = self->db;
-        impl->first_error[0] = lh_char_map_nul;
+        lh_str_ptr_clear(impl->first_error);
         lh_sql_db_clear_error(impl->db);
     }
 }
@@ -123,7 +123,7 @@ authum_sql_init(authum_sql_t *self)
     }
     self->driver = authum_sql_driver_sqlite;
     self->db = authum_null;
-    self->errmsg[0] = lh_char_map_nul;
+    lh_str_ptr_clear(self->errmsg);
 }
 
 /* Fresh private storage for @p self, its connection still to be chosen. */

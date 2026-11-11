@@ -12,7 +12,7 @@ authum_path_clear(authum_path_t *self)
     {
         return;
     }
-    self->data[0] = lh_char_map_nul;
+    lh_str_ptr_clear(self->data);
     self->size = 0u;
 }
 
@@ -135,7 +135,7 @@ authum_path_join(authum_path_t *self, const authum_path_t *dir, const authum_cha
         self->data[na++] = authum_path_sep;
     }
     lh_memory_std_copy(lh_math_add(self->data, na), leaf, nb);
-    self->data[lh_math_add(na, nb)] = lh_char_map_nul;
+    lh_str_ptr_erase(self->data, lh_math_add(na, nb));
     self->size = lh_math_add(na, nb);
     return authum_bool_true;
 }
@@ -218,7 +218,7 @@ authum_path_assign_parent(authum_path_t *self, const authum_path_t *path)
         return authum_bool_false;
     }
     lh_memory_std_copy(self->data, path->data, cut);
-    self->data[cut] = lh_char_map_nul;
+    lh_str_ptr_erase(self->data, cut);
     self->size = cut;
     return authum_bool_true;
 }

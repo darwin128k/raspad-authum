@@ -93,7 +93,7 @@ engine_arg(authum_i32_t kind, authum_i32_t value, authum_float_t real, const aut
         {
             lh_memory_std_copy(lh_math_add(g_message.text, g_message.text_used), text,
                                lh_math_sub(n, 1u));
-            g_message.text[lh_math_sub(lh_math_add(g_message.text_used, n), 1u)] = lh_char_map_nul;
+            lh_str_ptr_erase(g_message.text, lh_math_sub(lh_math_add(g_message.text_used, n), 1u));
             g_message.text_used += lh_cast_static(authum_u32_t, n);
         }
     }
@@ -295,7 +295,7 @@ engine_alert_message(ALERT_TYPE type, authum_char_t *fmt, ...)
     while (lh_math_gt(n, 0u) && (lh_math_eq(ev.text[lh_math_sub(n, 1u)], lh_char_map_lf) ||
                                  lh_math_eq(ev.text[lh_math_sub(n, 1u)], lh_char_map_cr)))
     {
-        ev.text[--n] = lh_char_map_nul;
+        lh_str_ptr_erase(ev.text, --n);
     }
     if (lh_math_eq(n, 0u))
     {

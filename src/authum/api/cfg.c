@@ -33,7 +33,7 @@ authum_cfg_read_file(const lh_fs_path_t *path, authum_char_t **out_text, authum_
         return authum_bool_false;
     }
     lh_memory_std_copy(bytes, lh_str_get_data(lh_addr_of(text)), size);
-    bytes[size] = lh_char_map_nul;
+    lh_str_ptr_erase(bytes, size);
     lh_str_deinit(lh_addr_of(text));
     *out_text = bytes;
     *out_size = size;
@@ -53,7 +53,7 @@ authum_cfg_close(authum_cfg_t *self)
         self->text = authum_null;
     }
     self->size = 0u;
-    self->line[0] = lh_char_map_nul;
+    lh_str_ptr_clear(self->line);
 }
 
 authum_bool_t
@@ -65,7 +65,7 @@ authum_cfg_open_cstr(authum_cfg_t *self, const authum_char_t *path)
     }
     self->text = authum_null;
     self->size = 0u;
-    self->line[0] = lh_char_map_nul;
+    lh_str_ptr_clear(self->line);
     if (authum_null_eq(path) || lh_math_eq(path[0], lh_char_map_nul))
     {
         return authum_bool_false;
@@ -98,7 +98,7 @@ authum_cfg_open_text(authum_cfg_t *self, const authum_char_t *text, authum_usize
     }
     self->text = authum_null;
     self->size = 0u;
-    self->line[0] = lh_char_map_nul;
+    lh_str_ptr_clear(self->line);
     if (authum_null_eq(text) && lh_math_gt(size, 0u))
     {
         return authum_bool_false;
@@ -112,7 +112,7 @@ authum_cfg_open_text(authum_cfg_t *self, const authum_char_t *text, authum_usize
     {
         lh_memory_std_copy(bytes, text, size);
     }
-    bytes[size] = lh_char_map_nul;
+    lh_str_ptr_erase(bytes, size);
     self->text = bytes;
     self->size = size;
     return authum_bool_true;

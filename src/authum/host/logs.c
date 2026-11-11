@@ -369,7 +369,7 @@ authum_logs_set_name(authum_char_t *out, authum_usize_t out_size, const authum_c
                      ? c
                      : lh_char_map_underscore;
     }
-    out[i] = lh_char_map_nul;
+    lh_str_ptr_erase(out, i);
     if (lh_math_eq(i, 0u) || authum_cstr_is_equal(out, ".", authum_bool_false) ||
         authum_cstr_is_equal(out, "..", authum_bool_false))
     {

@@ -104,7 +104,7 @@ authum_http_resource_check(const authum_http_options_t *options, const authum_ch
         }
         out[n++] = lh_cast_static(authum_char_t, x);
     }
-    out[n] = lh_char_map_nul;
+    lh_str_ptr_erase(out, n);
     /* Components: no empty ones, no hidden or dot names, nothing Windows would
      * trim or alias (trailing dot/space, 8.3 short names like NAME~1). */
     authum_usize_t start = 0;

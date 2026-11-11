@@ -25,12 +25,12 @@ authum_net_address_copy_host(const authum_char_t *address, authum_char_t *out,
                                     lh_addr_of(port), authum_null) ||
         lh_math_ge(lh_str_view_get_size(lh_addr_of(host)), capacity))
     {
-        out[0] = lh_char_map_nul;
+        lh_str_ptr_clear(out);
         return authum_bool_false;
     }
     /* @p out may be @p address itself: the host moves left, never right. */
     lh_memory_std_move(out, lh_str_view_get_data(lh_addr_of(host)),
                        lh_str_view_get_size(lh_addr_of(host)));
-    out[lh_str_view_get_size(lh_addr_of(host))] = lh_char_map_nul;
+    lh_str_ptr_erase(out, lh_str_view_get_size(lh_addr_of(host)));
     return authum_bool_true;
 }

@@ -1,6 +1,7 @@
 #include <authum/engine.h>
 #include <lh/core/char/map.h>
 #include <lh/core/str/format/text.h>
+#include <lh/core/util/str/ptr.h>
 
 #include <authum/cstr.h>
 
@@ -12,7 +13,7 @@ authum_engine_buf_reset(authum_char_t *buf, authum_usize_t buf_size)
     {
         return authum_bool_false;
     }
-    buf[0] = lh_char_map_nul;
+    lh_str_ptr_clear(buf);
     return authum_bool_true;
 }
 
@@ -408,7 +409,7 @@ authum_engine_kick(const authum_engine_t *engine, authum_i32_t userid, const aut
                            : c;
         }
     }
-    clean[n] = lh_char_map_nul;
+    lh_str_ptr_erase(clean, n);
     authum_char_t cmd[192];
     if (lh_math_gt(n, 0u))
     {

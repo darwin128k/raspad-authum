@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   forgotten one; inside, it is lh's `lh_array_t` with the sandbox as its allocator
   (`lh_array_init_by`). No 3.x module loads; `examples/hello` and `docs/sandbox.md`
   show the new calls.
+- The host clock's reader is `authum_clock_host_get_monotonic_ms` (`host/clock.h`), not a
+  `static` function; Authum has no `static` functions left. Terminators of C strings are
+  written with `lh_str_ptr_erase` / `lh_str_ptr_clear` instead of `s[n] = nul`.
 - Copies into a C-string buffer go through `lh_str_ptr_copy_cstr` (cfg values,
   `authum_cstr_copy`, json strings, paths, SQL error text, the HTTP host's shown
   entries). The HTTP host's policy lists take the checked value as an `lh_str_view_t`;

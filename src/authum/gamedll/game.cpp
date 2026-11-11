@@ -151,7 +151,7 @@ read_gamedll_name(const authum_char_t *dir, authum_char_t *out, authum_usize_t o
             size = limit;
         }
         lh_memory_std_copy(line, lh_str_view_get_data(lh_addr_of(line_view)), size);
-        line[size] = lh_char_map_nul;
+        lh_str_ptr_erase(line, size);
         trim(line);
         if (lh_math_eq(line[0], lh_char_map_nul))
         {

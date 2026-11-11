@@ -66,7 +66,7 @@ authum_http_socket_accept(lh_os_net_socket_t *listener, authum_http_client_t *pe
     lh_memory_std_copy(address, ip.octets, sizeof lh_ptr_deref(address));
     peer->port = lh_net_ip4_socket_addr_get_port(lh_addr_of(remote));
     lh_usize_t size = lh_net_ip4_format(lh_addr_of(ip), peer->ip, lh_math_sub(sizeof peer->ip, 1));
-    peer->ip[size] = lh_char_map_nul;
+    lh_str_ptr_erase(peer->ip, size);
     return authum_bool_true;
 }
 

@@ -32,7 +32,7 @@ authum_log_emit(lh_self_ptr /* self */, lh_logger_level_t level, lh_str_cptr fmt
         authum_unused(lh_os_debug_print_line(fmt));
         return lh_cast_static(lh_ssize_t, lh_str_ptr_len(fmt));
     }
-    line[n] = lh_char_map_nul;
+    lh_str_ptr_erase(line, n);
     authum_logs_write(authum_null, lh_cast_static(authum_logger_level_t, level), line);
     /* Under a debugger (Visual Studio's Output on Windows) the line shows there too. */
     authum_unused(lh_os_debug_print_line(line));

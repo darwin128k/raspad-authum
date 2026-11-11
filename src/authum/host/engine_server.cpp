@@ -71,7 +71,7 @@ authum_engine_get_game_dir_impl(authum_char_t *buf, authum_usize_t buf_size)
 {
     authum_char_t tmp[256];
 
-    tmp[0] = lh_char_map_nul;
+    lh_str_ptr_clear(tmp);
     if (lh_math_ne(g_engfuncs.pfnGetGameDir, authum_null))
     {
         g_engfuncs.pfnGetGameDir(tmp);
