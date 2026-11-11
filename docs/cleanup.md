@@ -250,9 +250,17 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   4. [x] `host/http/limits.c` per-IP limits, token bucket, trusted proxies → lh
      (`lh/core/net/cidr`, `lh/core/http/forwarded`, `lh/core/http/limit/{bucket,peer}`);
      Authum keeps the timeouts, the refusal summary and its address keys.
-  1. [ ] `host/loader.c` module discovery and the list file with OS sections → `lh/os/loader`.
+  1. [x] `host/loader.c` module discovery and the list file with OS sections → lh
+     (`lh/os/loader/{image,scan,list}`, `lh_os_system_get_name`, `lh_os_fs_is_file` /
+     `_is_dir`, `lh_os_fs_file_read_all(_by_path)`, `lh_fs_path_try_get_name`);
+     Authum keeps `modules/` and `configs/modules.list` beside its image, the log
+     lines and the refusal to load `authum` itself.
   5. [ ] `api/sql/thread.c` one connection per task thread → `lh/os/sql`.
   Authum keeps the game's names and policy in each.
+- [ ] **Declaration piles left in older functions** (2026-11-11).
+  `tools/check-decls.py` reports 10 in `lib/lh/src/lh/core/fs/path.c` (`get_segment`,
+  `join`, `parent`, ...) and 1 in `src/authum/api/cfg.c:124`; they predate the rule
+  and were seen while adding `lh_fs_path_try_get_name` next to them.
 - [ ] **LH has no cutting format into a fixed buffer** (2026-11-10).
   `lh_str_ptr_format_text_v` is all-or-nothing, so `lh_os_logger_capture_try_push_v`
   and `authum_cstr_format_v` format into an allocated `lh_str_t` and cut the copy.

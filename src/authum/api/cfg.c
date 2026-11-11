@@ -7,12 +7,6 @@
 #include <authum/memory.h>
 #include <authum/unused.h>
 
-/** The bytes one read of the config file brings in. */
-enum
-{
-    authum_cfg_read_chunk = 512
-};
-
 /**
  * @brief Read the whole file into a block of our own.
  *
@@ -25,32 +19,7 @@ authum_cfg_read_file(const lh_fs_path_t *path, authum_char_t **out_text, authum_
 {
     lh_str_t text;
     lh_str_init(lh_addr_of(text));
-    lh_os_fs_file_t file;
-    lh_os_fs_file_init(lh_addr_of(file));
-    if (!lh_os_fs_file_open(lh_addr_of(file), path, lh_fs_file_mode_read))
-    {
-        lh_os_fs_file_deinit(lh_addr_of(file));
-        lh_str_deinit(lh_addr_of(text));
-        return authum_bool_false;
-    }
-    authum_bool_t ok = authum_bool_true;
-    lh_char_t buf[authum_cfg_read_chunk];
-    for (;;)
-    {
-        lh_ssize_t n = lh_os_fs_file_read(lh_addr_of(file), buf, sizeof(buf));
-        if (lh_math_is_negative(n))
-        {
-            ok = authum_bool_false;
-            break;
-        }
-        if (lh_math_is_zero(n))
-        {
-            break;
-        }
-        lh_str_append(lh_addr_of(text), buf, lh_cast_static(lh_usize_t, n));
-    }
-    lh_os_fs_file_deinit(lh_addr_of(file));
-    if (!ok)
+    if (!lh_os_fs_file_read_all_by_path(path, lh_addr_of(text)))
     {
         lh_str_deinit(lh_addr_of(text));
         return authum_bool_false;

@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Module discovery runs on lh: `modules/` is scanned by `lh_os_loader_scan`,
+  `configs/modules.list` is read by `lh_os_loader_list_try_read` (sections by
+  `lh_os_system_get_name`), and an entry or a console name becomes an image path
+  through `lh_os_loader_image_try_resolve`. The config reader and the game DLL's
+  `gamedll.txt` read their files with `lh_os_fs_file_read_all_by_path`. A list
+  entry that cannot be resolved is now logged with its text and the reason (the old
+  line printed `%.*s`, which the log format does not support), and `authum load`
+  takes an absolute image path as `modules.list` always did.
 - The HTTP server's limits run on lh: trusted proxies are `lh_net_cidr_t` blocks,
   the client behind them comes from `lh_http_forwarded_copy_client`, the per-address
   table is `lh_http_limit_peer_t` and the byte budget refills through

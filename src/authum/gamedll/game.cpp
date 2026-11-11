@@ -101,39 +101,6 @@ host_dir(authum_char_t *out, authum_usize_t out_size)
     return ok;
 }
 
-/* Read the whole file into @p text, through lh. False when it cannot be
- * opened or read. */
-bool
-read_file_text(const lh_fs_path_t *path, lh_str_t *out)
-{
-    lh_os_fs_file_t file;
-    lh_char_t buf[512];
-    lh_ssize_t n;
-
-    lh_os_fs_file_init(lh_addr_of(file));
-    if (!lh_os_fs_file_open(lh_addr_of(file), path, lh_fs_file_mode_read))
-    {
-        lh_os_fs_file_deinit(lh_addr_of(file));
-        return false;
-    }
-    for (;;)
-    {
-        n = lh_os_fs_file_read(lh_addr_of(file), buf, sizeof(buf));
-        if (lh_math_is_negative(n))
-        {
-            lh_os_fs_file_deinit(lh_addr_of(file));
-            return false;
-        }
-        if (lh_math_is_zero(n))
-        {
-            break;
-        }
-        lh_str_append(out, buf, lh_cast_static(lh_usize_t, n));
-    }
-    lh_os_fs_file_deinit(lh_addr_of(file));
-    return true;
-}
-
 /* The game DLL path as written in gamedll.txt (or $AUTHUM_GAMEDLL). */
 authum_bool_t
 read_gamedll_name(const authum_char_t *dir, authum_char_t *out, authum_usize_t out_size)
@@ -161,7 +128,7 @@ read_gamedll_name(const authum_char_t *dir, authum_char_t *out, authum_usize_t o
     lh_str_view_init(lh_addr_of(view), path);
     lh_fs_path_set(lh_addr_of(file_path), view, lh_os_system_fs_path_style_native());
     lh_str_init(lh_addr_of(text));
-    if (!read_file_text(lh_addr_of(file_path), lh_addr_of(text)))
+    if (!lh_os_fs_file_read_all_by_path(lh_addr_of(file_path), lh_addr_of(text)))
     {
         lh_str_deinit(lh_addr_of(text));
         lh_fs_path_deinit(lh_addr_of(file_path));

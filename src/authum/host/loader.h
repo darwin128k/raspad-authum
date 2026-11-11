@@ -27,7 +27,7 @@
  *        (Authum list dialect).
  *
  * One path per line; optional `[linux]` / `[win32]` / `[modules]` / `[any]`
- * sections. Not INI — parsed with ::lh_str_line_reader_t in Authum.
+ * sections. Not INI — read by ::lh_os_loader_list_try_read.
  */
 #define AUTHUM_MODULES_LIST "modules.list"
 
