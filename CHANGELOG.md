@@ -32,8 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   forgotten one; inside, it is lh's `lh_array_t` with the sandbox as its allocator
   (`lh_array_init_by`). No 3.x module loads; `examples/hello` and `docs/sandbox.md`
   show the new calls.
-- `authum_cfg_get_value` reads the config with lh's INI parser in its flat mode
-  (`lh_ini_parser_init_flat`) instead of splitting lines itself. The dialect is
+- `authum_cfg_get_value` reads the config with lh's INI parser (its keys are in the
+  global section) instead of splitting lines itself. The dialect is
   unchanged: no sections needed, keys case-insensitive, a `[section]` line or any
   other line that is not `key = value` is passed over.
 - The host's log channel record (`authum_logs_channel_t`) has its own header

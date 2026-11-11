@@ -130,9 +130,10 @@ authum_cfg_get_value(authum_cfg_t *self, const authum_char_t *key)
     lh_str_view_init_by_size(lh_addr_of(text), self->text, self->size);
     lh_str_view_t wanted;
     lh_str_view_init(lh_addr_of(wanted), key);
-    /* A flat ini text: no headers needed, a `[section]` line is passed over. */
+    /* The cfg uses no sections: a key is looked up in the whole text, and a
+       `[section]` line is passed over. */
     lh_ini_parser_t parser;
-    lh_ini_parser_init_flat(lh_addr_of(parser), text);
+    lh_ini_parser_init(lh_addr_of(parser), text);
     lh_ini_entry_t entry;
     for (;;)
     {
@@ -146,9 +147,12 @@ authum_cfg_get_value(authum_cfg_t *self, const authum_char_t *key)
             lh_ini_parser_set_error(lh_addr_of(parser), lh_ini_error_none);
             continue;
         }
+        if (!lh_ini_entry_has_kind(lh_addr_of(entry), lh_ini_entry_kind_pair))
+        {
+            continue;
+        }
         lh_str_view_t name = lh_ini_entry_get_key(lh_addr_of(entry));
-        if (!lh_ini_entry_has_kind(lh_addr_of(entry), lh_ini_entry_kind_pair) ||
-            !lh_str_view_equals(lh_addr_of(name), lh_addr_of(wanted), lh_bool_true))
+        if (!lh_str_view_equals(lh_addr_of(name), lh_addr_of(wanted), lh_bool_true))
         {
             continue;
         }
