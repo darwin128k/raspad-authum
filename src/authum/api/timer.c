@@ -3,7 +3,7 @@
  * @brief Module timers on server frames over lh's timer group — see <authum/timer.h>.
  *
  * authum_client is linked into each module, so these globals are per module. Each
- * timer is an `lh_timer_t` in sandbox memory, armed on the module's group; the group
+ * timer is an `lh_timer_t` in region memory, armed on the module's group; the group
  * is driven by the sum of server frame lengths, in milliseconds. lh keeps the phase
  * of a repeating timer and skips missed periods instead of bursting.
  */
@@ -16,8 +16,8 @@
 lh_timer_group_t authum_timers_group;
 /** The live timers, newest first: what remove, clear and count walk. */
 authum_timer_entry_t *authum_timers_head;
-/** The module's sandbox, which the timers live in. */
-authum_sandbox_t authum_timers_sandbox;
+/** The module's region, which the timers live in. */
+authum_region_t authum_timers_region;
 authum_bool_t authum_timers_ready;
 /** Microseconds of server frames since the first timer was added. */
 authum_u64_t authum_timers_clock;
@@ -128,7 +128,7 @@ authum_timer_free(authum_timer_entry_t *entry)
         }
     }
     lh_timer_deinit(authum_timer_entry_get_timer_mut(entry));
-    authum_sandbox_free(lh_addr_of(authum_timers_sandbox), entry);
+    authum_region_free(lh_addr_of(authum_timers_region), entry);
 }
 
 authum_event_result_t
@@ -214,17 +214,17 @@ authum_timer_add(const authum_host_t *host, authum_float_t delay, authum_float_t
     }
     if (!authum_timers_ready)
     {
-        if (authum_null_eq(host) || !authum_sandbox_is_valid(authum_host_get_sandbox(host)) ||
+        if (authum_null_eq(host) || !authum_region_is_valid(authum_host_get_region(host)) ||
             !authum_host_subscribe(host, AUTHUM_EVENT_SERVER_FRAME, authum_timer_on_frame,
                                    authum_null))
         {
             return 0u;
         }
-        authum_timers_sandbox = lh_ptr_deref(authum_host_get_sandbox(host));
+        authum_timers_region = lh_ptr_deref(authum_host_get_region(host));
         lh_timer_group_init(lh_addr_of(authum_timers_group));
         authum_timers_ready = authum_bool_true;
     }
-    entry = authum_sandbox_alloc(lh_addr_of(authum_timers_sandbox), sizeof lh_ptr_deref(entry));
+    entry = authum_region_alloc(lh_addr_of(authum_timers_region), sizeof lh_ptr_deref(entry));
     if (authum_null_eq(entry))
     {
         return 0u;

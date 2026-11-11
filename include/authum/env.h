@@ -6,7 +6,7 @@
  * fallback). Paths are ::authum_path_t values owned by the host, valid until
  * `stop`. Absolute paths on the current volume when the host can resolve them.
  *
- * Every module is a sandbox: one folder holds everything that is its own.
+ * Every module is a region: one folder holds everything that is its own.
  * @code
  *   <game>/                        ← env->game
  *     addons/                      ← env->addons

@@ -231,11 +231,10 @@ authum_host_command_add_all(const authum_host_t *host, const authum_command_def_
     return authum_commands_add_all(authum_host_get_commands(host), defs, count);
 }
 
-const authum_sandbox_t *
-authum_host_get_sandbox(const authum_host_t *host)
+const authum_region_t *
+authum_host_get_region(const authum_host_t *host)
 {
-    return (!authum_null_eq(host) && !authum_null_eq((host)->sandbox)) ? host->sandbox
-                                                                       : authum_null;
+    return (!authum_null_eq(host) && !authum_null_eq((host)->region)) ? host->region : authum_null;
 }
 
 const authum_events_t *
@@ -245,11 +244,11 @@ authum_host_get_events(const authum_host_t *host)
 }
 
 void
-authum_host_set_sandbox(authum_host_t *host, const authum_sandbox_t *sandbox)
+authum_host_set_region(authum_host_t *host, const authum_region_t *region)
 {
     if (!authum_null_eq(host))
     {
-        host->sandbox = sandbox;
+        host->region = region;
     }
 }
 

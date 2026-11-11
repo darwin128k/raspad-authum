@@ -3,7 +3,7 @@
  * @brief Authum heap operations, backed by the image's LH runtime allocator.
  *
  * These blocks have explicit lifetime. For module-owned objects that must be
- * reclaimed at unload, use the sandbox API. Never mix heap and sandbox blocks,
+ * reclaimed at unload, use the region API. Never mix heap and region blocks,
  * libc blocks or blocks from another module image. The active LH allocator
  * and its context must remain compatible while its blocks exist; threads
  * exchanging blocks must use compatible runtime allocators.

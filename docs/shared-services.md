@@ -28,7 +28,7 @@ The buffer accepts 1..256 lines, reports dropped messages, and never allocates
 or calls the host while recording a line. A buffer has one owner at a time;
 handoff uses the task queue. Logger handles must stay alive and not be rebound
 until flush/discard. Flush only on the game thread. This does not make unrelated
-host/engine/event/sandbox APIs safe to call from workers.
+host/engine/event/region APIs safe to call from workers.
 
 The capture buffer copies the channel binding for each record, so the
 automatic-channel `authum_host_log_*` helpers also work inside a capture scope

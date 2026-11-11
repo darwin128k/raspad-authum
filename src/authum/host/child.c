@@ -5,7 +5,7 @@
 #include <authum/host/events.h>
 #include <authum/host/hooks.h>
 #include <authum/host/logs.h>
-#include <authum/host/sandbox.h>
+#include <authum/host/region.h>
 #include <authum/host/module.h>
 #include <authum/host/tasks.h>
 #include <authum/host/threads.h>
@@ -37,7 +37,7 @@ typedef struct authum_child_data
     authum_host_t host;
     authum_env_t env;
     authum_child_paths_t paths;
-    authum_sandbox_t sandbox;
+    authum_region_t region;
     authum_events_t events;
     authum_commands_t commands;
     authum_hooks_t hooks;
@@ -244,9 +244,9 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     out->crypto = authum_crypto();
     out->engine = authum_engine();
 
-    data->sandbox.ops = authum_sandbox_host_ops();
-    data->sandbox.root = authum_sandbox_host_root_create();
-    out->sandbox = lh_addr_of(data->sandbox);
+    data->region.ops = authum_region_host_ops();
+    data->region.root = authum_region_host_root_create();
+    out->region = lh_addr_of(data->region);
 
     authum_events_set_ops(authum_child_data_get_events_mut(data), authum_events_host_ops());
     authum_events_set_owner(authum_child_data_get_events_mut(data), data);
@@ -297,7 +297,7 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
 }
 
 /** After `stop` (or a failed `start`): drop the module's subscriptions and
- *  commands, free its sandbox. */
+ *  commands, free its region. */
 void
 authum_child_release(authum_child_data_t *data)
 {
@@ -310,7 +310,7 @@ authum_child_release(authum_child_data_t *data)
     authum_events_host_drop_owner(data);
     authum_hook_registry_drop_owner(authum_hook_registry(), data);
     authum_logs_close(data);
-    authum_sandbox_host_root_destroy(data->sandbox.root);
+    authum_region_host_root_destroy(data->region.root);
     authum_memory_free(data);
 }
 

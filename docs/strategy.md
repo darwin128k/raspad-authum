@@ -132,7 +132,7 @@ are the pilot: the first two rewritten on cnor, the last two after.
 ## 9. What stays as it is
 
 - The event bus with its owner tags and its drop-on-unload.
-- The log channels, the command registry, the placeholders, the sandbox, the
+- The log channels, the command registry, the placeholders, the region, the
   module loader of lh.
 - lh itself: it is the box of bricks, and it is not rewritten here.
 

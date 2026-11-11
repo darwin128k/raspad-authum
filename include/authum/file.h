@@ -15,7 +15,7 @@
  *     authum_char_t line[256];
  *     authum_usize_t read;
  *
- *     while (authum_file_read(&file, lh_addr_of(line), sizeof line, &read) && read)
+ *     while (authum_file_read(&file, line, sizeof line, &read) && read)
  *     {
  *         ...
  *     }

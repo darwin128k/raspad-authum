@@ -2,7 +2,7 @@
  * hello — a short tour of what almost every module needs:
  *   - the logger (logs/hello/YYYY-MM-DD.log),
  *   - an event subscription (authum.client.connect),
- *   - memory from the module sandbox (nothing to free in stop),
+ *   - memory from the module region (nothing to free in stop),
  *   - a console / RCON command (`authum hello seen`).
  *
  * Start from ../skeleton for an empty module; come here for these pieces.
@@ -74,9 +74,9 @@ hello_start(authum_host_t *host)
     authum_logger_info(&g_hello_log, "start, data dir %s",
                        authum_path_get_cstr(authum_host_get_module_data_path(&g_hello_host)));
 
-    /* Each item is a name buffer; the storage lives in this module's sandbox. */
+    /* Each item is a name buffer; the storage lives in this module's region. */
     g_hello_seen =
-        authum_array_create(authum_host_get_sandbox(&g_hello_host), authum_event_client_name_max);
+        authum_array_create(authum_host_get_region(&g_hello_host), authum_event_client_name_max);
     return !authum_null_eq(g_hello_seen) &&
            authum_host_subscribe(&g_hello_host, AUTHUM_EVENT_CLIENT_CONNECT, hello_on_connect,
                                  authum_null) &&

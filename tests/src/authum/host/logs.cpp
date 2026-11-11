@@ -592,13 +592,13 @@ TEST(authum_logs, constructor)
     test_write_cfg(g_test_cfg);
 }
 
-TEST(authum_logs, custom_sandbox)
+TEST(authum_logs, custom_region)
 {
     test_reset();
-    const char *base = TEST_ROOT "/custom_sandbox";
+    const char *base = TEST_ROOT "/custom_region";
     test_mkdir(base);
-    test_mkdir(TEST_ROOT "/custom_sandbox/configs");
-    FILE *cfg = fopen(TEST_ROOT "/custom_sandbox/configs/private.cfg", "w");
+    test_mkdir(TEST_ROOT "/custom_region/configs");
+    FILE *cfg = fopen(TEST_ROOT "/custom_region/configs/private.cfg", "w");
     EXPECT_NE(cfg, authum_null);
     fputs("log_level = debug\n", cfg);
     fclose(cfg);
@@ -608,16 +608,16 @@ TEST(authum_logs, custom_sandbox)
     int owner;
     EXPECT_TRUE(authum_logs_open(&owner, "private", authum_null, base));
     EXPECT_TRUE(authum_logs_is_enabled(&owner, authum_logger_level_debug));
-    authum_logs_write(&owner, authum_logger_level_debug, "custom sandbox");
+    authum_logs_write(&owner, authum_logger_level_debug, "custom region");
     EXPECT_TRUE(authum_logs_sync(5000));
     char day[32], path[256];
     struct tm *tm = localtime(&g_test_now);
     strftime(day, sizeof day, "%Y-%m-%d.log", tm);
     snprintf(path, sizeof path, "%s/logs/%s", base, day);
-    EXPECT_TRUE(test_path_contains(path, "custom sandbox"));
+    EXPECT_TRUE(test_path_contains(path, "custom region"));
     authum_logs_deinit();
     remove(path);
-    remove(TEST_ROOT "/custom_sandbox/configs/private.cfg");
+    remove(TEST_ROOT "/custom_region/configs/private.cfg");
     test_write_cfg(g_test_cfg);
 }
 

@@ -288,13 +288,17 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   and `authum_logs_channel_init`; `host/logs.c` goes through them (about 90 places),
   the registry walk in `authum_logs_free` keeps the previous channel instead of a
   pointer into a field.
-- [ ] **The next module ABI break** (owner, 2026-11-10; called "ABI 3.0" then, but 3.x
+- [x] **The next module ABI break** (owner, 2026-11-10; called "ABI 3.0" then, but 3.x
   shipped with Authum 4.0.0, so it is **4.0**): the sandbox becomes `authum_region_t` (an
   ownership tree of memory, not isolation), and a module's files leave `FILE *`; all in
-  one release, so modules are rewritten once. Started 2026-11-11: the opaque
-  `authum_array_t` is in, `AUTHUM_MODULE_ABI` is 4.0.0. Left: the region and the files
-  — before the release, so 4.0 is cut once. `AGENTS.md` still says the ABI is frozen
-  at 2.0 (owner's text, not touched).
+  one release, so modules are rewritten once. Done 2026-11-11, `AUTHUM_MODULE_ABI`
+  4.0.0: the opaque `authum_array_t`; `authum_sandbox_*` → `authum_region_*`
+  (`<authum/region.h>`, `authum_host_get_region`, docs/region.md); no public header
+  hands out `FILE *` or includes `stdio.h`, and `path.h` points at `authum_file_open`
+  instead of `fopen`. The RASPAD modules (outside this repository) move to 4.0 next:
+  `sandbox` → `region`, `fopen` → `authum_file_t`.
+- [ ] `AGENTS.md` says the module ABI is frozen at 2.0 (Authum 0.4.0); it is 4.0 now
+  (Authum 4.1.0). The owner's text — the owner updates it.
 - [ ] **LTO warns in lh's formatter** (seen 2026-11-11, mingw32 full rebuild):
   `-Wstringop-overflow` in `lh_memory_store_u64` / `lh_memory_std_rcopy_sse2`, inlined
   from `lh_str_ptr_format_real_fixed` → `lh_str_ptr_format_text_get_value` →
@@ -443,9 +447,10 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 - [ ] **Audit the rest of Authum for generic mechanisms**: tasks, threads, logs and
   their channels, cfg, placeholders, paths, the sandbox. Each is either generic
   (→ LH, Authum a thin facade) or the game (stays). Bring the list to the owner.
-- [ ] **Rename the sandbox** (item 3 of the next task). It is hierarchical memory
+- [x] **Rename the sandbox** (item 3 of the next task). It is hierarchical memory
   ownership with destructors on the LH ownership tree, not isolation, and the name
-  misleads. Candidates: `arena`, `region`, `scope`; the owner decides.
+  misleads. Candidates: `arena`, `region`, `scope`; the owner decides. The owner chose
+  `region` (2026-11-10); renamed 2026-11-11 with module ABI 4.0.
 - [ ] Authum has no named-character facade like `lh/core/char/map.h`; module code
   (`examples/chatfilter/chatfilter.c`) still compares bare literals.
 

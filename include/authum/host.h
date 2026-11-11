@@ -20,7 +20,7 @@
 #include <authum/events.h>
 #include <authum/hook.h>
 #include <authum/logger/ops.h>
-#include <authum/sandbox.h>
+#include <authum/region.h>
 #include <authum/task.h>
 #include <authum/thread.h>
 #include <authum/http.h>
@@ -61,8 +61,8 @@ typedef struct authum_host
      * current hosts; check before use if you support older `authum`.
      */
     const authum_engine_t *engine;
-    /** This module's memory sandbox; freed by the host after `stop`. */
-    const authum_sandbox_t *sandbox;
+    /** This module's memory region; freed by the host after `stop`. */
+    const authum_region_t *region;
     /** Event bus handle bound to this module (subscriptions dropped after `stop`). */
     const authum_events_t *events;
     /** `authum <module> <name>` console / RCON commands (dropped after `stop`). */
@@ -129,8 +129,8 @@ authum_host_get_engine(const authum_host_t *host);
 const authum_char_t *
 authum_host_get_tag(const authum_host_t *host);
 
-const authum_sandbox_t *
-authum_host_get_sandbox(const authum_host_t *host);
+const authum_region_t *
+authum_host_get_region(const authum_host_t *host);
 
 const authum_events_t *
 authum_host_get_events(const authum_host_t *host);
@@ -191,7 +191,7 @@ void
 authum_host_set_engine(authum_host_t *host, const authum_engine_t *engine);
 
 void
-authum_host_set_sandbox(authum_host_t *host, const authum_sandbox_t *sandbox);
+authum_host_set_region(authum_host_t *host, const authum_region_t *region);
 
 void
 authum_host_set_events(authum_host_t *host, const authum_events_t *events);

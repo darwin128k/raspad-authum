@@ -17,7 +17,7 @@ on the Authum surface. Sample: [`examples/hello`](../examples/hello/).
 | Authum types | Paths → `authum_path_t`; cfg → defaults on the struct + `authum_cfg_apply_items` (or manual `get_*` / `apply_*`); no raw `atoi`/`strncpy`/`strcasecmp` |
 | Host access | Never `host->engine` / `host->env` / … — only `authum_host_*` getters/setters |
 | Bricks, not statics | No `static` functions and no `static inline` in headers: every function is a small, prefixed, linkable brick declared in a header (debuggable, testable). `static` stays only for file-local data |
-| Small modules | A module holds only its own logic. Engine access, memory lifetime, config parsing, inter-module talk, console commands are Authum's job (host facade, sandbox, cfg, events, commands) |
+| Small modules | A module holds only its own logic. Engine access, memory lifetime, config parsing, inter-module talk, console commands are Authum's job (host facade, region, cfg, events, commands) |
 | No engine commands | `authum <module> <name>` via [commands.md](commands.md); never `pfnAddServerCommand` (clashes with AMXX / others, crashes after unload) |
 
 Config *file* keys use the same snake_case as C fields (`enable_revemu`, `max_bans`, …).

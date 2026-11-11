@@ -1,6 +1,6 @@
 /**
  * @file array.c
- * @brief ::authum_array_t — an lh array over the module's sandbox.
+ * @brief ::authum_array_t — an lh array over the module's region.
  */
 
 #include <authum/api/array/private.h>
@@ -11,16 +11,16 @@
 
 /* ── accessors ───────────────────────────────────────────────────────────── */
 
-const authum_sandbox_t *
-authum_array_get_sandbox(const authum_array_t *self)
+const authum_region_t *
+authum_array_get_region(const authum_array_t *self)
 {
-    return lh_addr_of(self->sandbox);
+    return lh_addr_of(self->region);
 }
 
 void
-authum_array_set_sandbox(authum_array_t *self, const authum_sandbox_t *sandbox)
+authum_array_set_region(authum_array_t *self, const authum_region_t *region)
 {
-    self->sandbox = lh_ptr_deref(sandbox);
+    self->region = lh_ptr_deref(region);
 }
 
 lh_memory_allocator_t *
@@ -45,21 +45,21 @@ lh_ptr
 authum_array_alloc(lh_self_ptr self, lh_usize_t size)
 {
     authum_array_t *array = lh_ptr_cast(authum_array_t, self);
-    return authum_sandbox_alloc_under(authum_array_get_sandbox(array), array, size);
+    return authum_region_alloc_under(authum_array_get_region(array), array, size);
 }
 
 lh_ptr
 authum_array_realloc(lh_self_ptr self, lh_ptr ptr, lh_usize_t old_size, lh_usize_t new_size)
 {
     authum_unused(old_size);
-    return authum_sandbox_realloc(authum_array_get_sandbox(lh_ptr_cast(authum_array_t, self)), ptr,
-                                  new_size);
+    return authum_region_realloc(authum_array_get_region(lh_ptr_cast(authum_array_t, self)), ptr,
+                                 new_size);
 }
 
 lh_void
 authum_array_dealloc(lh_self_ptr self, lh_ptr ptr)
 {
-    authum_sandbox_free(authum_array_get_sandbox(lh_ptr_cast(authum_array_t, self)), ptr);
+    authum_region_free(authum_array_get_region(lh_ptr_cast(authum_array_t, self)), ptr);
 }
 
 void
@@ -70,9 +70,9 @@ authum_array_destroy(authum_array_t *self)
         return;
     }
     lh_array_deinit(authum_array_get_items_mut(self));
-    /* A copy: the record that holds the sandbox goes with it. */
-    authum_sandbox_t sandbox = lh_ptr_deref(authum_array_get_sandbox(self));
-    authum_sandbox_free(lh_addr_of(sandbox), self);
+    /* A copy: the record that holds the region goes with it. */
+    authum_region_t region = lh_ptr_deref(authum_array_get_region(self));
+    authum_region_free(lh_addr_of(region), self);
 }
 
 authum_usize_t
@@ -156,9 +156,9 @@ authum_array_clear(authum_array_t *self)
 }
 
 void
-authum_array_init(authum_array_t *self, const authum_sandbox_t *sandbox, authum_usize_t item_size)
+authum_array_init(authum_array_t *self, const authum_region_t *region, authum_usize_t item_size)
 {
-    authum_array_set_sandbox(self, sandbox);
+    authum_array_set_region(self, region);
     lh_memory_allocator_t *allocator = authum_array_get_allocator_mut(self);
     lh_memory_allocator_init(allocator, authum_array_alloc, authum_array_dealloc);
     lh_memory_allocator_set_realloc_cb(allocator, authum_array_realloc);
@@ -173,18 +173,18 @@ authum_array_is_empty(const authum_array_t *self)
 }
 
 authum_array_t *
-authum_array_create(const authum_sandbox_t *sandbox, authum_usize_t item_size)
+authum_array_create(const authum_region_t *region, authum_usize_t item_size)
 {
-    if (!authum_sandbox_is_valid(sandbox) || lh_math_eq(item_size, 0u))
+    if (!authum_region_is_valid(region) || lh_math_eq(item_size, 0u))
     {
         return authum_null;
     }
     authum_array_t *self =
-        lh_ptr_cast(authum_array_t, authum_sandbox_alloc(sandbox, sizeof(authum_array_t)));
+        lh_ptr_cast(authum_array_t, authum_region_alloc(region, sizeof(authum_array_t)));
     if (authum_null_eq(self))
     {
         return authum_null;
     }
-    authum_array_init(self, sandbox, item_size);
+    authum_array_init(self, region, item_size);
     return self;
 }

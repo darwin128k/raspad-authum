@@ -14,7 +14,7 @@ typedef enum authum_logger_format
 } authum_logger_format_t;
 
 /** Construction defaults; administrator configuration still takes precedence.
- * A named logger always stays under the module's logs/<name>/ sandbox. */
+ * A named logger always stays under the module's logs/<name>/ region. */
 typedef struct authum_logger_options
 {
     const authum_char_t *name;

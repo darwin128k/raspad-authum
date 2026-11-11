@@ -85,7 +85,7 @@ AUTHUM_MODULE_EXPORT const authum_module_api_t authum_module_api = {
 cstrike/addons/authum/
   authum.so
   configs/modules.list         # one name per line: example
-  modules/example/             # the module's sandbox
+  modules/example/             # the module's region
     example.so
     configs/example.cfg        # optional, the admin's
     lang/                      # translations
@@ -118,9 +118,9 @@ survives Authum's internal changes.
 | `authum_host_get_engine` / game dir / print / command | engine facade (no HLSDK) |
 | `authum_host_get_engine_funcs` / `authum_host_get_globals` | escape hatch → HLSDK types |
 | `authum_host_get_env` / `authum_host_get_module_path` / `_module_config` / `_module_lang` / `_module_data` / `_game` / … | `authum_path_t` roots |
-| `authum_host_join_config_path` / `_data_path` | a module's files in its sandbox |
+| `authum_host_join_config_path` / `_data_path` | a module's files in its region |
 | `authum_host_get_crypto` | Rijndael + SHA (`<authum/crypto.h>`) |
-| `authum_host_get_sandbox` | Module memory freed at unload — [sandbox.md](sandbox.md) |
+| `authum_host_get_region` | Module memory freed at unload — [region.md](region.md) |
 | `authum_host_get_events` / `authum_host_subscribe` / `authum_host_forward` / `authum_host_query` | Event bus — [events.md](events.md) |
 | `authum_host_kick` | `kick #userid "reason"` (sanitized) |
 | `authum_host_get_max_clients` / `_game_time` / `_get_map_name` | current map |
@@ -189,7 +189,7 @@ private utilities. Not the host runtime.
 Include `<authum/logger.h>` and call `authum_host_log_info(&g_host, "loaded %u bans",
 count)` (or `_warning`, `_error`, `_debug`). The host supplies a module channel
 automatically. Existing `authum_logger_init` / `authum_logger_info` handles work too.
-Files stay in the module's sandbox, `logs/YYYY-MM-DD.log`; modules never open
+Files stay in the module's region, `logs/YYYY-MM-DD.log`; modules never open
 diagnostic files or create logging threads themselves.
 
 The module's `configs/<module>.cfg` can set `log_level`, `log_keep_days`,
@@ -225,7 +225,7 @@ destinations, including journals. Details and construction: [logging.md](logging
 - [ ] Folder `foo` → `foo.so` / `foo.dll`
 - [ ] Not a `plugins.ini` entry
 - [ ] Logs via host facade
-- [ ] Long-lived memory from the sandbox ([sandbox.md](sandbox.md))
+- [ ] Long-lived memory from the region ([region.md](region.md))
 - [ ] Talks to other modules only via events ([events.md](events.md)); no hooks of its own for player connect/disconnect
 - [ ] Console / RCON commands via `authum_host_command_add` — never `pfnAddServerCommand` ([commands.md](commands.md))
 - [ ] Config: defaults + `authum_cfg_apply_items`; custom keys after the table ([cfg.md](cfg.md))

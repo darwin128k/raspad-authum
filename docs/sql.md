@@ -47,7 +47,7 @@ void mymod_complete(const authum_sql_thread_result_t *result, authum_ptr user)
 Use bound parameters for untrusted values. Copy needed rows into request-owned
 storage inside `work`; the database and statement pointers never survive the
 worker callback. Worker code must not call engine, event, console, host logging,
-commands or sandbox APIs, or mutate game-thread state. Read-only environment/path
+commands or region APIs, or mutate game-thread state. Read-only environment/path
 getters are safe while the module is loaded. Return data/log messages to the
 game thread instead. Check every operation: no rows and a failed query are
 different outcomes. A failed transaction must be abandoned, not continued on a

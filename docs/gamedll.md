@@ -13,7 +13,7 @@ cstrike/addons/authum/
   gamedll.txt                        ← the real game library (one line)
   configs/                           ← Authum's: authum.cfg, modules.list
   logs/YYYY-MM-DD.log                ← Authum's log + every module's warnings
-  modules/                           ← one sandbox per module (as in Metamod)
+  modules/                           ← one region per module (as in Metamod)
     qproto/qproto.so
 ```
 

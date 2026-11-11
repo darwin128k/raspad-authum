@@ -44,7 +44,7 @@ skeleton_start(authum_host_t *host)
 void
 skeleton_stop(void)
 {
-    /* Authum drops subscriptions, commands and sandbox memory by itself. */
+    /* Authum drops subscriptions, commands and region memory by itself. */
     authum_logger_info(&g_skeleton_log, "stopped");
     authum_logger_close(&g_skeleton_log);
     authum_host_clear(&g_skeleton_host);

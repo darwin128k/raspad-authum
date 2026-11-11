@@ -169,7 +169,7 @@ stats_start(authum_host_t *host)
 void
 stats_stop(void)
 {
-    /* The database is not sandbox memory: close it here. */
+    /* The database is not region memory: close it here. */
     authum_sql_close(&g_stats_db);
     authum_logger_close(&g_stats_visits);
     authum_logger_close(&g_stats_log);

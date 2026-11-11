@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Module ABI 4.0.0 — the sandbox is the region.** It is an ownership tree of memory,
+  not isolation, and now says so: `authum_sandbox_t` / `authum_sandbox_*` /
+  `<authum/sandbox.h>` / `<authum/sandbox/ops.h>` are `authum_region_t` /
+  `authum_region_*` / `<authum/region.h>` / `<authum/region/ops.h>`,
+  `authum_host_get_sandbox` is `authum_host_get_region`, and `docs/sandbox.md` is
+  `docs/region.md`. Behaviour is unchanged. `path.h` now sends a module to
+  `authum_file_open` instead of `fopen` (no public header hands out `FILE *`).
 - **Module ABI 4.0.0 — `authum_array_t` is opaque.** A module no longer holds the
   struct: `authum_array_create(sandbox, item_size)` returns the array (null for a bad
   sandbox or a zero item size) and `authum_array_destroy` frees it with its storage;

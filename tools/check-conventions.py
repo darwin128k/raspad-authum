@@ -23,7 +23,7 @@ def main():
              for path in (ROOT / folder).rglob("*") if path.suffix in (".c", ".cpp", ".h")]
     rules = [
         (r'(?<![\w>.])(?:std::)?(?:malloc|calloc|realloc|free)\s*\(',
-         "use authum_memory_* or the matching sandbox API"),
+         "use authum_memory_* or the matching region API"),
         (r'\b(?:std::)?(?:memset|memcpy|memmove|memcmp)\s*\(', "use LH memory kernels"),
         (r'\bNULL\b', "use authum_null"),
         (r'\b(?:static_cast|reinterpret_cast|const_cast)\s*<', "use LH cast helpers"),

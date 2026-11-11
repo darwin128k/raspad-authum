@@ -1,5 +1,5 @@
 # Authum client library: every function a module calls on the Authum API
-# (host getters, cfg, path, cstr, logger, sandbox, array, events, sql, json, …).
+# (host getters, cfg, path, cstr, logger, region, array, events, sql, json, …).
 # Headers in include/ only declare; code lives in src/authum/api/ and ships as
 # this static library. Modules link `authum_client`; they never compile Authum
 # `.c` files themselves. No Metamod. `authum` links it too.

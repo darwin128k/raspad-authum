@@ -13,9 +13,9 @@ it. Allocation and release must use compatible allocator callbacks and context;
 do not change the runtime heap while blocks exist, or exchange blocks between
 images. Worker threads exchanging blocks must have compatible runtime heaps.
 
-Use the sandbox for module-owned objects that must be reclaimed at unload.
+Use the region for module-owned objects that must be reclaimed at unload.
 Its ownership tree remains in LH, and its backing heap goes through the Authum
-memory facade too. Heap blocks and sandbox blocks have different ownership and
+memory facade too. Heap blocks and region blocks have different ownership and
 must be released by their matching API.
 
 Authum implementation code uses LH byte kernels (`lh_memory_std_copy`,

@@ -66,7 +66,7 @@ session; do not make the owner repeat them again.
 
 - Use Authum types and `authum_null` in Authum code; keep native types at actual ABI boundaries.
 - Allocate explicit-lifetime heap blocks through `<authum/memory.h>`, backed by LH.
-  Keep sandbox ownership on the existing LH ownership tree; never mix the two kinds of blocks.
+  Keep region ownership on the existing LH ownership tree; never mix the two kinds of blocks.
 - Use LH memory kernels, math operations, cast and pointer helpers, character predicates,
   ASCII names and numeric/domain limits instead of open-coding equivalent primitives.
 - **Everything runs on the LH core — all of it.** Every brick Authum uses is an lh

@@ -15,7 +15,7 @@ target_compile_features(authum_test_main PUBLIC cxx_std_20)
 # LH's runner fills LH's runtime slots over the C library before any test runs.
 target_link_libraries(authum_test_main PUBLIC gtest lh)
 
-# Authum GoogleTest suites run by CTest. Host pieces (sandbox, events,
+# Authum GoogleTest suites run by CTest. Host pieces (region, events,
 # commands, logs) are compiled from src/authum/host together with lh, exactly as
 # authum uses them.
 
@@ -40,7 +40,7 @@ target_link_libraries(authum_test_client PRIVATE authum_client authum_test_main)
 add_test(NAME authum_client COMMAND authum_test_client)
 
 add_library(authum_test_host STATIC
-        "${CMAKE_SOURCE_DIR}/src/authum/host/sandbox.c"
+        "${CMAKE_SOURCE_DIR}/src/authum/host/region.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/events.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/events/ops.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/commands.c"
@@ -54,9 +54,9 @@ add_library(authum_test_host STATIC
 target_include_directories(authum_test_host PUBLIC "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/src")
 target_link_libraries(authum_test_host PUBLIC lh authum_client)
 
-add_executable(authum_test_sandbox src/authum/host/sandbox.cpp)
-target_link_libraries(authum_test_sandbox PRIVATE authum_test_host authum_test_main)
-add_test(NAME authum_sandbox COMMAND authum_test_sandbox)
+add_executable(authum_test_region src/authum/host/region.cpp)
+target_link_libraries(authum_test_region PRIVATE authum_test_host authum_test_main)
+add_test(NAME authum_region COMMAND authum_test_region)
 
 add_executable(authum_test_events src/authum/host/events.cpp)
 target_link_libraries(authum_test_events PRIVATE authum_test_host authum_test_main)

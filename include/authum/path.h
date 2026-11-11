@@ -7,8 +7,9 @@
  * (`qproto.cfg`, `sprites/foo.spr`, …).
  *
  * Host-filled env paths use the platform-native form (via lh inside
- * `authum`). Module joins always insert `/` (::authum_path_sep); `/`
- * still works with `fopen` on Windows HLDS.
+ * `authum`). Module joins always insert `/` (::authum_path_sep); `/` works
+ * on every platform. Open the file with ::authum_file_open (<authum/file.h>),
+ * not libc.
  */
 
 #ifndef AUTHUM_PATH_H

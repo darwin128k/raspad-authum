@@ -8,14 +8,14 @@
 
 #include <authum/client.h>
 #include <authum/host/events.h>
-#include <authum/host/sandbox.h>
+#include <authum/host/region.h>
 
 #include <string.h>
 #include <stdlib.h>
 
 int g_owner;
 authum_host_t g_host;
-authum_sandbox_t g_sandbox;
+authum_region_t g_region;
 authum_events_t g_events;
 
 int g_once;
@@ -83,12 +83,12 @@ void
 timer_setup(void)
 {
     g_once = g_every = g_self_removing = g_spawned = 0;
-    g_sandbox.ops = authum_sandbox_host_ops();
-    g_sandbox.root = authum_sandbox_host_root_create();
+    g_region.ops = authum_region_host_ops();
+    g_region.root = authum_region_host_root_create();
     authum_events_set_ops(&g_events, authum_events_host_ops());
     authum_events_set_owner(&g_events, &g_owner);
     memset(&g_host, 0, sizeof g_host);
-    g_host.sandbox = &g_sandbox;
+    g_host.region = &g_region;
     g_host.events = &g_events;
 }
 
@@ -97,7 +97,7 @@ timer_teardown(void)
 {
     authum_timer_clear();
     authum_events_host_drop_owner(&g_owner);
-    authum_sandbox_host_root_destroy(g_sandbox.root);
+    authum_region_host_root_destroy(g_region.root);
 }
 
 void

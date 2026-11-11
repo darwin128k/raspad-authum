@@ -1,16 +1,16 @@
 /**
  * @file array.h
- * @brief Growable array of fixed-size items living in an ::authum_sandbox_t.
+ * @brief Growable array of fixed-size items living in an ::authum_region_t.
  *
  * The array is opaque: ::authum_array_create makes it as a block of the
- * sandbox, and its storage hangs under that block, so an array a module
+ * region, and its storage hangs under that block, so an array a module
  * forgets to destroy is still released at unload. Items are copied in by
  * value; pointers returned by ::authum_array_get_at / ::authum_array_push stay
  * valid until the next call that grows or shrinks the array.
  *
  * @code
  * authum_array_t *names =
- *     authum_array_create(authum_host_get_sandbox(host), sizeof(mymod_name_t));
+ *     authum_array_create(authum_host_get_region(host), sizeof(mymod_name_t));
  * mymod_name_t *slot = authum_array_push(names, authum_null);  // zeroed item
  * @endcode
  */
@@ -18,7 +18,7 @@
 #ifndef AUTHUM_ARRAY_H
 #define AUTHUM_ARRAY_H
 
-#include <authum/sandbox.h>
+#include <authum/region.h>
 
 /** @brief Opaque growable array; made by ::authum_array_create. */
 typedef struct authum_array authum_array_t;
@@ -26,15 +26,15 @@ typedef struct authum_array authum_array_t;
 AUTHUM_EXTERN_C_BEGIN
 
 /**
- * @brief An empty array of @p item_size-byte items in @p sandbox; its storage
+ * @brief An empty array of @p item_size-byte items in @p region; its storage
  *        is not allocated yet.
  *
- * @return The array, or null for an invalid sandbox or a zero @p item_size.
+ * @return The array, or null for an invalid region or a zero @p item_size.
  */
 authum_array_t *
-authum_array_create(const authum_sandbox_t *sandbox, authum_usize_t item_size);
+authum_array_create(const authum_region_t *region, authum_usize_t item_size);
 
-/** @brief Free the array and its storage now (optional — the sandbox frees both at unload). */
+/** @brief Free the array and its storage now (optional — the region frees both at unload). */
 void
 authum_array_destroy(authum_array_t *self);
 

@@ -7,7 +7,7 @@ what you need, rename it, and build from there. They use only
 | Example | Start here when you want to… | Shows |
 |---------|------------------------------|-------|
 | [skeleton](skeleton/) | write any module | the empty template: info, start / stop, host copy, logger |
-| [hello](hello/) | see the usual pieces together | event subscription, sandbox array, console command |
+| [hello](hello/) | see the usual pieces together | event subscription, region array, console command |
 | [welcome](welcome/) | react to players and maps | `put_in_server` / `disconnect` / `server.activate`, engine facade: name, auth id, address, chat message, player list |
 | [chatfilter](chatfilter/) | stop a player's command | a command hook: the handler swallows the call before the game sees it |
 | [cvarguard](cvarguard/) | check a client's settings | `authum_host_query_cvar` → `authum.client.cvar_value`, kick |

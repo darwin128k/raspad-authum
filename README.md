@@ -28,7 +28,7 @@ dropped under `modules/`.
 - Loads modules from `modules.list` (Authum line format) or scans `modules/`
 - Connect gate scaffolding for children
 - Client modules: `authum/client.h` (ABI **1.0**, no lh type in its headers);
-  host passes `authum_host_t` into `start` (sandbox, events, commands)
+  host passes `authum_host_t` into `start` (region, events, commands)
 - Server command `authum` — status / load / unload / module commands
 - Static `lh` in the host (`AUTHUM_LH_LINK_MODE=needed|whole`); `authum_client`
   runs `<authum/json.h>` / `<authum/sql.h>` on it too, with lh's symbols kept
@@ -70,7 +70,7 @@ cstrike/addons/authum/
   gamedll.txt                        ← the real game library (dlls/cs.so)
   configs/                           ← Authum's: authum.cfg (log levels), modules.list
   logs/YYYY-MM-DD.log                ← Authum's log + every module's warnings and errors
-  modules/                           ← one sandbox per module
+  modules/                           ← one region per module
     qproto/
       qproto.so
       configs/                       ← the admin's: qproto.cfg, …

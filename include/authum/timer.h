@@ -12,7 +12,7 @@
  * the game thread like every other handler, never in between. Time is the
  * sum of frame lengths: it keeps counting across map changes (the engine's
  * map clock starts over). Nothing to clean up: when the module unloads, its
- * frame subscription and its timer list (sandbox memory) go with it.
+ * frame subscription and its timer list (region memory) go with it.
  */
 
 #ifndef AUTHUM_TIMER_H

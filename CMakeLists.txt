@@ -148,7 +148,7 @@ else ()
             "Point this cache variable at an HLSDK tree before compiling.")
 endif ()
 
-# Host: the engine-independent core (loader, events, gate, log, sandbox, …).
+# Host: the engine-independent core (loader, events, gate, log, region, …).
 file(GLOB_RECURSE AUTHUM_HOST_SOURCES CONFIGURE_DEPENDS
         "${CMAKE_SOURCE_DIR}/src/authum/host/*.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/*.cpp"
@@ -168,7 +168,7 @@ if (NOT AUTHUM_HOST_SOURCES)
     return ()
 endif ()
 
-# Module API (src/authum/api: cfg, path, host getters, sandbox, events, …) — the static lib modules link.
+# Module API (src/authum/api: cfg, path, host getters, region, events, …) — the static lib modules link.
 add_subdirectory(client)
 
 # Settings common to every Authum image.

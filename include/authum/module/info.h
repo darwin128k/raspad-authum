@@ -24,7 +24,11 @@
  * 4.0 hides `authum_array_t`: the array is opaque, made by
  * `authum_array_create` and freed by `authum_array_destroy` (a module held the
  * struct and called `authum_array_init` / `_deinit`); inside it is lh's array
- * with the module's sandbox as its allocator. No 3.x module loads.
+ * with the module's region as its allocator. And the sandbox is renamed the
+ * region: `authum_sandbox_t` / `authum_sandbox_*` / `<authum/sandbox.h>` are
+ * `authum_region_t` / `authum_region_*` / `<authum/region.h>`, and
+ * `authum_host_get_sandbox` is `authum_host_get_region` — it is an ownership
+ * tree of memory, not isolation. No 3.x module loads.
  *
  * 3.0 renamed the module identity field `logtag` to `tag`: it is the mark the
  * module is shown with in a log record, and the struct already says what it is.

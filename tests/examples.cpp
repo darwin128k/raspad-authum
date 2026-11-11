@@ -1,7 +1,7 @@
 /**
  * @file examples.cpp
  * @brief Smoke test of examples/: load every built module with the real event
- *        bus, commands, sandbox and logs, a fake engine with three players,
+ *        bus, commands, region and logs, a fake engine with three players,
  *        then play a short scenario and check what each module did.
  */
 
@@ -12,7 +12,7 @@
 #include <authum/host/events.h>
 #include <authum/host/hooks.h>
 #include <authum/host/logs.h>
-#include <authum/host/sandbox.h>
+#include <authum/host/region.h>
 
 #include <stddef.h>
 #include <stdio.h>
@@ -395,7 +395,7 @@ typedef struct test_module
     authum_path_t module_config;
     authum_path_t module_lang;
     authum_path_t module_data;
-    authum_sandbox_t sandbox;
+    authum_region_t region;
     authum_events_t events;
     authum_commands_t commands;
     authum_hooks_t hooks;
@@ -484,8 +484,8 @@ test_load(test_module_t *m)
     authum_path_join(&m->module_data, &m->module, "data");
     m->env.module_data = &m->module_data;
 
-    m->sandbox.ops = authum_sandbox_host_ops();
-    m->sandbox.root = authum_sandbox_host_root_create();
+    m->region.ops = authum_region_host_ops();
+    m->region.root = authum_region_host_root_create();
     authum_events_set_ops(test_module_get_events_mut(m), authum_events_host_ops());
     authum_events_set_owner(test_module_get_events_mut(m), m);
     /* The module owns the names under its own name. */
@@ -504,7 +504,7 @@ test_load(test_module_t *m)
     m->host.logger = &m->logger;
     m->host.env = &m->env;
     m->host.engine = &g_engine;
-    m->host.sandbox = &m->sandbox;
+    m->host.region = &m->region;
     m->host.events = test_module_get_events_mut(m);
     m->host.commands = &m->commands;
     m->host.hooks = &m->hooks;
@@ -527,10 +527,10 @@ test_unload(test_module_t *m)
     authum_events_host_drop_owner(m);
     authum_hook_registry_drop_owner(authum_hook_registry(), m);
     authum_logs_close(m);
-    if (m->sandbox.root != authum_null)
+    if (m->region.root != authum_null)
     {
-        authum_sandbox_host_root_destroy(m->sandbox.root);
-        m->sandbox.root = authum_null;
+        authum_region_host_root_destroy(m->region.root);
+        m->region.root = authum_null;
     }
     if (m->library != authum_null)
     {

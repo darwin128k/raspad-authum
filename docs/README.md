@@ -12,7 +12,7 @@ Reusable worker logs, client references, SQL error history and address parsing:
 | [cfg.md](cfg.md) | Flat `key=value` config: `authum_client`, defaults + `apply_items`, custom keys |
 | [path.md](path.md) | `authum_path_t`, host env roots, joining cfg/log leaves |
 | [memory.md](memory.md) | Authum heap facade, LH allocator, failure and ownership contracts |
-| [sandbox.md](sandbox.md) | Per-module memory sandbox (freed at unload), nested sandboxes, `authum_array_t` |
+| [region.md](region.md) | Per-module memory region (freed at unload), nested regions, `authum_array_t` |
 | [events.md](events.md) | Event bus: forwards + queries between modules, `authum.client.*` player events |
 | [commands.md](commands.md) | `authum <module> <cmd>` console / RCON commands — why modules never register engine commands |
 | [../examples/](../examples/) | Module templates, one topic each, all exercised by `tests/examples.cpp` |

@@ -2,7 +2,7 @@
 
 ## Module policy and configuration
 
-Each loaded module automatically receives its own log channel. The sandbox
+Each loaded module automatically receives its own log channel. The region
 layout stays `configs/`, `data/`, `logs/`; daily files live in the actual
 module directory's `logs/YYYY-MM-DD.log`. Authum writes its own daily log in
 `addons/authum/logs/`. No module-owned threads, file handles or formatter
@@ -38,7 +38,7 @@ can be overridden by more specific journal settings.
 | Key | Meaning |
 | --- | --- |
 | `log_level` | Source filter: emergency through debug; `off`/`none` disables every destination |
-| `log_file` | `on`/`off` for this channel's own sandbox file only |
+| `log_file` | `on`/`off` for this channel's own region file only |
 | `log_console` | Independent console threshold, or `off` |
 | `log_host` | Independent threshold for copies into Authum's log, or `off` |
 | `log_format` | `standard` or `raw`, applied to this channel's own file |
@@ -103,7 +103,7 @@ if (authum_logger_create(&audit, host, &options)) {
 }
 ```
 
-This writes under the same sandbox's `logs/audit/`. `raw` omits host
+This writes under the same region's `logs/audit/`. `raw` omits host
 prefixes and preserves a terminating newline, adding one if absent.
 Local and explicit administrator format settings override construction defaults;
 global format defaults apply when construction uses `inherit`. Opening an already-shared
