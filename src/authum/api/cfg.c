@@ -158,11 +158,9 @@ authum_cfg_get_value(authum_cfg_t *self, const authum_char_t *key)
         }
         lh_str_view_t value = lh_ini_entry_get_value(lh_addr_of(entry));
         /* The value is handed out NUL-terminated, cut to the line buffer. */
-        lh_usize_t size =
-            lh_math_min(lh_str_view_get_size(lh_addr_of(value)),
-                        lh_math_sub(lh_cast_static(lh_usize_t, sizeof(self->line)), 1u));
-        lh_memory_std_copy(self->line, lh_str_view_get_data(lh_addr_of(value)), size);
-        self->line[size] = lh_char_map_nul;
+        authum_unused(lh_str_ptr_copy_cstr(self->line, sizeof(self->line),
+                                           lh_str_view_get_data(lh_addr_of(value)),
+                                           lh_str_view_get_size(lh_addr_of(value))));
         return self->line;
     }
 }

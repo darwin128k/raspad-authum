@@ -1,4 +1,5 @@
 #include <authum/api/json/private.h>
+#include <authum/unused.h>
 
 /* Read @p json into @p root; the caller deinits @p root whatever this returns. */
 authum_bool_t
@@ -50,19 +51,11 @@ authum_json_object_copy_cstr(const authum_char_t *json, const authum_char_t *key
         if (!authum_null_eq(member) && lh_web_json_node_has_kind(member, lh_web_json_kind_string))
         {
             const lh_str_view_t value = lh_web_json_node_get_str(member);
-            authum_usize_t n =
-                lh_cast_static(authum_usize_t, lh_str_view_get_size(lh_addr_of(value)));
 
             /* Truncated to the buffer, as before; the text is already unescaped. */
-            if (lh_math_gt(n, lh_math_sub(out_size, 1u)))
-            {
-                n = lh_math_sub(out_size, 1u);
-            }
-            if (lh_math_gt(n, 0u))
-            {
-                lh_memory_std_copy(out, lh_str_view_get_data(lh_addr_of(value)), n);
-            }
-            out[n] = lh_char_map_nul;
+            authum_unused(lh_str_ptr_copy_cstr(out, out_size,
+                                               lh_str_view_get_data(lh_addr_of(value)),
+                                               lh_str_view_get_size(lh_addr_of(value))));
             found = authum_bool_true;
         }
     }

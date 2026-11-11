@@ -63,9 +63,7 @@ authum_path_set_cstr(authum_path_t *self, const authum_char_t *text)
         authum_path_clear(self);
         return authum_bool_false;
     }
-    lh_memory_std_copy(self->data, text, n);
-    self->data[n] = lh_char_map_nul;
-    self->size = n;
+    self->size = lh_str_ptr_copy_cstr(self->data, authum_path_capacity, text, n);
     return authum_bool_true;
 }
 
@@ -86,9 +84,7 @@ authum_path_assign(authum_path_t *self, const authum_path_t *other)
         authum_path_clear(self);
         return authum_bool_false;
     }
-    lh_memory_std_copy(self->data, other->data, other->size);
-    self->data[other->size] = lh_char_map_nul;
-    self->size = other->size;
+    self->size = lh_str_ptr_copy_cstr(self->data, authum_path_capacity, other->data, other->size);
     return authum_bool_true;
 }
 

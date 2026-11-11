@@ -62,17 +62,9 @@ authum_sql_stmt_get_impl(const authum_sql_stmt_t *stmt)
 void
 authum_sql_set_errmsg(authum_sql_t *self, lh_str_view_t text)
 {
-    authum_usize_t n = lh_cast_static(authum_usize_t, lh_str_view_get_size(lh_addr_of(text)));
-
-    if (lh_math_gt(n, lh_math_sub(authum_sql_errmsg_max, 1u)))
-    {
-        n = lh_math_sub(authum_sql_errmsg_max, 1u);
-    }
-    if (lh_math_gt(n, 0u))
-    {
-        lh_memory_std_copy(self->errmsg, lh_str_view_get_data(lh_addr_of(text)), n);
-    }
-    self->errmsg[n] = lh_char_map_nul;
+    const authum_usize_t n = lh_str_ptr_copy_cstr(self->errmsg, authum_sql_errmsg_max,
+                                                  lh_str_view_get_data(lh_addr_of(text)),
+                                                  lh_str_view_get_size(lh_addr_of(text)));
     if (n && self->db)
     {
         struct authum_sql_db_impl *impl = self->db;

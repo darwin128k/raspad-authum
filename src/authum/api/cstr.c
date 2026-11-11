@@ -66,19 +66,11 @@ authum_char_to_upper(authum_char_t c)
 authum_bool_t
 authum_cstr_copy(authum_char_t *dst, authum_usize_t dst_size, const authum_char_t *src)
 {
-    authum_usize_t n;
-
     if (authum_null_eq(dst) || lh_math_eq(dst_size, 0u) || authum_null_eq(src))
     {
         return authum_bool_false;
     }
-    n = lh_cast_static(authum_usize_t, lh_str_ptr_len(src));
-    if (lh_math_ge(n, dst_size))
-    {
-        n = lh_math_sub(dst_size, 1u);
-    }
-    lh_memory_std_copy(dst, src, n);
-    dst[n] = lh_char_map_nul;
+    authum_unused(lh_str_ptr_copy_cstr(dst, dst_size, src, lh_str_ptr_len(src)));
     return authum_bool_true;
 }
 

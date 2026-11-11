@@ -32,6 +32,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   forgotten one; inside, it is lh's `lh_array_t` with the sandbox as its allocator
   (`lh_array_init_by`). No 3.x module loads; `examples/hello` and `docs/sandbox.md`
   show the new calls.
+- Copies into a C-string buffer go through `lh_str_ptr_copy_cstr` (cfg values,
+  `authum_cstr_copy`, json strings, paths, SQL error text, the HTTP host's shown
+  entries). The HTTP host's policy lists take the checked value as an `lh_str_view_t`;
+  the unused `authum_http_parse_key` is gone. Behaviour is unchanged.
 - Authum uses lh's bricks where it placed characters by hand: `authum_time_format_utc`
   writes with `lh_datetime_format_by`; the HTTP host's path check names its characters
   (`lh_char_map_*` sets), decodes `%XX` with `lh_str_ptr_parse_hex_bytes`, and reads an

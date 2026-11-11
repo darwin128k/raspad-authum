@@ -82,19 +82,6 @@ authum_http_key_of_ip4(const lh_net_ip4_t *address)
 }
 
 authum_bool_t
-authum_http_parse_key(const authum_char_t *text, authum_usize_t size, authum_u32_t *key)
-{
-    lh_net_ip4_t ip;
-
-    if (lh_math_eq(size, 0u) || !lh_net_ip4_parse(text, size, lh_addr_of(ip)))
-    {
-        return authum_bool_false;
-    }
-    lh_ptr_deref(key) = authum_http_key_of_ip4(lh_addr_of(ip));
-    return authum_bool_true;
-}
-
-authum_bool_t
 authum_http_trusted_parse(authum_http_server_t *server, authum_char_t *error,
                           authum_u32_t error_size)
 {
@@ -125,11 +112,9 @@ authum_http_trusted_parse(authum_http_server_t *server, authum_char_t *error,
         {
             /* The entry is a view into the list: copied, cut, to be shown. */
             authum_char_t shown[64];
-            const lh_usize_t size =
-                lh_math_min(lh_str_view_get_size(lh_addr_of(entry)), lh_math_sub_one(sizeof shown));
-
-            lh_memory_std_copy(shown, lh_str_view_get_data(lh_addr_of(entry)), size);
-            shown[size] = lh_char_map_nul;
+            authum_unused(lh_str_ptr_copy_cstr(shown, sizeof shown,
+                                               lh_str_view_get_data(lh_addr_of(entry)),
+                                               lh_str_view_get_size(lh_addr_of(entry))));
             authum_unused(lh_str_ptr_format_cstr(
                 error, error_size,
                 "trusted_proxy entry '%s' must be an IPv4 address or CIDR block (at most %d "

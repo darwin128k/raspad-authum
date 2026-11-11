@@ -11,9 +11,11 @@ static const lh_char_t m_http_name_reserved[] = {
 static const lh_char_t m_http_target_ends[] = {lh_char_map_question, lh_char_map_hash};
 
 authum_bool_t
-authum_http_policy_contains(const authum_char_t *list, const authum_char_t *value, authum_usize_t n,
-                            authum_bool_t prefix)
+authum_http_policy_contains(const authum_char_t *list, lh_str_view_t value, authum_bool_t prefix)
 {
+    const authum_char_t *text = lh_str_view_get_data(lh_addr_of(value));
+    const authum_usize_t n = lh_str_view_get_size(lh_addr_of(value));
+
     while (lh_ptr_deref(list))
     {
         while (lh_math_eq(lh_ptr_deref(list), lh_char_map_space))
@@ -23,9 +25,11 @@ authum_http_policy_contains(const authum_char_t *list, const authum_char_t *valu
         const authum_usize_t rest = lh_str_ptr_len(list);
         const authum_char_t *e = lh_str_ptr_find_of_char(list, rest, lh_char_map_space);
         authum_usize_t z = e ? lh_cast_static(authum_usize_t, lh_ptr_udiff(e, list)) : rest;
-        if (z && (prefix ? lh_math_ge(n, z) && lh_str_ptr_equals_by_size(list, z, value, z, lh_bool_true) &&
-                               (lh_math_eq(n, z) || lh_math_eq(value[z], lh_char_map_slash))
-                         : lh_math_eq(z, n) && lh_str_ptr_equals_by_size(list, n, value, n, lh_bool_true)))
+        if (z &&
+            (prefix
+                 ? lh_math_ge(n, z) && lh_str_ptr_equals_by_size(list, z, text, z, lh_bool_true) &&
+                       (lh_math_eq(n, z) || lh_math_eq(text[z], lh_char_map_slash))
+                 : lh_math_eq(z, n) && lh_str_ptr_equals_by_size(list, n, text, n, lh_bool_true)))
         {
             return authum_bool_true;
         }
@@ -132,29 +136,41 @@ authum_http_resource_check(const authum_http_options_t *options, const authum_ch
         }
         start = i + 1;
     }
-    if (authum_http_policy_contains(options->deny_prefixes, out, n, 1))
+    lh_str_view_t path;
+    lh_str_view_init_by_size(lh_addr_of(path), out, n);
+    if (authum_http_policy_contains(options->deny_prefixes, path, 1))
     {
         *reason = "denied_prefix";
         return 0;
     }
     const authum_char_t *slash = lh_str_ptr_find_of_char(out, n, lh_char_map_slash);
-    if (slash &&
-        !authum_http_policy_contains(options->allow_dirs, out,
-                                     lh_cast_static(authum_usize_t, lh_ptr_udiff(slash, out)), 0))
+    if (slash)
     {
-        *reason = "dir_not_allowed";
-        return 0;
+        lh_str_view_t dir;
+        lh_str_view_from_offset(lh_addr_of(path), 0,
+                                lh_cast_static(authum_usize_t, lh_ptr_udiff(slash, out)),
+                                lh_addr_of(dir));
+        if (!authum_http_policy_contains(options->allow_dirs, dir, 0))
+        {
+            *reason = "dir_not_allowed";
+            return 0;
+        }
     }
     /* The extension of the last component; root files have their own list. */
     const authum_char_t *last = lh_str_ptr_rfind_of_char(out, n, lh_char_map_slash);
     last = last ? last + 1 : out;
     const authum_char_t *ext = lh_str_ptr_rfind_of_char(
         last, lh_cast_static(authum_usize_t, lh_ptr_udiff(out + n, last)), lh_char_map_period);
-    authum_usize_t ext_len =
-        ext ? lh_cast_static(authum_usize_t, lh_math_sub_one(lh_ptr_udiff(out + n, ext))) : 0;
-    if (!ext || !ext_len ||
-        !authum_http_policy_contains(options->allow_extensions, ext + 1, ext_len, 0) ||
-        (!slash && !authum_http_policy_contains(options->root_extensions, ext + 1, ext_len, 0)))
+    lh_str_view_t extension;
+    lh_str_view_init_empty(lh_addr_of(extension));
+    if (ext)
+    {
+        const authum_usize_t at = lh_cast_static(authum_usize_t, lh_ptr_udiff(ext + 1, out));
+        lh_str_view_from_offset(lh_addr_of(path), at, lh_math_sub(n, at), lh_addr_of(extension));
+    }
+    if (lh_str_view_is_empty(lh_addr_of(extension)) ||
+        !authum_http_policy_contains(options->allow_extensions, extension, 0) ||
+        (!slash && !authum_http_policy_contains(options->root_extensions, extension, 0)))
     {
         *reason = "ext_not_allowed";
         return 0;

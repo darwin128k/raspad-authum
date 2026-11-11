@@ -197,13 +197,21 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   - **C-style casts** instead of `lh_cast_*`: LH ~300 — `crypto/curve25519/field.c`
     225, `crypto/ed25519/scalar.c` 16, `point.c` 8, `net/modbus/link.c` 9, the rest
     scattered; Authum 22 (`api/runtime.c` 7, `host/http/resources.c` 7).
-  - **Text as `(const char *, size)`** instead of `lh_str_view_t`:
-    `lh_os_module_event_entry_try_create` / `_create`; in Authum
-    `host/http/internal.h` (5), `host/placeholders.c/.h`, `host/http/resources.c`.
-  - **Hand-NUL-terminated copies** (`p[n] = nul` after a copy): LH 16
-    (`util/str/ptr.c` 4, `net/modbus/link.c` 2, `str/format/text.c` 2), Authum 35
-    (`api/cfg.c` 6, `api/path.c` 5, `api/sql.c` 4, `api/cstr.c` 3). Some are the
-    terminating brick itself; the rest want one "copy and terminate" brick.
+  - [x] **Text as `(const char *, size)`** (done 2026-11-11):
+    `lh_os_module_event_entry_try_create` / `_create` take an `lh_str_view_t`;
+    `authum_http_policy_contains` takes the value as a view (its callers cut the
+    directory and the extension with `lh_str_view_from_offset`);
+    `authum_http_parse_key` had no caller and is gone. Left: the
+    `(text, size)` pairs in `host/placeholders.c/.h` and `host/http/internal.h`.
+  - [x] **Hand-NUL-terminated copies** (done 2026-11-11): the brick is
+    `lh_str_ptr_copy_cstr`; the JS lexer, the web player's page, `cfg.c`,
+    `authum_cstr_copy`, `json.c`, `path.c`, `sql.c`, `http/limits.c` use it. Left on
+    purpose: loops that rewrite characters while copying (`engine.c`, `http/access.c`,
+    `logs.c`, `ui/label.c`), the overlapping move in `net/address.c`, and the
+    terminators of the bricks themselves (`str/format/text.c`, `util/str/ptr.c`).
+    Still open: a formatter followed by `dst[n] = nul` (`authum_cstr_format_u64` /
+    `_i64`, `api/net.c`, `http/transport.c`, `http/request.c`) — lh's number and IPv4
+    formatters have no `_cstr` form; the text formatter has one.
   - [x] **Authum character literals** (33), done 2026-11-11: `api/time.c` formats with
     `lh_datetime_format_by` + `lh_str_ptr_format_cstr`; `host/http/resources.c` tests
     the reserved name characters and the end of the path with `lh_char_map_*` sets

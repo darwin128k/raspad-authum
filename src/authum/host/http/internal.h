@@ -420,12 +420,6 @@ authum_u32_t
 authum_http_key_of_ip4(const lh_net_ip4_t *address);
 
 /**
- * @brief Read an IPv4 address of @p size characters into the 4-byte peer key @p key.
- */
-authum_bool_t
-authum_http_parse_key(const authum_char_t *text, authum_usize_t size, authum_u32_t *key);
-
-/**
  * @brief Fill @p events with what the next poll watches: the listener, the wake signal and each client, closing the timed-out ones.
  */
 void
@@ -463,8 +457,7 @@ authum_http_request_format_address(authum_u32_t address, authum_char_t *text,
  * @brief Whether the space-separated @p list holds @p value (or a prefix of it, with @p prefix), without case.
  */
 authum_bool_t
-authum_http_policy_contains(const authum_char_t *list, const authum_char_t *value, authum_usize_t n,
-                            authum_bool_t prefix);
+authum_http_policy_contains(const authum_char_t *list, lh_str_view_t value, authum_bool_t prefix);
 
 /**
  * @brief A byte a published name may hold once decoded. Separators, controls and the characters
