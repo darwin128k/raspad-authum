@@ -23,10 +23,9 @@ authum_http_client_close(authum_http_server_t *server, authum_http_client_t *cli
                        : "disconnect");
         authum_http_access_close(server, client, event, authum_http_now_ms());
         lh_os_net_socket_close(lh_addr_of(client->fd));
-        if (client->pending && lh_math_ge(client->ip_slot, 0) &&
-            server->peers[client->ip_slot].pending)
+        if (client->pending && lh_math_ge(client->ip_slot, 0))
         {
-            --server->peers[client->ip_slot].pending;
+            lh_http_limit_peer_drop_pending(lh_addr_of(server->peers[client->ip_slot]));
         }
         authum_http_peer_release(server, client->ip_slot);
     }
@@ -92,7 +91,7 @@ authum_http_clients_accept(authum_http_server_t *server, authum_i64_t now)
             }
             /* Connections that have not sent their request yet are capped per
              * address, so one address cannot hold the slots. */
-            if (lh_math_ge(server->peers[ip].pending,
+            if (lh_math_ge(lh_http_limit_peer_get_pending(lh_addr_of(server->peers[ip])),
                            lh_cast_static(authum_u32_t, server->options.per_ip_pending)))
             {
                 authum_http_peer_release(server, ip);
@@ -130,7 +129,7 @@ authum_http_clients_accept(authum_http_server_t *server, authum_i64_t now)
         if (lh_math_ge(ip, 0))
         {
             peer.pending = authum_bool_true;
-            server->peers[ip].pending = lh_math_add_one(server->peers[ip].pending);
+            lh_http_limit_peer_add_pending(lh_addr_of(server->peers[ip]));
         }
         server->clients[slot] = peer;
         if (lh_math_ge(server->options.access_log, 2))
@@ -176,9 +175,9 @@ authum_http_client_read(authum_http_server_t *server, authum_http_client_t *clie
         if (client->state)
         {
             /* The request has arrived: no longer counted as unfinished. */
-            if (client->pending && lh_math_ge(slot, 0) && server->peers[slot].pending)
+            if (client->pending && lh_math_ge(slot, 0))
             {
-                --server->peers[slot].pending;
+                lh_http_limit_peer_drop_pending(lh_addr_of(server->peers[slot]));
             }
             client->pending = authum_bool_false;
             if (lh_math_ge(server->options.access_log, 2))

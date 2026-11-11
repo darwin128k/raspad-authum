@@ -1,55 +1,20 @@
 #include <authum/host/http/internal.h>
+#include <lh/core/bit/endian.h>
+#include <lh/core/char/map.h>
 #include <lh/core/memory/std.h>
 
 authum_i32_t
 authum_http_peer_acquire(authum_http_server_t *server, authum_u32_t ip, authum_i64_t now,
                          const authum_http_options_t *options)
 {
-    authum_i32_t free_slot = -1;
-    /* A full table must not refuse a new address: an idle peer whose
-     * one-second window has not ended yet is reused, oldest window first. */
-    authum_i32_t idle_slot = -1;
-    for (authum_i32_t i = 0; lh_math_lt(i, AUTHUM_HTTP_MAX_PEERS); i = lh_math_add_one(i))
-    {
-        authum_http_peer_t *peer = lh_addr_of(server->peers[i]);
-        if (peer->used && lh_math_eq(peer->ip, ip))
-        {
-            if (lh_math_ge(lh_math_sub(now, peer->window), 1000))
-            {
-                peer->window = now;
-                peer->count = 0;
-            }
-            if (lh_math_ge(peer->active, lh_cast_static(authum_u32_t, options->per_ip)) ||
-                lh_math_ge(peer->count, lh_cast_static(authum_u32_t, options->requests_per_second)))
-            {
-                return -1;
-            }
-            peer->count = lh_math_add_one(peer->count);
-            peer->active = lh_math_add_one(peer->active);
-            return i;
-        }
-        if (!peer->used || (!peer->active && lh_math_ge(lh_math_sub(now, peer->window), 1000)))
-        {
-            free_slot = i;
-        }
-        else if (!peer->active &&
-                 (lh_math_lt(idle_slot, 0) ||
-                  lh_math_lt(peer->window, server->peers[idle_slot].window)))
-        {
-            idle_slot = i;
-        }
-    }
-    if (lh_math_lt(free_slot, 0))
-    {
-        free_slot = idle_slot;
-    }
-    if (lh_math_lt(free_slot, 0))
-    {
-        return -1;
-    }
-    server->peers[free_slot] =
-        (authum_http_peer_t){.ip = ip, .used = 1, .active = 1, .count = 1, .window = now};
-    return free_slot;
+    lh_usize_t slot = 0u;
+
+    return lh_http_limit_peer_try_acquire(server->peers, AUTHUM_HTTP_MAX_PEERS, ip, now,
+                                          lh_cast_static(lh_u32_t, options->per_ip),
+                                          lh_cast_static(lh_u32_t, options->requests_per_second),
+                                          lh_addr_of(slot))
+               ? lh_cast_static(authum_i32_t, slot)
+               : -1;
 }
 
 authum_bool_t
@@ -78,45 +43,54 @@ void
 authum_http_budget_refill(double *tokens, authum_i64_t *last, authum_i64_t now,
                           const authum_http_options_t *options)
 {
-    double burst = lh_math_div(options->bytes_per_second, 10.0);
-    lh_ptr_deref(tokens) +=
-        lh_math_div(lh_math_mul((lh_math_sub(now, lh_ptr_deref(last))),
-                                lh_cast_static(double, options->bytes_per_second)),
-                    1000.0);
+    const lh_real_t per_second = lh_cast_static(lh_real_t, options->bytes_per_second);
+
+    lh_ptr_deref(tokens) = lh_http_limit_bucket_get_refilled(
+        lh_ptr_deref(tokens), lh_math_sub(now, lh_ptr_deref(last)), per_second,
+        lh_math_div(per_second, 10.0));
     lh_ptr_deref(last) = now;
-    if (lh_math_gt(lh_ptr_deref(tokens), burst))
-    {
-        lh_ptr_deref(tokens) = burst;
-    }
 }
 
 void
 authum_http_peer_release(authum_http_server_t *server, authum_i32_t slot)
 {
-    if (lh_math_ge(slot, 0) && server->peers[slot].active)
+    if (lh_math_ge(slot, 0))
     {
-        server->peers[slot].active = lh_math_sub_one(server->peers[slot].active);
+        lh_http_limit_peer_release(lh_addr_of(server->peers[slot]));
     }
 }
 
-/* An address key (octets in network order) as a host-order number. */
 authum_u32_t
 authum_http_host_order(authum_u32_t key)
 {
-    const authum_byte_t *o = (const authum_byte_t *)&key;
-    return ((authum_u32_t)o[0] << 24) | ((authum_u32_t)o[1] << 16) | ((authum_u32_t)o[2] << 8) |
-           (authum_u32_t)o[3];
+    return lh_bit_unpack_be32(lh_cast_reinterpret(lh_byte_ptr, lh_addr_of(key)));
+}
+
+void
+authum_http_key_to_ip4(authum_u32_t key, lh_net_ip4_t *out)
+{
+    lh_net_ip4_init_by_u32(out, authum_http_host_order(key));
+}
+
+authum_u32_t
+authum_http_key_of_ip4(const lh_net_ip4_t *address)
+{
+    authum_u32_t key = 0u;
+
+    lh_bit_pack_be32(lh_net_ip4_to_u32(address), lh_cast_reinterpret(lh_byte_ptr, lh_addr_of(key)));
+    return key;
 }
 
 authum_bool_t
 authum_http_parse_key(const authum_char_t *text, authum_usize_t size, authum_u32_t *key)
 {
     lh_net_ip4_t ip;
-    if (!size || !lh_net_ip4_parse(text, size, lh_addr_of(ip)))
+
+    if (lh_math_eq(size, 0u) || !lh_net_ip4_parse(text, size, lh_addr_of(ip)))
     {
         return authum_bool_false;
     }
-    lh_memory_std_copy(key, ip.octets, sizeof lh_ptr_deref(key));
+    lh_ptr_deref(key) = authum_http_key_of_ip4(lh_addr_of(ip));
     return authum_bool_true;
 }
 
@@ -124,66 +98,45 @@ authum_bool_t
 authum_http_trusted_parse(authum_http_server_t *server, authum_char_t *error,
                           authum_u32_t error_size)
 {
-    const authum_char_t *p = server->options.trusted_proxies;
-    server->trusted_count = 0;
-    while (*p)
+    /* Entries are separated by spaces, commas or tabs, in any number. */
+    const authum_char_t separators[3] = {lh_char_map_space, lh_char_map_comma, lh_char_map_ht};
+
+    server->trusted_count = 0u;
+
+    lh_str_view_t list;
+
+    lh_str_view_init(lh_addr_of(list), server->options.trusted_proxies);
+
+    lh_str_view_t entry;
+    lh_usize_t pos = 0u;
+    lh_bool_t had_separator = lh_bool_false;
+
+    while (lh_str_view_split_next_of(lh_addr_of(list), separators, sizeof separators,
+                                     lh_addr_of(pos), lh_addr_of(entry), lh_addr_of(had_separator)))
     {
-        while (*p == ' ' || *p == ',' || *p == '\t')
+        if (lh_str_view_is_empty(lh_addr_of(entry)))
         {
-            ++p;
+            continue;
         }
-        if (!*p)
+        if (lh_math_ge(server->trusted_count, AUTHUM_HTTP_MAX_TRUSTED) ||
+            !lh_net_cidr_try_parse(lh_str_view_get_data(lh_addr_of(entry)),
+                                   lh_str_view_get_size(lh_addr_of(entry)),
+                                   lh_addr_of(server->trusted[server->trusted_count])))
         {
-            break;
-        }
-        const authum_char_t *start = p;
-        while (*p && *p != ' ' && *p != ',' && *p != '\t')
-        {
-            ++p;
-        }
-        authum_usize_t size = (authum_usize_t)(p - start);
-        authum_usize_t address_size = size;
-        authum_u32_t bits = 32;
-        for (authum_usize_t i = 0; i < size; ++i)
-        {
-            if (start[i] == '/')
-            {
-                address_size = i;
-                if (i + 1 == size || size - i - 1 > 2)
-                {
-                    bits = 99;
-                    break;
-                }
-                bits = 0;
-                for (authum_usize_t j = i + 1; j < size; ++j)
-                {
-                    if (start[j] < '0' || start[j] > '9')
-                    {
-                        bits = 99;
-                        break;
-                    }
-                    bits = bits * 10 + (authum_u32_t)(start[j] - '0');
-                }
-                break;
-            }
-        }
-        authum_u32_t key = 0;
-        if (bits > 32 || !authum_http_parse_key(start, address_size, &key) ||
-            lh_math_ge(server->trusted_count, AUTHUM_HTTP_MAX_TRUSTED))
-        {
-            authum_char_t entry[64];
-            authum_usize_t n = size < sizeof entry - 1 ? size : sizeof entry - 1;
-            lh_memory_std_copy(entry, start, n);
-            entry[n] = 0;
+            /* The entry is a view into the list: copied, cut, to be shown. */
+            authum_char_t shown[64];
+            const lh_usize_t size =
+                lh_math_min(lh_str_view_get_size(lh_addr_of(entry)), lh_math_sub_one(sizeof shown));
+
+            lh_memory_std_copy(shown, lh_str_view_get_data(lh_addr_of(entry)), size);
+            shown[size] = lh_char_map_nul;
             authum_unused(lh_str_ptr_format_cstr(
                 error, error_size,
-                "trusted_proxy entry '%s' must be an IPv4 address or CIDR block (at most %d entries)",
-                entry, AUTHUM_HTTP_MAX_TRUSTED));
+                "trusted_proxy entry '%s' must be an IPv4 address or CIDR block (at most %d "
+                "entries)",
+                shown, AUTHUM_HTTP_MAX_TRUSTED));
             return authum_bool_false;
         }
-        authum_u32_t mask = bits ? 0xffffffffu << (32 - bits) : 0;
-        server->trusted_net[server->trusted_count] = authum_http_host_order(key) & mask;
-        server->trusted_mask[server->trusted_count] = mask;
         server->trusted_count = lh_math_add_one(server->trusted_count);
     }
     return authum_bool_true;
@@ -192,15 +145,10 @@ authum_http_trusted_parse(authum_http_server_t *server, authum_char_t *error,
 authum_bool_t
 authum_http_trusted(const authum_http_server_t *server, authum_u32_t address)
 {
-    authum_u32_t value = authum_http_host_order(address);
-    for (authum_u32_t i = 0; lh_math_lt(i, server->trusted_count); i = lh_math_add_one(i))
-    {
-        if ((value & server->trusted_mask[i]) == server->trusted_net[i])
-        {
-            return authum_bool_true;
-        }
-    }
-    return authum_bool_false;
+    lh_net_ip4_t ip;
+
+    authum_http_key_to_ip4(address, lh_addr_of(ip));
+    return lh_net_cidr_list_contains(server->trusted, server->trusted_count, lh_addr_of(ip));
 }
 
 authum_u32_t
@@ -208,50 +156,15 @@ authum_http_forwarded_client(const authum_http_server_t *server,
                              const lh_str_view_t *const *values, authum_usize_t count,
                              authum_u32_t proxy)
 {
-    /* Walk the hops right to left (last field, last entry first): every hop
-     * added by a trusted proxy is skipped, the first untrusted one is the
-     * client. A malformed entry ends the walk: nothing left of it can be
-     * believed, so the last trusted hop seen is used. */
-    authum_u32_t client = proxy;
-    for (authum_usize_t field = count; field > 0; --field)
-    {
-        const authum_char_t *text = lh_str_view_get_data(values[field - 1]);
-        authum_usize_t end = lh_str_view_get_size(values[field - 1]);
-        while (1)
-        {
-            authum_usize_t start = end;
-            while (start > 0 && text[start - 1] != ',')
-            {
-                --start;
-            }
-            authum_usize_t a = start;
-            authum_usize_t b = end;
-            while (a < b && (text[a] == ' ' || text[a] == '\t'))
-            {
-                ++a;
-            }
-            while (b > a && (text[b - 1] == ' ' || text[b - 1] == '\t'))
-            {
-                --b;
-            }
-            authum_u32_t hop;
-            if (!authum_http_parse_key(text + a, b - a, &hop))
-            {
-                return client;
-            }
-            client = hop;
-            if (!authum_http_trusted(server, hop))
-            {
-                return hop;
-            }
-            if (!start)
-            {
-                break;
-            }
-            end = start - 1;
-        }
-    }
-    return client;
+    lh_net_ip4_t from;
+
+    authum_http_key_to_ip4(proxy, lh_addr_of(from));
+
+    lh_net_ip4_t client;
+
+    lh_http_forwarded_copy_client(values, count, lh_addr_of(from), server->trusted,
+                                  server->trusted_count, lh_addr_of(client));
+    return authum_http_key_of_ip4(lh_addr_of(client));
 }
 
 void

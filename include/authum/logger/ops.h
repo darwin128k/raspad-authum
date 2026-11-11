@@ -42,4 +42,24 @@ struct authum_logger_channel
 };
 typedef struct authum_logger_channel authum_logger_channel_t;
 
+AUTHUM_EXTERN_C_BEGIN
+
+/** @brief Level-1 read of ops; self must be nonnull. */
+const authum_logger_ops_t *
+authum_logger_channel_get_ops(const authum_logger_channel_t *self);
+
+/** @brief Level-1 store of ops; no validation or ownership transfer. */
+void
+authum_logger_channel_set_ops(authum_logger_channel_t *self, const authum_logger_ops_t *value);
+
+/** @brief Level-1 read of owner; self must be nonnull. */
+authum_ptr
+authum_logger_channel_get_owner(const authum_logger_channel_t *self);
+
+/** @brief Level-1 store of owner; no validation or ownership transfer. */
+void
+authum_logger_channel_set_owner(authum_logger_channel_t *self, authum_ptr value);
+
+AUTHUM_EXTERN_C_END
+
 #endif /* AUTHUM_LOGGER_OPS_H */

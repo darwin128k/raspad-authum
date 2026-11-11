@@ -204,7 +204,7 @@ TEST_F(authum_hooks, a_point_holds_a_limited_number_of_handlers)
     int owner;
     int index;
 
-    for (index = 0; index < authum_hooks_max; index++)
+    for (index = 0; index < LH_OS_MODULE_HOOK_SIZE; index++)
     {
         EXPECT_TRUE(authum_hook_registry_add(authum_hook_registry(), &owner, "GUARD",
                                              authum_hook_point_client_connect, on_first, g_a));

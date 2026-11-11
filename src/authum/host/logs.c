@@ -344,11 +344,10 @@ authum_logs_set_name(authum_char_t *out, authum_usize_t out_size, const authum_c
          i = lh_math_add_one(i))
     {
         authum_char_t c = name[i];
-        out[i] =
-            (lh_char_is_letter(c) || lh_char_is_digit(c) || lh_math_eq(c, lh_char_map_underscore) ||
-             lh_math_eq(c, lh_char_map_minus) || lh_math_eq(c, lh_char_map_period))
-                ? c
-                : lh_char_map_underscore;
+        out[i] = (lh_char_is_word(c) || lh_math_eq(c, lh_char_map_minus) ||
+                  lh_math_eq(c, lh_char_map_period))
+                     ? c
+                     : lh_char_map_underscore;
     }
     out[i] = lh_char_map_nul;
     if (lh_math_eq(i, 0u) || authum_cstr_is_equal(out, ".", authum_bool_false) ||

@@ -30,10 +30,12 @@ void
 authum_logger_channel_write(const authum_logger_channel_t *channel, authum_logger_level_t level,
                             const authum_char_t *text)
 {
-    if (!authum_null_eq(channel) && !authum_null_eq(channel->ops) &&
-        !authum_null_eq((channel->ops)->write) && !authum_null_eq(text))
+    const authum_logger_ops_t *ops =
+        !authum_null_eq(channel) ? authum_logger_channel_get_ops(channel) : authum_null;
+
+    if (!authum_null_eq(ops) && !authum_null_eq(ops->write) && !authum_null_eq(text))
     {
-        channel->ops->write(channel->owner, level, text);
+        ops->write(authum_logger_channel_get_owner(channel), level, text);
     }
 }
 
@@ -41,14 +43,16 @@ authum_bool_t
 authum_logger_channel_is_enabled(const authum_logger_channel_t *channel,
                                  authum_logger_level_t level)
 {
-    if (authum_null_eq(channel) || authum_null_eq(channel->ops) ||
-        authum_null_eq((channel->ops)->write))
+    const authum_logger_ops_t *ops =
+        !authum_null_eq(channel) ? authum_logger_channel_get_ops(channel) : authum_null;
+
+    if (authum_null_eq(ops) || authum_null_eq(ops->write))
     {
         return authum_bool_false;
     }
     /* A host without the filter takes every line. */
-    return !authum_null_eq((channel->ops)->is_enabled)
-               ? channel->ops->is_enabled(channel->owner, level)
+    return !authum_null_eq(ops->is_enabled)
+               ? ops->is_enabled(authum_logger_channel_get_owner(channel), level)
                : authum_bool_true;
 }
 
@@ -85,21 +89,23 @@ authum_logger_open(authum_logger_t *self, const authum_host_t *host, const authu
     }
     authum_logger_init(self, host);
     module = self->channel;
-    if (authum_null_eq(module) || authum_null_eq(module->ops) ||
-        authum_null_eq((module->ops)->open) || authum_null_eq((module->ops)->close) ||
+    const authum_logger_ops_t *ops =
+        !authum_null_eq(module) ? authum_logger_channel_get_ops(module) : authum_null;
+
+    if (authum_null_eq(ops) || authum_null_eq(ops->open) || authum_null_eq(ops->close) ||
         authum_null_eq(name) || lh_math_eq(name[0], lh_char_map_nul))
     {
         self->channel = authum_null;
         return authum_bool_false;
     }
-    journal = module->ops->open(module->owner, name);
+    journal = ops->open(authum_logger_channel_get_owner(module), name);
     if (authum_null_eq(journal))
     {
         self->channel = authum_null;
         return authum_bool_false;
     }
-    self->journal.ops = module->ops;
-    self->journal.owner = journal;
+    authum_logger_channel_set_ops(lh_addr_of(self->journal), ops);
+    authum_logger_channel_set_owner(lh_addr_of(self->journal), journal);
     self->owns_journal = authum_bool_true;
     return authum_bool_true;
 }
@@ -113,7 +119,8 @@ authum_logger_close(authum_logger_t *self)
     }
     if (self->owns_journal)
     {
-        self->journal.ops->close(self->journal.owner);
+        authum_logger_channel_get_ops(lh_addr_of(self->journal))
+            ->close(authum_logger_channel_get_owner(lh_addr_of(self->journal)));
     }
     lh_memory_std_set(self, 0, sizeof lh_ptr_deref(self));
 }
@@ -129,18 +136,21 @@ authum_logger_create(authum_logger_t *self, const authum_host_t *host,
     authum_logger_init(self, host);
     const authum_logger_channel_t *module = self->channel;
     self->channel = authum_null;
-    if (!module || !module->ops || authum_null_eq((module->ops)->construct) ||
-        authum_null_eq((module->ops)->close) || !options)
+    const authum_logger_ops_t *ops =
+        !authum_null_eq(module) ? authum_logger_channel_get_ops(module) : authum_null;
+
+    if (authum_null_eq(ops) || authum_null_eq(ops->construct) || authum_null_eq(ops->close) ||
+        authum_null_eq(options))
     {
         return authum_bool_false;
     }
-    authum_ptr journal = module->ops->construct(module->owner, options);
+    authum_ptr journal = ops->construct(authum_logger_channel_get_owner(module), options);
     if (!journal)
     {
         return authum_bool_false;
     }
-    self->journal.ops = module->ops;
-    self->journal.owner = journal;
+    authum_logger_channel_set_ops(lh_addr_of(self->journal), ops);
+    authum_logger_channel_set_owner(lh_addr_of(self->journal), journal);
     self->owns_journal = authum_bool_true;
     return authum_bool_true;
 }

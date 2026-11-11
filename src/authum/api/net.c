@@ -4,62 +4,43 @@
 #include <authum/null.h>
 
 #include <lh/os/net/interface.h>
-#include <lh/core/str/format/text.h>
+#include <lh/core/char/map.h>
 
 authum_bool_t
 authum_net_ipv4_is_loopback(authum_u32_t ip)
 {
-    return lh_math_eq((lh_math_bit_and(ip, 0xff000000u)), 0x7f000000u) ? authum_bool_true
-                                                                       : authum_bool_false;
+    lh_net_ip4_t address;
+
+    lh_net_ip4_init_by_u32(lh_addr_of(address), ip);
+    return lh_net_ip4_is_loopback(lh_addr_of(address));
 }
 
 authum_bool_t
 authum_net_ipv4_is_external(authum_u32_t ip)
 {
-    static const struct
-    {
-        authum_u32_t net;
-        authum_u32_t mask;
-    } reserved[] = {
-        {0x00000000u, 0xff000000u}, /* 0.0.0.0/8 */
-        {0x0a000000u, 0xff000000u}, /* 10.0.0.0/8 */
-        {0x64400000u, 0xffc00000u}, /* 100.64.0.0/10 CGNAT */
-        {0x7f000000u, 0xff000000u}, /* 127.0.0.0/8 */
-        {0xa9fe0000u, 0xffff0000u}, /* 169.254.0.0/16 link-local */
-        {0xac100000u, 0xfff00000u}, /* 172.16.0.0/12 */
-        {0xc0000000u, 0xffffff00u}, /* 192.0.0.0/24 */
-        {0xc0a80000u, 0xffff0000u}, /* 192.168.0.0/16 */
-        {0xc6120000u, 0xfffe0000u}, /* 198.18.0.0/15 benchmark */
-        {0xe0000000u, 0xe0000000u}, /* 224.0.0.0/3 multicast + reserved */
-    };
+    lh_net_ip4_t address;
 
-    for (authum_usize_t i = 0u; lh_math_lt(i, lh_math_div(sizeof reserved, sizeof reserved[0]));
-         i = lh_math_add_one(i))
-    {
-        if (lh_math_eq((lh_math_bit_and(ip, reserved[i].mask)), reserved[i].net))
-        {
-            return authum_bool_false;
-        }
-    }
-    return authum_bool_true;
+    lh_net_ip4_init_by_u32(lh_addr_of(address), ip);
+    return lh_net_ip4_is_public(lh_addr_of(address));
 }
 
 authum_bool_t
 authum_net_ipv4_format(authum_u32_t ip, authum_char_t *buf, authum_usize_t buf_size)
 {
-    authum_usize_t written;
-
     if (authum_null_eq(buf) || lh_math_eq(buf_size, 0u))
     {
         return authum_bool_false;
     }
-    written = lh_str_ptr_format_cstr(
-        buf, buf_size, "%u.%u.%u.%u", lh_cast_static(authum_u32_t, (lh_math_bit_shr(ip, 24))),
-        lh_cast_static(authum_u32_t, (lh_math_bit_and((lh_math_bit_shr(ip, 16)), 0xffu))),
-        lh_cast_static(authum_u32_t, (lh_math_bit_and((lh_math_bit_shr(ip, 8)), 0xffu))),
-        lh_cast_static(authum_u32_t, (lh_math_bit_and(ip, 0xffu))));
-    return lh_math_gt(written, 0u) && lh_math_lt(written, buf_size) ? authum_bool_true
-                                                                    : authum_bool_false;
+
+    lh_net_ip4_t address;
+
+    lh_net_ip4_init_by_u32(lh_addr_of(address), ip);
+
+    const lh_usize_t written =
+        lh_net_ip4_format(lh_addr_of(address), buf, lh_math_sub(buf_size, 1u));
+
+    buf[written] = lh_char_map_nul;
+    return lh_math_gt(written, 0u) ? authum_bool_true : authum_bool_false;
 }
 
 /** What ::authum_net_ipv4_collect gathers while the OS lists addresses. */
@@ -76,12 +57,7 @@ authum_net_ipv4_add(lh_ptr user, const lh_net_ip4_t *address)
 {
     authum_net_ipv4_list_t *list = lh_cast_reinterpret(authum_net_ipv4_list_t *, user);
     /* Host byte order, the way the rest of <authum/net.h> holds an address. */
-    const authum_u32_t ip = lh_math_bit_or(
-        lh_math_bit_or(
-            lh_math_bit_or((lh_math_bit_shl(lh_cast_static(authum_u32_t, address->octets[0]), 24)),
-                           (lh_math_bit_shl(lh_cast_static(authum_u32_t, address->octets[1]), 16))),
-            (lh_math_bit_shl(lh_cast_static(authum_u32_t, address->octets[2]), 8))),
-        lh_cast_static(authum_u32_t, address->octets[3]));
+    const authum_u32_t ip = lh_net_ip4_to_u32(address);
     authum_usize_t i;
 
     if (authum_net_ipv4_is_loopback(ip) ||

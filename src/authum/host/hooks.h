@@ -2,9 +2,10 @@
  * @file hooks.h
  * @brief The chain of module handlers inside `authum` (not for modules).
  *
- * One slot per point, the handlers in it and the game's own function at the
- * end. The module that hooked last is called first. A handler that overruns
- * its budget is dropped, so one module cannot stall the game loop.
+ * One lh hook chain (`lh/os/module/hook.h`) per point, and the game's own
+ * function at the end. The module that hooked last is called first. A handler
+ * that overruns its budget is dropped, so one module cannot stall the game loop.
+ * Authum keeps the points, the budget and the call's verdict.
  */
 
 #ifndef AUTHUM_HOST_HOOKS_H
@@ -12,13 +13,7 @@
 
 #include <authum/hook.h>
 #include <authum/size.h>
-#include <lh/core/util/ptr.h>
-
-/** @brief How many handlers one point may hold. */
-enum
-{
-    authum_hooks_max = 16
-};
+#include <lh/os/module/hook.h>
 
 /** @brief What one handler may spend on one call, in microseconds. */
 enum
@@ -26,36 +21,30 @@ enum
     authum_hook_budget_us = 5000
 };
 
-/** @brief One handler in a chain. */
-typedef struct authum_hook_handler
-{
-    /** The handler. */
-    authum_hook_fn fn;
-    /** The value it was given. */
-    authum_ptr user;
-    /** The module that added it. */
-    authum_ptr owner;
-    /** The tag of that module: the chain names it when the handler stops a call. */
-    const authum_char_t *tag;
-} authum_hook_handler_t;
-
-/** @brief The handlers of one point. */
-typedef struct authum_hook_chain
-{
-    /** The handlers, in the order they were hooked. */
-    authum_hook_handler_t handlers[authum_hooks_max];
-    /** How many handlers the slot holds. */
-    authum_usize_t count;
-} authum_hook_chain_t;
-
 /** @brief Every point's chain. */
 typedef struct authum_hook_registry
 {
     /** One chain per point. */
-    authum_hook_chain_t chains[authum_hook_point_count];
+    lh_os_module_hook_t chains[authum_hook_point_count];
 } authum_hook_registry_t;
 
 AUTHUM_EXTERN_C_BEGIN
+
+/**
+ * @brief The chain of @p point (level 1).
+ *
+ * @param self  The registry; must not be null.
+ * @param point Below ::authum_hook_point_count.
+ */
+lh_os_module_hook_t *
+authum_hook_registry_get_chain_mut(authum_hook_registry_t *self, authum_hook_point_t point);
+
+/**
+ * @brief lh's handler for a module's handler: the same arguments, an Authum call
+ *        for lh's opaque one, so the module ABI meets the chain in one cast.
+ */
+lh_os_module_hook_cb
+authum_hook_registry_get_callback(authum_hook_fn fn);
 
 /**
  * @brief The chain every module hooks into.
@@ -92,8 +81,8 @@ authum_hook_registry_add(authum_hook_registry_t *self, authum_ptr owner, const a
  * @brief Remove a handler from a point.
  */
 authum_bool_t
-authum_hook_registry_remove(authum_hook_registry_t *self, authum_ptr owner, authum_hook_point_t point,
-                    authum_hook_fn fn, authum_ptr user);
+authum_hook_registry_remove(authum_hook_registry_t *self, authum_ptr owner,
+                            authum_hook_point_t point, authum_hook_fn fn, authum_ptr user);
 
 /**
  * @brief Remove every handler @p owner added.
@@ -109,7 +98,7 @@ authum_hook_registry_drop_owner(authum_hook_registry_t *self, authum_ptr owner);
  * rest of the chain runs.
  *
  * @param call    The call the handlers see.
- * @param overrun Receives whether a handler was dropped for its budget; may be
+ * @param overran Receives whether a handler was dropped for its budget; may be
  *                null. The core does not log: the caller owns the journal.
  * @return Whether the game function is called at all.
  */

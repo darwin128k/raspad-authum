@@ -27,8 +27,9 @@
 
 #include <authum/env.h>
 #include <authum/placeholders.h>
-#include <lh/core/char/letter.h>
-#include <lh/core/char/digit.h>
+#include <lh/core/str/template.h>
+#include <lh/core/char/map.h>
+#include <lh/core/str/template/registry.h>
 #include <lh/core/memory/std.h>
 #include <lh/os/system/fs/path.h>
 #include <lh/os/fs/path.h>
@@ -129,19 +130,34 @@ authum_bool_t
 authum_placeholder_name_valid(const authum_char_t *name);
 
 /**
- * @brief * The text of @p path, or null when it is empty.  Reads ::authum_path_t directly: this
- * file is also compiled into hosts that do not link the whole SDK (the FastDL test host).
+ * @brief The text of @p path, or null when it is empty.
+ *
+ * Reads ::authum_path_t directly: this file is also compiled into hosts that do
+ * not link the whole SDK (the FastDL test host).
  */
 const authum_char_t *
 authum_placeholder_path_text(const authum_path_t *path);
 
 /**
- * @brief * The value of @p name, or null when nobody published it.  Standard names resolve against
- * the calling module; registered names are shared by every module.
+ * @brief The shared registry of names modules registered; set up on first use.
  */
-const authum_char_t *
-authum_placeholder_lookup(authum_placeholder_owner_t *owner, const authum_char_t *name,
-                          authum_usize_t length);
+lh_str_template_registry_t *
+authum_placeholder_get_registry(void);
+
+/**
+ * @brief The index of the standard name @p name (@p length characters), or
+ *        ::authum_placeholder_standard_count when it is none.
+ */
+authum_usize_t
+authum_placeholder_find_standard(const authum_char_t *name, authum_usize_t length);
+
+/**
+ * @brief lh's template lookup for one module: a standard name resolves against the
+ *        module (@p user, an ::authum_placeholder_owner_t), any other against the
+ *        shared registry.
+ */
+lh_bool_t
+authum_placeholder_lookup(lh_ptr user, const lh_str_view_t *name, lh_str_view_t *value);
 
 /**
  * @brief Expand the placeholders in @p pattern into @p out: the placeholder table's expand.

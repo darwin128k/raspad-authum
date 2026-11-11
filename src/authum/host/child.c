@@ -254,8 +254,8 @@ authum_child_fill_host(authum_module_t *child, authum_child_data_t *data)
     authum_events_set_prefix(authum_child_data_get_events_mut(data), data->info->name);
     out->events = authum_child_data_get_events_mut(data);
 
-    data->logger.ops = authum_logs_ops();
-    data->logger.owner = data;
+    authum_logger_channel_set_ops(lh_addr_of(data->logger), authum_logs_ops());
+    authum_logger_channel_set_owner(lh_addr_of(data->logger), data);
     out->logger = lh_addr_of(data->logger);
 
     data->commands.ops = authum_commands_host_ops();

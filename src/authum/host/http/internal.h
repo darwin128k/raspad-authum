@@ -13,6 +13,9 @@
 #include <lh/rail/loop.h>
 #include <lh/os/net/socket.h>
 #include <lh/os/fs/file.h>
+#include <lh/core/http/forwarded.h>
+#include <lh/core/http/limit/bucket.h>
+#include <lh/core/http/limit/peer.h>
 #include <authum/unused.h>
 
 enum
@@ -119,17 +122,6 @@ typedef struct authum_http_client
     authum_char_t via[AUTHUM_NET_IPV4_TEXT_SIZE];
 } authum_http_client_t;
 
-typedef struct authum_http_peer
-{
-    authum_u32_t ip;
-    authum_bool_t used;
-    authum_u32_t active;
-    authum_u32_t count;
-    /** Connections of this address whose request has not arrived yet. */
-    authum_u32_t pending;
-    authum_i64_t window;
-} authum_http_peer_t;
-
 /** Refusals of the current second, logged as one summary line. */
 typedef struct authum_http_refusals
 {
@@ -158,8 +150,8 @@ struct authum_http_server
     /** The module that owns the server; it names the owner in the access log. */
     const authum_char_t *tag;
     authum_char_t tag_text[32];
-    authum_u32_t trusted_net[AUTHUM_HTTP_MAX_TRUSTED];
-    authum_u32_t trusted_mask[AUTHUM_HTTP_MAX_TRUSTED];
+    /** The trusted proxies, parsed from options.trusted_proxies. */
+    lh_net_cidr_t trusted[AUTHUM_HTTP_MAX_TRUSTED];
     authum_u32_t trusted_count;
     authum_http_refusals_t refusals;
     /** Set by a stop that gave up waiting: the worker frees the server when it
@@ -182,7 +174,8 @@ struct authum_http_server
     double tokens;
     authum_usize_t cursor;
     authum_http_client_t *clients;
-    authum_http_peer_t peers[AUTHUM_HTTP_MAX_PEERS];
+    /** Per-address limits; the key is the address key (network byte order). */
+    lh_http_limit_peer_t peers[AUTHUM_HTTP_MAX_PEERS];
     authum_u32_t next_id;
     authum_bool_t joined;
     authum_usize_t drain_depth;
@@ -413,6 +406,18 @@ authum_http_client_partial(authum_http_client_t *client);
  */
 authum_u32_t
 authum_http_host_order(authum_u32_t key);
+
+/**
+ * @brief Write the address of key @p key (network byte order) into @p out.
+ */
+void
+authum_http_key_to_ip4(authum_u32_t key, lh_net_ip4_t *out);
+
+/**
+ * @brief The address key (network byte order) of @p address.
+ */
+authum_u32_t
+authum_http_key_of_ip4(const lh_net_ip4_t *address);
 
 /**
  * @brief Read an IPv4 address of @p size characters into the 4-byte peer key @p key.

@@ -1,30 +1,48 @@
-#include <authum/host/hooks.h>
+/**
+ * @file hooks.c
+ * @brief The module hook points over lh's hook chains — see hooks.h.
+ */
 
+#include <authum/host/hooks.h>
 #include <authum/unused.h>
-#include <lh/os/tick.h>
-#include <lh/core/size.h>
+#include <lh/core/assert/static.h>
 
 /** The chain every module hooks into. */
-static authum_hook_registry_t g_hooks;
+authum_hook_registry_t authum_hook_registry_global;
+
+/* A module's handler is lh's handler itself: the same arguments (the call is
+   lh's opaque pointer) and a boolean of the same size and values. */
+lh_assert_static(sizeof(authum_bool_t) == sizeof(lh_bool_t),
+                 "authum and lh booleans must have the same size");
+
+lh_os_module_hook_t *
+authum_hook_registry_get_chain_mut(authum_hook_registry_t *self, authum_hook_point_t point)
+{
+    return lh_addr_of(self->chains[point]);
+}
+
+lh_os_module_hook_cb
+authum_hook_registry_get_callback(authum_hook_fn fn)
+{
+    return lh_cast_reinterpret(lh_os_module_hook_cb, fn);
+}
 
 authum_hook_registry_t *
 authum_hook_registry(void)
 {
-    return lh_addr_of(g_hooks);
+    return lh_addr_of(authum_hook_registry_global);
 }
 
 void
 authum_hook_registry_init(authum_hook_registry_t *self)
 {
-    authum_usize_t point;
-
     if (authum_null_eq(self))
     {
         return;
     }
-    for (point = 0u; lh_math_lt(point, authum_hook_point_count); point = lh_math_add_one(point))
+    for (authum_usize_t point = 0u; lh_math_lt(point, authum_hook_point_count); ++point)
     {
-        self->chains[point].count = 0u;
+        lh_os_module_hook_init(authum_hook_registry_get_chain_mut(self, point));
     }
 }
 
@@ -32,86 +50,36 @@ authum_bool_t
 authum_hook_registry_add(authum_hook_registry_t *self, authum_ptr owner, const authum_char_t *tag,
                          authum_hook_point_t point, authum_hook_fn fn, authum_ptr user)
 {
-    authum_hook_chain_t *chain;
-
-    if (authum_null_eq(self) || authum_null_eq(fn) ||
-        lh_math_ge(point, authum_hook_point_count))
+    if (authum_null_eq(self) || lh_math_ge(point, authum_hook_point_count))
     {
         return authum_bool_false;
     }
-    chain = lh_addr_of(self->chains[point]);
-    if (lh_math_ge(chain->count, authum_hooks_max))
-    {
-        return authum_bool_false;
-    }
-    /* The handlers are kept in the order they were hooked; the chain runs them
-     * from the last one, so the module that hooked last is called first. */
-    chain->handlers[chain->count].fn = fn;
-    chain->handlers[chain->count].user = user;
-    chain->handlers[chain->count].owner = owner;
-    chain->handlers[chain->count].tag = tag;
-    chain->count = lh_math_add_one(chain->count);
-    return authum_bool_true;
+    return lh_os_module_hook_try_add(authum_hook_registry_get_chain_mut(self, point), owner, tag,
+                                     authum_hook_registry_get_callback(fn), user);
 }
 
 authum_bool_t
-authum_hook_registry_remove(authum_hook_registry_t *self, authum_ptr owner, authum_hook_point_t point,
-                    authum_hook_fn fn, authum_ptr user)
+authum_hook_registry_remove(authum_hook_registry_t *self, authum_ptr owner,
+                            authum_hook_point_t point, authum_hook_fn fn, authum_ptr user)
 {
-    authum_hook_chain_t *chain;
-    authum_usize_t index;
-
-    if (authum_null_eq(self) || authum_null_eq(fn) ||
-        lh_math_ge(point, authum_hook_point_count))
+    if (authum_null_eq(self) || authum_null_eq(fn) || lh_math_ge(point, authum_hook_point_count))
     {
         return authum_bool_false;
     }
-    chain = lh_addr_of(self->chains[point]);
-    for (index = 0u; lh_math_lt(index, chain->count); index = lh_math_add_one(index))
-    {
-        authum_hook_handler_t *handler = lh_addr_of(chain->handlers[index]);
-
-        if (handler->fn != fn || handler->user != user || handler->owner != owner)
-        {
-            continue;
-        }
-        chain->count = lh_math_sub_one(chain->count);
-        for (; lh_math_lt(index, chain->count); index = lh_math_add_one(index))
-        {
-            chain->handlers[index] = chain->handlers[lh_math_add_one(index)];
-        }
-        return authum_bool_true;
-    }
-    return authum_bool_false;
+    return lh_os_module_hook_try_remove(authum_hook_registry_get_chain_mut(self, point), owner,
+                                        authum_hook_registry_get_callback(fn), user);
 }
 
 void
 authum_hook_registry_drop_owner(authum_hook_registry_t *self, authum_ptr owner)
 {
-    authum_usize_t point;
-
     if (authum_null_eq(self))
     {
         return;
     }
-    for (point = 0u; lh_math_lt(point, authum_hook_point_count); point = lh_math_add_one(point))
+    for (authum_usize_t point = 0u; lh_math_lt(point, authum_hook_point_count); ++point)
     {
-        authum_hook_chain_t *chain = lh_addr_of(self->chains[point]);
-        authum_usize_t index = 0u;
-
-        while (lh_math_lt(index, chain->count))
-        {
-            if (chain->handlers[index].owner == owner)
-            {
-                chain->count = lh_math_sub_one(chain->count);
-                for (; lh_math_lt(index, chain->count); index = lh_math_add_one(index))
-                {
-                    chain->handlers[index] = chain->handlers[lh_math_add_one(index)];
-                }
-                continue;
-            }
-            index = lh_math_add_one(index);
-        }
+        lh_os_module_hook_remove_owner(authum_hook_registry_get_chain_mut(self, point), owner);
     }
 }
 
@@ -119,45 +87,26 @@ authum_bool_t
 authum_hook_registry_call(authum_hook_registry_t *self, authum_hook_point_t point,
                           authum_hook_call_t *call, authum_bool_t *overran)
 {
-    authum_hook_chain_t *chain;
-    authum_usize_t index = 0u;
-
     if (!authum_null_eq(overran))
     {
-        *overran = authum_bool_false;
+        lh_ptr_deref(overran) = authum_bool_false;
     }
     if (authum_null_eq(self) || authum_null_eq(call) ||
         lh_math_ge(point, authum_hook_point_count))
     {
         return authum_bool_true;
     }
-    call->decided_by = authum_null;
-    chain = lh_addr_of(self->chains[point]);
-    for (index = chain->count; lh_math_gt(index, 0u); index = lh_math_sub_one(index))
-    {
-        authum_hook_handler_t *handler = lh_addr_of(chain->handlers[lh_math_sub_one(index)]);
-        /* The tick is 64-bit: a 32-bit counter would wrap and every handler
-         * would look like it overran its budget. */
-        lh_u64_t started = lh_os_tick_us();
-        authum_bool_t keep = handler->fn(handler->user, call);
 
-        if (lh_math_gt(lh_math_sub(lh_os_tick_us(), started),
-                       lh_cast_static(lh_u64_t, authum_hook_budget_us)))
-        {
-            if (!authum_null_eq(overran))
-            {
-                *overran = authum_bool_true;
-            }
-            authum_hook_registry_remove(self, handler->owner, point, handler->fn, handler->user);
-            continue;
-        }
-        if (!keep)
-        {
-            /* The handler stopped the call: the tag of its module goes into the
-             * call, so the caller names who decided. */
-            call->decided_by = handler->tag;
-            break;
-        }
+    lh_bool_t dropped = lh_bool_false;
+
+    /* The handler that stopped the call names its module in the call, so the caller
+       names who decided; the verdict itself is the call's proceed. */
+    authum_unused(lh_os_module_hook_call(authum_hook_registry_get_chain_mut(self, point), call,
+                                         lh_cast_static(lh_u64_t, authum_hook_budget_us),
+                                         lh_addr_of(call->decided_by), lh_addr_of(dropped)));
+    if (!authum_null_eq(overran))
+    {
+        lh_ptr_deref(overran) = dropped;
     }
     return call->proceed;
 }

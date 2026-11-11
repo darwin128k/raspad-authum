@@ -236,6 +236,36 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 
 ## Authum (after LH)
 
+- [ ] **Generic mechanisms of Authum move to LH** (owner, 2026-11-10), in this order:
+  7. [x] `api/net.c` IPv4 classes → `lh/core/net/ip` predicates
+     (`lh_net_ip4_is_public`, `lh_net_ip4_to_u32`, `lh_net_ip4_init_by_u32`).
+  6. [x] `api/logger/buffer.c` capture of a thread's lines → `lh/os/logger/capture`
+     (`lh_os_logger_capture_t`); Authum keeps the channel as the line's target and
+     the overflow warning.
+  3. [x] `host/placeholders.c` `{name}` expansion and its owned registry → `lh/core/str/template`
+     (`lh_str_template_try_expand`, `lh_str_template_registry_t`); Authum keeps the
+     standard names, canonical absolute values and the module-relative rule.
+  2. [x] `host/hooks.c` interception chain → `lh/os/module/hook`, beside the event bus
+     (`lh_os_module_hook_t`); Authum keeps the points, the 5 ms budget and the verdict.
+  4. [x] `host/http/limits.c` per-IP limits, token bucket, trusted proxies → lh
+     (`lh/core/net/cidr`, `lh/core/http/forwarded`, `lh/core/http/limit/{bucket,peer}`);
+     Authum keeps the timeouts, the refusal summary and its address keys.
+  1. [ ] `host/loader.c` module discovery and the list file with OS sections → `lh/os/loader`.
+  5. [ ] `api/sql/thread.c` one connection per task thread → `lh/os/sql`.
+  Authum keeps the game's names and policy in each.
+- [ ] **LH has no cutting format into a fixed buffer** (2026-11-10).
+  `lh_str_ptr_format_text_v` is all-or-nothing, so `lh_os_logger_capture_try_push_v`
+  and `authum_cstr_format_v` format into an allocated `lh_str_t` and cut the copy.
+  Add a cutting mode to the formatter (the walk stops at the room, NUL kept) and
+  use it in both.
+- [ ] **`authum_logger_t` fields are raw** (2026-11-10). `api/logger.c` touches
+  `channel`, `journal`, `owns_journal` directly; the channel itself now has
+  level-1 accessors (`authum_logger_channel_get_ops` / `_owner`, `api/logger/ops.c`).
+  The host's channel record (`host/logs.c`, `channel->owner`) is the same debt.
+- [ ] **ABI 3.0** (owner, 2026-11-10): the sandbox becomes `authum_region_t` (an
+  ownership tree of memory, not isolation), and a module's files leave `FILE *`; both in
+  one release, so modules are rewritten once.
+
 - [ ] **`host/tasks.c` — сырые поля и static** (2026-11-04, шаг 4b исполнения).
   Файл переехал на `lh/rail`, но сохранил стиль соседей (`host/threads.c`):
   `authum_task_worker_t` / `authum_task_record_t` трогаются напрямую, колбэки и

@@ -37,8 +37,7 @@
 #define AUTHUM_HOST_LOGS_H
 
 #include <authum/logger/ops.h>
-#include <lh/core/char/letter.h>
-#include <lh/core/char/digit.h>
+#include <lh/core/char/word.h>
 #include <lh/core/memory/std.h>
 #include <lh/os/logger/daily.h>
 #include <lh/os/logger/queue.h>

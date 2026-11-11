@@ -17,6 +17,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The HTTP server's limits run on lh: trusted proxies are `lh_net_cidr_t` blocks,
+  the client behind them comes from `lh_http_forwarded_copy_client`, the per-address
+  table is `lh_http_limit_peer_t` and the byte budget refills through
+  `lh_http_limit_bucket_get_refilled`. Behaviour is unchanged, except that a CIDR
+  prefix with a leading zero (`/08`) is now refused.
+- Hook points run on lh's hook chain (`lh/os/module/hook.h`): one `lh_os_module_hook_t`
+  per point; the order, the budget, the drop of an overrunning handler and the
+  stopper's tag are lh's. Behaviour is unchanged; a point still holds 16 handlers
+  (`LH_OS_MODULE_HOOK_SIZE`, `authum_hooks_max` is gone).
+- Path placeholders expand through lh's template (`lh/core/str/template.h`) and keep
+  registered names in its registry (`lh_str_template_registry_t`); the standard
+  names, canonical absolute values and the module-relative rule stay Authum's.
+  Behaviour is unchanged. Log channel names use `lh_char_is_word`.
+- `authum_logger_buffer_*` is a thin facade over lh's log capture
+  (`lh/os/logger/capture.h`); the thread-local scope and the bounded buffer of lines
+  live in lh. Behaviour is unchanged.
+- `authum_net_ipv4_is_loopback` / `_is_external` / `_format` use lh's IPv4 bricks
+  (`lh_net_ip4_is_public` and the RFC 6890 table, `lh_net_ip4_format`).
+- `authum_logger_channel_t` gets level-1 accessors (`authum_logger_channel_get_ops`,
+  `_set_ops`, `_get_owner`, `_set_owner`); `authum_logger_get_channel` is declared in
+  `<authum/logger.h>`.
 - Module timers run on lh's timer group (`lh_timer_start_after`): each timer is an
   `lh_timer_t` in sandbox memory; removal is safe from any callback.
 - The HTTP server opens source roots and files through LH filesystem objects; handle-relative lookup still refuses links and path escapes.

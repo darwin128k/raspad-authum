@@ -145,6 +145,10 @@ authum_logger_hex_dump(authum_logger_t *self, const authum_char_t *label, authum
 
 /* --- channel bricks (what the logger and authum_host_log_line call) ------ */
 
+/** The channel @p self logs to: its journal, else the module's; null for null. */
+const authum_logger_channel_t *
+authum_logger_get_channel(const authum_logger_t *self);
+
 void
 authum_logger_channel_write(const authum_logger_channel_t *channel, authum_logger_level_t level,
                             const authum_char_t *text);

@@ -125,7 +125,8 @@ and step 2 are only committed together with step 3.
 
 ## 8. What is done (2026-10-30)
 
-- The chain: `src/authum/host/hooks.c` — one slot per point, the handlers kept
+- The chain: `src/authum/host/hooks.c` over lh's `lh_os_module_hook_t`
+  (`lib/lh/include/lh/os/module/hook.h`) — one chain per point, the handlers kept
   in the order they were hooked and run from the last one, a budget of 5 ms
   per handler (the handler that overruns it is dropped and the core reports it
   to the caller, which owns the journal), and every handler of a module removed
