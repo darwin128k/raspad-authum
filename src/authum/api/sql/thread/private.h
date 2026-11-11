@@ -10,15 +10,7 @@
 
 #include <authum/sql/thread.h>
 #include <lh/core/attribute/thread_local.h>
-#include <lh/core/memory/std.h>
-#include <lh/os/sql/mysql/api.h>
-
-typedef struct authum_sql_thread_copy
-{
-    authum_sql_connection_t connection;
-    authum_usize_t strings_size;
-    authum_char_t strings[];
-} authum_sql_thread_copy_t;
+#include <lh/os/sql/keep.h>
 
 typedef struct authum_sql_thread_job
 {
@@ -29,61 +21,32 @@ typedef struct authum_sql_thread_job
     /** No end-of-thread call on this host: the job closes its own connection. */
     authum_bool_t own_connection;
     authum_sql_thread_result_t result;
-    authum_sql_connection_t connection;
-    authum_usize_t strings_size;
-    authum_char_t strings[];
+    /** The backend the module asked for, as the handle it gets names it. */
+    authum_sql_driver_t driver;
+    /** Where to connect, copied from the module's description (owned). */
+    lh_sql_address_t address;
 } authum_sql_thread_job_t;
-
-/** The connection a task thread keeps between jobs; that thread's alone. */
-typedef struct authum_sql_thread_cache
-{
-    authum_sql_t db;
-    /** The description db was opened with (null: no connection kept). */
-    authum_sql_thread_copy_t *key;
-    /** The MySQL client was used on this thread: mysql_thread_end at its end. */
-    authum_bool_t used_mysql;
-} authum_sql_thread_cache_t;
 
 AUTHUM_EXTERN_C_BEGIN
 
 /**
- * @brief Bytes the strings of @p c take with their terminators; 0 on overflow past @p limit.
- */
-authum_usize_t
-authum_sql_thread_strings_size(const authum_sql_connection_t *c, authum_usize_t limit);
-
-/**
- * @brief Copy @p c into @p dst, its strings into @p strings (sized by
- * authum_sql_thread_strings_size).
- */
-void
-authum_sql_thread_copy_init(authum_sql_connection_t *dst, authum_char_t *strings,
-                            const authum_sql_connection_t *c);
-
-/**
- * @brief Whether two optional strings are equal (both absent counts as equal).
+ * @brief Copy the module's connection description @p c into @p out, an
+ *        ::lh_sql_address_init'ed address: the backend and every field, used
+ *        or not, with Authum's defaults (MySQL host `127.0.0.1`, an absent
+ *        text empty).
+ *
+ * @return ::authum_bool_false for an unknown backend or an SQLite description
+ *         without a path; @p out is left cleared then.
  */
 authum_bool_t
-authum_sql_thread_same_text(const authum_char_t *a, const authum_char_t *b);
+authum_sql_thread_try_copy_address(const authum_sql_connection_t *c, lh_sql_address_t *out);
 
 /**
- * @brief Whether @p a and @p b describe the same connection.
+ * @brief The connection this task thread keeps, ::lh_os_sql_keep_init'ed on
+ *        first use.
  */
-authum_bool_t
-authum_sql_thread_same(const authum_sql_connection_t *a, const authum_sql_connection_t *b);
-
-/**
- * @brief Close the connection this thread keeps, if any, and forget its description.
- */
-void
-authum_sql_thread_drop(authum_sql_thread_cache_t *cache);
-
-/**
- * @brief The connection this thread keeps for @p c: kept, reopened, or opened now.
- */
-authum_sql_t *
-authum_sql_thread_connection(authum_sql_thread_cache_t *cache, const authum_sql_connection_t *c,
-                             authum_usize_t strings_size);
+lh_os_sql_keep_t *
+authum_sql_thread_get_keep(void);
 
 AUTHUM_EXTERN_C_END
 

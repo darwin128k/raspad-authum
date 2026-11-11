@@ -1,10 +1,12 @@
 #include <authum/api/sql/private.h>
 #include <authum/memory.h>
 
-/* Private storage: keep the public SQL handle layout unchanged. */
+/* Private storage: keep the public SQL handle layout unchanged. `db` is `own`
+   for a connection the handle opened, or one it borrows (authum_sql_borrow). */
 struct authum_sql_db_impl
 {
-    lh_sql_db_t db;
+    lh_sql_db_t own;
+    lh_sql_db_t *db;
     authum_char_t first_error[authum_sql_errmsg_max];
 };
 
@@ -32,7 +34,7 @@ authum_sql_clear_errors(authum_sql_t *self)
     {
         struct authum_sql_db_impl *impl = self->db;
         impl->first_error[0] = lh_char_map_nul;
-        lh_sql_db_clear_error(lh_addr_of(impl->db));
+        lh_sql_db_clear_error(impl->db);
     }
 }
 
@@ -48,7 +50,7 @@ struct authum_sql_stmt_impl
 lh_sql_db_t *
 authum_sql_get_db(const authum_sql_t *self)
 {
-    return lh_cast_reinterpret(lh_sql_db_t *, self->db);
+    return lh_cast_reinterpret(struct authum_sql_db_impl *, self->db)->db;
 }
 
 struct authum_sql_stmt_impl *
@@ -132,25 +134,53 @@ authum_sql_init(authum_sql_t *self)
     self->errmsg[0] = lh_char_map_nul;
 }
 
-/* A closed lh connection for @p self, ready for a backend to open. */
-lh_sql_db_t *
-authum_sql_begin_open(authum_sql_t *self, authum_sql_driver_t driver)
+/* Fresh private storage for @p self, its connection still to be chosen. */
+struct authum_sql_db_impl *
+authum_sql_begin_impl(authum_sql_t *self, authum_sql_driver_t driver)
 {
-    lh_sql_db_t *db;
-
     authum_sql_close(self);
     authum_sql_init(self);
     self->driver = driver;
-    db = lh_cast_reinterpret(lh_sql_db_t *,
-                             authum_memory_alloc_zero(1u, sizeof(struct authum_sql_db_impl)));
-    if (authum_null_eq(db))
+
+    struct authum_sql_db_impl *impl = lh_cast_reinterpret(
+        struct authum_sql_db_impl *, authum_memory_alloc_zero(1u, sizeof lh_ptr_deref(impl)));
+
+    if (authum_null_eq(impl))
     {
         authum_sql_set_errmsg(self, lh_str_view_lit("out of memory"));
         return authum_null;
     }
-    lh_sql_db_init(db);
-    self->db = db;
-    return db;
+    self->db = impl;
+    return impl;
+}
+
+/* A closed lh connection for @p self, ready for a backend to open. */
+lh_sql_db_t *
+authum_sql_begin_open(authum_sql_t *self, authum_sql_driver_t driver)
+{
+    struct authum_sql_db_impl *impl = authum_sql_begin_impl(self, driver);
+
+    if (authum_null_eq(impl))
+    {
+        return authum_null;
+    }
+    impl->db = lh_addr_of(impl->own);
+    lh_sql_db_init(impl->db);
+    return impl->db;
+}
+
+authum_bool_t
+authum_sql_borrow(authum_sql_t *self, authum_sql_driver_t driver, lh_sql_db_t *db)
+{
+    struct authum_sql_db_impl *impl = authum_sql_begin_impl(self, driver);
+
+    if (authum_null_eq(impl))
+    {
+        return authum_bool_false;
+    }
+    impl->db = db;
+    authum_sql_sync_errmsg(self);
+    return authum_bool_true;
 }
 
 /* Keep the connection if @p opened, drop it otherwise; the message either way. */
@@ -160,9 +190,7 @@ authum_sql_end_open(authum_sql_t *self, lh_bool_t opened)
     authum_sql_sync_errmsg(self);
     if (!opened)
     {
-        lh_sql_db_deinit(authum_sql_get_db(self));
-        authum_memory_free(self->db);
-        self->db = authum_null;
+        authum_sql_close(self);
         return authum_bool_false;
     }
     return authum_bool_true;
@@ -220,8 +248,15 @@ authum_sql_close(authum_sql_t *self)
     {
         return;
     }
-    lh_sql_db_deinit(authum_sql_get_db(self));
-    authum_memory_free(self->db);
+
+    struct authum_sql_db_impl *impl = self->db;
+
+    /* A borrowed connection stays open for its owner. */
+    if (lh_math_eq(impl->db, lh_addr_of(impl->own)))
+    {
+        lh_sql_db_deinit(impl->db);
+    }
+    authum_memory_free(impl);
     self->db = authum_null;
 }
 

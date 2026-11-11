@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The connection a module's task thread keeps for `authum_sql_thread_query` is lh's
+  `lh_os_sql_keep_t`: the description is copied into an `lh_sql_address_t` (the
+  password is wiped when the job ends), the job's `authum_sql_t` borrows the kept
+  connection, and `mysql_thread_end` runs at the thread's end as before.
+  `authum_sql_connect` opens through `lh_os_sql_address_try_open`. Behaviour is
+  unchanged.
 - Module discovery runs on lh: `modules/` is scanned by `lh_os_loader_scan`,
   `configs/modules.list` is read by `lh_os_loader_list_try_read` (sections by
   `lh_os_system_get_name`), and an entry or a console name becomes an image path

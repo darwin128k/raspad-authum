@@ -59,6 +59,23 @@ void
 authum_sql_stmt_drop_columns(struct authum_sql_stmt_impl *impl);
 
 /**
+ * @brief Fresh private storage for @p self (whatever it had open is closed);
+ *        ::lh_null, with the message set, when out of memory.
+ */
+struct authum_sql_db_impl *
+authum_sql_begin_impl(authum_sql_t *self, authum_sql_driver_t driver);
+
+/**
+ * @brief Make @p self a handle on @p db, which someone else owns and keeps
+ *        open: ::authum_sql_close then lets go of the handle and leaves @p db
+ *        as it is. The message of @p db is taken over.
+ *
+ * @return ::authum_bool_false when out of memory (the message is set).
+ */
+authum_bool_t
+authum_sql_borrow(authum_sql_t *self, authum_sql_driver_t driver, lh_sql_db_t *db);
+
+/**
  * @brief A closed lh connection for @p self, ready for a backend to open.
  */
 lh_sql_db_t *

@@ -255,12 +255,17 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
      `_is_dir`, `lh_os_fs_file_read_all(_by_path)`, `lh_fs_path_try_get_name`);
      Authum keeps `modules/` and `configs/modules.list` beside its image, the log
      lines and the refusal to load `authum` itself.
-  5. [ ] `api/sql/thread.c` one connection per task thread → `lh/os/sql`.
+  5. [x] `api/sql/thread.c` one connection per task thread → lh
+     (`lh/core/sql/address`, `lh_os_sql_address_try_open`, `lh/os/sql/keep`,
+     `lh_str_is_equal`); an `authum_sql_t` borrows the kept connection
+     (`authum_sql_borrow`). Authum keeps the module's description and its defaults,
+     the result and the end-of-thread registration.
   Authum keeps the game's names and policy in each.
 - [ ] **Declaration piles left in older functions** (2026-11-11).
   `tools/check-decls.py` reports 10 in `lib/lh/src/lh/core/fs/path.c` (`get_segment`,
-  `join`, `parent`, ...) and 1 in `src/authum/api/cfg.c:124`; they predate the rule
-  and were seen while adding `lh_fs_path_try_get_name` next to them.
+  `join`, `parent`, ...), 3 in `lib/lh/src/lh/core/str.c` (lines 68, 113, 159) and 1 in
+  `src/authum/api/cfg.c:124`; they predate the rule and were seen while adding
+  `lh_fs_path_try_get_name` and `lh_str_is_equal` next to them.
 - [ ] **LH has no cutting format into a fixed buffer** (2026-11-10).
   `lh_str_ptr_format_text_v` is all-or-nothing, so `lh_os_logger_capture_try_push_v`
   and `authum_cstr_format_v` format into an allocated `lh_str_t` and cut the copy.
