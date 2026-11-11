@@ -185,11 +185,33 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
     (char / str / view), `ui/frame/stats.h` (callback typedef → `stats/cb.h`).
   - The split headers copy every include of their parent; trim to what each
     one needs.
-- [ ] **`static` functions: 61 in 11 files** (`ui/renderer3d.c`, `http/parser.c` done).
-  `memory/std/x86/sse2.h` 12, `memory/std/words.h` 10, `memory/std/x86/avx2.h` 9,
-  `crypto/rijndael.c` 8, `memory/std.c` 7, `os/worker.c` 5,
-  posix/win concurrency, x11, cpuid. SIMD tiers may need target attributes —
+- [ ] **`static` functions: 55 in 9 files** (`ui/renderer3d.c`, `http/parser.c`,
+  `os/worker.c`, and on 2026-11-11 `os/mutex.c` / `thread.c` / `condition.c` done —
+  `lh_os_fail`). `memory/std/x86/sse2.h` 12, `memory/std/words.h` 10,
+  `memory/std/x86/avx2.h` 9, `crypto/rijndael.c` 8 (AES-NI), `memory/std.c` 7,
+  posix/win concurrency 5, x11 3, cpuid 1. SIMD tiers may need target attributes —
   check before making them public bricks.
+- [ ] **Brick-bypass audit, 2026-11-11** (owner: "do we use our wrappers everywhere?").
+  A scan of LH and Authum (third-party sqlite and the native backends left out). Done:
+  min/max, swap, the lexer's `'\0'`, the `_invalid` statics (see CHANGELOG). Left:
+  - **C-style casts** instead of `lh_cast_*`: LH ~300 — `crypto/curve25519/field.c`
+    225, `crypto/ed25519/scalar.c` 16, `point.c` 8, `net/modbus/link.c` 9, the rest
+    scattered; Authum 22 (`api/runtime.c` 7, `host/http/resources.c` 7).
+  - **Text as `(const char *, size)`** instead of `lh_str_view_t`:
+    `lh_os_module_event_entry_try_create` / `_create`; in Authum
+    `host/http/internal.h` (5), `host/placeholders.c/.h`, `host/http/resources.c`.
+  - **Hand-NUL-terminated copies** (`p[n] = nul` after a copy): LH 16
+    (`util/str/ptr.c` 4, `net/modbus/link.c` 2, `str/format/text.c` 2), Authum 35
+    (`api/cfg.c` 6, `api/path.c` 5, `api/sql.c` 4, `api/cstr.c` 3). Some are the
+    terminating brick itself; the rest want one "copy and terminate" brick.
+  - **Authum character literals** (33): `host/http/resources.c` 21, `api/time.c` 7
+    (it writes `YYYY-MM-DD HH:MM:SS UTC` by hand — a format brick in lh),
+    `host/http/request.c` 3 (`' '` / `'\t'` / `'0'`: `lh/core/char/*` classes).
+  - `ui/shadow/shape.c`: a zero-fill loop (`lh_memory_set`) and `|px - cx|` written
+    as a conditional (`lh_math_abs` of the difference).
+  - **Plain operators and `!ptr`** (`==`, `+`, `++`, `!self`) instead of
+    `lh_math_*` / `lh_null_eq`: tens of thousands in LH. Not counted as defects — the
+    open question below (`lh_math_add_one(p)` style) decides it.
 - [ ] **Naming pass.** Functions whose name does not say what they return
   (`get_` / `set_` / `is_` / `has_`) — in LH and in Authum.
 - [ ] **Documentation briefs.** Replace one-line function comments with full
