@@ -288,9 +288,18 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   and `authum_logs_channel_init`; `host/logs.c` goes through them (about 90 places),
   the registry walk in `authum_logs_free` keeps the previous channel instead of a
   pointer into a field.
-- [ ] **ABI 3.0** (owner, 2026-11-10): the sandbox becomes `authum_region_t` (an
-  ownership tree of memory, not isolation), and a module's files leave `FILE *`; both in
-  one release, so modules are rewritten once.
+- [ ] **The next module ABI break** (owner, 2026-11-10; called "ABI 3.0" then, but 3.x
+  shipped with Authum 4.0.0, so it is **4.0**): the sandbox becomes `authum_region_t` (an
+  ownership tree of memory, not isolation), and a module's files leave `FILE *`; all in
+  one release, so modules are rewritten once. Started 2026-11-11: the opaque
+  `authum_array_t` is in, `AUTHUM_MODULE_ABI` is 4.0.0. Left: the region and the files
+  — before the release, so 4.0 is cut once. `AGENTS.md` still says the ABI is frozen
+  at 2.0 (owner's text, not touched).
+- [ ] **LTO warns in lh's formatter** (seen 2026-11-11, mingw32 full rebuild):
+  `-Wstringop-overflow` in `lh_memory_store_u64` / `lh_memory_std_rcopy_sse2`, inlined
+  from `lh_str_ptr_format_real_fixed` → `lh_str_ptr_format_text_get_value` →
+  `lh_str_ptr_format_text_walk.constprop` when `authum_test_threads` links. Tests pass;
+  find whether GCC sees a real short buffer or a false positive, and fix it in lh.
 
 - [ ] **`host/tasks.c` — сырые поля и static** (2026-11-04, шаг 4b исполнения).
   Файл переехал на `lh/rail`, но сохранил стиль соседей (`host/threads.c`):
@@ -446,11 +455,14 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   generic brick (cfg, array, timer, logger, cstr, path, net address, json,
   sql, crypto) becomes a thin `authum_*` facade over the LH brick, with no
   logic of its own. Missing pieces are added to LH first.
-- [ ] `authum_array_t` keeps its own storage: it is a public struct a module fills, and
+- [x] `authum_array_t` keeps its own storage: it is a public struct a module fills, and
   its memory comes from the module's sandbox, while `lh_array_t` owns a block of the
   runtime allocator. Its growth and overflow are lh's now (`lh_array_get_grown_capacity`,
   `lh_interval_closed_is_mul_overflow`). Full delegation needs an `lh_array_t` over a
-  caller's allocator (the sandbox is one) — then ABI 3.0 can hide the struct.
+  caller's allocator (the sandbox is one) — then ABI 3.0 can hide the struct. Done
+  2026-11-11: `lh_array_init_by` takes an allocator (the `_by` forms of
+  `lh/core/memory/bounds|typed/allocated`), and `authum_array_t` is opaque
+  (`authum_array_create` / `_destroy`) — an lh array over the sandbox. Module ABI 4.0.0.
 - [x] `cfg.c` reads its lines with lh's bricks (`lh_ini_parser_is_skipped`, views); a
   whole-file `lh/ini` read waits for sectionless `key = value` in lh/ini. Done
   2026-11-11: lh's parser has a flat mode (`lh_ini_parser_init_flat`), and

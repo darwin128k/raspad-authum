@@ -12,7 +12,7 @@
 
 authum_host_t g_hello_host;
 authum_logger_t g_hello_log;
-authum_array_t g_hello_seen;
+authum_array_t *g_hello_seen;
 
 AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
     .abi = AUTHUM_MODULE_ABI,
@@ -36,9 +36,9 @@ hello_on_connect(const authum_char_t *name, authum_ptr payload, authum_ptr user)
     {
         return authum_event_result_continue;
     }
-    authum_array_push(&g_hello_seen, ev->name);
+    authum_array_push(g_hello_seen, ev->name);
     authum_logger_info(&g_hello_log, "#%d %s connected (%u seen since load)", ev->index, ev->name,
-                       authum_array_get_size(&g_hello_seen));
+                       authum_array_get_size(g_hello_seen));
     return authum_event_result_continue;
 }
 
@@ -49,11 +49,11 @@ hello_cmd_seen(const authum_command_t *cmd, authum_ptr user)
     authum_usize_t i;
 
     authum_unused(user);
-    authum_command_printf(cmd, "%u connects since load:", authum_array_get_size(&g_hello_seen));
-    for (i = 0u; i < authum_array_get_size(&g_hello_seen); ++i)
+    authum_command_printf(cmd, "%u connects since load:", authum_array_get_size(g_hello_seen));
+    for (i = 0u; i < authum_array_get_size(g_hello_seen); ++i)
     {
         authum_command_printf(cmd, "  %s",
-                              (const authum_char_t *)authum_array_get_at(&g_hello_seen, i));
+                              (const authum_char_t *)authum_array_get_at(g_hello_seen, i));
     }
     return authum_bool_true;
 }
@@ -75,9 +75,10 @@ hello_start(authum_host_t *host)
                        authum_path_get_cstr(authum_host_get_module_data_path(&g_hello_host)));
 
     /* Each item is a name buffer; the storage lives in this module's sandbox. */
-    authum_array_init(&g_hello_seen, authum_host_get_sandbox(&g_hello_host),
-                      authum_event_client_name_max);
-    return authum_host_subscribe(&g_hello_host, AUTHUM_EVENT_CLIENT_CONNECT, hello_on_connect,
+    g_hello_seen =
+        authum_array_create(authum_host_get_sandbox(&g_hello_host), authum_event_client_name_max);
+    return !authum_null_eq(g_hello_seen) &&
+           authum_host_subscribe(&g_hello_host, AUTHUM_EVENT_CLIENT_CONNECT, hello_on_connect,
                                  authum_null) &&
            authum_host_command_add_all(&g_hello_host, g_hello_commands,
                                        sizeof g_hello_commands / sizeof g_hello_commands[0]);

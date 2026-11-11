@@ -139,39 +139,57 @@ struct test_item
 TEST(authum_sandbox, array)
 {
     authum_sandbox_t sb = test_sandbox_root();
-    authum_array_t arr;
     struct test_item item;
     struct test_item *at;
-    authum_i32_t i;
 
-    EXPECT_FALSE(authum_array_init(&arr, &sb, 0u));
-    EXPECT_TRUE(authum_array_init(&arr, &sb, sizeof(struct test_item)));
-    EXPECT_TRUE(authum_array_is_empty(&arr));
-    for (i = 0; i < 100; ++i)
+    EXPECT_EQ(authum_array_create(&sb, 0u), authum_null);
+    EXPECT_EQ(authum_array_create(authum_null, sizeof(struct test_item)), authum_null);
+    authum_array_t *arr = authum_array_create(&sb, sizeof(struct test_item));
+    ASSERT_NE(arr, authum_null);
+    EXPECT_TRUE(authum_array_is_empty(arr));
+    EXPECT_EQ(authum_array_get_capacity(arr), 0u);
+    for (authum_i32_t i = 0; i < 100; ++i)
     {
         memset(&item, 0, sizeof item);
         item.id = i;
-        EXPECT_NE(authum_array_push(&arr, &item), authum_null);
+        EXPECT_NE(authum_array_push(arr, &item), authum_null);
     }
-    EXPECT_EQ(authum_array_get_size(&arr), 100u);
-    at = static_cast<struct test_item *>(authum_array_get_at(&arr, 42u));
+    EXPECT_EQ(authum_array_get_size(arr), 100u);
+    at = static_cast<struct test_item *>(authum_array_get_at(arr, 42u));
     EXPECT_TRUE(at != authum_null && at->id == 42);
-    EXPECT_EQ(authum_array_get_at(&arr, 100u), authum_null);
+    EXPECT_EQ(authum_array_get_at(arr, 100u), authum_null);
 
-    EXPECT_TRUE(authum_array_remove_at(&arr, 0u));
-    at = static_cast<struct test_item *>(authum_array_get_at(&arr, 0u));
+    EXPECT_TRUE(authum_array_remove_at(arr, 0u));
+    at = static_cast<struct test_item *>(authum_array_get_at(arr, 0u));
     EXPECT_TRUE(at != authum_null && at->id == 1);
-    EXPECT_EQ(authum_array_get_size(&arr), 99u);
-    EXPECT_FALSE(authum_array_remove_at(&arr, 99u));
+    EXPECT_EQ(authum_array_get_size(arr), 99u);
+    EXPECT_FALSE(authum_array_remove_at(arr, 99u));
 
-    at = static_cast<struct test_item *>(authum_array_push(&arr, authum_null));
+    at = static_cast<struct test_item *>(authum_array_push(arr, authum_null));
     EXPECT_TRUE(at != authum_null && at->id == 0 && at->name[0] == '\0');
 
-    authum_array_clear(&arr);
-    EXPECT_TRUE(authum_array_is_empty(&arr));
-    EXPECT_TRUE(authum_array_reserve(&arr, 500u));
-    EXPECT_GE(arr.capacity, 500u);
+    authum_array_clear(arr);
+    EXPECT_TRUE(authum_array_is_empty(arr));
+    EXPECT_TRUE(authum_array_reserve(arr, 500u));
+    EXPECT_GE(authum_array_get_capacity(arr), 500u);
 
-    /* Not deinit'ed on purpose: the sandbox root owns the storage. */
+    /* Not destroyed on purpose: the sandbox root owns the record and its storage. */
+    authum_sandbox_host_root_destroy(sb.root);
+}
+
+TEST(authum_sandbox, array_destroy_frees_record_and_storage)
+{
+    authum_sandbox_t sb = test_sandbox_root();
+    authum_array_t *arr = authum_array_create(&sb, sizeof(authum_i32_t));
+    ASSERT_NE(arr, authum_null);
+    for (authum_i32_t i = 0; i < 64; ++i)
+    {
+        EXPECT_NE(authum_array_push(arr, &i), authum_null);
+    }
+    EXPECT_EQ(*static_cast<authum_i32_t *>(authum_array_get_at(arr, 63u)), 63);
+    authum_array_destroy(arr);
+    authum_array_destroy(authum_null);
+    EXPECT_EQ(authum_array_get_size(authum_null), 0u);
+    EXPECT_TRUE(authum_array_is_empty(authum_null));
     authum_sandbox_host_root_destroy(sb.root);
 }

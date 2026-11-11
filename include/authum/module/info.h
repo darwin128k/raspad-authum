@@ -19,13 +19,17 @@
 
 /**
  * @def AUTHUM_MODULE_ABI
- * @brief Loader ABI (`3.0.0`) — lh-free module API (`authum_module_api`).
+ * @brief Loader ABI (`4.0.0`) — lh-free module API (`authum_module_api`).
  *
- * 3.0 renames the module identity field `logtag` to `tag`: it is the mark the
+ * 4.0 hides `authum_array_t`: the array is opaque, made by
+ * `authum_array_create` and freed by `authum_array_destroy` (a module held the
+ * struct and called `authum_array_init` / `_deinit`); inside it is lh's array
+ * with the module's sandbox as its allocator. No 3.x module loads.
+ *
+ * 3.0 renamed the module identity field `logtag` to `tag`: it is the mark the
  * module is shown with in a log record, and the struct already says what it is.
- * No 2.x module loads.
  *
- * From here the ABI is frozen: nothing that exists changes or moves. New API
+ * Within a major the ABI is frozen: nothing that exists changes or moves. New API
  * is added at the end of a table, or as a new table or a new structure, and
  * bumps the minor; an input structure a module fills in never grows (a new
  * field is a new structure). A module therefore runs on a host of the same
@@ -51,7 +55,7 @@
  * `authum_memory_is_equal`, `authum_memory_find`, `authum_time_now_seconds`,
  * `authum_time_format_utc`.
  */
-#define AUTHUM_MODULE_ABI AUTHUM_VERSION(3, 3, 0)
+#define AUTHUM_MODULE_ABI AUTHUM_VERSION(4, 0, 0)
 
 struct authum_module_info
 {

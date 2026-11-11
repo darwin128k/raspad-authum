@@ -68,26 +68,26 @@ while its root is alive.
 
 ## 3. Arrays
 
-`authum_array_t` is a growable array of fixed-size items whose storage lives in
-a sandbox:
+`authum_array_t` is an opaque, growable array of fixed-size items. The array
+is a block of a sandbox and its storage hangs under that block (inside it is
+lh's `lh_array_t` with the sandbox as its allocator):
 
 ```c
-authum_array_t names;
-
-authum_array_init(&names, authum_host_get_sandbox(host), sizeof(mymod_name_t));
-mymod_name_t *n = authum_array_push(&names, authum_null);   /* zeroed item */
-mymod_name_t *first = authum_array_get_at(&names, 0u);
-authum_array_remove_at(&names, 0u);                         /* keeps order */
+authum_array_t *names =
+    authum_array_create(authum_host_get_sandbox(host), sizeof(mymod_name_t));
+mymod_name_t *n = authum_array_push(names, authum_null);   /* zeroed item */
+mymod_name_t *first = authum_array_get_at(names, 0u);
+authum_array_remove_at(names, 0u);                         /* keeps order */
 ```
 
 | Call | Meaning |
 |------|---------|
-| `init(arr, sandbox, item_size)` | Empty; allocates nothing yet |
+| `create(sandbox, item_size)` | Empty array, or null; storage not allocated yet |
 | `push(arr, item)` | Copy `item` in (null → zeroed); returns the slot |
-| `at(arr, i)` / `size(arr)` / `is_empty(arr)` | Access |
+| `get_at(arr, i)` / `get_size(arr)` / `get_capacity(arr)` / `is_empty(arr)` | Access |
 | `remove_at(arr, i)` / `clear(arr)` | Shrink (clear keeps capacity) |
 | `reserve(arr, n)` | Pre-grow |
-| `deinit(arr)` | Free now (optional) |
+| `destroy(arr)` | Free the array and its storage now (optional) |
 
 Pointers from `at` / `push` stay valid until the next call that grows or
 shrinks the array.

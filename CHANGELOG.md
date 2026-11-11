@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Module ABI 4.0.0 — `authum_array_t` is opaque.** A module no longer holds the
+  struct: `authum_array_create(sandbox, item_size)` returns the array (null for a bad
+  sandbox or a zero item size) and `authum_array_destroy` frees it with its storage;
+  `authum_array_init` / `_deinit` are gone, and `authum_array_get_capacity` is new.
+  The array is a sandbox block with its storage under it, so unload still frees a
+  forgotten one; inside, it is lh's `lh_array_t` with the sandbox as its allocator
+  (`lh_array_init_by`). No 3.x module loads; `examples/hello` and `docs/sandbox.md`
+  show the new calls.
 - `authum_cfg_get_value` reads the config with lh's INI parser in its flat mode
   (`lh_ini_parser_init_flat`) instead of splitting lines itself. The dialect is
   unchanged: no sections needed, keys case-insensitive, a `[section]` line or any
