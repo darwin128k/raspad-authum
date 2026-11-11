@@ -45,6 +45,7 @@ add_library(authum_test_host STATIC
         "${CMAKE_SOURCE_DIR}/src/authum/host/events/ops.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/commands.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/logs.c"
+        "${CMAKE_SOURCE_DIR}/src/authum/host/logs/channel.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/hooks.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/hook/ops.c"
         "${CMAKE_SOURCE_DIR}/src/authum/host/tasks.c"

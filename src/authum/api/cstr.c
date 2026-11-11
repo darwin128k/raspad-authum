@@ -90,18 +90,7 @@ authum_cstr_format_v(authum_char_t *dst, authum_usize_t dst_size, const authum_c
     {
         return 0u;
     }
-    lh_str_t text;
-    lh_str_init(lh_addr_of(text));
-    authum_unused(lh_str_format_v(lh_addr_of(text), fmt, ap));
-    authum_usize_t n = lh_cast_static(authum_usize_t, lh_str_get_size(lh_addr_of(text)));
-    if (lh_math_ge(n, dst_size))
-    {
-        n = lh_math_sub(dst_size, 1u);
-    }
-    lh_memory_std_copy(dst, lh_str_get_data(lh_addr_of(text)), n);
-    dst[n] = lh_char_map_nul;
-    lh_str_deinit(lh_addr_of(text));
-    return n;
+    return lh_cast_static(authum_usize_t, lh_str_ptr_format_cstr_cut_v(dst, dst_size, fmt, ap));
 }
 
 authum_usize_t

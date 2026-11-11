@@ -1,10 +1,9 @@
+#include <authum/api/logger/private.h>
 #include <lh/core/assert/static.h>
 #include <lh/core/char/map.h>
 #include <lh/core/logger/level.h>
-#include <lh/core/memory/std.h>
 #include <lh/core/str/format/text.h>
 #include <authum/logger/buffer.h>
-
 
 /* Authum's levels are LH's, value for value: the names come from LH. */
 lh_assert_static(authum_logger_level_emergency == lh_logger_level_emergency &&
@@ -12,7 +11,6 @@ lh_assert_static(authum_logger_level_emergency == lh_logger_level_emergency &&
                      authum_logger_level_error == lh_logger_level_error &&
                      authum_logger_level_warning == lh_logger_level_warning,
                  "authum and lh logger levels must have the same values");
-
 authum_bool_t
 authum_logger_level_parse(const authum_char_t *name, authum_logger_level_t *out)
 {
@@ -56,6 +54,42 @@ authum_logger_channel_is_enabled(const authum_logger_channel_t *channel,
                : authum_bool_true;
 }
 
+const authum_logger_channel_t *
+authum_logger_get_module_channel(const authum_logger_t *self)
+{
+    return self->channel;
+}
+
+void
+authum_logger_set_module_channel(authum_logger_t *self, const authum_logger_channel_t *value)
+{
+    self->channel = value;
+}
+
+const authum_logger_channel_t *
+authum_logger_get_journal(const authum_logger_t *self)
+{
+    return lh_addr_of(self->journal);
+}
+
+authum_logger_channel_t *
+authum_logger_get_journal_mut(authum_logger_t *self)
+{
+    return lh_addr_of(self->journal);
+}
+
+authum_bool_t
+authum_logger_owns_journal(const authum_logger_t *self)
+{
+    return self->owns_journal;
+}
+
+void
+authum_logger_set_owns_journal(authum_logger_t *self, authum_bool_t value)
+{
+    self->owns_journal = value;
+}
+
 /** The channel @p self logs to: its journal, else the module's. */
 const authum_logger_channel_t *
 authum_logger_get_channel(const authum_logger_t *self)
@@ -64,7 +98,28 @@ authum_logger_get_channel(const authum_logger_t *self)
     {
         return authum_null;
     }
-    return self->owns_journal ? lh_addr_of(self->journal) : self->channel;
+    return authum_logger_owns_journal(self) ? authum_logger_get_journal(self)
+                                            : authum_logger_get_module_channel(self);
+}
+
+/* No module channel, no journal. */
+void
+authum_logger_clear(authum_logger_t *self)
+{
+    authum_logger_set_module_channel(self, authum_null);
+    authum_logger_channel_set_ops(authum_logger_get_journal_mut(self), authum_null);
+    authum_logger_channel_set_owner(authum_logger_get_journal_mut(self), authum_null);
+    authum_logger_set_owns_journal(self, authum_bool_false);
+}
+
+/* Keep @p journal, opened through @p ops, as the channel @p self logs to. */
+void
+authum_logger_adopt_journal(authum_logger_t *self, const authum_logger_ops_t *ops,
+                            authum_ptr journal)
+{
+    authum_logger_channel_set_ops(authum_logger_get_journal_mut(self), ops);
+    authum_logger_channel_set_owner(authum_logger_get_journal_mut(self), journal);
+    authum_logger_set_owns_journal(self, authum_bool_true);
 }
 
 void
@@ -72,42 +127,9 @@ authum_logger_init(authum_logger_t *self, const authum_host_t *host)
 {
     if (!authum_null_eq(self))
     {
-        lh_memory_std_set(self, 0, sizeof lh_ptr_deref(self));
-        self->channel = authum_host_get_logger(host);
+        authum_logger_clear(self);
+        authum_logger_set_module_channel(self, authum_host_get_logger(host));
     }
-}
-
-authum_bool_t
-authum_logger_open(authum_logger_t *self, const authum_host_t *host, const authum_char_t *name)
-{
-    const authum_logger_channel_t *module;
-    authum_ptr journal;
-
-    if (authum_null_eq(self))
-    {
-        return authum_bool_false;
-    }
-    authum_logger_init(self, host);
-    module = self->channel;
-    const authum_logger_ops_t *ops =
-        !authum_null_eq(module) ? authum_logger_channel_get_ops(module) : authum_null;
-
-    if (authum_null_eq(ops) || authum_null_eq(ops->open) || authum_null_eq(ops->close) ||
-        authum_null_eq(name) || lh_math_eq(name[0], lh_char_map_nul))
-    {
-        self->channel = authum_null;
-        return authum_bool_false;
-    }
-    journal = ops->open(authum_logger_channel_get_owner(module), name);
-    if (authum_null_eq(journal))
-    {
-        self->channel = authum_null;
-        return authum_bool_false;
-    }
-    authum_logger_channel_set_ops(lh_addr_of(self->journal), ops);
-    authum_logger_channel_set_owner(lh_addr_of(self->journal), journal);
-    self->owns_journal = authum_bool_true;
-    return authum_bool_true;
 }
 
 void
@@ -117,42 +139,13 @@ authum_logger_close(authum_logger_t *self)
     {
         return;
     }
-    if (self->owns_journal)
+    if (authum_logger_owns_journal(self))
     {
-        authum_logger_channel_get_ops(lh_addr_of(self->journal))
-            ->close(authum_logger_channel_get_owner(lh_addr_of(self->journal)));
-    }
-    lh_memory_std_set(self, 0, sizeof lh_ptr_deref(self));
-}
+        const authum_logger_channel_t *journal = authum_logger_get_journal(self);
 
-authum_bool_t
-authum_logger_create(authum_logger_t *self, const authum_host_t *host,
-                     const authum_logger_options_t *options)
-{
-    if (!self)
-    {
-        return authum_bool_false;
+        authum_logger_channel_get_ops(journal)->close(authum_logger_channel_get_owner(journal));
     }
-    authum_logger_init(self, host);
-    const authum_logger_channel_t *module = self->channel;
-    self->channel = authum_null;
-    const authum_logger_ops_t *ops =
-        !authum_null_eq(module) ? authum_logger_channel_get_ops(module) : authum_null;
-
-    if (authum_null_eq(ops) || authum_null_eq(ops->construct) || authum_null_eq(ops->close) ||
-        authum_null_eq(options))
-    {
-        return authum_bool_false;
-    }
-    authum_ptr journal = ops->construct(authum_logger_channel_get_owner(module), options);
-    if (!journal)
-    {
-        return authum_bool_false;
-    }
-    authum_logger_channel_set_ops(lh_addr_of(self->journal), ops);
-    authum_logger_channel_set_owner(lh_addr_of(self->journal), journal);
-    self->owns_journal = authum_bool_true;
-    return authum_bool_true;
+    authum_logger_clear(self);
 }
 
 void
@@ -177,6 +170,65 @@ authum_logger_is_enabled(const authum_logger_t *self, authum_logger_level_t leve
     return authum_logger_channel_is_enabled(authum_logger_get_channel(self), level);
 }
 
+authum_bool_t
+authum_logger_open(authum_logger_t *self, const authum_host_t *host, const authum_char_t *name)
+{
+    const authum_logger_channel_t *module;
+    authum_ptr journal;
+
+    if (authum_null_eq(self))
+    {
+        return authum_bool_false;
+    }
+    authum_logger_init(self, host);
+    module = authum_logger_get_module_channel(self);
+    const authum_logger_ops_t *ops =
+        !authum_null_eq(module) ? authum_logger_channel_get_ops(module) : authum_null;
+
+    if (authum_null_eq(ops) || authum_null_eq(ops->open) || authum_null_eq(ops->close) ||
+        authum_null_eq(name) || lh_math_eq(name[0], lh_char_map_nul))
+    {
+        authum_logger_set_module_channel(self, authum_null);
+        return authum_bool_false;
+    }
+    journal = ops->open(authum_logger_channel_get_owner(module), name);
+    if (authum_null_eq(journal))
+    {
+        authum_logger_set_module_channel(self, authum_null);
+        return authum_bool_false;
+    }
+    authum_logger_adopt_journal(self, ops, journal);
+    return authum_bool_true;
+}
+
+authum_bool_t
+authum_logger_create(authum_logger_t *self, const authum_host_t *host,
+                     const authum_logger_options_t *options)
+{
+    if (!self)
+    {
+        return authum_bool_false;
+    }
+    authum_logger_init(self, host);
+    const authum_logger_channel_t *module = authum_logger_get_module_channel(self);
+    authum_logger_set_module_channel(self, authum_null);
+    const authum_logger_ops_t *ops =
+        !authum_null_eq(module) ? authum_logger_channel_get_ops(module) : authum_null;
+
+    if (authum_null_eq(ops) || authum_null_eq(ops->construct) || authum_null_eq(ops->close) ||
+        authum_null_eq(options))
+    {
+        return authum_bool_false;
+    }
+    authum_ptr journal = ops->construct(authum_logger_channel_get_owner(module), options);
+    if (!journal)
+    {
+        return authum_bool_false;
+    }
+    authum_logger_adopt_journal(self, ops, journal);
+    return authum_bool_true;
+}
+
 void
 authum_logger_log_v(authum_logger_t *self, authum_logger_level_t level, const authum_char_t *fmt,
                     va_list ap)
@@ -194,15 +246,6 @@ authum_logger_log_v(authum_logger_t *self, authum_logger_level_t level, const au
     }
     authum_cstr_format_v(buf, sizeof buf, fmt, ap);
     authum_logger_channel_write(authum_logger_get_channel(self), level, buf);
-}
-
-void
-authum_logger_log(authum_logger_t *self, authum_logger_level_t level, const authum_char_t *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    authum_logger_log_v(self, level, fmt, ap);
-    va_end(ap);
 }
 
 void
@@ -233,4 +276,13 @@ authum_logger_hex_dump(authum_logger_t *self, const authum_char_t *label, authum
         }
         authum_logger_debug(self, "%s", line);
     }
+}
+
+void
+authum_logger_log(authum_logger_t *self, authum_logger_level_t level, const authum_char_t *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    authum_logger_log_v(self, level, fmt, ap);
+    va_end(ap);
 }

@@ -119,7 +119,7 @@ TEST(authum_logger_buffer, defers_worker_logging_until_game_thread_completion)
     authum_logger_ops_t ops = {write_log, log_enabled, 0, 0};
     authum_logger_channel_t channel = {&ops, authum_null};
     authum_tasks_t tasks = {authum_tasks_host_ops(), &owner};
-    job.logger.channel = &channel;
+    authum_logger_set_module_channel(&job.logger, &channel);
     job.host.logger = &channel;
     EXPECT_FALSE(authum_logger_buffer_init(&job.buffer, &job.logger, 0));
     EXPECT_TRUE(authum_logger_buffer_init(&job.buffer, &job.logger, 2));
@@ -160,7 +160,7 @@ TEST(authum_logger_buffer, nested_capture_restores_previous_buffer)
     log_job_t job = {};
     authum_logger_ops_t ops = {write_log, log_enabled, 0, 0};
     authum_logger_channel_t channel = {&ops, authum_null};
-    job.logger.channel = &channel;
+    authum_logger_set_module_channel(&job.logger, &channel);
     authum_logger_buffer_t nested = {}, *previous;
     ASSERT_TRUE(authum_logger_buffer_init(&job.buffer, &job.logger, 2));
     EXPECT_TRUE(authum_logger_buffer_init(&nested, &job.logger, 1));
@@ -186,7 +186,7 @@ TEST(authum_logger_buffer, counts_messages_beyond_capacity)
     authum_logger_ops_t ops = {write_log, log_enabled, 0, 0};
     authum_logger_channel_t channel = {&ops, authum_null};
     authum_logger_t logger = {};
-    logger.channel = &channel;
+    authum_logger_set_module_channel(&logger, &channel);
     authum_logger_buffer_t buffer = {};
     ASSERT_TRUE(authum_logger_buffer_init(&buffer, &logger, 1));
     auto *previous = authum_logger_buffer_begin(&buffer);

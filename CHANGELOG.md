@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The host's log channel record (`authum_logs_channel_t`) has its own header
+  `host/logs/channel.h` and level-1 accessors; `host/logs.c` no longer touches its
+  fields. Behaviour is unchanged.
+- `authum_logger_t` has level-1 accessors (`authum_logger_get_module_channel` /
+  `_set_module_channel`, `_get_journal` / `_get_journal_mut`, `_owns_journal` /
+  `_set_owns_journal`); Authum no longer touches its fields. The layout is unchanged.
+- `authum_cstr_format_v` cuts with lh's `lh_str_ptr_format_cstr_cut_v` instead of
+  formatting into an allocated string and copying its head. The result is the same.
 - The connection a module's task thread keeps for `authum_sql_thread_query` is lh's
   `lh_os_sql_keep_t`: the description is copied into an `lh_sql_address_t` (the
   password is wiped when the job ends), the job's `authum_sql_t` borrows the kept

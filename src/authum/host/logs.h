@@ -46,42 +46,7 @@
 #include <lh/os/env.h>
 #include <lh/core/runtime/logger.h>
 #include <authum/cfg.h>
-
-enum
-{
-    authum_logs_name_max = 64,
-    /** Channel level that lets nothing through. */
-    authum_logs_level_off = -1
-};
-
-typedef struct authum_logs_channel authum_logs_channel_t;
-
-struct authum_logs_channel
-{
-    authum_logs_channel_t *next;
-    /** The id its records carry in the queue; 0 is the host. */
-    lh_u32_t id;
-    authum_ptr owner;
-    /** The module channel this journal belongs to; null for a module or the host. */
-    authum_logs_channel_t *parent;
-    /** Opens of a journal by name; it closes when the last one does. */
-    authum_usize_t refs;
-    /** Folder name: `qproto`, or `bans` under `qproto/` for a journal. */
-    authum_char_t name[authum_logs_name_max];
-    /** The source mark of the records: `QPROTO`, `QPROTO/bans` for a journal. */
-    authum_char_t tag[lh_math_mul(authum_logs_name_max, 2)];
-    /** Most verbose level written to the file, or ::authum_logs_level_off. */
-    authum_i32_t level;
-    authum_i32_t console_level;
-    authum_i32_t host_level;
-    long keep_days;
-    authum_bool_t file_enabled;
-    authum_logger_format_t format;
-    authum_logger_format_t default_format;
-    authum_path_t config;
-    /** Where the daily files go: logs/, modules/<module>/logs/, or a journal's folder in it. */
-    authum_path_t dir;
-};
+#include <authum/host/logs/channel.h>
 
 AUTHUM_EXTERN_C_BEGIN
 

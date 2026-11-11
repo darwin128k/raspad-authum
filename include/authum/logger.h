@@ -58,6 +58,30 @@ typedef struct authum_logger authum_logger_t;
 
 AUTHUM_EXTERN_C_BEGIN
 
+/** @brief Level-1 read of `channel`, the module's channel; @p self must be nonnull. */
+const authum_logger_channel_t *
+authum_logger_get_module_channel(const authum_logger_t *self);
+
+/** @brief Level-1 store of `channel`; no validation or ownership transfer. */
+void
+authum_logger_set_module_channel(authum_logger_t *self, const authum_logger_channel_t *value);
+
+/** @brief Level-1 read of the journal channel; @p self must be nonnull. */
+const authum_logger_channel_t *
+authum_logger_get_journal(const authum_logger_t *self);
+
+/** @brief Level-1 access to the journal channel, for change; @p self must be nonnull. */
+authum_logger_channel_t *
+authum_logger_get_journal_mut(authum_logger_t *self);
+
+/** @brief Level-1 read of `owns_journal`: a journal is open; @p self must be nonnull. */
+authum_bool_t
+authum_logger_owns_journal(const authum_logger_t *self);
+
+/** @brief Level-1 store of `owns_journal`; no validation. */
+void
+authum_logger_set_owns_journal(authum_logger_t *self, authum_bool_t value);
+
 /** Bind @p self to @p host's log channel (keep @p host alive until close). */
 void
 authum_logger_init(authum_logger_t *self, const authum_host_t *host);

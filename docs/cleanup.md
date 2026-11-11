@@ -266,15 +266,28 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   `join`, `parent`, ...), 3 in `lib/lh/src/lh/core/str.c` (lines 68, 113, 159) and 1 in
   `src/authum/api/cfg.c:124`; they predate the rule and were seen while adding
   `lh_fs_path_try_get_name` and `lh_str_is_equal` next to them.
-- [ ] **LH has no cutting format into a fixed buffer** (2026-11-10).
-  `lh_str_ptr_format_text_v` is all-or-nothing, so `lh_os_logger_capture_try_push_v`
-  and `authum_cstr_format_v` format into an allocated `lh_str_t` and cut the copy.
-  Add a cutting mode to the formatter (the walk stops at the room, NUL kept) and
-  use it in both.
-- [ ] **`authum_logger_t` fields are raw** (2026-11-10). `api/logger.c` touches
-  `channel`, `journal`, `owns_journal` directly; the channel itself now has
-  level-1 accessors (`authum_logger_channel_get_ops` / `_owner`, `api/logger/ops.c`).
-  The host's channel record (`host/logs.c`, `channel->owner`) is the same debt.
+- [x] **LH has no cutting format into a fixed buffer** (2026-11-10, done 2026-11-11).
+  The engine has a cut mode (`lh_str_ptr_format_text_walk(..., cut)`,
+  `lh_str_ptr_format_text_get_fit`); `lh_str_ptr_format_text_cut_v` and
+  `lh_str_ptr_format_cstr_cut_v` use it, and so do `lh_os_logger_capture_try_push_v`
+  and `authum_cstr_format_v` — no allocation per line any more.
+- [x] **An SQL failure is text only** (owner's question, 2026-11-11; done the same
+  day in lh: `lh_sql_error_kind_t`, `lh_sql_db_get_error_kind` / `_get_error_code`,
+  `lh_sql_db_fail_as`, `lh_os_sql_mysql_get_error_kind`, `lh_os_sql_sqlite_get_error_kind`;
+  every backend failure sets them).
+- [ ] **Modules see only the text of an SQL failure.** `authum_sql_thread_result_t`
+  and `authum_sql_t` are frozen, so the kind and the code reach a module only through
+  new API (a getter on `authum_sql_t`, a new result structure): the owner decides
+  when (a minor ABI step).
+- [x] **`authum_logger_t` fields are raw** (2026-11-10, done 2026-11-11). Level-1
+  accessors in `<authum/logger.h>` (`authum_logger_get_module_channel`, `_get_journal`,
+  `_owns_journal`, ...); `api/logger.c` and the tests go through them, with
+  `authum_logger_clear` / `_adopt_journal` (`api/logger/private.h`) above them.
+- [x] **The host's log channel record is raw** (done 2026-11-11). `authum_logs_channel_t`
+  moved to its own `host/logs/channel.h` with level-1 accessors (`host/logs/channel.c`)
+  and `authum_logs_channel_init`; `host/logs.c` goes through them (about 90 places),
+  the registry walk in `authum_logs_free` keeps the previous channel instead of a
+  pointer into a field.
 - [ ] **ABI 3.0** (owner, 2026-11-10): the sandbox becomes `authum_region_t` (an
   ownership tree of memory, not isolation), and a module's files leave `FILE *`; both in
   one release, so modules are rewritten once.
