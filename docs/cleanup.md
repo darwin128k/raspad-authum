@@ -220,7 +220,9 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
     `lh_str_ptr_parse_hex_bytes` and digits with `lh_char_is_digit`;
     `host/http/request.c` reads an all-zero Content-Length with
     `lh_str_ptr_find_not_of_chars`; `api/cstr.c` / `api/events.c` name their characters.
-  - `authum_char_to_upper` upper-cases one character through a two-byte buffer and
+  - [x] (done 2026-11-11: `lh_char_to_upper` / `lh_char_to_lower`, `lh_char_is_ascii`;
+    `authum_char_to_upper` is one call.) Was: `authum_char_to_upper` upper-cases one
+    character through a two-byte buffer and
     `lh_str_ptr_to_upper`: lh's one-character mapping (`lh_str_ptr_map_upper_one` /
     `_lower_one` in `util/str/case/map.c`) is hidden and exists only under the table
     option. Make `lh_char_to_upper` / `lh_char_to_lower` public bricks in

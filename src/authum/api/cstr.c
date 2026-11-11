@@ -2,7 +2,7 @@
 #include <authum/unused.h>
 #include <lh/core/char/space.h>
 #include <lh/core/char/xdigit.h>
-#include <lh/core/util/str/case/map.h>
+#include <lh/core/util/char/case/map.h>
 #include <lh/core/memory/std.h>
 
 #include <lh/core/str.h>
@@ -55,12 +55,7 @@ authum_char_is_xdigit(authum_char_t c)
 authum_char_t
 authum_char_to_upper(authum_char_t c)
 {
-    authum_char_t text[2];
-
-    text[0] = c;
-    lh_str_ptr_erase(text, 1);
-    lh_str_ptr_to_upper(text, 1u);
-    return text[0];
+    return lh_char_to_upper(c);
 }
 
 authum_bool_t
