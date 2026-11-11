@@ -103,7 +103,7 @@ authum_placeholder_name_valid(const authum_char_t *name)
 const authum_char_t *
 authum_placeholder_path_text(const authum_path_t *path)
 {
-    return (path && path->size) ? path->data : authum_null;
+    return (!authum_null_eq(path) && path->size) ? path->data : authum_null;
 }
 
 authum_bool_t
@@ -162,17 +162,17 @@ authum_placeholder_host_init(authum_placeholder_owner_t *owner,
                              const authum_char_t *const standard[authum_placeholder_standard_count],
                              authum_placeholder_service_t *service)
 {
-    if (!owner || !service)
+    if (authum_null_eq(owner) || authum_null_eq(service))
     {
         return;
     }
     lh_memory_std_set(owner, 0, sizeof lh_ptr_deref(owner));
-    if (standard)
+    if (!authum_null_eq(standard))
     {
         for (authum_usize_t index = 0; lh_math_lt(index, authum_placeholder_standard_count);
              index = lh_math_add_one(index))
         {
-            if (!standard[index] || !standard[index][0])
+            if (authum_null_eq(standard[index]) || !standard[index][0])
             {
                 continue;
             }
@@ -301,11 +301,11 @@ authum_placeholder_host_init_env(authum_placeholder_owner_t *owner, const authum
 {
     const authum_char_t *standard[authum_placeholder_standard_count] = {0};
 
-    if (!owner || !service)
+    if (authum_null_eq(owner) || authum_null_eq(service))
     {
         return;
     }
-    if (env)
+    if (!authum_null_eq(env))
     {
         const authum_path_t *paths[authum_placeholder_standard_count] = {
             env->game,   env->module, env->module_data, env->module_config, env->module_lang,

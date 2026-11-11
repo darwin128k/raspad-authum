@@ -39,7 +39,7 @@ authum_logs_now(void)
 {
     lh_timestamp_t now = 0;
 
-    if (authum_logs_clock)
+    if (!authum_null_eq(authum_logs_clock))
     {
         return authum_logs_clock();
     }
@@ -202,13 +202,13 @@ authum_logs_apply(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authu
                                          authum_logs_channel_get_host_level(channel)));
     value = LOG_VALUE("log_keep_days");
     /* Bound calendar arithmetic; reject overflow, negatives and trailing garbage. */
-    if (value && authum_cstr_parse_i32(value, lh_addr_of(days)) && lh_math_ge(days, 0) &&
-        lh_math_le(days, 36500))
+    if (!authum_null_eq(value) && authum_cstr_parse_i32(value, lh_addr_of(days)) &&
+        lh_math_ge(days, 0) && lh_math_le(days, 36500))
     {
         authum_logs_channel_set_keep_days(channel, days);
     }
     value = LOG_VALUE("log_file");
-    if (value)
+    if (!authum_null_eq(value))
     {
         if (authum_cstr_is_equal(value, "on", authum_bool_false))
         {
@@ -220,7 +220,7 @@ authum_logs_apply(authum_logs_channel_t *channel, authum_cfg_t *cfg, const authu
         }
     }
     value = LOG_VALUE("log_format");
-    if (value)
+    if (!authum_null_eq(value))
     {
         if (authum_cstr_is_equal(value, "standard", authum_bool_false))
         {
@@ -266,8 +266,9 @@ void
 authum_logs_read_channel_level(authum_logs_channel_t *channel, authum_cfg_t *admin)
 {
     authum_cfg_t local;
-    const authum_logs_channel_t *module =
-        authum_logs_channel_get_parent(channel) ? authum_logs_channel_get_parent(channel) : channel;
+    const authum_logs_channel_t *module = !authum_null_eq(authum_logs_channel_get_parent(channel))
+                                              ? authum_logs_channel_get_parent(channel)
+                                              : channel;
     authum_char_t path[lh_math_add(lh_math_mul(authum_logs_name_max, 2), 2)];
     /* Resolve each channel afresh: admin module overrides outrank local journal keys. */
     authum_logs_inherit(channel, lh_addr_of(authum_logs_defaults));
@@ -275,17 +276,17 @@ authum_logs_read_channel_level(authum_logs_channel_t *channel, authum_cfg_t *adm
         authum_cfg_open(lh_addr_of(local), authum_logs_channel_get_config(module)))
     {
         authum_logs_apply(channel, lh_addr_of(local), "");
-        if (authum_logs_channel_get_parent(channel))
+        if (!authum_null_eq(authum_logs_channel_get_parent(channel)))
         {
             authum_logs_admin(channel, lh_addr_of(local), authum_logs_channel_get_name(channel));
         }
         authum_cfg_close(lh_addr_of(local));
     }
-    if (admin)
+    if (!authum_null_eq(admin))
     {
         /* The keys are named, not tagged: `qproto.` for a module, `qproto/bans.` for a
          * journal under it. */
-        if (authum_logs_channel_get_parent(channel))
+        if (!authum_null_eq(authum_logs_channel_get_parent(channel)))
         {
             authum_logs_admin(
                 channel, admin,
@@ -346,7 +347,8 @@ authum_logs_read_cfg(void)
         authum_cfg_close(open);
     }
     authum_logs_send_channel(lh_addr_of(authum_logs_host));
-    for (channel = authum_logs_head; channel; channel = authum_logs_channel_get_next(channel))
+    for (channel = authum_logs_head; !authum_null_eq(channel);
+         channel = authum_logs_channel_get_next(channel))
     {
         authum_logs_send_channel(channel);
     }
@@ -452,7 +454,7 @@ authum_logs_is_enabled(authum_ptr owner, authum_logger_level_t level)
     return (lh_math_le(lh_cast_static(authum_i32_t, level),
                        authum_logs_channel_get_level(channel)) &&
             lh_math_le(level, authum_logger_level_debug) &&
-            (!authum_logs_channel_get_parent(channel) ||
+            (authum_null_eq(authum_logs_channel_get_parent(channel)) ||
              lh_math_ne(authum_logs_channel_get_level(authum_logs_channel_get_parent(channel)),
                         authum_logs_level_off)) &&
             (authum_logs_channel_is_file_enabled(channel) ||
@@ -555,7 +557,7 @@ authum_logs_add(authum_ptr owner, authum_logs_channel_t *parent, const authum_ch
         authum_unused(
             authum_path_join(authum_logs_channel_get_dir_mut(channel), lh_addr_of(base), "logs"));
     }
-    if (!parent)
+    if (authum_null_eq(parent))
     {
         authum_path_t configs;
         authum_char_t leaf[lh_math_add(authum_logs_name_max, 5)];
@@ -708,13 +710,13 @@ authum_logs_close_journal(authum_ptr journal)
 authum_ptr
 authum_logs_construct(authum_ptr owner, const authum_logger_options_t *options)
 {
-    if (!options || lh_math_lt(options->format, authum_logger_format_inherit) ||
+    if (authum_null_eq(options) || lh_math_lt(options->format, authum_logger_format_inherit) ||
         lh_math_gt(options->format, authum_logger_format_raw))
     {
         return authum_null;
     }
     authum_ptr journal = authum_logs_open_journal(owner, options->name);
-    if (!journal)
+    if (authum_null_eq(journal))
     {
         return authum_null;
     }

@@ -1,5 +1,4 @@
 #include <authum/host/http/internal.h>
-#include <authum/null.h>
 #include <authum/memory.h>
 #include <lh/os/net.h>
 #include <lh/os/system.h>
@@ -25,7 +24,7 @@ authum_http_server_release_resources(authum_http_server_t *server)
     {
         lh_os_fs_file_deinit(lh_addr_of(authum_http_server_get_roots_mut(server)[i]));
     }
-    if (authum_http_server_get_clients_mut(server))
+    if (!authum_null_eq(authum_http_server_get_clients_mut(server)))
     {
         for (authum_i32_t i = 0; lh_math_lt(i, server->options.max_clients); i = lh_math_add_one(i))
         {
@@ -68,14 +67,14 @@ authum_http_server_create(const authum_http_options_t *options, const authum_cha
                           authum_char_t *error, authum_u32_t error_size)
 {
     authum_http_server_t *server = authum_memory_alloc_zero(1, sizeof lh_ptr_deref(server));
-    if (!server)
+    if (authum_null_eq(server))
     {
         authum_unused(lh_str_ptr_format_cstr(error, error_size, "HTTP state allocation failed"));
         return authum_null;
     }
     /* Winsock counts its starts: one for each server, ended in its release. */
     server->orphan = authum_memory_alloc_zero(1, sizeof lh_ptr_deref(server->orphan));
-    if (!server->orphan)
+    if (authum_null_eq(server->orphan))
     {
         authum_unused(lh_str_ptr_format_cstr(error, error_size, "HTTP state allocation failed"));
         authum_memory_free(server);
@@ -94,7 +93,7 @@ authum_http_server_create(const authum_http_options_t *options, const authum_cha
     /* The access log says which module served the request. The tag is copied
      * before the worker starts: a worker that outlives a bounded stop must not
      * read the unloaded module's image. */
-    if (tag)
+    if (!authum_null_eq(tag))
     {
         authum_unused(lh_str_ptr_format_cstr(server->tag_text, sizeof server->tag_text, "%s", tag));
         server->tag = server->tag_text;
@@ -119,7 +118,7 @@ authum_http_server_create(const authum_http_options_t *options, const authum_cha
     }
     server->clients = authum_memory_alloc_zero(lh_cast_static(authum_usize_t, options->max_clients),
                                                sizeof lh_ptr_deref(server->clients));
-    if (!server->clients)
+    if (authum_null_eq(server->clients))
     {
         authum_unused(lh_str_ptr_format_cstr(error, error_size, "client buffer allocation failed"));
         goto failed;
@@ -191,7 +190,7 @@ authum_http_wake(authum_ptr arg)
 void
 authum_http_server_shutdown(authum_http_server_t *server)
 {
-    if (!server || server->joined || server->abandoned)
+    if (authum_null_eq(server) || server->joined || server->abandoned)
     {
         return;
     }
@@ -199,17 +198,18 @@ authum_http_server_shutdown(authum_http_server_t *server)
      * a file call (a source on a slow network share) is given up instead of
      * freezing the server on unload: the loop has it free its hold on the
      * server when it ends, and the reaper frees the loop later. */
-    if (server->loop && !lh_rail_loop_try_stop(server->loop, AUTHUM_HTTP_STOP_TIMEOUT_MS) &&
+    if (!authum_null_eq(server->loop) &&
+        !lh_rail_loop_try_stop(server->loop, AUTHUM_HTTP_STOP_TIMEOUT_MS) &&
         lh_rail_loop_try_abandon(server->loop, authum_http_worker_release, server))
     {
         server->abandoned = authum_bool_true;
-        authum_unused(lh_logger_log(
-            lh_runtime_logger_get_mut(), lh_logger_level_warning,
-            "http event=stop_timeout module=%s port=%d waited_ms=%d: the HTTP worker "
-            "is blocked (often a source on a network drive); it is left to finish on "
-            "its own and frees its memory when it does",
-            server->tag ? server->tag : "-", server->options.port,
-            lh_cast_static(int, AUTHUM_HTTP_STOP_TIMEOUT_MS)));
+        authum_unused(
+            lh_logger_log(lh_runtime_logger_get_mut(), lh_logger_level_warning,
+                          "http event=stop_timeout module=%s port=%d waited_ms=%d: the HTTP worker "
+                          "is blocked (often a source on a network drive); it is left to finish on "
+                          "its own and frees its memory when it does",
+                          !authum_null_eq(server->tag) ? server->tag : "-", server->options.port,
+                          lh_cast_static(int, AUTHUM_HTTP_STOP_TIMEOUT_MS)));
         return;
     }
     lh_rail_loop_destroy(server->loop);
@@ -220,11 +220,12 @@ authum_http_server_shutdown(authum_http_server_t *server)
 authum_usize_t
 authum_http_server_memory(const authum_http_server_t *server)
 {
-    return server ? lh_math_add(
-                        sizeof lh_ptr_deref(server),
-                        lh_math_mul(lh_cast_static(authum_usize_t, server->options.max_clients),
-                                    sizeof lh_ptr_deref(server->clients)))
-                  : 0;
+    return !authum_null_eq(server)
+               ? lh_math_add(
+                     sizeof lh_ptr_deref(server),
+                     lh_math_mul(lh_cast_static(authum_usize_t, server->options.max_clients),
+                                 sizeof lh_ptr_deref(server->clients)))
+               : 0;
 }
 
 /* Game thread only: loops of abandoned workers not yet reaped. */
@@ -235,7 +236,7 @@ authum_http_host_reap(void)
 {
     authum_usize_t left = 0;
     authum_http_orphan_t **slot = lh_addr_of(g_orphans);
-    while (lh_ptr_deref(slot))
+    while (!authum_null_eq(lh_ptr_deref(slot)))
     {
         authum_http_orphan_t *orphan = lh_ptr_deref(slot);
         /* Never waits: the loop is freed only once its thread has ended. */
@@ -254,7 +255,7 @@ authum_http_host_reap(void)
 void
 authum_http_server_destroy(authum_http_server_t *server)
 {
-    if (!server)
+    if (authum_null_eq(server))
     {
         return;
     }

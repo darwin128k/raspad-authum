@@ -15,7 +15,7 @@ authum_http_client_close(authum_http_server_t *server, authum_http_client_t *cli
     if (lh_os_net_socket_is_valid(lh_addr_of(client->fd)))
     {
         const authum_char_t *event =
-            client->close_reason
+            !authum_null_eq(client->close_reason)
                 ? client->close_reason
                 : (client->state && lh_math_eq(client->sent, client->output_size) &&
                            !client->remaining
@@ -163,8 +163,9 @@ authum_http_client_read(authum_http_server_t *server, authum_http_client_t *clie
         client->progress = now;
         /* Parse only when a line has ended (or the buffer is full): a request
          * dripped byte by byte then costs one scan per line, not one per byte. */
-        if (!lh_str_ptr_find_of_char(lh_math_add(client->input, before),
-                                     lh_cast_static(authum_usize_t, received), lh_char_map_lf) &&
+        if (authum_null_eq(lh_str_ptr_find_of_char(lh_math_add(client->input, before),
+                                                   lh_cast_static(authum_usize_t, received),
+                                                   lh_char_map_lf)) &&
             lh_math_lt(client->used, sizeof client->input))
         {
             authum_http_client_partial(client);

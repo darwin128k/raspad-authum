@@ -42,7 +42,7 @@ authum_clients_event(const authum_char_t *name, authum_ptr payload, authum_ptr u
         }
         return authum_event_result_continue;
     }
-    if (!ev || lh_math_lt(ev->index, 1) ||
+    if (authum_null_eq(ev) || lh_math_lt(ev->index, 1) ||
         lh_math_gt(lh_cast_static(authum_usize_t, ev->index), impl->max))
     {
         return authum_event_result_continue;
@@ -66,7 +66,7 @@ authum_clients_destroy(authum_clients_t *self)
 {
     authum_clients_impl_t *impl;
     authum_u32_t i;
-    if (!self || !(impl = self->impl))
+    if (authum_null_eq(self) || authum_null_eq(impl = self->impl))
     {
         return;
     }
@@ -85,15 +85,15 @@ authum_clients_init(authum_clients_t *self, const authum_host_t *host, authum_us
 {
     authum_clients_impl_t *impl;
     authum_u32_t i;
-    if (!self || self->impl || !host || !authum_host_get_events(host) || !max ||
-        lh_math_gt(max, 4096))
+    if (authum_null_eq(self) || !authum_null_eq(self->impl) || authum_null_eq(host) ||
+        authum_null_eq(authum_host_get_events(host)) || !max || lh_math_gt(max, 4096))
     {
         return authum_bool_false;
     }
     impl = authum_memory_alloc_zero(
         1, lh_math_add(sizeof lh_ptr_deref(impl),
                        lh_math_mul((lh_math_add(max, 1)), sizeof impl->slots[0])));
-    if (!impl)
+    if (authum_null_eq(impl))
     {
         return authum_bool_false;
     }
@@ -123,13 +123,13 @@ authum_clients_init(authum_clients_t *self, const authum_host_t *host, authum_us
 authum_bool_t
 authum_clients_capture(const authum_clients_t *self, authum_i32_t index, authum_client_ref_t *out)
 {
-    const authum_clients_impl_t *impl = self ? self->impl : authum_null;
+    const authum_clients_impl_t *impl = !authum_null_eq(self) ? self->impl : authum_null;
     const authum_client_identity_t *slot;
-    if (out)
+    if (!authum_null_eq(out))
     {
         lh_memory_std_set(out, 0, sizeof lh_ptr_deref(out));
     }
-    if (!impl || !out || lh_math_lt(index, 1) ||
+    if (authum_null_eq(impl) || authum_null_eq(out) || lh_math_lt(index, 1) ||
         lh_math_gt(lh_cast_static(authum_usize_t, index), impl->max))
     {
         return authum_bool_false;
@@ -152,7 +152,7 @@ authum_bool_t
 authum_client_ref_is_current(const authum_clients_t *self, const authum_client_ref_t *ref)
 {
     authum_client_ref_t current;
-    return ref && authum_clients_capture(self, ref->index, lh_addr_of(current)) &&
+    return !authum_null_eq(ref) && authum_clients_capture(self, ref->index, lh_addr_of(current)) &&
            lh_math_eq(ref->tracker, current.tracker) &&
            lh_math_eq(ref->lifetime, current.lifetime) &&
            lh_math_eq(ref->generation, current.generation) &&

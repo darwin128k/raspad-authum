@@ -1,6 +1,5 @@
 #include <authum/host/http/internal.h>
 #include <lh/os/tick.h>
-#include <authum/null.h>
 
 void (*authum_http_test_step_hook)(authum_http_server_t *server) = authum_null;
 
@@ -126,7 +125,7 @@ void
 authum_http_step(authum_ptr arg)
 {
     authum_http_server_t *server = arg;
-    if (authum_http_test_step_hook)
+    if (!authum_null_eq(authum_http_test_step_hook))
     {
         authum_http_test_step_hook(server);
     }

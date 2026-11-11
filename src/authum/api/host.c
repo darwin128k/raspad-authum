@@ -5,37 +5,38 @@
 const authum_http_service_t *
 authum_host_get_http(const authum_host_t *host)
 {
-    return host && !authum_null_eq((host)->http) ? host->http : authum_null;
+    return !authum_null_eq(host) && !authum_null_eq((host)->http) ? host->http : authum_null;
 }
 
 const authum_clock_t *
 authum_host_get_clock(const authum_host_t *host)
 {
-    return host && !authum_null_eq((host)->clock) ? host->clock : authum_null;
+    return !authum_null_eq(host) && !authum_null_eq((host)->clock) ? host->clock : authum_null;
 }
 
 const authum_placeholder_service_t *
 authum_host_get_placeholders(const authum_host_t *host)
 {
-    return host && !authum_null_eq((host)->placeholders) ? host->placeholders : authum_null;
+    return !authum_null_eq(host) && !authum_null_eq((host)->placeholders) ? host->placeholders
+                                                                          : authum_null;
 }
 
 const authum_hooks_t *
 authum_host_get_hooks(const authum_host_t *host)
 {
-    return host && !authum_null_eq((host)->hooks) ? host->hooks : authum_null;
+    return !authum_null_eq(host) && !authum_null_eq((host)->hooks) ? host->hooks : authum_null;
 }
 
 const authum_threads_t *
 authum_host_get_threads(const authum_host_t *host)
 {
-    return host && !authum_null_eq((host)->threads) ? host->threads : authum_null;
+    return !authum_null_eq(host) && !authum_null_eq((host)->threads) ? host->threads : authum_null;
 }
 
 const authum_tasks_t *
 authum_host_get_tasks(const authum_host_t *host)
 {
-    return host && !authum_null_eq((host)->tasks) ? host->tasks : authum_null;
+    return !authum_null_eq(host) && !authum_null_eq((host)->tasks) ? host->tasks : authum_null;
 }
 
 const authum_logger_channel_t *

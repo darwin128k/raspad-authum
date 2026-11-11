@@ -1,6 +1,5 @@
 #include <authum/host/http/internal.h>
 #include <lh/os/system/fs/path.h>
-#include <authum/null.h>
 #include <lh/core/char/map.h>
 #include <lh/core/memory/std.h>
 #include <authum/memory.h>
@@ -8,11 +7,12 @@
 authum_bool_t
 authum_http_owner_has_server(const authum_http_owner_t *owner, const authum_http_server_t *server)
 {
-    if (!owner || !server)
+    if (authum_null_eq(owner) || authum_null_eq(server))
     {
         return authum_bool_false;
     }
-    for (const authum_http_server_t *entry = owner->head; entry; entry = entry->next)
+    for (const authum_http_server_t *entry = owner->head; !authum_null_eq(entry);
+         entry = entry->next)
     {
         if (lh_math_eq(entry, server))
         {
@@ -42,7 +42,7 @@ authum_bool_t
 authum_http_options_read(const authum_http_options_t *in, authum_http_options_t *out)
 {
     authum_http_options_fill_defaults(out);
-    if (!in)
+    if (authum_null_eq(in))
     {
         return authum_bool_false;
     }
@@ -87,7 +87,7 @@ authum_http_options_read(const authum_http_options_t *in, authum_http_options_t 
 authum_bool_t
 authum_http_options_is_valid(const authum_http_options_t *options)
 {
-    if (!options || !options->source_count ||
+    if (authum_null_eq(options) || !options->source_count ||
         lh_math_gt(options->source_count, AUTHUM_HTTP_MAX_SOURCES) ||
         lh_math_lt(options->port, 1) || lh_math_gt(options->port, LH_NET_PORT_MAX) ||
         lh_math_lt(options->max_clients, 1) ||
@@ -129,16 +129,16 @@ authum_http_service_open(authum_ptr context, const authum_http_options_t *caller
                          authum_char_t *error, authum_usize_t error_size)
 {
     authum_unused(authum_http_host_reap());
-    if (!error)
+    if (authum_null_eq(error))
     {
         error_size = 0;
     }
     /* The caller's struct may be from an older module: read it into the
      * current layout (kept off the stack: the struct is about 70 KiB). */
     authum_http_options_t *options = authum_memory_alloc_zero(1, sizeof lh_ptr_deref(options));
-    if (!options)
+    if (authum_null_eq(options))
     {
-        if (error && error_size)
+        if (!authum_null_eq(error) && error_size)
         {
             authum_unused(lh_str_ptr_format_cstr(error, error_size, "HTTP options allocation failed"));
         }
@@ -149,11 +149,11 @@ authum_http_service_open(authum_ptr context, const authum_http_options_t *caller
     {
         server = authum_http_service_open_read(context, options, error, error_size);
     }
-    else if (error && error_size)
+    else if (!authum_null_eq(error) && error_size)
     {
         authum_unused(lh_str_ptr_format_cstr(error, error_size,
                                              "HTTP options struct_size %u is not supported",
-                                             caller ? caller->struct_size : 0u));
+                                             !authum_null_eq(caller) ? caller->struct_size : 0u));
     }
     authum_memory_free(options);
     return server;
@@ -163,9 +163,9 @@ authum_http_server_t *
 authum_http_service_open_read(authum_http_owner_t *owner, const authum_http_options_t *options,
                               authum_char_t *error, authum_usize_t error_size)
 {
-    if (!owner || !authum_http_options_is_valid(options))
+    if (authum_null_eq(owner) || !authum_http_options_is_valid(options))
     {
-        if (error && error_size)
+        if (!authum_null_eq(error) && error_size)
         {
             authum_unused(lh_str_ptr_format_cstr(error, error_size, "invalid HTTP options or owner"));
         }
@@ -173,20 +173,20 @@ authum_http_service_open_read(authum_http_owner_t *owner, const authum_http_opti
     }
     /* Bound per-owner service state independently of connection limits. */
     authum_usize_t count = 0;
-    for (authum_http_server_t *entry = owner->head; entry; entry = entry->next)
+    for (authum_http_server_t *entry = owner->head; !authum_null_eq(entry); entry = entry->next)
     {
         count = lh_math_add_one(count);
     }
     if (lh_math_ge(count, 8))
     {
-        if (error && error_size)
+        if (!authum_null_eq(error) && error_size)
         {
             authum_unused(lh_str_ptr_format_cstr(error, error_size, "HTTP server limit reached for owner"));
         }
         return authum_null;
     }
     authum_http_server_t *server = authum_http_server_create(options, owner->tag, error, error_size);
-    if (server)
+    if (!authum_null_eq(server))
     {
         server->next = owner->head;
         owner->head = server;
@@ -266,9 +266,9 @@ authum_http_host_init(authum_http_owner_t *owner, authum_http_service_t *service
 void
 authum_http_host_drop_owner(authum_http_owner_t *owner)
 {
-    if (owner)
+    if (!authum_null_eq(owner))
     {
-        while (owner->head)
+        while (!authum_null_eq(owner->head))
         {
             authum_http_service_close(owner, owner->head);
         }

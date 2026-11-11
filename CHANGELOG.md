@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   forgotten one; inside, it is lh's `lh_array_t` with the sandbox as its allocator
   (`lh_array_init_by`). No 3.x module loads; `examples/hello` and `docs/sandbox.md`
   show the new calls.
+- A pointer is never used as a truth value: `!p` / `if (p)` / `p ? … : …` are
+  `authum_null_eq(p)` / `!authum_null_eq(p)` (168 sites). The HTTP host's files get
+  `authum/null.h` through `http/internal.h`.
 - The HTTP host's path check is lh's `lh_http_target_try_copy_path`; Authum keeps only
   its policy lists. The refusal names in the access log are unchanged.
   `authum_http_name_byte` is gone (`lh_http_is_name_char`).

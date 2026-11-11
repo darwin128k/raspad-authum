@@ -27,7 +27,8 @@ authum_http_options_init(authum_http_options_t *options)
 authum_bool_t
 authum_http_source_add(authum_http_options_t *options, const authum_char_t *path)
 {
-    if (!options || !path || lh_math_ge(options->source_count, AUTHUM_HTTP_MAX_SOURCES) ||
+    if (authum_null_eq(options) || authum_null_eq(path) ||
+        lh_math_ge(options->source_count, AUTHUM_HTTP_MAX_SOURCES) ||
         lh_math_ge(lh_str_ptr_len(path), AUTHUM_HTTP_PATH_CAPACITY) ||
         !lh_fs_path_is_text_absolute(path, lh_os_system_fs_path_style_native()))
     {
@@ -42,10 +43,11 @@ authum_http_server_t *
 authum_http_open(const authum_http_service_t *service, const authum_http_options_t *options,
                  authum_char_t *error, authum_usize_t error_size)
 {
-    if (!service || !service->ops || authum_null_eq((service->ops)->open) ||
-        authum_null_eq((service->ops)->shutdown) || authum_null_eq((service->ops)->close))
+    if (authum_null_eq(service) || authum_null_eq(service->ops) ||
+        authum_null_eq((service->ops)->open) || authum_null_eq((service->ops)->shutdown) ||
+        authum_null_eq((service->ops)->close))
     {
-        if (error && error_size)
+        if (!authum_null_eq(error) && error_size)
         {
             authum_unused(lh_str_ptr_format_cstr(error, error_size, "%s",
                                                  "host has no HTTP service on this platform"));
@@ -58,7 +60,8 @@ authum_http_open(const authum_http_service_t *service, const authum_http_options
 void
 authum_http_shutdown(const authum_http_service_t *service, authum_http_server_t *server)
 {
-    if (service && service->ops && !authum_null_eq((service->ops)->shutdown))
+    if (!authum_null_eq(service) && !authum_null_eq(service->ops) &&
+        !authum_null_eq((service->ops)->shutdown))
     {
         service->ops->shutdown(service->owner, server);
     }
@@ -67,7 +70,8 @@ authum_http_shutdown(const authum_http_service_t *service, authum_http_server_t 
 void
 authum_http_close(const authum_http_service_t *service, authum_http_server_t *server)
 {
-    if (service && service->ops && !authum_null_eq((service->ops)->close))
+    if (!authum_null_eq(service) && !authum_null_eq(service->ops) &&
+        !authum_null_eq((service->ops)->close))
     {
         service->ops->close(service->owner, server);
     }
@@ -77,7 +81,8 @@ authum_usize_t
 authum_http_drain(const authum_http_service_t *service, authum_http_server_t *server,
                   authum_http_log_fn sink, authum_ptr user, authum_usize_t limit)
 {
-    return service && service->ops && !authum_null_eq((service->ops)->drain)
+    return !authum_null_eq(service) && !authum_null_eq(service->ops) &&
+                   !authum_null_eq((service->ops)->drain)
                ? service->ops->drain(service->owner, server, sink, user, limit)
                : 0;
 }
@@ -86,7 +91,8 @@ authum_usize_t
 authum_http_get_memory_usage(const authum_http_service_t *service,
                              const authum_http_server_t *server)
 {
-    return service && service->ops && !authum_null_eq((service->ops)->memory_usage)
+    return !authum_null_eq(service) && !authum_null_eq(service->ops) &&
+                   !authum_null_eq((service->ops)->memory_usage)
                ? service->ops->memory_usage(service->owner, server)
                : 0;
 }

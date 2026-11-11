@@ -6,7 +6,8 @@ authum_placeholder_expand(const authum_placeholder_service_t *service,
                           const authum_char_t *template, authum_char_t *out,
                           authum_usize_t out_size)
 {
-    if (!service || !service->ops || authum_null_eq((service->ops)->expand) || !template || !out ||
+    if (authum_null_eq(service) || authum_null_eq(service->ops) ||
+        authum_null_eq((service->ops)->expand) || authum_null_eq(template) || authum_null_eq(out) ||
         !out_size)
     {
         return authum_bool_false;
@@ -18,8 +19,9 @@ authum_bool_t
 authum_placeholder_register(const authum_placeholder_service_t *service, const authum_char_t *name,
                             const authum_char_t *value)
 {
-    if (!service || !service->ops || authum_null_eq((service->ops)->register_placeholder) ||
-        !name || !value)
+    if (authum_null_eq(service) || authum_null_eq(service->ops) ||
+        authum_null_eq((service->ops)->register_placeholder) || authum_null_eq(name) ||
+        authum_null_eq(value))
     {
         return authum_bool_false;
     }
@@ -30,8 +32,8 @@ authum_bool_t
 authum_placeholder_unregister(const authum_placeholder_service_t *service,
                               const authum_char_t *name)
 {
-    if (!service || !service->ops || authum_null_eq((service->ops)->unregister_placeholder) ||
-        !name)
+    if (authum_null_eq(service) || authum_null_eq(service->ops) ||
+        authum_null_eq((service->ops)->unregister_placeholder) || authum_null_eq(name))
     {
         return authum_bool_false;
     }

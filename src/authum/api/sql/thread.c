@@ -58,7 +58,7 @@ authum_sql_thread_try_copy_address(const authum_sql_connection_t *c, lh_sql_addr
 authum_bool_t
 authum_sql_connect(authum_sql_t *db, const authum_sql_connection_t *c)
 {
-    if (!db || !c)
+    if (authum_null_eq(db) || authum_null_eq(c))
     {
         return authum_bool_false;
     }
@@ -148,7 +148,7 @@ void
 authum_sql_thread_finish(authum_ptr arg)
 {
     authum_sql_thread_job_t *job = arg;
-    if (job->complete)
+    if (!authum_null_eq(job->complete))
     {
         job->complete(lh_addr_of(job->result), job->user);
     }
@@ -158,7 +158,7 @@ void
 authum_sql_thread_free(authum_ptr arg)
 {
     authum_sql_thread_job_t *job = arg;
-    if (job->destroy)
+    if (!authum_null_eq(job->destroy))
     {
         job->destroy(job->user);
     }
@@ -172,7 +172,7 @@ authum_sql_thread_query(const authum_host_t *host, const authum_sql_connection_t
                         authum_task_fn destroy, authum_ptr user)
 {
     const authum_tasks_t *tasks = authum_host_get_tasks(host);
-    if (!c || !work || !tasks)
+    if (authum_null_eq(c) || authum_null_eq(work) || authum_null_eq(tasks))
     {
         return authum_bool_false;
     }
@@ -184,7 +184,7 @@ authum_sql_thread_query(const authum_host_t *host, const authum_sql_connection_t
         return authum_bool_false;
     }
     authum_sql_thread_job_t *job = authum_memory_alloc_zero(1, sizeof lh_ptr_deref(job));
-    if (!job)
+    if (authum_null_eq(job))
     {
         return authum_bool_false;
     }

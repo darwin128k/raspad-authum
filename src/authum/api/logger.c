@@ -165,7 +165,7 @@ authum_logger_is_enabled(const authum_logger_t *self, authum_logger_level_t leve
 {
     if (authum_logger_buffer_is_active())
     {
-        return self && lh_math_le(level, authum_logger_level_debug);
+        return !authum_null_eq(self) && lh_math_le(level, authum_logger_level_debug);
     }
     return authum_logger_channel_is_enabled(authum_logger_get_channel(self), level);
 }
@@ -205,7 +205,7 @@ authum_bool_t
 authum_logger_create(authum_logger_t *self, const authum_host_t *host,
                      const authum_logger_options_t *options)
 {
-    if (!self)
+    if (authum_null_eq(self))
     {
         return authum_bool_false;
     }
@@ -221,7 +221,7 @@ authum_logger_create(authum_logger_t *self, const authum_host_t *host,
         return authum_bool_false;
     }
     authum_ptr journal = ops->construct(authum_logger_channel_get_owner(module), options);
-    if (!journal)
+    if (authum_null_eq(journal))
     {
         return authum_bool_false;
     }

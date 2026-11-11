@@ -1,4 +1,3 @@
-#include <authum/null.h>
 #include <authum/host/http.h>
 #include <authum/host/threads.h>
 #include <authum/host/http/internal.h>

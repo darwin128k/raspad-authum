@@ -8,13 +8,14 @@ authum_thread_start(const authum_threads_t *threads, authum_thread_fn run, authu
                     authum_ptr user, authum_i32_t cpu, authum_u32_t flags, authum_char_t *error,
                     authum_usize_t error_size)
 {
-    if (error && error_size)
+    if (!authum_null_eq(error) && error_size)
     {
         error[0] = 0;
     }
-    if (!threads || !threads->ops || authum_null_eq((threads->ops)->start))
+    if (authum_null_eq(threads) || authum_null_eq(threads->ops) ||
+        authum_null_eq((threads->ops)->start))
     {
-        if (error && error_size)
+        if (!authum_null_eq(error) && error_size)
         {
             authum_unused(lh_str_ptr_format_cstr(
                 error, error_size, "%s", "host has no managed-thread API on this platform"));
@@ -27,7 +28,8 @@ authum_thread_start(const authum_threads_t *threads, authum_thread_fn run, authu
 authum_bool_t
 authum_thread_stop(const authum_threads_t *threads, authum_thread_t *thread)
 {
-    return threads && threads->ops && !authum_null_eq((threads->ops)->stop)
+    return !authum_null_eq(threads) && !authum_null_eq(threads->ops) &&
+                   !authum_null_eq((threads->ops)->stop)
                ? threads->ops->stop(threads->owner, thread)
                : authum_bool_false;
 }

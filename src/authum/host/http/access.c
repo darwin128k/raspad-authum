@@ -45,9 +45,10 @@ authum_http_access_record(authum_http_server_t *server, const authum_http_client
         event, client->id, client->ip, client->port,
         lh_ptr_deref(client->method) ? client->method : "-",
         lh_ptr_deref(client->path) ? client->path : "-", client->status, bytes, client->source,
-        server->tag ? server->tag : "-", duration, client->reason ? " reason=" : "",
-        client->reason ? client->reason : "", lh_ptr_deref(client->via) ? " via=" : "",
-        client->via));
+        !authum_null_eq(server->tag) ? server->tag : "-", duration,
+        !authum_null_eq(client->reason) ? " reason=" : "",
+        !authum_null_eq(client->reason) ? client->reason : "",
+        lh_ptr_deref(client->via) ? " via=" : "", client->via));
     authum_http_access_line(server, line);
 }
 
@@ -102,7 +103,7 @@ authum_u32_t
 authum_http_server_drain(authum_http_server_t *server, authum_http_log_fn sink, authum_ptr user,
                          authum_u32_t limit)
 {
-    if (!server || !sink || !limit)
+    if (authum_null_eq(server) || authum_null_eq(sink) || !limit)
     {
         return 0;
     }

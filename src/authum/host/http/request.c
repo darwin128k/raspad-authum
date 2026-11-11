@@ -1,5 +1,4 @@
 #include <authum/host/http/internal.h>
-#include <authum/null.h>
 #include <lh/core/memory/std.h>
 #include <lh/core/http/parser.h>
 #include <lh/core/char/map.h>
@@ -68,7 +67,7 @@ authum_http_request_read(authum_http_server_t *server, authum_http_client_t *cli
         }
         /* The buffer is full: a request line that never ended is a long URI,
          * anything after it is a header block over its budget. */
-        if (!lh_str_ptr_find_of_char(client->input, client->used, lh_char_map_lf))
+        if (authum_null_eq(lh_str_ptr_find_of_char(client->input, client->used, lh_char_map_lf)))
         {
             authum_http_request_refuse(client, 414, "URI Too Long", "uri_too_long");
         }
@@ -83,8 +82,9 @@ authum_http_request_read(authum_http_server_t *server, authum_http_client_t *cli
     {
         lh_http_error_t error = lh_http_parser_get_error(lh_addr_of(parser));
         const authum_bool_t line_ended =
-            lh_str_ptr_find_of_char(client->input, client->used, lh_char_map_lf) ? authum_bool_true
-                                                                                : authum_bool_false;
+            !authum_null_eq(lh_str_ptr_find_of_char(client->input, client->used, lh_char_map_lf))
+                ? authum_bool_true
+                : authum_bool_false;
         if (error == lh_http_error_header_capacity ||
             ((error == lh_http_error_head_size || error == lh_http_error_line_size) && line_ended))
         {
@@ -176,11 +176,13 @@ authum_http_request_read(authum_http_server_t *server, authum_http_client_t *cli
     if (!authum_http_resource_check(options, path, path_length, relative, sizeof relative,
                                     lh_addr_of(reason)))
     {
-        if (reason && (lh_str_ptr_equals(reason, "bad_encoding", lh_bool_false) || lh_str_ptr_equals(reason, "bad_target", lh_bool_false)))
+        if (!authum_null_eq(reason) && (lh_str_ptr_equals(reason, "bad_encoding", lh_bool_false) ||
+                                        lh_str_ptr_equals(reason, "bad_target", lh_bool_false)))
         {
             authum_http_request_refuse(client, 400, "Bad Request", reason);
         }
-        else if (reason && lh_str_ptr_equals(reason, "uri_too_long", lh_bool_false))
+        else if (!authum_null_eq(reason) &&
+                 lh_str_ptr_equals(reason, "uri_too_long", lh_bool_false))
         {
             authum_http_request_refuse(client, 414, "URI Too Long", reason);
         }

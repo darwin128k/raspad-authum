@@ -17,7 +17,8 @@ authum_http_policy_contains(const authum_char_t *list, lh_str_view_t value, auth
         }
         const authum_usize_t rest = lh_str_ptr_len(list);
         const authum_char_t *e = lh_str_ptr_find_of_char(list, rest, lh_char_map_space);
-        authum_usize_t z = e ? lh_cast_static(authum_usize_t, lh_ptr_udiff(e, list)) : rest;
+        authum_usize_t z =
+            !authum_null_eq(e) ? lh_cast_static(authum_usize_t, lh_ptr_udiff(e, list)) : rest;
         if (z &&
             (prefix
                  ? lh_math_ge(n, z) && lh_str_ptr_equals_by_size(list, z, text, z, lh_bool_true) &&
@@ -59,7 +60,7 @@ authum_http_resource_check(const authum_http_options_t *options, const authum_ch
         return 0;
     }
     const authum_char_t *slash = lh_str_ptr_find_of_char(out, n, lh_char_map_slash);
-    if (slash)
+    if (!authum_null_eq(slash))
     {
         lh_str_view_t dir;
         lh_str_view_from_offset(lh_addr_of(path), 0,
@@ -73,19 +74,20 @@ authum_http_resource_check(const authum_http_options_t *options, const authum_ch
     }
     /* The extension of the last component; root files have their own list. */
     const authum_char_t *last = lh_str_ptr_rfind_of_char(out, n, lh_char_map_slash);
-    last = last ? last + 1 : out;
+    last = !authum_null_eq(last) ? last + 1 : out;
     const authum_char_t *ext = lh_str_ptr_rfind_of_char(
         last, lh_cast_static(authum_usize_t, lh_ptr_udiff(out + n, last)), lh_char_map_period);
     lh_str_view_t extension;
     lh_str_view_init_empty(lh_addr_of(extension));
-    if (ext)
+    if (!authum_null_eq(ext))
     {
         const authum_usize_t at = lh_cast_static(authum_usize_t, lh_ptr_udiff(ext + 1, out));
         lh_str_view_from_offset(lh_addr_of(path), at, lh_math_sub(n, at), lh_addr_of(extension));
     }
     if (lh_str_view_is_empty(lh_addr_of(extension)) ||
         !authum_http_policy_contains(options->allow_extensions, extension, 0) ||
-        (!slash && !authum_http_policy_contains(options->root_extensions, extension, 0)))
+        (authum_null_eq(slash) &&
+         !authum_http_policy_contains(options->root_extensions, extension, 0)))
     {
         *reason = "ext_not_allowed";
         return 0;

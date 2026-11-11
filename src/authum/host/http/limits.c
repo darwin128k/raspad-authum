@@ -169,7 +169,7 @@ authum_http_refusals_flush(authum_http_server_t *server, authum_i64_t now)
             "http event=refused_summary rate_or_per_ip=%u per_ip_pending=%u no_slot=%u "
             "evicted=%u unlogged_refusals=%u module=%s",
             r->limit, r->pending, r->slots, r->evicted, r->unlogged,
-            server->tag ? server->tag : "-"));
+            !authum_null_eq(server->tag) ? server->tag : "-"));
         authum_http_access_line(server, line);
     }
     lh_memory_std_set(r, 0, sizeof lh_ptr_deref(r));

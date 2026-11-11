@@ -13,11 +13,11 @@ struct authum_sql_db_impl
 const authum_char_t *
 authum_sql_first_error(const authum_sql_t *self)
 {
-    if (!self)
+    if (authum_null_eq(self))
     {
         return "";
     }
-    return self->db
+    return !authum_null_eq(self->db)
                ? (lh_cast_reinterpret(const struct authum_sql_db_impl *, self->db))->first_error
                : self->errmsg;
 }
@@ -25,12 +25,12 @@ authum_sql_first_error(const authum_sql_t *self)
 void
 authum_sql_clear_errors(authum_sql_t *self)
 {
-    if (!self)
+    if (authum_null_eq(self))
     {
         return;
     }
     lh_str_ptr_clear(self->errmsg);
-    if (self->db)
+    if (!authum_null_eq(self->db))
     {
         struct authum_sql_db_impl *impl = self->db;
         lh_str_ptr_clear(impl->first_error);
@@ -65,7 +65,7 @@ authum_sql_set_errmsg(authum_sql_t *self, lh_str_view_t text)
     const authum_usize_t n = lh_str_ptr_copy_cstr(self->errmsg, authum_sql_errmsg_max,
                                                   lh_str_view_get_data(lh_addr_of(text)),
                                                   lh_str_view_get_size(lh_addr_of(text)));
-    if (n && self->db)
+    if (n && !authum_null_eq(self->db))
     {
         struct authum_sql_db_impl *impl = self->db;
         if (!impl->first_error[0])
@@ -94,7 +94,7 @@ authum_sql_view(const authum_char_t *text)
 authum_bool_t
 authum_sql_fail(authum_sql_t *self, const authum_char_t *message)
 {
-    if (self)
+    if (!authum_null_eq(self))
     {
         authum_sql_set_errmsg(self, authum_sql_view(message));
     }
@@ -374,11 +374,12 @@ authum_bool_t
 authum_sql_stmt_bind_i64(authum_sql_stmt_t *stmt, authum_i32_t index, authum_i64_t value)
 {
     lh_sql_stmt_t *native = authum_sql_stmt_for_bind(stmt, index);
-    authum_bool_t ok = native && lh_sql_stmt_bind_sint(native, lh_cast_static(lh_usize_t, index),
-                                                       lh_cast_static(lh_sllong_t, value));
-    if (!ok && stmt && stmt->sql)
+    authum_bool_t ok =
+        !authum_null_eq(native) && lh_sql_stmt_bind_sint(native, lh_cast_static(lh_usize_t, index),
+                                                         lh_cast_static(lh_sllong_t, value));
+    if (!ok && !authum_null_eq(stmt) && !authum_null_eq(stmt->sql))
     {
-        if (stmt->sql->db)
+        if (!authum_null_eq(stmt->sql->db))
         {
             authum_sql_sync_errmsg(stmt->sql);
         }
@@ -394,11 +395,12 @@ authum_bool_t
 authum_sql_stmt_bind_cstr(authum_sql_stmt_t *stmt, authum_i32_t index, const authum_char_t *text)
 {
     lh_sql_stmt_t *native = authum_sql_stmt_for_bind(stmt, index);
-    authum_bool_t ok = native && lh_sql_stmt_bind_str(native, lh_cast_static(lh_usize_t, index),
-                                                      authum_sql_view(text));
-    if (!ok && stmt && stmt->sql)
+    authum_bool_t ok =
+        !authum_null_eq(native) &&
+        lh_sql_stmt_bind_str(native, lh_cast_static(lh_usize_t, index), authum_sql_view(text));
+    if (!ok && !authum_null_eq(stmt) && !authum_null_eq(stmt->sql))
     {
-        if (stmt->sql->db)
+        if (!authum_null_eq(stmt->sql->db))
         {
             authum_sql_sync_errmsg(stmt->sql);
         }

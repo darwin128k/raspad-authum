@@ -41,7 +41,7 @@ void
 authum_task_record_complete(lh_ptr user)
 {
     authum_task_record_t *record = user;
-    if (record->complete)
+    if (!authum_null_eq(record->complete))
     {
         record->complete(record->user);
     }
@@ -52,7 +52,7 @@ void
 authum_task_record_destroy(lh_ptr user)
 {
     authum_task_record_t *record = user;
-    if (record->destroy)
+    if (!authum_null_eq(record->destroy))
     {
         record->destroy(record->user);
     }
@@ -76,15 +76,15 @@ authum_task_worker_t *
 authum_task_worker_get(authum_ptr owner)
 {
     authum_task_worker_t *w;
-    for (w = m_workers; w && lh_math_ne(w->owner, owner); w = w->next)
+    for (w = m_workers; !authum_null_eq(w) && lh_math_ne(w->owner, owner); w = w->next)
     {
     }
-    if (w)
+    if (!authum_null_eq(w))
     {
         return w;
     }
     w = authum_memory_alloc_zero(1, sizeof lh_ptr_deref(w));
-    if (!w)
+    if (authum_null_eq(w))
     {
         return authum_null;
     }
@@ -110,17 +110,17 @@ authum_bool_t
 authum_tasks_host_submit(authum_ptr owner, authum_task_fn work, authum_task_fn complete,
                          authum_task_fn destroy, authum_ptr user)
 {
-    if (!owner || !work)
+    if (authum_null_eq(owner) || authum_null_eq(work))
     {
         return authum_bool_false;
     }
     authum_task_worker_t *w = authum_task_worker_get(owner);
-    if (!w)
+    if (authum_null_eq(w))
     {
         return authum_bool_false;
     }
     authum_task_record_t *record = authum_memory_alloc_zero(1, sizeof lh_ptr_deref(record));
-    if (!record)
+    if (authum_null_eq(record))
     {
         return authum_bool_false;
     }
@@ -146,12 +146,12 @@ authum_tasks_host_submit(authum_ptr owner, authum_task_fn work, authum_task_fn c
 authum_bool_t
 authum_tasks_host_at_exit(authum_ptr owner, authum_task_fn fn, authum_ptr user)
 {
-    if (!owner || !fn)
+    if (authum_null_eq(owner) || authum_null_eq(fn))
     {
         return authum_bool_false;
     }
     authum_task_worker_t *w = authum_task_worker_get(owner);
-    if (!w)
+    if (authum_null_eq(w))
     {
         return authum_bool_false;
     }
@@ -185,15 +185,15 @@ authum_tasks_host_pump(void)
         budget = lh_math_sub_one(budget);
         lh_rail_task_t *task = authum_null;
         authum_task_worker_t **link = lh_addr_of(m_workers);
-        for (; lh_ptr_deref(link); link = lh_addr_of((lh_ptr_deref(link))->next))
+        for (; !authum_null_eq(lh_ptr_deref(link)); link = lh_addr_of((lh_ptr_deref(link))->next))
         {
             task = lh_rail_mailbox_try_take(lh_addr_of((lh_ptr_deref(link))->mailbox));
-            if (task)
+            if (!authum_null_eq(task))
             {
                 break;
             }
         }
-        if (!task)
+        if (authum_null_eq(task))
         {
             break;
         }
@@ -229,11 +229,11 @@ void
 authum_tasks_host_drop_owner(authum_ptr owner)
 {
     authum_task_worker_t **link = lh_addr_of(m_workers), *w;
-    while (lh_ptr_deref(link) && lh_math_ne((lh_ptr_deref(link))->owner, owner))
+    while (!authum_null_eq(lh_ptr_deref(link)) && lh_math_ne((lh_ptr_deref(link))->owner, owner))
     {
         link = lh_addr_of((lh_ptr_deref(link))->next);
     }
-    if (!(w = lh_ptr_deref(link)))
+    if (authum_null_eq(w = lh_ptr_deref(link)))
     {
         return;
     }
@@ -247,8 +247,8 @@ authum_tasks_host_drop_owner(authum_ptr owner)
     /* Every accepted task is in the mailbox now. None gets complete during unload:
      * finished ones are cancelled too, so only their destructors run, here. */
     m_dispatching = lh_math_add_one(m_dispatching);
-    for (lh_rail_task_t *task = lh_rail_mailbox_try_take(lh_addr_of(w->mailbox)); task;
-         task = lh_rail_mailbox_try_take(lh_addr_of(w->mailbox)))
+    for (lh_rail_task_t *task = lh_rail_mailbox_try_take(lh_addr_of(w->mailbox));
+         !authum_null_eq(task); task = lh_rail_mailbox_try_take(lh_addr_of(w->mailbox)))
     {
         lh_rail_task_set_cancelled(task, lh_bool_true);
         lh_rail_mailbox_deliver(lh_addr_of(w->mailbox), task);

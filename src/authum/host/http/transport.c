@@ -3,7 +3,6 @@
 #include <lh/core/memory/std.h>
 #include <lh/os.h>
 #include <lh/os/error/code.h>
-#include <authum/null.h>
 
 authum_i64_t
 authum_http_now_ms(void)
@@ -110,12 +109,13 @@ authum_http_get_error_text(void)
     const authum_char_t *own = lh_cast_reinterpret(const authum_char_t *, lh_os_get_last_error_desc());
     if (lh_math_ne(code, lh_os_system_error_code_ok))
     {
-        authum_unused(lh_str_ptr_format_cstr(text, sizeof text, "%s (os error %u)",
-                                             native && *native ? native : "no description",
-                                             lh_cast_static(lh_uint_t, code)));
+        authum_unused(lh_str_ptr_format_cstr(
+            text, sizeof text, "%s (os error %u)",
+            !authum_null_eq(native) && lh_ptr_deref(native) ? native : "no description",
+            lh_cast_static(lh_uint_t, code)));
         return text;
     }
-    if (own && *own)
+    if (!authum_null_eq(own) && *own)
     {
         authum_unused(lh_str_ptr_format_cstr(text, sizeof text, "%s (code %u)", own,
                                              lh_cast_static(lh_uint_t, lh_os_get_last_error_code())));

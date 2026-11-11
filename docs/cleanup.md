@@ -246,9 +246,13 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
     operators are fine, a wrapper that is only the operator is optional, existing
     ones stay; bricks with a meaning are required (AGENTS.md, "Operators are not
     bricks; meanings are").
-  - [ ] **`!p` on pointers** → `lh_ptr_is_null(p)` / `authum_null_eq(p)` (the same
-    rule). LH ~886 and Authum ~457 `!x`, but that count mixes pointers with flags
-    (`!lh_x_is_y()`); a pass has to tell them apart by hand, file by file.
+  - [x] **Pointers as truth values** (done 2026-11-11): every `!p`, `if (p)`, `p && …`,
+    `p ? … : …` whose operand is a pointer — found by type in clang's AST, not by text —
+    is `lh_ptr_is_null(p)` / `lh_ptr_is_set(p)` in LH (40, plus 7
+    `lh_return_ifn(p, …)` → `lh_return_if(lh_ptr_is_null(p), …)`) and
+    `authum_null_eq(p)` / `!authum_null_eq(p)` in Authum (168). What is left are the
+    bodies of the check macros (`lh_assert_runtime_ref` and kin), where `!(p)` is the
+    macro's own implementation.
 - [ ] **Naming pass.** Functions whose name does not say what they return
   (`get_` / `set_` / `is_` / `has_`) — in LH and in Authum.
 - [ ] **Documentation briefs.** Replace one-line function comments with full

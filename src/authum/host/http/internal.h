@@ -1,6 +1,7 @@
 #ifndef AUTHUM_HOST_HTTP_INTERNAL_H
 #define AUTHUM_HOST_HTTP_INTERNAL_H
 
+#include <authum/null.h>
 #include <authum/host/http.h>
 #include <authum/net.h>
 #include <authum/host/clock.h>
