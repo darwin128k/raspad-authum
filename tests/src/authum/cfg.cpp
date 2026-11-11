@@ -84,4 +84,15 @@ TEST_F(authum_cfg, found_string_copies_value)
     ASSERT_TRUE(authum_cfg_copy_cstr(&cfg, "text", out, sizeof out, "dflt"));
     EXPECT_STREQ(out, "a=b=c");
 }
+
+TEST_F(authum_cfg, passes_over_headers_and_bad_lines)
+{
+    static const authum_char_t lenient[] = "[server]\njust text\n= nokey\n[bad\nport = 27015\n";
+    authum_cfg_t local;
+
+    ASSERT_TRUE(authum_cfg_open_text(&local, lenient, sizeof lenient - 1));
+    EXPECT_EQ(authum_cfg_get_u32(&local, "port", 0u), 27015u);
+    EXPECT_EQ(authum_cfg_get_u32(&local, "PORT", 0u), 27015u);
+    authum_cfg_close(&local);
+}
 } // namespace tests

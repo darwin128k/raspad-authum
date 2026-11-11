@@ -10,7 +10,8 @@
  * - Trim whitespace on line / key / value.
  * - Empty lines and lines starting with `#` or `;` are skipped.
  * - First `=` splits key and value (value may contain more `=`).
- * - No `[sections]` required.
+ * - No `[sections]` required; a `[section]` line, and any other line that is
+ *   not `key = value`, is passed over: keys are looked up in the whole file.
  *
  * Prefer: defaults on your config object (static init), then
  * ::authum_cfg_apply_items. ::authum_cfg_get_* remain for one-shot reads with

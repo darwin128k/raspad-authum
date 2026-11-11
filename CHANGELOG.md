@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `authum_cfg_get_value` reads the config with lh's INI parser in its flat mode
+  (`lh_ini_parser_init_flat`) instead of splitting lines itself. The dialect is
+  unchanged: no sections needed, keys case-insensitive, a `[section]` line or any
+  other line that is not `key = value` is passed over.
 - The host's log channel record (`authum_logs_channel_t`) has its own header
   `host/logs/channel.h` and level-1 accessors; `host/logs.c` no longer touches its
   fields. Behaviour is unchanged.

@@ -121,55 +121,46 @@ authum_cfg_open_text(authum_cfg_t *self, const authum_char_t *text, authum_usize
 const authum_char_t *
 authum_cfg_get_value(authum_cfg_t *self, const authum_char_t *key)
 {
-    lh_str_view_t text;
-    lh_str_view_t wanted;
-    lh_str_view_t line;
-    lh_usize_t pos = 0u;
-
     if (authum_null_eq(self) || authum_null_eq(self->text) || authum_null_eq(key) ||
         lh_math_eq(key[0], lh_char_map_nul))
     {
         return authum_null;
     }
+    lh_str_view_t text;
     lh_str_view_init_by_size(lh_addr_of(text), self->text, self->size);
+    lh_str_view_t wanted;
     lh_str_view_init(lh_addr_of(wanted), key);
-    while (lh_str_view_split_next_line(lh_addr_of(text), lh_addr_of(pos), lh_addr_of(line)))
+    /* A flat ini text: no headers needed, a `[section]` line is passed over. */
+    lh_ini_parser_t parser;
+    lh_ini_parser_init_flat(lh_addr_of(parser), text);
+    lh_ini_entry_t entry;
+    for (;;)
     {
-        lh_str_view_t name;
-        lh_str_view_t value;
-        lh_usize_t eq;
-        lh_usize_t size;
-
-        /* The ini dialect's lines: trimmed, empty and `#` / `;` comments skipped. */
-        lh_str_view_trim(lh_addr_of(line));
-        if (lh_ini_parser_is_skipped(lh_addr_of(line)))
+        if (!lh_ini_parser_next(lh_addr_of(parser), lh_addr_of(entry)))
+        {
+            if (!lh_ini_parser_has_error(lh_addr_of(parser)))
+            {
+                return authum_null;
+            }
+            /* The cfg is lenient: a line that is not `key = value` is passed over. */
+            lh_ini_parser_set_error(lh_addr_of(parser), lh_ini_error_none);
+            continue;
+        }
+        lh_str_view_t name = lh_ini_entry_get_key(lh_addr_of(entry));
+        if (!lh_ini_entry_has_kind(lh_addr_of(entry), lh_ini_entry_kind_pair) ||
+            !lh_str_view_equals(lh_addr_of(name), lh_addr_of(wanted), lh_bool_true))
         {
             continue;
         }
-        eq = lh_str_view_find_char(lh_addr_of(line), lh_char_map_equals);
-        if (lh_math_eq(eq, LH_STR_VIEW_INVALID))
-        {
-            continue;
-        }
-        lh_str_view_from_offset(lh_addr_of(line), 0u, eq, lh_addr_of(name));
-        lh_str_view_rtrim(lh_addr_of(name));
-        if (!lh_str_view_equals(lh_addr_of(name), lh_addr_of(wanted), lh_bool_true))
-        {
-            continue;
-        }
-        lh_str_view_from_offset(
-            lh_addr_of(line), lh_math_add_one(eq),
-            lh_math_sub(lh_math_sub(lh_str_view_get_size(lh_addr_of(line)), eq), 1u),
-            lh_addr_of(value));
-        lh_str_view_ltrim(lh_addr_of(value));
+        lh_str_view_t value = lh_ini_entry_get_value(lh_addr_of(entry));
         /* The value is handed out NUL-terminated, cut to the line buffer. */
-        size = lh_math_min(lh_str_view_get_size(lh_addr_of(value)),
-                           lh_math_sub(lh_cast_static(lh_usize_t, sizeof(self->line)), 1u));
+        lh_usize_t size =
+            lh_math_min(lh_str_view_get_size(lh_addr_of(value)),
+                        lh_math_sub(lh_cast_static(lh_usize_t, sizeof(self->line)), 1u));
         lh_memory_std_copy(self->line, lh_str_view_get_data(lh_addr_of(value)), size);
         self->line[size] = lh_char_map_nul;
         return self->line;
     }
-    return authum_null;
 }
 
 authum_bool_t
