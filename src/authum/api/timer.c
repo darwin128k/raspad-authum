@@ -97,7 +97,7 @@ authum_timer_us(authum_float_t seconds)
 {
     /* Rounded: 0.01f * 1e6 is 9999.9998, and truncating would lose 1 µs a frame. */
     return lh_math_gt(seconds, 0.0f)
-               ? (authum_u64_t)(lh_math_add(lh_math_mul(seconds, 1000000.0f), 0.5f))
+               ? lh_cast_static(authum_u64_t, lh_math_add(lh_math_mul(seconds, 1000000.0f), 0.5f))
                : 0u;
 }
 

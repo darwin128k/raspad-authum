@@ -162,7 +162,7 @@ authum_cstr_number_digits(const authum_char_t *text, authum_bool_t allow_minus,
         end = lh_math_sub_one(end);
     }
     lh_ptr_deref(digits) = text;
-    lh_ptr_deref(size) = (authum_usize_t)(lh_math_sub(end, text));
+    lh_ptr_deref(size) = lh_cast_static(authum_usize_t, lh_math_sub(end, text));
     return lh_math_gt(lh_ptr_deref(size), 0u) ? authum_bool_true : authum_bool_false;
 }
 
@@ -188,8 +188,9 @@ authum_cstr_parse_i32(const authum_char_t *text, authum_i32_t *out)
     {
         return authum_bool_false;
     }
-    lh_ptr_deref(out) = negative ? (authum_i32_t)(-lh_cast_static(lh_sllong_t, magnitude))
-                                 : lh_cast_static(authum_i32_t, magnitude);
+    lh_ptr_deref(out) = negative
+                            ? lh_cast_static(authum_i32_t, -lh_cast_static(lh_sllong_t, magnitude))
+                            : lh_cast_static(authum_i32_t, magnitude);
     return authum_bool_true;
 }
 

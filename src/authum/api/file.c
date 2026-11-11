@@ -101,9 +101,9 @@ authum_file_read_all(authum_file_t *self, authum_ptr buf, authum_usize_t buf_siz
 
         if (lh_math_gt(room, 0u))
         {
-            if (!authum_file_read(self,
-                                  lh_ptr_add_by_offset(lh_char_t, buf, (lh_uaddr_t)total), room,
-                                  &count))
+            if (!authum_file_read(
+                    self, lh_ptr_add_by_offset(lh_char_t, buf, lh_cast_static(lh_uaddr_t, total)),
+                    room, &count))
             {
                 return authum_bool_false;
             }
@@ -129,7 +129,8 @@ authum_file_read_all(authum_file_t *self, authum_ptr buf, authum_usize_t buf_siz
     if (lh_math_lt(total, buf_size))
     {
         /* The text fits with room for a terminator: the file reads as a string. */
-        lh_ptr_deref(lh_ptr_add_by_offset(lh_char_t, buf, (lh_uaddr_t)total)) = lh_char_map_nul;
+        lh_ptr_deref(lh_ptr_add_by_offset(lh_char_t, buf, lh_cast_static(lh_uaddr_t, total))) =
+            lh_char_map_nul;
     }
     return authum_bool_true;
 }

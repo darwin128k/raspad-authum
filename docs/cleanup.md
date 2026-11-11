@@ -195,9 +195,10 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
 - [ ] **Brick-bypass audit, 2026-11-11** (owner: "do we use our wrappers everywhere?").
   A scan of LH and Authum (third-party sqlite and the native backends left out). Done:
   min/max, swap, the lexer's `'\0'`, the `_invalid` statics (see CHANGELOG). Left:
-  - **C-style casts** instead of `lh_cast_*`: LH ~300 — `crypto/curve25519/field.c`
-    225, `crypto/ed25519/scalar.c` 16, `point.c` 8, `net/modbus/link.c` 9, the rest
-    scattered; Authum 22 (`api/runtime.c` 7, `host/http/resources.c` 7).
+  - [x] **C-style casts** (done 2026-11-11): 275 `(T)x` → `lh_cast_static(T, x)` in LH
+    and Authum sources (`curve25519/field.c` 224, `ed25519`, `ui`, Authum's `runtime.c`,
+    `tasks.c`, `file.c`, `cstr.c`, `timer.c`). Left on purpose: `(void)x` (the discard
+    idiom) and the public `include/authum/` headers, which may not use lh.
   - [x] **Text as `(const char *, size)`** (done 2026-11-11):
     `lh_os_module_event_entry_try_create` / `_create` take an `lh_str_view_t`;
     `authum_http_policy_contains` takes the value as a view (its callers cut the
@@ -230,8 +231,8 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
   - `host/http/resources.c` is a generic URL-path check (decode once, refuse encoded
     separators, dot and short names) — a candidate for `lh/core/http` next to
     `lh_http_is_target_char`.
-  - `ui/shadow/shape.c`: a zero-fill loop (`lh_memory_set`) and `|px - cx|` written
-    as a conditional (`lh_math_abs` of the difference).
+  - [x] `ui/shadow/shape.c`: the zero-fill loop is `lh_memory_set`, `|px - cx|` is
+    `lh_math_abs` (2026-11-11).
   - **Plain operators and `!ptr`** (`==`, `+`, `++`, `!self`) instead of
     `lh_math_*` / `lh_null_eq`: tens of thousands in LH. Not counted as defects — the
     open question below (`lh_math_add_one(p)` style) decides it.

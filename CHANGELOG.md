@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   forgotten one; inside, it is lh's `lh_array_t` with the sandbox as its allocator
   (`lh_array_init_by`). No 3.x module loads; `examples/hello` and `docs/sandbox.md`
   show the new calls.
+- Authum's sources cast with `lh_cast_static` instead of `(T)x` (`runtime.c`, `tasks.c`,
+  `file.c`, `cstr.c`, `timer.c`). The public headers keep plain C: they may not use lh.
 - `authum_char_to_upper` is `lh_char_to_upper` (it went through a two-byte buffer and
   `lh_str_ptr_to_upper`).
 - The host clock's reader is `authum_clock_host_get_monotonic_ms` (`host/clock.h`), not a
