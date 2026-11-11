@@ -2,6 +2,8 @@
 
 #include <authum/null.h>
 
+#include <lh/core/char/map.h>
+#include <lh/core/str/format/text.h>
 #include <lh/os/timestamp.h>
 
 authum_i64_t
@@ -19,22 +21,20 @@ authum_time_now_seconds(void)
 authum_usize_t
 authum_time_format_utc(authum_i64_t seconds, authum_char_t *dst, authum_usize_t dst_size)
 {
-    if (authum_null_eq(dst) || lh_math_le(dst_size, 24u))
+    if (authum_null_eq(dst))
     {
         return 0u;
     }
-    lh_timestamp_t moment = lh_cast_static(lh_timestamp_t, seconds);
-    lh_date_t date;
-    lh_timestamp_get_date(moment, lh_addr_of(date));
-    lh_time_t clock;
-    lh_timestamp_get_time(moment, lh_addr_of(clock));
-    lh_date_format_by(lh_addr_of(date), dst, 11u, '-');
-    dst[10] = ' ';
-    lh_time_format(lh_addr_of(clock), dst + 11, dst_size - 11u);
-    dst[19] = ' ';
-    dst[20] = 'U';
-    dst[21] = 'T';
-    dst[22] = 'C';
-    dst[23] = '\0';
-    return 23u;
+    lh_datetime_t moment;
+    lh_timestamp_to_datetime(lh_cast_static(lh_timestamp_t, seconds), lh_addr_of(moment));
+    const lh_usize_t size =
+        lh_datetime_format_by(lh_addr_of(moment), dst, dst_size, lh_char_map_minus);
+    if (lh_math_is_zero(size) || lh_math_ge(size, dst_size))
+    {
+        return 0u;
+    }
+    /* The zone after the moment, and the NUL after it. */
+    const lh_usize_t zone = lh_str_ptr_format_cstr(lh_ptr_add_by_offset(authum_char_t, dst, size),
+                                                   lh_math_sub(dst_size, size), " UTC");
+    return lh_math_is_zero(zone) ? 0u : lh_math_add(size, zone);
 }

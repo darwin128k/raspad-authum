@@ -58,7 +58,7 @@ authum_char_to_upper(authum_char_t c)
     authum_char_t text[2];
 
     text[0] = c;
-    text[1] = '\0';
+    text[1] = lh_char_map_nul;
     lh_str_ptr_to_upper(text, 1u);
     return text[0];
 }

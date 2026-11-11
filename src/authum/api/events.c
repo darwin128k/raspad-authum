@@ -1,5 +1,6 @@
 #include <authum/api/events/private.h>
 #include <authum/null.h>
+#include <lh/core/char/map.h>
 
 const authum_events_ops_t *
 authum_events_get_ops(const authum_events_t *self)
@@ -82,7 +83,7 @@ authum_events_name_is_own(const authum_events_t *self, const authum_char_t *name
     {
         return authum_bool_false;
     }
-    return lh_math_eq(name[length], '.');
+    return lh_math_eq(name[length], lh_char_map_period);
 }
 
 authum_event_result_t

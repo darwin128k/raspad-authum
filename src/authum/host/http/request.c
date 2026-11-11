@@ -4,6 +4,10 @@
 #include <lh/core/http/parser.h>
 #include <lh/core/char/map.h>
 
+/* What a Content-Length of an empty body may hold: zeros, and the OWS around them. */
+static const lh_char_t m_http_zero_length_chars[] = {lh_char_map_digit_0, lh_char_map_space,
+                                                     lh_char_map_ht};
+
 enum
 {
     /** X-Forwarded-For fields read from one request. */
@@ -23,32 +27,24 @@ authum_bool_t
 authum_http_request_is_zero_length(const lh_str_view_t *value)
 {
     const authum_char_t *text = lh_str_view_get_data(value);
-    authum_usize_t size = lh_str_view_get_size(value);
-    authum_usize_t digits = 0;
-    for (authum_usize_t i = 0; i < size; ++i)
-    {
-        if (text[i] == ' ' || text[i] == '\t')
-        {
-            continue;
-        }
-        if (text[i] != '0')
-        {
-            return authum_bool_false;
-        }
-        ++digits;
-    }
-    return digits ? authum_bool_true : authum_bool_false;
+    const authum_usize_t size = lh_str_view_get_size(value);
+
+    return lh_cast_static(
+        authum_bool_t, lh_ptr_is_null(lh_str_ptr_find_not_of_chars(
+                           text, size, m_http_zero_length_chars,
+                           lh_array_ptr_get_size(m_http_zero_length_chars))) &&
+                           lh_ptr_is_set(lh_str_ptr_find_of_char(text, size, lh_char_map_digit_0)));
 }
 
 void
 authum_http_request_format_address(authum_u32_t address, authum_char_t *text,
                                    authum_usize_t capacity)
 {
-    const authum_byte_t *octets = (const authum_byte_t *)&address;
+    const authum_byte_t *octets = lh_cast_reinterpret(const authum_byte_t *, lh_addr_of(address));
     lh_net_ip4_t ip;
     lh_net_ip4_init(lh_addr_of(ip), octets[0], octets[1], octets[2], octets[3]);
     authum_usize_t size = lh_net_ip4_format(lh_addr_of(ip), text, lh_math_sub(capacity, 1));
-    text[size] = 0;
+    text[size] = lh_char_map_nul;
 }
 
 void

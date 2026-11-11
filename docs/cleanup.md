@@ -204,9 +204,21 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
     (`util/str/ptr.c` 4, `net/modbus/link.c` 2, `str/format/text.c` 2), Authum 35
     (`api/cfg.c` 6, `api/path.c` 5, `api/sql.c` 4, `api/cstr.c` 3). Some are the
     terminating brick itself; the rest want one "copy and terminate" brick.
-  - **Authum character literals** (33): `host/http/resources.c` 21, `api/time.c` 7
-    (it writes `YYYY-MM-DD HH:MM:SS UTC` by hand — a format brick in lh),
-    `host/http/request.c` 3 (`' '` / `'\t'` / `'0'`: `lh/core/char/*` classes).
+  - [x] **Authum character literals** (33), done 2026-11-11: `api/time.c` formats with
+    `lh_datetime_format_by` + `lh_str_ptr_format_cstr`; `host/http/resources.c` tests
+    the reserved name characters and the end of the path with `lh_char_map_*` sets
+    (`lh_str_ptr_contains_char` / `_find_of_chars`), decodes `%XX` with
+    `lh_str_ptr_parse_hex_bytes` and digits with `lh_char_is_digit`;
+    `host/http/request.c` reads an all-zero Content-Length with
+    `lh_str_ptr_find_not_of_chars`; `api/cstr.c` / `api/events.c` name their characters.
+  - `authum_char_to_upper` upper-cases one character through a two-byte buffer and
+    `lh_str_ptr_to_upper`: lh's one-character mapping (`lh_str_ptr_map_upper_one` /
+    `_lower_one` in `util/str/case/map.c`) is hidden and exists only under the table
+    option. Make `lh_char_to_upper` / `lh_char_to_lower` public bricks in
+    `lh/core/char/`, the string forms built on them.
+  - `host/http/resources.c` is a generic URL-path check (decode once, refuse encoded
+    separators, dot and short names) — a candidate for `lh/core/http` next to
+    `lh_http_is_target_char`.
   - `ui/shadow/shape.c`: a zero-fill loop (`lh_memory_set`) and `|px - cx|` written
     as a conditional (`lh_math_abs` of the difference).
   - **Plain operators and `!ptr`** (`==`, `+`, `++`, `!self`) instead of

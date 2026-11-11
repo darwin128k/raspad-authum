@@ -1,6 +1,14 @@
 #include <authum/host/http/internal.h>
-#include <lh/core/char/xdigit.h>
+#include <lh/core/char/digit.h>
 #include <lh/core/memory/std.h>
+
+/* The characters Windows reserves in a name; refused on every platform. */
+static const lh_char_t m_http_name_reserved[] = {
+    lh_char_map_backslash, lh_char_map_colon, lh_char_map_asterisk, lh_char_map_question,
+    lh_char_map_dquot,     lh_char_map_less,  lh_char_map_greater,  lh_char_map_pipe};
+
+/* Where the path of a request target ends: the query or the fragment. */
+static const lh_char_t m_http_target_ends[] = {lh_char_map_question, lh_char_map_hash};
 
 authum_bool_t
 authum_http_policy_contains(const authum_char_t *list, const authum_char_t *value, authum_usize_t n,
@@ -14,7 +22,7 @@ authum_http_policy_contains(const authum_char_t *list, const authum_char_t *valu
         }
         const authum_usize_t rest = lh_str_ptr_len(list);
         const authum_char_t *e = lh_str_ptr_find_of_char(list, rest, lh_char_map_space);
-        authum_usize_t z = e ? (authum_usize_t)(lh_math_sub(e, list)) : rest;
+        authum_usize_t z = e ? lh_cast_static(authum_usize_t, lh_ptr_udiff(e, list)) : rest;
         if (z && (prefix ? lh_math_ge(n, z) && lh_str_ptr_equals_by_size(list, z, value, z, lh_bool_true) &&
                                (lh_math_eq(n, z) || lh_math_eq(value[z], lh_char_map_slash))
                          : lh_math_eq(z, n) && lh_str_ptr_equals_by_size(list, n, value, n, lh_bool_true)))
@@ -35,24 +43,13 @@ authum_http_policy_contains(const authum_char_t *list, const authum_char_t *valu
 authum_bool_t
 authum_http_name_byte(authum_byte_t x)
 {
-    if (x < 0x20 || x == 0x7f)
-    {
-        return authum_bool_false;
-    }
-    switch (x)
-    {
-    case '\\':
-    case ':':
-    case '*':
-    case '?':
-    case '"':
-    case '<':
-    case '>':
-    case '|':
-        return authum_bool_false;
-    default:
-        return authum_bool_true;
-    }
+    const lh_char_t ch = lh_cast_static(lh_char_t, x);
+
+    return lh_cast_static(authum_bool_t,
+                          lh_math_gt(x, lh_char_map_us) && lh_math_ne(x, lh_char_map_del) &&
+                              !lh_str_ptr_contains_char(m_http_name_reserved,
+                                                        lh_array_ptr_get_size(m_http_name_reserved),
+                                                        ch));
 }
 
 authum_usize_t
@@ -61,15 +58,13 @@ authum_http_resource_check(const authum_http_options_t *options, const authum_ch
                            const authum_char_t **reason)
 {
     /* The query and fragment never name a file. */
-    for (authum_usize_t i = 0; i < len; ++i)
+    const authum_char_t *end = lh_str_ptr_find_of_chars(url, len, m_http_target_ends,
+                                                        lh_array_ptr_get_size(m_http_target_ends));
+    if (end)
     {
-        if (url[i] == '?' || url[i] == '#')
-        {
-            len = i;
-            break;
-        }
+        len = lh_cast_static(authum_usize_t, lh_ptr_udiff(end, url));
     }
-    if (len < 2 || url[0] != '/')
+    if (len < 2 || url[0] != lh_char_map_slash)
     {
         *reason = "bad_target";
         return 0;
@@ -78,23 +73,22 @@ authum_http_resource_check(const authum_http_options_t *options, const authum_ch
     authum_usize_t n = 0;
     for (authum_usize_t i = 1; i < len; ++i)
     {
-        authum_byte_t x = (authum_byte_t)url[i];
-        if (x == '%')
+        authum_byte_t x = lh_cast_static(authum_byte_t, url[i]);
+        if (x == lh_char_map_percent)
         {
-            if (i + 2 >= len || !lh_char_is_xdigit(url[i + 1]) || !lh_char_is_xdigit(url[i + 2]))
+            if (i + 2 >= len || !lh_str_ptr_parse_hex_bytes(url + i + 1, 2, lh_addr_of(x), 1))
             {
                 *reason = "bad_encoding";
                 return 0;
             }
-            x = (authum_byte_t)(lh_char_to_xdigit(url[i + 1]) * 16 + lh_char_to_xdigit(url[i + 2]));
             i += 2;
-            if (x == '/' || x == 0)
+            if (x == lh_char_map_slash || x == lh_char_map_nul)
             {
                 *reason = "encoded_separator";
                 return 0;
             }
         }
-        if (x != '/' && !authum_http_name_byte(x))
+        if (x != lh_char_map_slash && !authum_http_name_byte(x))
         {
             *reason = "bad_char";
             return 0;
@@ -104,17 +98,17 @@ authum_http_resource_check(const authum_http_options_t *options, const authum_ch
             *reason = "uri_too_long";
             return 0;
         }
-        out[n++] = (authum_char_t)x;
+        out[n++] = lh_cast_static(authum_char_t, x);
     }
-    out[n] = 0;
+    out[n] = lh_char_map_nul;
     /* Components: no empty ones, no hidden or dot names, nothing Windows would
      * trim or alias (trailing dot/space, 8.3 short names like NAME~1). */
     authum_usize_t start = 0;
     for (authum_usize_t i = 0; i <= n; ++i)
     {
-        if (i < n && out[i] != '/')
+        if (i < n && out[i] != lh_char_map_slash)
         {
-            if (out[i] == '~' && i + 1 < n && out[i + 1] >= '0' && out[i + 1] <= '9')
+            if (out[i] == lh_char_map_tilde && i + 1 < n && lh_char_is_digit(out[i + 1]))
             {
                 *reason = "short_name";
                 return 0;
@@ -126,12 +120,12 @@ authum_http_resource_check(const authum_http_options_t *options, const authum_ch
             *reason = "empty_component";
             return 0;
         }
-        if (out[start] == '.')
+        if (out[start] == lh_char_map_period)
         {
             *reason = "hidden_or_dot";
             return 0;
         }
-        if (out[i - 1] == '.' || out[i - 1] == ' ')
+        if (out[i - 1] == lh_char_map_period || out[i - 1] == lh_char_map_space)
         {
             *reason = "trailing_dot_or_space";
             return 0;
@@ -144,8 +138,9 @@ authum_http_resource_check(const authum_http_options_t *options, const authum_ch
         return 0;
     }
     const authum_char_t *slash = lh_str_ptr_find_of_char(out, n, lh_char_map_slash);
-    if (slash && !authum_http_policy_contains(options->allow_dirs, out,
-                                              (authum_usize_t)(slash - out), 0))
+    if (slash &&
+        !authum_http_policy_contains(options->allow_dirs, out,
+                                     lh_cast_static(authum_usize_t, lh_ptr_udiff(slash, out)), 0))
     {
         *reason = "dir_not_allowed";
         return 0;
@@ -153,9 +148,10 @@ authum_http_resource_check(const authum_http_options_t *options, const authum_ch
     /* The extension of the last component; root files have their own list. */
     const authum_char_t *last = lh_str_ptr_rfind_of_char(out, n, lh_char_map_slash);
     last = last ? last + 1 : out;
-    const authum_char_t *ext =
-        lh_str_ptr_rfind_of_char(last, (authum_usize_t)(out + n - last), lh_char_map_period);
-    authum_usize_t ext_len = ext ? (authum_usize_t)(out + n - ext - 1) : 0;
+    const authum_char_t *ext = lh_str_ptr_rfind_of_char(
+        last, lh_cast_static(authum_usize_t, lh_ptr_udiff(out + n, last)), lh_char_map_period);
+    authum_usize_t ext_len =
+        ext ? lh_cast_static(authum_usize_t, lh_math_sub_one(lh_ptr_udiff(out + n, ext))) : 0;
     if (!ext || !ext_len ||
         !authum_http_policy_contains(options->allow_extensions, ext + 1, ext_len, 0) ||
         (!slash && !authum_http_policy_contains(options->root_extensions, ext + 1, ext_len, 0)))
