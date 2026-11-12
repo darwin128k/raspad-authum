@@ -105,9 +105,7 @@ Close an item by deleting it; what was done goes to the CHANGELOGs.
   socat pseudo-terminals, which have no parity bit (WSL refuses one) and no wire timing:
   parity, real t3.5 silence and USB-serial adapter bursts are untested; run the same
   tests over two USB-RS485 adapters, and the server on the F407 over its USART. The bench
-  is not in `ctest` (it needs socat, pymodbus and processes). The server takes
-  `lh_mb_link_clock_cb`, a link type: the clock becomes `lh/core/net/modbus/clock/` for
-  both. A TCP server with many clients is the application's accept loop today (one
+  is not in `ctest` (it needs socat, pymodbus and processes). A TCP server with many clients is the application's accept loop today (one
   `lh_mb_server_t` per connection, polled in turn, tested with eight in one thread); it
   waits for the listener of `docs/design/io.md` (`lh/rail/stream.h`).
 - [ ] **Window tests are not in the LH test builds** (`LH_LIBRARY_OPTION_OS_WINDOW=OFF`
