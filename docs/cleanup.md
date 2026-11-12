@@ -86,7 +86,7 @@ Close an item by deleting it; what was done goes to the CHANGELOGs.
 - [ ] **Monoliths.** 64 functions exceed 60 lines, 13 exceed 100. Worst:
   `lh_ui_web_player_page_create_play` (446; `create_fit` 350, `create_emit` 310),
   `lh_os_system_window_open` (211, posix), `lh_os_system_win_window_proc` (207),
-  `lh_ui_canvas_web_put_head` (156), `lh_mb_link_poll` (155), `lh_memory_std_copy`
+  `lh_ui_canvas_web_put_head` (156), `lh_memory_std_copy`
   (127), `lh_ui_decl_build` (114), `lh_str_ptr_format_float` (112),
   `lh_ui_web_host_ws_ingest` (105), `lh_memory_rfind_step` (92).
 - [ ] **`_v` and accessor names.** Lower-layer functions under an accessor's name that
@@ -101,6 +101,15 @@ Close an item by deleting it; what was done goes to the CHANGELOGs.
   digits, not the binary value (`0.125` → `0.13`, printf gives `0.12`).
 - [ ] **`lh_fs_path_t` is awkward.** Simplify it, or split it into an owning path and a
   fixed one usable with `lh_str_ptr` directly.
+- [ ] **Modbus: what the emulator bench cannot reach.** `test/emu/modbus/run.sh` runs over
+  socat pseudo-terminals, which have no parity bit (WSL refuses one) and no wire timing:
+  parity, real t3.5 silence and USB-serial adapter bursts are untested; run the same
+  tests over two USB-RS485 adapters, and the server on the F407 over its USART. The bench
+  is not in `ctest` (it needs socat, pymodbus and processes). The server takes
+  `lh_mb_link_clock_cb`, a link type: the clock becomes `lh/core/net/modbus/clock/` for
+  both. A TCP server with many clients is the application's accept loop today (one
+  `lh_mb_server_t` per connection, polled in turn, tested with eight in one thread); it
+  waits for the listener of `docs/design/io.md` (`lh/rail/stream.h`).
 - [ ] **Window tests are not in the LH test builds** (`LH_LIBRARY_OPTION_OS_WINDOW=OFF`
   in `build-lh-concurrency*`); make `build-lh-window-*` (ON) the standard.
 - [ ] **Documentation briefs.** One-line function comments become full contracts;
