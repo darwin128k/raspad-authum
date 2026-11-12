@@ -45,10 +45,19 @@ Close an item by deleting it; what was done goes to the CHANGELOGs.
   `authum_test_threads`). Reproduce each, then decide: a real short buffer is fixed,
   a false positive is silenced in the source (a size the compiler can see), never by
   dropping the warning.
-- [ ] **AES on a Cortex-M4 is slow.** One AES-128 block takes 8 758 cycles to encrypt and
-  13 690 to decrypt on an STM32F407 (FIPS-197 vector passes); a table-driven
-  implementation on the same core takes about 600-1 000. Measure the portable path and fix
-  it at the root, as the text path was.
+- [ ] **AES on a Cortex-M4: SubBytes is what is left.** After the word rounds, the S-boxes
+  in RAM and the rounds specialised for 16-byte blocks (2026-11-12) one AES-128 block takes
+  4 080 cycles to encrypt and 4 952 to decrypt on an STM32F407 (from 8 758 / 13 690).
+  SubBytes is about 1 700 of them, ten cycles a byte; a table-driven AES on the same core
+  takes about 1 000 in all. Running the cipher from SRAM was measured and was slower: code
+  and data share the system bus there.
+- [ ] **Timing on the F407 moves with code layout.** The same AES code measured 6 053 and
+  7 525 cycles in two builds whose only difference was other code LTO laid out around it.
+  A change worth less than about 20 % cannot be judged on the board until hot code runs
+  from RAM or the measurement controls the flash cache.
+- [ ] **`lh_memory_std` on an M4: big copies and small moves are slow.** `lh_memory_std_copy`
+  of 256 bytes takes 1 560 cycles where 64 bytes take 50; `lh_memory_std_move` of 32 bytes
+  takes 372. Look at the portable tiers above 64 bytes and the overlap path.
 - [ ] **`-Wtype-limits` in generic macros** on a bare-metal `-Wextra` build:
   `lh_math_is_negative` and `lh_interval_*_is_*_overflow` compare unsigned values with 0
   (`math/ops.h:192-210`, through `interval.h`, `deflate.c`, `gzip.c`, `chunked.c`,

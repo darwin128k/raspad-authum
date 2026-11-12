@@ -200,7 +200,7 @@ def with_marker_header(lines, path):
         'check_includes', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'check-includes.py'))
     includes = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(includes)
-    needed = 'lh/compiler/extern/c.h' if path.startswith('lib/lh/') else 'authum/extern.h'
+    needed = 'lh/core/compiler/extern/c.h' if path.startswith('lib/lh/') else 'authum/extern.h'
     seen = set()
     for line in lines:
         match = includes.INCLUDE.match(line)
@@ -253,7 +253,7 @@ def main():
                             open(path, 'wb').write('\n'.join(new).replace('\n', newline).encode('utf-8'))
                     continue
                 for (begin_mark, end_mark), header_name in zip(
-                        PAIRS, ('lh/compiler/extern/c.h', 'authum/extern.h')):
+                        PAIRS, ('lh/core/compiler/extern/c.h', 'authum/extern.h')):
                     opened = [i for i, line in enumerate(lines) if line.strip() == begin_mark]
                     closed = [i for i, line in enumerate(lines) if line.strip() == end_mark]
                     included = [i for i, line in enumerate(lines)
