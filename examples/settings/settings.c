@@ -58,13 +58,12 @@ void
 settings_apply_mode(authum_cfg_t *cfg)
 {
     const authum_char_t *value = authum_cfg_get_value(cfg, "mode");
-    authum_usize_t i;
 
     if (authum_null_eq(value))
     {
         return;
     }
-    for (i = 0u; i < sizeof g_settings_modes / sizeof g_settings_modes[0]; ++i)
+    for (authum_usize_t i = 0u; i < sizeof g_settings_modes / sizeof g_settings_modes[0]; ++i)
     {
         if (authum_cstr_is_equal(value, g_settings_modes[i], authum_bool_true))
         {

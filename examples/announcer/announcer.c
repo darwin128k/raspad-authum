@@ -32,10 +32,9 @@ AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
 void
 announcer_tick(authum_ptr user)
 {
-    authum_char_t text[128];
-
     authum_unused(user);
     ++g_announcer_count;
+    authum_char_t text[128];
     authum_cstr_format(text, sizeof text, "\x04[Info]\x01 This server runs Authum. Message #%d.",
                        g_announcer_count);
     authum_host_client_chat(&g_announcer_host, 0, 0, text);
@@ -59,7 +58,6 @@ announcer_on_log(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 {
     const authum_event_server_log_t *ev = (const authum_event_server_log_t *)payload;
     authum_i32_t max = authum_host_get_max_clients(&g_announcer_host);
-    authum_i32_t index;
 
     authum_unused(name);
     authum_unused(user);
@@ -67,7 +65,7 @@ announcer_on_log(const authum_char_t *name, authum_ptr payload, authum_ptr user)
     {
         return authum_event_result_continue;
     }
-    for (index = 1; index <= max; ++index)
+    for (authum_i32_t index = 1; index <= max; ++index)
     {
         if (authum_host_client_is_connected(&g_announcer_host, index) &&
             !authum_host_client_is_bot(&g_announcer_host, index))
@@ -114,8 +112,6 @@ const authum_command_def_t g_announcer_commands[] = {
 authum_bool_t
 announcer_start(authum_host_t *host)
 {
-    authum_float_t interval;
-
     if (authum_null_eq(host))
     {
         return authum_bool_false;
@@ -123,7 +119,8 @@ announcer_start(authum_host_t *host)
     authum_host_copy(&g_announcer_host, host);
     authum_logger_init(&g_announcer_log, &g_announcer_host);
     authum_host_cvar_register(&g_announcer_host, "announcer_interval", "120", 0);
-    interval = authum_host_cvar_get_float(&g_announcer_host, "announcer_interval", 120.0f);
+    authum_float_t interval =
+        authum_host_cvar_get_float(&g_announcer_host, "announcer_interval", 120.0f);
     if (interval < 10.0f)
     {
         interval = 10.0f;

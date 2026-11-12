@@ -72,13 +72,12 @@ authum_bool_t
 authum_events_name_is_own(const authum_events_t *self, const authum_char_t *name)
 {
     const authum_char_t *prefix = authum_events_get_prefix(self);
-    authum_usize_t length;
 
     if (authum_null_eq(prefix) || authum_null_eq(name))
     {
         return authum_bool_false;
     }
-    length = lh_str_ptr_len(prefix);
+    authum_usize_t length = lh_str_ptr_len(prefix);
     if (lh_math_eq(length, 0u) || !lh_str_ptr_starts_with(name, prefix, lh_bool_false))
     {
         return authum_bool_false;

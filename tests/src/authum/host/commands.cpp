@@ -24,10 +24,8 @@ test_print(authum_ptr out, const authum_char_t *text)
 authum_bool_t
 test_cmd_echo(const authum_command_t *cmd, authum_ptr user)
 {
-    authum_usize_t i;
-
     authum_unused(user);
-    for (i = 0u; i < authum_command_get_argc(cmd); ++i)
+    for (authum_usize_t i = 0u; i < authum_command_get_argc(cmd); ++i)
     {
         authum_command_printf(cmd, "%s/%s:%s", authum_command_get_scope(cmd),
                               authum_command_get_name(cmd), authum_command_get_argv(cmd, i));
@@ -192,10 +190,10 @@ TEST(authum_commands, invalid)
 
 TEST(authum_commands, command_accessors)
 {
-    authum_command_t cmd;
     authum_i32_t n = 0;
     const authum_char_t *args[] = {"12", "abc"};
 
+    authum_command_t cmd;
     memset(&cmd, 0, sizeof cmd);
     cmd.argc = 2u;
     cmd.argv = args;

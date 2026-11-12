@@ -46,8 +46,6 @@ authum_path_get_cstr_or_null(const authum_path_t *self)
 authum_bool_t
 authum_path_set_cstr(authum_path_t *self, const authum_char_t *text)
 {
-    authum_usize_t n;
-
     if (authum_null_eq(self))
     {
         return authum_bool_false;
@@ -57,7 +55,7 @@ authum_path_set_cstr(authum_path_t *self, const authum_char_t *text)
         authum_path_clear(self);
         return authum_bool_true;
     }
-    n = lh_cast_static(authum_usize_t, lh_str_ptr_len(text));
+    authum_usize_t n = lh_cast_static(authum_usize_t, lh_str_ptr_len(text));
     if (lh_math_ge(n, lh_cast_static(authum_usize_t, authum_path_capacity)))
     {
         authum_path_clear(self);
@@ -91,13 +89,11 @@ authum_path_assign(authum_path_t *self, const authum_path_t *other)
 authum_bool_t
 authum_path_has_trailing_sep(const authum_path_t *self)
 {
-    authum_char_t c;
-
     if (authum_path_is_empty(self))
     {
         return authum_bool_false;
     }
-    c = self->data[lh_math_sub(self->size, 1u)];
+    authum_char_t c = self->data[lh_math_sub(self->size, 1u)];
     return (lh_math_eq(c, lh_char_map_slash) || lh_math_eq(c, lh_char_map_backslash))
                ? authum_bool_true
                : authum_bool_false;

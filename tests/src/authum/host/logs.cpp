@@ -60,12 +60,12 @@ test_mirror(authum_logger_level_t level, const authum_char_t *name, const authum
 void
 test_log_path(authum_char_t *out, authum_usize_t out_size, const char *dir, time_t when)
 {
-    char day[16];
-    char module[64];
     const char *slash = strchr(dir, '/');
     struct tm *tm = localtime(&when);
 
+    char day[16];
     strftime(day, sizeof day, "%Y-%m-%d", tm);
+    char module[64];
     if (strcmp(dir, "authum") == 0)
     {
         snprintf(out, out_size, TEST_ROOT "/logs/%s.log", day);
@@ -85,7 +85,6 @@ test_log_path(authum_char_t *out, authum_usize_t out_size, const char *dir, time
 authum_bool_t
 test_path_contains(const char *path, const char *needle)
 {
-    authum_char_t line[512];
     authum_bool_t found = authum_bool_false;
     FILE *file = fopen(path, "r");
 
@@ -93,6 +92,7 @@ test_path_contains(const char *path, const char *needle)
     {
         return authum_bool_false;
     }
+    authum_char_t line[512];
     while (!found && fgets(line, sizeof line, file) != authum_null)
     {
         found = strstr(line, needle) != authum_null ? authum_bool_true : authum_bool_false;
@@ -134,9 +134,8 @@ test_exists(const char *path)
 authum_bool_t
 test_file_exists(const char *dir, time_t when)
 {
-    authum_char_t path[256];
-
     EXPECT_TRUE(authum_logs_sync(5000));
+    authum_char_t path[256];
     test_log_path(path, sizeof path, dir, when);
     return test_exists(path);
 }
@@ -190,9 +189,8 @@ test_reset(void)
     g_test_mirrored = 0;
     const char *dirs[] = {"authum", "qproto", "quiet", "hello", "hello/audit", "qproto/bans"};
     authum_char_t path[256];
-    authum_usize_t i;
 
-    for (i = 0u; i < sizeof dirs / sizeof dirs[0]; ++i)
+    for (authum_usize_t i = 0u; i < sizeof dirs / sizeof dirs[0]; ++i)
     {
         test_log_path(path, sizeof path, dirs[i], TEST_DAY_ONE);
         remove(path);
@@ -348,17 +346,13 @@ TEST(authum_logs, file_cache)
 TEST(authum_logs, journals)
 {
     test_reset();
-    authum_ptr audit;
-    authum_ptr again;
-    authum_ptr bans;
-    authum_char_t path[256];
 
     EXPECT_TRUE(authum_logs_init(TEST_ROOT, authum_null));
     authum_logs_set_clock(test_clock);
     EXPECT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null, authum_null));
     EXPECT_TRUE(authum_logs_open(&g_test_qproto, "qproto", authum_null, authum_null));
 
-    audit = authum_logs_open_journal(&g_test_hello, "audit");
+    authum_ptr audit = authum_logs_open_journal(&g_test_hello, "audit");
     EXPECT_NE(audit, authum_null);
     EXPECT_EQ(authum_logs_open_journal(authum_null, "x"), authum_null);
     EXPECT_EQ(authum_logs_open_journal(&g_test_hello, ""), authum_null);
@@ -375,7 +369,7 @@ TEST(authum_logs, journals)
         test_file_contains("authum", TEST_DAY_ONE, "[warning] [hello/audit] audit warning line"));
 
     /* Opening the same name again shares it; it lives until the last close. */
-    again = authum_logs_open_journal(&g_test_hello, "audit");
+    authum_ptr again = authum_logs_open_journal(&g_test_hello, "audit");
     EXPECT_EQ(again, audit);
     authum_logs_close_journal(again);
     EXPECT_TRUE(authum_logs_is_enabled(audit, authum_logger_level_info));
@@ -383,8 +377,9 @@ TEST(authum_logs, journals)
     EXPECT_FALSE(authum_logs_is_enabled(audit, authum_logger_level_error));
 
     /* A module that forgets its journal: it goes when the module does. */
-    bans = authum_logs_open_journal(&g_test_qproto, "bans");
+    authum_ptr bans = authum_logs_open_journal(&g_test_qproto, "bans");
     authum_logs_write(bans, authum_logger_level_info, "ban line");
+    authum_char_t path[256];
     test_log_path(path, sizeof path, "qproto/bans", TEST_DAY_ONE);
     authum_logs_close(&g_test_qproto);
     EXPECT_TRUE(authum_logs_sync(5000));
@@ -416,13 +411,13 @@ TEST(authum_logs, reload)
 TEST(authum_logs, prune)
 {
     test_reset();
-    authum_char_t old_path[256];
-    authum_char_t recent_path[256];
 
     test_mkdir(TEST_ROOT "/modules");
     test_mkdir(TEST_ROOT "/modules/hello");
     test_mkdir(TEST_ROOT "/modules/hello/logs");
+    authum_char_t old_path[256];
     test_log_path(old_path, sizeof old_path, "hello", TEST_DAY_ONE - 40 * TEST_DAY);
+    authum_char_t recent_path[256];
     test_log_path(recent_path, sizeof recent_path, "hello", TEST_DAY_ONE - 5 * TEST_DAY);
     test_touch(old_path);
     test_touch(recent_path);
@@ -447,20 +442,19 @@ TEST(authum_logs, prune)
 TEST(authum_logs, module_logger)
 {
     test_reset();
-    authum_logger_channel_t channel;
-    authum_host_t host;
-    authum_logger_t log;
-    authum_logger_t audit;
 
     EXPECT_TRUE(authum_logs_init(TEST_ROOT, test_mirror));
     authum_logs_set_clock(test_clock);
     EXPECT_TRUE(authum_logs_open(&g_test_hello, "hello", authum_null, authum_null));
 
+    authum_logger_channel_t channel;
     channel.ops = authum_logs_ops();
     channel.owner = &g_test_hello;
+    authum_host_t host;
     memset(&host, 0, sizeof host);
     host.logger = &channel;
 
+    authum_logger_t log;
     authum_logger_init(&log, &host);
     authum_logger_info(&log, "seen %d players", 3);
     EXPECT_TRUE(test_file_contains("hello", TEST_DAY_ONE, "[info] seen 3 players"));
@@ -468,6 +462,7 @@ TEST(authum_logs, module_logger)
     authum_host_log_line(&host, authum_bool_true, "via host_log_line");
     EXPECT_TRUE(test_file_contains("hello", TEST_DAY_ONE, "[error] via host_log_line"));
 
+    authum_logger_t audit;
     EXPECT_TRUE(authum_logger_open(&audit, &host, "audit"));
     EXPECT_TRUE(authum_logger_is_enabled(&audit, authum_logger_level_debug));
     authum_logger_debug(&audit, "admin %s did %s", "vega", "kick");

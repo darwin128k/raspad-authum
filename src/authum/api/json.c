@@ -21,12 +21,11 @@ authum_json_read(const authum_char_t *json, lh_web_json_node_t *root)
 const lh_web_json_node_t *
 authum_json_object_find(const lh_web_json_node_t *root, const authum_char_t *key)
 {
-    lh_str_view_t name;
-
     if (authum_null_eq(key) || lh_math_eq(key[0], lh_char_map_nul))
     {
         return authum_null;
     }
+    lh_str_view_t name;
     lh_str_view_init(lh_addr_of(name), key);
     return lh_web_json_node_get_member(root, name);
 }
@@ -35,7 +34,6 @@ authum_bool_t
 authum_json_object_copy_cstr(const authum_char_t *json, const authum_char_t *key,
                              authum_char_t *out, authum_usize_t out_size)
 {
-    lh_web_json_node_t root;
     const lh_web_json_node_t *member;
     authum_bool_t found = authum_bool_false;
 
@@ -45,6 +43,7 @@ authum_json_object_copy_cstr(const authum_char_t *json, const authum_char_t *key
     }
     lh_str_ptr_clear(out);
 
+    lh_web_json_node_t root;
     if (authum_json_read(json, lh_addr_of(root)))
     {
         member = authum_json_object_find(lh_addr_of(root), key);
@@ -67,15 +66,15 @@ authum_bool_t
 authum_json_object_try_get_i32(const authum_char_t *json, const authum_char_t *key,
                                authum_i32_t *out)
 {
-    lh_web_json_node_t root;
     const lh_web_json_node_t *member;
-    lh_sllong_t value;
     authum_bool_t found = authum_bool_false;
 
     if (authum_null_eq(out))
     {
         return authum_bool_false;
     }
+    lh_web_json_node_t root;
+    lh_sllong_t value;
     if (authum_json_read(json, lh_addr_of(root)))
     {
         member = authum_json_object_find(lh_addr_of(root), key);

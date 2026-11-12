@@ -6,15 +6,15 @@
 
 TEST(authum_host, copies_and_clears_facade)
 {
-    authum_host_t src;
-    authum_host_t dst;
     authum_engine_t engine;
 
     memset(&engine, 0, sizeof engine);
+    authum_host_t src;
     memset(&src, 0, sizeof src);
     src.engine = &engine;
     src.commands = (const authum_commands_t *)&engine; /* any non-null marker */
 
+    authum_host_t dst;
     authum_host_copy(&dst, &src);
     EXPECT_EQ(authum_host_get_engine(&dst), &engine);
     EXPECT_EQ(authum_host_get_commands(&dst), src.commands);

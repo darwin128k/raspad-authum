@@ -31,11 +31,10 @@ authum_clients_event(const authum_char_t *name, authum_ptr payload, authum_ptr u
     authum_clients_impl_t *impl = user;
     const authum_event_client_t *ev = payload;
     authum_client_identity_t *slot;
-    authum_usize_t i;
     if (lh_str_ptr_equals(name, AUTHUM_EVENT_SERVER_DEACTIVATE, lh_bool_false) ||
         lh_str_ptr_equals(name, AUTHUM_EVENT_SERVER_ACTIVATE, lh_bool_false))
     {
-        for (i = 1; lh_math_le(i, impl->max); i = lh_math_add_one(i))
+        for (authum_usize_t i = 1; lh_math_le(i, impl->max); i = lh_math_add_one(i))
         {
             ++impl->slots[i].generation;
             impl->slots[i].connected = authum_bool_false;
@@ -65,12 +64,12 @@ void
 authum_clients_destroy(authum_clients_t *self)
 {
     authum_clients_impl_t *impl;
-    authum_u32_t i;
     if (authum_null_eq(self) || authum_null_eq(impl = self->impl))
     {
         return;
     }
-    for (i = 0; lh_math_lt(i, lh_math_div(sizeof m_client_events, sizeof m_client_events[0]));
+    for (authum_u32_t i = 0;
+         lh_math_lt(i, lh_math_div(sizeof m_client_events, sizeof m_client_events[0]));
          i = lh_math_add_one(i))
     {
         authum_events_unsubscribe(authum_host_get_events(lh_addr_of(impl->host)),
@@ -84,7 +83,6 @@ authum_bool_t
 authum_clients_init(authum_clients_t *self, const authum_host_t *host, authum_usize_t max)
 {
     authum_clients_impl_t *impl;
-    authum_u32_t i;
     if (authum_null_eq(self) || !authum_null_eq(self->impl) || authum_null_eq(host) ||
         authum_null_eq(authum_host_get_events(host)) || !max || lh_math_gt(max, 4096))
     {
@@ -100,7 +98,7 @@ authum_clients_init(authum_clients_t *self, const authum_host_t *host, authum_us
     authum_host_copy(lh_addr_of(impl->host), host);
     impl->max = max;
     impl->id = ++m_next_tracker;
-    for (i = 1; lh_math_le(i, max); i = lh_math_add_one(i))
+    for (authum_u32_t i = 1; lh_math_le(i, max); i = lh_math_add_one(i))
     {
         impl->slots[i].userid =
             authum_host_client_get_userid(host, lh_cast_static(authum_i32_t, i));
@@ -108,7 +106,8 @@ authum_clients_init(authum_clients_t *self, const authum_host_t *host, authum_us
         impl->slots[i].generation = 1;
     }
     self->impl = impl;
-    for (i = 0; lh_math_lt(i, lh_math_div(sizeof m_client_events, sizeof m_client_events[0]));
+    for (authum_u32_t i = 0;
+         lh_math_lt(i, lh_math_div(sizeof m_client_events, sizeof m_client_events[0]));
          i = lh_math_add_one(i))
     {
         if (!authum_host_subscribe(host, m_client_events[i], authum_clients_event, impl))

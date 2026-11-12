@@ -5,7 +5,7 @@
 <h1 align="center">Authum</h1>
 
 <p align="center">
-  <b>4.1.0</b> — Metamod-P plugin host for classic HLDS<br>
+  <b>4.1.0</b> — the game library for classic HLDS that hosts modules<br>
   loads child modules from <code>modules.list</code> / <code>modules/</code>
 </p>
 
@@ -27,7 +27,7 @@ dropped under `modules/`.
 
 - Loads modules from `modules.list` (Authum line format) or scans `modules/`
 - Connect gate scaffolding for children
-- Client modules: `authum/client.h` (ABI **1.0**, no lh type in its headers);
+- Client modules: `authum/client.h` (module ABI **4.0**, no lh type in its headers);
   host passes `authum_host_t` into `start` (region, events, commands)
 - Server command `authum` — status / load / unload / module commands
 - Static `lh` in the host (`AUTHUM_LH_LINK_MODE=needed|whole`); `authum_client`

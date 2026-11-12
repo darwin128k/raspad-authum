@@ -78,7 +78,6 @@ authum_event_message_set_string(authum_event_message_t *ev, authum_i32_t i,
 {
     authum_event_message_arg_t *arg =
         lh_cast_reinterpret(authum_event_message_arg_t *, authum_event_message_arg(ev, i));
-    authum_usize_t n;
 
     if (authum_null_eq(arg) || lh_math_ne(arg->kind, authum_message_arg_string) ||
         authum_null_eq(text))
@@ -86,7 +85,7 @@ authum_event_message_set_string(authum_event_message_t *ev, authum_i32_t i,
         return authum_bool_false;
     }
     /* The new text goes after the others; the old one just stops being used. */
-    n = lh_math_add(lh_str_ptr_len(text), 1u);
+    authum_usize_t n = lh_math_add(lh_str_ptr_len(text), 1u);
     if (lh_math_gt(lh_math_add(ev->text_used, n), authum_event_message_text_max))
     {
         return authum_bool_false;

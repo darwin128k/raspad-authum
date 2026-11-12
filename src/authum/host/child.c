@@ -86,14 +86,13 @@ void
 authum_child_bind_lh_path(authum_path_t *slot, const authum_path_t **field,
                           const lh_fs_path_t *path, lh_fs_path_style_t style)
 {
-    lh_str_t scratch;
-
     if (lh_fs_path_is_empty(path))
     {
         authum_path_clear(slot);
         lh_ptr_deref(field) = lh_null;
         return;
     }
+    lh_str_t scratch;
     authum_child_bind_path(slot, field, lh_fs_path_to_cstr(path, style, lh_addr_of(scratch)));
     lh_str_deinit(lh_addr_of(scratch));
 }
@@ -183,7 +182,6 @@ authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
 {
     authum_env_t *env = lh_addr_of(data->env);
     authum_child_paths_t *paths = lh_addr_of(data->paths);
-    authum_path_t up;
 
     lh_memory_std_set(env, 0, sizeof(lh_ptr_deref(env)));
     lh_memory_std_set(paths, 0, sizeof(lh_ptr_deref(paths)));
@@ -191,6 +189,7 @@ authum_child_fill_env(authum_module_t *child, authum_child_data_t *data)
 
     authum_child_bind_parent(lh_addr_of(paths->authum), lh_addr_of(env->authum),
                              lh_os_module_get_path(lh_addr_of(authum)));
+    authum_path_t up;
     if (!lh_null_eq(env->authum) && authum_path_assign_parent(lh_addr_of(up), env->authum))
     {
         authum_child_bind_path(lh_addr_of(paths->addons), lh_addr_of(env->addons),

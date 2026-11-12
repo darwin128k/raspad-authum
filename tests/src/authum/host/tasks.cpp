@@ -78,8 +78,7 @@ destroy(void *user)
 void
 pump_until(int count)
 {
-    unsigned i;
-    for (i = 0; i < 5000 && completed < count; ++i)
+    for (unsigned i = 0; i < 5000 && completed < count; ++i)
     {
         authum_tasks_host_pump();
         pause_ms();
@@ -96,8 +95,8 @@ authum_bool_t
 sql_work(authum_sql_t *db, void *user)
 {
     sql_case_t *test = static_cast<sql_case_t *>(user);
-    authum_sql_stmt_t stmt;
     test->wrong_thread = thread_id() == main_thread;
+    authum_sql_stmt_t stmt;
     if (!authum_sql_exec(db, "CREATE TABLE t (value INTEGER)") ||
         !authum_sql_exec(db, "INSERT INTO t VALUES (42)") ||
         !authum_sql_prepare(db, &stmt, "SELECT value FROM t"))

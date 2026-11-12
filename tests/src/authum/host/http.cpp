@@ -26,11 +26,11 @@ static bool
 resource_open(const lh_os_fs_file_t *root, const authum_http_options_t *options, const char *url,
               size_t length, lh_u64_t *size, const char **reason = nullptr)
 {
-    char path[2048];
     const char *why = nullptr;
     lh_os_fs_file_t file;
     lh_os_fs_file_init(&file);
     bool opened = false;
+    char path[2048];
     if (authum_http_resource_check(options, url, length, path, sizeof path, &why))
     {
         opened = authum_http_resource_open(&file, root, options, path, size, &why);
@@ -48,9 +48,9 @@ static lh_net_ip4_socket_addr_t
 loopback(lh_net_port_t port)
 {
     lh_net_ip4_t ip;
-    lh_net_ip4_socket_addr_t address;
 
     EXPECT_TRUE(lh_net_ip4_parse("127.0.0.1", 9, &ip));
+    lh_net_ip4_socket_addr_t address;
     lh_net_ip4_socket_addr_init(&address, &ip, port);
     return address;
 }

@@ -38,13 +38,11 @@ lh_memory_sized_allocator_t authum_region_heap =
 authum_ptr
 authum_region_host_alloc(authum_ptr parent, authum_usize_t size)
 {
-    authum_ptr ptr;
-
     if (lh_null_eq(parent) || lh_math_ge(lh_cast_static(lh_usize_t, size), AUTHUM_REGION_SIZE_MAX))
     {
         return lh_null;
     }
-    ptr = lh_memory_tree_alloc_child(parent, lh_cast_static(lh_usize_t, size));
+    authum_ptr ptr = lh_memory_tree_alloc_child(parent, lh_cast_static(lh_usize_t, size));
     if (!lh_null_eq(ptr) && lh_math_gt(size, 0u))
     {
         lh_memory_std_set(ptr, 0, lh_cast_static(authum_usize_t, size));

@@ -53,8 +53,8 @@ authum_bool_t
 authum_http_socket_accept(lh_os_net_socket_t *listener, authum_http_client_t *peer,
                           authum_u32_t *address)
 {
-    lh_net_ip4_socket_addr_t remote;
     lh_os_net_socket_init(lh_addr_of(peer->fd));
+    lh_net_ip4_socket_addr_t remote;
     if (!lh_os_net_socket_accept_nonblocking(listener, lh_addr_of(peer->fd), lh_addr_of(remote)))
     {
         return authum_bool_false;

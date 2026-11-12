@@ -66,9 +66,9 @@ authum_command(void)
     const authum_char_t *argv[64];
     authum_usize_t argc = 0u;
     authum_i32_t engine_argc = g_engfuncs.pfnCmd_Argc();
-    authum_i32_t i;
 
-    for (i = 1; lh_math_lt(i, engine_argc) && lh_math_lt(argc, 64u); i = lh_math_add_one(i))
+    for (authum_i32_t i = 1; lh_math_lt(i, engine_argc) && lh_math_lt(argc, 64u);
+         i = lh_math_add_one(i))
     {
         argv[argc++] = g_engfuncs.pfnCmd_Argv(i);
     }
@@ -89,7 +89,6 @@ authum_command(void)
 void
 log_mirror(authum_logger_level_t /* level */, const authum_char_t *name, const authum_char_t *text)
 {
-    authum_char_t line[1024];
     const authum_char_t *end;
 
     if (lh_math_eq(text, authum_null) || lh_math_eq(g_engfuncs.pfnServerPrint, authum_null))
@@ -101,6 +100,7 @@ log_mirror(authum_logger_level_t /* level */, const authum_char_t *name, const a
            lh_math_eq(text[lh_math_sub(lh_str_ptr_len(text), 1u)], lh_char_map_lf))
               ? ""
               : "\n";
+    authum_char_t line[1024];
     if (lh_math_ne(name, authum_null) &&
         lh_math_ne(lh_str_ptr_equals(name, "authum", lh_bool_false), lh_bool_true))
     {

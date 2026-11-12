@@ -18,13 +18,11 @@ authum_bool_t
 authum_commands_add_all(const authum_commands_t *self, const authum_command_def_t *defs,
                         authum_usize_t count)
 {
-    authum_usize_t i;
-
     if (authum_null_eq(defs))
     {
         return authum_bool_false;
     }
-    for (i = 0u; lh_math_lt(i, count); i = lh_math_add_one(i))
+    for (authum_usize_t i = 0u; lh_math_lt(i, count); i = lh_math_add_one(i))
     {
         if (!authum_commands_add(self, lh_addr_of(defs[i])))
         {

@@ -280,13 +280,11 @@ authum_sql_errmsg(const authum_sql_t *self)
 authum_bool_t
 authum_sql_exec(authum_sql_t *self, const authum_char_t *sql)
 {
-    lh_bool_t ok;
-
     if (!authum_sql_is_open(self) || authum_null_eq(sql))
     {
         return authum_sql_fail(self, "database is not open or SQL text is missing");
     }
-    ok = lh_sql_db_exec(authum_sql_get_db(self), authum_sql_view(sql));
+    lh_bool_t ok = lh_sql_db_exec(authum_sql_get_db(self), authum_sql_view(sql));
     authum_sql_sync_errmsg(self);
     return ok ? authum_bool_true : authum_bool_false;
 }
@@ -305,7 +303,6 @@ authum_bool_t
 authum_sql_prepare(authum_sql_t *self, authum_sql_stmt_t *stmt, const authum_char_t *sql)
 {
     struct authum_sql_stmt_impl *impl;
-    lh_bool_t ok;
 
     if (authum_null_eq(stmt))
     {
@@ -324,7 +321,8 @@ authum_sql_prepare(authum_sql_t *self, authum_sql_stmt_t *stmt, const authum_cha
     {
         return authum_bool_false;
     }
-    ok = lh_sql_db_prepare(authum_sql_get_db(self), lh_addr_of(impl->stmt), authum_sql_view(sql));
+    lh_bool_t ok =
+        lh_sql_db_prepare(authum_sql_get_db(self), lh_addr_of(impl->stmt), authum_sql_view(sql));
     authum_sql_sync_errmsg(self);
     if (!ok)
     {
@@ -417,7 +415,6 @@ lh_sql_step_t
 authum_sql_stmt_step(authum_sql_stmt_t *stmt)
 {
     struct authum_sql_stmt_impl *impl;
-    lh_sql_step_t step;
 
     if (authum_null_eq(stmt) || authum_null_eq(stmt->stmt) || authum_null_eq(stmt->sql))
     {
@@ -425,7 +422,7 @@ authum_sql_stmt_step(authum_sql_stmt_t *stmt)
     }
     impl = authum_sql_stmt_get_impl(stmt);
     authum_sql_stmt_drop_columns(impl);
-    step = lh_sql_stmt_step(lh_addr_of(impl->stmt));
+    lh_sql_step_t step = lh_sql_stmt_step(lh_addr_of(impl->stmt));
     authum_sql_sync_errmsg(stmt->sql);
     return step;
 }

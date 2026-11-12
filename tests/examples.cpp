@@ -156,9 +156,8 @@ test_client_get_address(authum_i32_t index, authum_char_t *buf, authum_usize_t s
 authum_bool_t
 test_client_print(authum_i32_t index, authum_i32_t kind, const authum_char_t *text)
 {
-    authum_char_t line[256];
-
     authum_unused(kind);
+    authum_char_t line[256];
     snprintf(line, sizeof line, "%d|%s", (int)index, text);
     test_append(g_prints, line);
     return authum_bool_true;
@@ -235,9 +234,7 @@ int g_cvar_count;
 int
 test_cvar_find(const authum_char_t *name)
 {
-    int i;
-
-    for (i = 0; i < g_cvar_count; ++i)
+    for (int i = 0; i < g_cvar_count; ++i)
     {
         if (strcmp(g_cvar_names[i], name) == 0)
         {
@@ -341,12 +338,11 @@ test_entity_get_i32(authum_i32_t index, authum_i32_t field, authum_i32_t *out)
 authum_bool_t
 test_client_command(authum_i32_t index, const authum_char_t *cmd)
 {
-    authum_char_t line[192];
-
     if (test_player(index) == authum_null)
     {
         return authum_bool_false;
     }
+    authum_char_t line[192];
     snprintf(line, sizeof line, "cmd|%d|%s\n", (int)index, cmd);
     test_append(g_commands, line);
     return authum_bool_true;
@@ -444,7 +440,6 @@ authum_bool_t
 test_load(test_module_t *m)
 {
     char path[512];
-    authum_path_t modules;
 
     snprintf(path, sizeof path, "%s/%s/%s%s", AUTHUM_TEST_EXAMPLES_DIR, m->name, m->name,
              AUTHUM_TEST_MODULE_SUFFIX);
@@ -467,6 +462,7 @@ test_load(test_module_t *m)
     EXPECT_STREQ(m->info->name, m->name);
 
     authum_path_set_cstr(&m->root, TEST_ROOT);
+    authum_path_t modules;
     authum_path_join(&modules, &m->root, "modules");
     authum_path_ensure_dir(&modules);
     memset(&m->env, 0, sizeof m->env);
@@ -560,9 +556,9 @@ test_run(const char *scope, const char *name, authum_usize_t argc, const authum_
 void
 test_client_event(const char *event, authum_i32_t index)
 {
-    authum_event_client_t ev;
     test_player_t *player = test_player(index);
 
+    authum_event_client_t ev;
     memset(&ev, 0, sizeof ev);
     ev.index = index;
     ev.userid = player->userid;
@@ -578,10 +574,9 @@ test_client_event(const char *event, authum_i32_t index)
 authum_bool_t
 test_say(authum_i32_t index, const char *text)
 {
-    authum_event_client_command_t ev;
-    authum_hook_call_t call;
     test_player_t *player = test_player(index);
 
+    authum_event_client_command_t ev;
     memset(&ev, 0, sizeof ev);
     ev.client.index = index;
     ev.client.userid = player->userid;
@@ -593,6 +588,7 @@ test_say(authum_i32_t index, const char *text)
     authum_cstr_copy(ev.args, sizeof ev.args, text);
     (void)authum_events_host_publish(AUTHUM_EVENT_CLIENT_COMMAND, &ev);
     /* The decision is the chain's: the event only says what happened. */
+    authum_hook_call_t call;
     memset(&call, 0, sizeof call);
     call.point = authum_hook_point_client_command;
     call.index = index;
@@ -681,8 +677,6 @@ class authum_examples : public ::testing::Test
         g_cvar_count = 0;
         g_query_index = g_query_request = 0;
         authum_path_t root;
-        authum_usize_t i;
-
         authum_path_set_cstr(&root, TEST_ROOT);
         authum_path_ensure_dir(&root);
         remove(TEST_ROOT "/modules/stats/data/stats.db");
@@ -709,7 +703,7 @@ class authum_examples : public ::testing::Test
             fclose(rule);
         }
 
-        for (i = 0u; i < sizeof g_modules / sizeof g_modules[0]; ++i)
+        for (authum_usize_t i = 0u; i < sizeof g_modules / sizeof g_modules[0]; ++i)
         {
             ASSERT_TRUE(test_load(&g_modules[i])) << g_modules[i].name;
         }
@@ -984,10 +978,9 @@ TEST_F(authum_examples, announcer_plays_round_sound_to_humans)
 TEST_F(authum_examples, announcer_waits_for_timer_deadline)
 {
     authum_event_server_t server = {};
-    int i;
     g_prints[0] = '\0';
     server.frame_time = 1.0f;
-    for (i = 0; i < 119; ++i)
+    for (int i = 0; i < 119; ++i)
     {
         (void)authum_events_host_publish(AUTHUM_EVENT_SERVER_FRAME, &server);
     }

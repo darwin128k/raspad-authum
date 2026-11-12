@@ -80,9 +80,9 @@ lh_void
 authum_logger_buffer_replay(lh_ptr user, const lh_os_logger_capture_line_t *line)
 {
     const lh_os_logger_record_t *record = lh_os_logger_capture_line_get_record(line);
-    authum_logger_channel_t channel;
 
     authum_unused(user);
+    authum_logger_channel_t channel;
     authum_logger_channel_set_ops(
         lh_addr_of(channel),
         lh_cast_static(const authum_logger_ops_t *, lh_os_logger_capture_line_get_target(line)));

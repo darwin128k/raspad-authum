@@ -16,10 +16,8 @@ test_detour_target(int x)
 int
 test_detour_hook(int x)
 {
-    int original;
-
     authum_detour_suspend(&g_test_detour);
-    original = ((int (*)(int))g_test_detour.target)(x);
+    int original = ((int (*)(int))g_test_detour.target)(x);
     authum_detour_resume(&g_test_detour);
     return original * 100;
 }

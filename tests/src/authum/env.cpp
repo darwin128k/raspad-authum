@@ -40,24 +40,26 @@ test_env_exists(const char *path)
 
 TEST(authum_env, separates_config_and_data_lifetimes)
 {
-    authum_path_t root, module, module_config, module_data, out;
-    authum_env_t env;
-    struct stat info;
-
+    authum_path_t root;
     authum_path_set_cstr(&root, TEST_ENV_ROOT);
+    authum_path_t module;
     authum_path_join(&module, &root, "foo");
+    authum_path_t module_config;
     authum_path_join(&module_config, &module, "configs");
+    authum_path_t module_data;
     authum_path_join(&module_data, &module, "data");
     EXPECT_TRUE(authum_path_ensure_dir(&root) && authum_path_ensure_dir(&module) &&
                 authum_path_ensure_dir(&module_config));
     remove(TEST_ENV_ROOT "/foo/configs/foo.cfg");
 
+    authum_env_t env;
     memset(&env, 0, sizeof env);
     env.module = &module;
     env.module_config = &module_config;
     env.module_data = &module_data;
 
     /* configs/<leaf>: the path either way, true once the file is there. */
+    authum_path_t out;
     EXPECT_FALSE(authum_env_join_config_path(&env, "foo.cfg", &out));
     EXPECT_STREQ(authum_path_get_cstr(&out), TEST_ENV_ROOT "/foo/configs/foo.cfg");
     test_env_touch(TEST_ENV_ROOT "/foo/configs/foo.cfg", "x\n");
@@ -69,6 +71,7 @@ TEST(authum_env, separates_config_and_data_lifetimes)
 #else
     remove(TEST_ENV_ROOT "/foo/data");
 #endif
+    struct stat info;
     EXPECT_NE(stat(TEST_ENV_ROOT "/foo/data", &info), 0);
     /* Constructing a path for a read must not create the directory. */
     EXPECT_TRUE(authum_env_join_data_path(&env, "foo.db", &out));

@@ -11,8 +11,8 @@ class authum_net_address_valid : public ::testing::TestWithParam<address_case>
 
 TEST_P(authum_net_address_valid, copies_host_without_resolving)
 {
-    char out[64];
     const auto value = GetParam();
+    char out[64];
     ASSERT_TRUE(authum_net_address_copy_host(std::get<0>(value), out, sizeof out));
     EXPECT_STREQ(out, std::get<1>(value));
 }

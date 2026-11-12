@@ -102,9 +102,9 @@ TEST_F(authum_hooks, the_last_hooked_is_called_first)
 
 TEST_F(authum_hooks, a_handler_may_stop_the_call)
 {
-    int owner;
     authum_hook_call_t call = {};
 
+    int owner;
     EXPECT_TRUE(authum_hook_registry_add(authum_hook_registry(), &owner, "GUARD",
                                          authum_hook_point_client_connect, on_stop, authum_null));
     call.proceed = authum_bool_true;
@@ -117,9 +117,9 @@ TEST_F(authum_hooks, a_handler_may_stop_the_call)
 
 TEST_F(authum_hooks, a_call_nobody_stopped_has_no_author)
 {
-    int owner;
     authum_hook_call_t call = {};
 
+    int owner;
     EXPECT_TRUE(authum_hook_registry_add(authum_hook_registry(), &owner, "GUARD",
                                          authum_hook_point_client_connect, on_first, g_a));
     call.proceed = authum_bool_true;
@@ -147,10 +147,10 @@ TEST_F(authum_hooks, a_removed_handler_is_not_called)
 TEST_F(authum_hooks, unloading_a_module_drops_its_handlers)
 {
     int owner;
-    int other;
 
     EXPECT_TRUE(authum_hook_registry_add(authum_hook_registry(), &owner, "GUARD",
                                          authum_hook_point_client_connect, on_first, g_a));
+    int other;
     EXPECT_TRUE(authum_hook_registry_add(authum_hook_registry(), &other, "OTHER",
                                          authum_hook_point_client_connect, on_second, authum_null));
     authum_hook_registry_drop_owner(authum_hook_registry(), &owner);
@@ -164,9 +164,9 @@ TEST_F(authum_hooks, unloading_a_module_drops_its_handlers)
 
 TEST_F(authum_hooks, a_handler_that_keeps_to_its_budget_stays_in_the_chain)
 {
-    int owner;
     authum_hook_call_t call = {};
 
+    int owner;
     EXPECT_TRUE(authum_hook_registry_add(authum_hook_registry(), &owner, "GUARD",
                                          authum_hook_point_client_connect, on_first, g_a));
     call.proceed = authum_bool_true;
@@ -182,9 +182,9 @@ TEST_F(authum_hooks, a_handler_that_keeps_to_its_budget_stays_in_the_chain)
 
 TEST_F(authum_hooks, a_handler_that_overruns_its_budget_is_dropped)
 {
-    int owner;
     authum_hook_call_t call = {};
 
+    int owner;
     EXPECT_TRUE(authum_hook_registry_add(authum_hook_registry(), &owner, "GUARD",
                                          authum_hook_point_client_connect, on_slow, g_a));
     call.proceed = authum_bool_true;
@@ -202,9 +202,8 @@ TEST_F(authum_hooks, a_handler_that_overruns_its_budget_is_dropped)
 TEST_F(authum_hooks, a_point_holds_a_limited_number_of_handlers)
 {
     int owner;
-    int index;
 
-    for (index = 0; index < LH_OS_MODULE_HOOK_SIZE; index++)
+    for (int index = 0; index < LH_OS_MODULE_HOOK_SIZE; index++)
     {
         EXPECT_TRUE(authum_hook_registry_add(authum_hook_registry(), &owner, "GUARD",
                                              authum_hook_point_client_connect, on_first, g_a));

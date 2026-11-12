@@ -38,13 +38,12 @@ TEST(authum_region, region_alloc_and_unload)
     authum_byte_t *a;
     authum_byte_t *b;
     authum_byte_t *child;
-    authum_usize_t i;
     authum_bool_t zero = authum_bool_true;
 
     EXPECT_TRUE(authum_region_is_valid(&region));
     a = static_cast<authum_byte_t *>(authum_region_alloc(&region, 64u));
     EXPECT_NE(a, authum_null);
-    for (i = 0u; i < 64u; ++i)
+    for (authum_usize_t i = 0u; i < 64u; ++i)
     {
         if (a[i] != 0u)
         {
@@ -72,10 +71,9 @@ TEST(authum_region, region_nested)
 {
     authum_region_t root = test_region_root();
     authum_region_t nested;
-    authum_ptr p;
 
     EXPECT_TRUE(authum_region_open(&nested, &root));
-    p = authum_region_alloc(&nested, 16u);
+    authum_ptr p = authum_region_alloc(&nested, 16u);
     authum_region_set_destructor(&nested, p, test_region_count_destroy);
     g_destroyed = 0;
     authum_region_close(&nested);
@@ -100,15 +98,13 @@ TEST(authum_region, region_realloc_with_children)
 {
     authum_region_t region = test_region_root();
     authum_ptr parent = authum_region_alloc(&region, 16u);
-    authum_ptr moved;
-    int i;
 
-    for (i = 0; i < 3; ++i)
+    for (int i = 0; i < 3; ++i)
     {
         authum_ptr child = authum_region_alloc_under(&region, parent, 8u);
         authum_region_set_destructor(&region, child, test_region_count_destroy);
     }
-    moved = authum_region_realloc(&region, parent, 1u << 16);
+    authum_ptr moved = authum_region_realloc(&region, parent, 1u << 16);
     EXPECT_NE(moved, authum_null);
 
     g_destroyed = 0;
@@ -139,7 +135,6 @@ struct test_item
 TEST(authum_region, array)
 {
     authum_region_t region = test_region_root();
-    struct test_item item;
     struct test_item *at;
 
     EXPECT_EQ(authum_array_create(&region, 0u), authum_null);
@@ -148,6 +143,7 @@ TEST(authum_region, array)
     ASSERT_NE(arr, authum_null);
     EXPECT_TRUE(authum_array_is_empty(arr));
     EXPECT_EQ(authum_array_get_capacity(arr), 0u);
+    struct test_item item;
     for (authum_i32_t i = 0; i < 100; ++i)
     {
         memset(&item, 0, sizeof item);

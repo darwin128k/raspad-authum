@@ -39,9 +39,8 @@ void
 test_run(authum_float_t seconds)
 {
     int frames = (int)(seconds * 100.0f + 0.5f);
-    int i;
 
-    for (i = 0; i < frames; ++i)
+    for (int i = 0; i < frames; ++i)
     {
         test_frame(0.01f);
     }

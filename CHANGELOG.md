@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The address of a variable is `lh_addr_of(x)` in Authum's sources too (`api/file.c`,
+  `gamedll/hooks.cpp`); found by the type of the expression in clang's AST, so C++
+  references and bitwise `&` were not touched. The tests keep C++'s own `&`, as they
+  keep their casts.
+
+- The docs are one index (`docs/README.md`): writing a module, how the host works,
+  plans, reports. The engine-log investigation moved to
+  `docs/reports/hlds-log-buffering/follow-up.md` and its target to `docs/roadmap.md`
+  (new: Authum's own roadmap, the features that `docs/cleanup.md` held). The CHANGELOG
+  has its 4.0.1, 3.0.0 and 2.0.1 sections back: the 2.0.1 and 3.0.0 branches never
+  named theirs, so their entries had ended up under 4.0.0. The README names Authum the
+  game library and module ABI 4.0; AGENTS.md says ABI 4.0.
+
+- Every variable is declared where it is used, in the sources and the tests: about 1900
+  declarations moved down to the statement that first uses them, joined with their first
+  assignment or put into their `for` header; unused locals are gone. `tools/check-decls.py`
+  reports 0 (the bundled SQLite is not ours and is not counted) and has `--fix`. The
+  checker counts braces outside comments, treats `namespace` / `extern "C"` as
+  transparent, accepts storage the next statement uses whole (a loop and its body
+  included), and no longer takes an array a range-for walks for a loop counter or a
+  struct member for a local. Behaviour is unchanged.
+
 ### Fixed
 
 - Windows: the HTTP server's listening socket now holds its port exclusively (`SO_EXCLUSIVEADDRUSE`, through lh's `lh_os_system_net_socket_set_exclusive_addr`). It used to set `SO_REUSEADDR`, which on Windows lets another process bind the same port and take FastDL's connections. Linux is unchanged. `lib/lh` moves to `76949087`.
@@ -109,6 +133,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LH's execution part is `lh/rail` now (was `lh/exec`): the host's tasks and HTTP server use `lh_rail_*`. `authum_runtime_install` also fills LH's rail base slot with the OS base (`lh/os/rail/base.h`), which rail's threads and loops now need in every image.
 - `lib/lh` moves to lh 0.5.0 at `af1c75dc`: rail with its base slot, the loop pass, critical-section atomics, Ed25519 on lh's own bricks (the vendored Monocypher is gone), SQLite beside its driver (`src/lh/os/sql/sqlite/third_party`), listeners that own their port, and portable sockets and files that the HTTP server now uses instead of `lh_os_system_net_*` / `lh_os_system_fs_file_*`.
 
+## [4.0.1] - 2026-11-05
+
+### Fixed
+
+- Windows: the HTTP server's listening socket (FastDL's) now holds its port
+  exclusively (`SO_EXCLUSIVEADDRUSE`, through lh's
+  `lh_os_system_net_socket_set_exclusive_addr`). It used to set
+  `SO_REUSEADDR`, which on Windows lets another process bind the same port and
+  take the connections. Linux is unchanged. `lib/lh` moves to `3db378ae`
+  (lh 0.4.0 with that fix).
+
 ## [4.0.0] - 2026-11-05
 
 ### Changed
@@ -123,7 +158,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `authum_tasks_at_exit(tasks, fn, user)` — calls run on the module's task
   thread after its last task, before the module's stop. A host without it
   gets the old one-connection-per-job behaviour.
-
 - **HTTP server hardening (from fastdl).** `authum_http_options_t` gained
   `struct_size` (filled by `authum_http_options_init`; the host reads only that
   many bytes, defaults the rest, and still reads the older layout without it),
@@ -138,7 +172,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its memory itself, and the game thread joins it later. The stop, the give-up
   and the later join are `lh_exec_loop_try_stop` / `_try_abandon` /
   `_try_reap`; the reaper no longer waits a grace period.
-
 - **Background tasks run on `lh/exec`.** Each module owner gets an
   `lh_exec_thread_t` (its tasks in order) and an `lh_exec_mailbox_t` (at most 64
   outstanding, finished ones held for the game frame) instead of the removed
@@ -147,7 +180,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   once; unload cancels what has not started, waits for the running task and
   runs the remaining destructors without `complete`. A destructor that submits
   again during unload is refused, as before.
-
 - **Moved to lh 0.4.0 (`8673c267`).** lh's data bricks live under
   `lh/core/` and the database drivers under `lh/os/sql/`: every
   `#include <lh/...>` and every `lh_sql_mysql_*` / `lh_sql_sqlite_*` name
@@ -163,6 +195,128 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that `stderr` logger (`authum_runtime_use_stderr_logger`) instead of lh's
   removed `lh_runtime_logger_stderr`. The test runner (`authum_test_main`, lh's
   `test/src/main.cpp`) now links lh to fill the slots before any test.
+- The module ABI moves to **3.1.0** — the bricks above are new API, and the
+  minor says so. A 3.1 module needs a host of the same major and a minor of 1
+  or later; a 3.0 module still runs on a 3.1 host.
+- **The client events carry no decision any more.** `authum_event_client_t` has
+  no `allow`, `reject_reason` or `decided_by`, and `authum_event_client_command_t`
+  has no `block` or `decided_by`. An event is a message: it says what happened.
+  Refusing a client, swallowing a command and stopping a kill are hook points
+  now — there is one road to a decision, and the log names the module that took
+  it. A module built against the old fields does not compile — the module ABI
+  moves to **3.0.0** anyway.
+- The event bus has two kinds of publication now, as its own documentation
+  always said: `authum_events_forward` announces an event of your own — the
+  name must start with your prefix, so a module never publishes under another
+  module's name — and `authum_events_query` asks the module that owns the
+  name and reads its answer. `authum_events_publish` and
+  `authum_events_publish_id` are gone; `authum_host_forward` and
+  `authum_host_query` replace `authum_host_publish`.
+- The module identity field `logtag` is now `tag`: it is the mark the module is
+  shown with in a log record, not a logging thing of its own. A module built
+  against the old name does not compile — the module ABI moves to **3.0.0**,
+  and no 2.x module loads. The three words are separated now: `owner` is who
+  owns a subscription, a journal or a decision; `tag` is the mark a source is
+  shown with; `name` is what it is called.
+- Standard file logs use the HLDS `L MM/DD/YYYY - HH:MM:SS:` timestamp prefix,
+  followed by the level and text. Shared-host copies retain their module/journal
+  tag; a module's own file does not repeat its name.
+- Module commands run on the LH console (`lh/console`): the registry no longer cuts
+  usage and help text, and `authum_command_print` / `authum_command_printf` print a line
+  of any length. `authum_command_line_max`, `authum_command_usage_max` and
+  `authum_command_help_max` are gone; `authum_command_word_max` stays.
+- HTTP serves on Windows as on Linux: one transport on LH sockets, file handles and
+  formatting; a source path may be absolute in either OS's form. The server starts and
+  stops Winsock itself.
+- The HTTP worker is an LH loop that sleeps in `poll` on its sockets; it no longer
+  takes one of the module's 64 thread slots. `authum_http_host_init` takes no thread
+  facade.
+- A module's threads are an LH thread group (`lh/os/thread/group`).
+- Log files are written by the LH log queue and daily files (`lh/os/logger`): the
+  writer sleeps until a record instead of polling every 10 ms, records carry a
+  channel id instead of a copy of the directory path, open files are no longer
+  capped at 32, and Windows and Linux share one path with no `#if`.
+- `authum_command_def_t` has level-1 accessors (`authum_command_def_get_name`, ...).
+- `authum_net_address_host` is `authum_net_address_copy_host`, declared in its own
+  `<authum/net/address.h>` (still brought in by `<authum/client.h>`).
+- Module API sources mirror their headers (`src/authum/api/command/def.c` for
+  `<authum/command/def.h>`, ...); `tools/check-mirror.py` checks it.
+- The config reader reads files through lh (`lh/os/fs/file.h`), not through
+  libc: `authum_cfg_t` holds the config text it read instead of a `FILE *`,
+  and `authum_cfg_open_file` is gone. A config that is already in memory is
+  opened with `authum_cfg_open_text`. The values, the errors and the return
+  codes are the same.
+- Public API names say what they return (99 functions): values are `get_` / `is_` /
+  `has_` (`authum_host_get_engine`, `authum_array_get_size`, `authum_command_get_argv`,
+  `authum_env_get_game_path`, `authum_events_get_id`, `authum_clock_get_monotonic_ms`,
+  `authum_logger_buffer_is_active`, ...), results written into the caller's buffer are
+  `copy_` (`authum_host_client_copy_name`, `_copy_auth_id`, `_copy_info`,
+  `authum_engine_copy_map_name`, `authum_cfg_copy_cstr`, `authum_json_object_copy_cstr`),
+  scalars through a pointer with a success flag are `try_get_`
+  (`authum_host_entity_try_get_float`, `authum_command_try_get_arg_i32`,
+  `authum_json_object_try_get_i32`; `authum_json_object_get_i32` takes the fallback),
+  path builders are `join_` (`authum_host_join_config_path`), and
+  `authum_cfg_open_file`, `authum_cstr_is_equal`, `authum_char_to_lower`,
+  `authum_crypto_ed25519_is_valid` / `_create_key_pair`, `authum_path_get_cstr` /
+  `_has_trailing_sep` / `_assign_parent`, `authum_net_ipv4_collect_external` /
+  `_collect_internal`. `.clang-format` matches LH's.
+- Thread, task and logging workers use LH OS primitives behind the existing module API.
+- HTTP request parsing now uses LH's portable parser; removed PicoHTTPParser.
+  The public module API remains unchanged.
+- `log_level=off` now disables every destination and the module's journals;
+  use `log_file=off` to disable only the private file. The default retention
+  and shipped configuration are 10 days; explicitly configured values are preserved.
+- This changes module logging only. The native HLDS asynchronous file writer
+  remains an isolated Linux experiment and is not enabled by this release.
+- **Metamod is gone — Authum is the game library and nothing else.** The
+  Metamod-P plugin image (`authum_mm.so`, `src/authum/plugin/`) is removed, the
+  core no longer speaks Metamod (no `plugin_info_t`, no `meta_globals_t`, no
+  Metamod console mirror — the host mirrors console-level lines to the engine
+  console itself), and the HLSDK headers are vendored on their own
+  (`lib/hlsdk`) instead of arriving with Metamod-P. One build, one image:
+  `authum.so`.
+- **The game library is loaded through lh's OS layer** (`dlopen` / `LoadLibrary`),
+  so the same image builds on Linux and Windows.
+- **`src/authum/` mirrors `include/authum/`, sources named for what they are.**
+  `src/standalone/` → `src/authum/gamedll/` (what the engine sees as the game
+  DLL: entry points, the real game behind it, hooks, class trampolines), the
+  core → `src/authum/host/`, `src/client/` → `src/authum/api/` (the module API
+  behind `include/authum/`; the CMake target is still `authum_client`, and
+  `client/CMakeLists.txt` stays where modules include it).
+  `docs/standalone.md` → `docs/gamedll.md`.
+- **`include/authum/` is the module API only.** The host's headers moved next
+  to their code as `<authum/host/…>`: `gate.h`, `loader.h`, `log.h`, `module.h`,
+  `console.h`, `error/code.h` → `errors.h`, and the five `*/host.h` →
+  `events.h`, `commands.h`, `logs.h`, `sandbox.h`, `engine.h`. No public header
+  includes lh any more.
+- **`AUTHUM_EXTERN_C_BEGIN` / `AUTHUM_EXTERN_C_END`** (`<authum/extern.h>`)
+  replace the `#ifdef __cplusplus` / `extern "C" {` pair in every header.
+- **`authum_unused(x)`** (`<authum/unused.h>`, in `<authum/client.h>`) replaces
+  `(void)x;` for parameters a handler does not need.
+- **Authum types on the API surface:** `authum_cptr` (`const void *`) for
+  `authum_array_push`, `authum_ptr` for `authum_crypto_wipe` and the SQL
+  handles, `authum_bool_t` for `authum_host_log_line`'s `is_error`. Examples
+  drop casts that converted nothing; `docs/module-style.md` gains the macro
+  case rule and the `printf` format of each Authum type.
+- **No platform code in `authum_client`.** Directories, page protection
+  (detours), symbols of loaded images (exported and ELF-local) and interface
+  addresses now come from lh's os layer (`lh_os_fs_dir_create`,
+  `lh_os_memory_protect`, `lh_os_shared_bind_name` / `_get_local_sym`,
+  `lh_os_net_interface_each_ip4`); `src/authum/api/os/` is gone, and so are
+  the per-platform filters and the `iphlpapi` / `dl` links (lh brings them).
+  Same behaviour — a library loaded by full path is still found by its file
+  name.
+- **`authum_cstr_parse_i32` / `_u32` count digits with lh**
+  (`lh_str_ptr_parse_ullong_digits`), same rules as before: spaces around,
+  a `+` (and `-` for i32), zero padding allowed. `array`, `cfg` and the
+  `authum_path_t` text stay Authum's: the array lives in the module's sandbox,
+  the cfg reader skips bad lines where lh's INI parser stops, and
+  `authum_path_t` is part of the host ABI.
+- **Ed25519 comes from lh.** `<authum/crypto/ed25519.h>` now wraps
+  `lh/crypto/ed25519.h` the way Rijndael and SHA wrap theirs; Monocypher moved
+  into lh (`lib/lh/lib/monocypher`) and `lib/monocypher` with the
+  `authum_monocypher` target is gone. Same API, same bytes; lh's symbols —
+  Monocypher's now among them — stay local to each module (`--exclude-libs`).
 
 ### Added
 
@@ -216,64 +370,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the lh string formatter, for the modules that may not link lh. It cuts a
   result that does not fit, like the C runtime does, so a log line keeps the
   documented "the rest is cut" behaviour.
-
-### Changed
-
-- The module ABI moves to **3.1.0** — the bricks above are new API, and the
-  minor says so. A 3.1 module needs a host of the same major and a minor of 1
-  or later; a 3.0 module still runs on a 3.1 host.
-- **The client events carry no decision any more.** `authum_event_client_t` has
-  no `allow`, `reject_reason` or `decided_by`, and `authum_event_client_command_t`
-  has no `block` or `decided_by`. An event is a message: it says what happened.
-  Refusing a client, swallowing a command and stopping a kill are hook points
-  now — there is one road to a decision, and the log names the module that took
-  it. A module built against the old fields does not compile — the module ABI
-  moves to **3.0.0** anyway.
-- The event bus has two kinds of publication now, as its own documentation
-  always said: `authum_events_forward` announces an event of your own — the
-  name must start with your prefix, so a module never publishes under another
-  module's name — and `authum_events_query` asks the module that owns the
-  name and reads its answer. `authum_events_publish` and
-  `authum_events_publish_id` are gone; `authum_host_forward` and
-  `authum_host_query` replace `authum_host_publish`.
-- The module identity field `logtag` is now `tag`: it is the mark the module is
-  shown with in a log record, not a logging thing of its own. A module built
-  against the old name does not compile — the module ABI moves to **3.0.0**,
-  and no 2.x module loads. The three words are separated now: `owner` is who
-  owns a subscription, a journal or a decision; `tag` is the mark a source is
-  shown with; `name` is what it is called.
-- Standard file logs use the HLDS `L MM/DD/YYYY - HH:MM:SS:` timestamp prefix,
-  followed by the level and text. Shared-host copies retain their module/journal
-  tag; a module's own file does not repeat its name.
-
-- Module commands run on the LH console (`lh/console`): the registry no longer cuts
-  usage and help text, and `authum_command_print` / `authum_command_printf` print a line
-  of any length. `authum_command_line_max`, `authum_command_usage_max` and
-  `authum_command_help_max` are gone; `authum_command_word_max` stays.
-- HTTP serves on Windows as on Linux: one transport on LH sockets, file handles and
-  formatting; a source path may be absolute in either OS's form. The server starts and
-  stops Winsock itself.
-- The HTTP worker is an LH loop that sleeps in `poll` on its sockets; it no longer
-  takes one of the module's 64 thread slots. `authum_http_host_init` takes no thread
-  facade.
-- A module's threads are an LH thread group (`lh/os/thread/group`).
-- Log files are written by the LH log queue and daily files (`lh/os/logger`): the
-  writer sleeps until a record instead of polling every 10 ms, records carry a
-  channel id instead of a copy of the directory path, open files are no longer
-  capped at 32, and Windows and Linux share one path with no `#if`.
-- `authum_command_def_t` has level-1 accessors (`authum_command_def_get_name`, ...).
-- `authum_net_address_host` is `authum_net_address_copy_host`, declared in its own
-  `<authum/net/address.h>` (still brought in by `<authum/client.h>`).
-- Module API sources mirror their headers (`src/authum/api/command/def.c` for
-  `<authum/command/def.h>`, ...); `tools/check-mirror.py` checks it.
-- The config reader reads files through lh (`lh/os/fs/file.h`), not through
-  libc: `authum_cfg_t` holds the config text it read instead of a `FILE *`,
-  and `authum_cfg_open_file` is gone. A config that is already in memory is
-  opened with `authum_cfg_open_text`. The values, the errors and the return
-  codes are the same.
-
-### Added
-
 - Module ABI 2.0.0 for Authum 0.4.0, with no backward compatibility: the host tables
   and the event payloads lose their `size` member, `<authum/abi.h>` (`AUTHUM_ABI_FITS` /
   `AUTHUM_ABI_HAS`) is gone, and no 1.x module loads. From here the ABI is frozen:
@@ -302,96 +398,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Placeholder service (ABI 1.3): the host resolves `{game}`, `{module}`,
   `{data}`, `{config}`, `{lang}` and the per-module registrations, so a module
   never parses a path template itself.
-
-### Changed
-
-- Public API names say what they return (99 functions): values are `get_` / `is_` /
-  `has_` (`authum_host_get_engine`, `authum_array_get_size`, `authum_command_get_argv`,
-  `authum_env_get_game_path`, `authum_events_get_id`, `authum_clock_get_monotonic_ms`,
-  `authum_logger_buffer_is_active`, ...), results written into the caller's buffer are
-  `copy_` (`authum_host_client_copy_name`, `_copy_auth_id`, `_copy_info`,
-  `authum_engine_copy_map_name`, `authum_cfg_copy_cstr`, `authum_json_object_copy_cstr`),
-  scalars through a pointer with a success flag are `try_get_`
-  (`authum_host_entity_try_get_float`, `authum_command_try_get_arg_i32`,
-  `authum_json_object_try_get_i32`; `authum_json_object_get_i32` takes the fallback),
-  path builders are `join_` (`authum_host_join_config_path`), and
-  `authum_cfg_open_file`, `authum_cstr_is_equal`, `authum_char_to_lower`,
-  `authum_crypto_ed25519_is_valid` / `_create_key_pair`, `authum_path_get_cstr` /
-  `_has_trailing_sep` / `_assign_parent`, `authum_net_ipv4_collect_external` /
-  `_collect_internal`. `.clang-format` matches LH's.
-- Thread, task and logging workers use LH OS primitives behind the existing module API.
-
-- HTTP request parsing now uses LH's portable parser; removed PicoHTTPParser.
-  The public module API remains unchanged.
-
-- `log_level=off` now disables every destination and the module's journals;
-  use `log_file=off` to disable only the private file. The default retention
-  and shipped configuration are 10 days; explicitly configured values are preserved.
-- This changes module logging only. The native HLDS asynchronous file writer
-  remains an isolated Linux experiment and is not enabled by this release.
-
-### Fixed
-
-- **The hook budget never fitted.** The chain measured a handler with a 32-bit
-  counter while the clock is 64-bit, so the elapsed time was a huge number and
-  every handler looked like it had overrun its budget: it ran once, was dropped
-  from the chain and the core reported an overrun. The counter is 64-bit now, so
-  a handler that keeps to the budget stays where it is.
-
-### Changed
-
-- **Metamod is gone — Authum is the game library and nothing else.** The
-  Metamod-P plugin image (`authum_mm.so`, `src/authum/plugin/`) is removed, the
-  core no longer speaks Metamod (no `plugin_info_t`, no `meta_globals_t`, no
-  Metamod console mirror — the host mirrors console-level lines to the engine
-  console itself), and the HLSDK headers are vendored on their own
-  (`lib/hlsdk`) instead of arriving with Metamod-P. One build, one image:
-  `authum.so`.
-- **The game library is loaded through lh's OS layer** (`dlopen` / `LoadLibrary`),
-  so the same image builds on Linux and Windows.
-- **`src/authum/` mirrors `include/authum/`, sources named for what they are.**
-  `src/standalone/` → `src/authum/gamedll/` (what the engine sees as the game
-  DLL: entry points, the real game behind it, hooks, class trampolines), the
-  core → `src/authum/host/`, `src/client/` → `src/authum/api/` (the module API
-  behind `include/authum/`; the CMake target is still `authum_client`, and
-  `client/CMakeLists.txt` stays where modules include it).
-  `docs/standalone.md` → `docs/gamedll.md`.
-- **`include/authum/` is the module API only.** The host's headers moved next
-  to their code as `<authum/host/…>`: `gate.h`, `loader.h`, `log.h`, `module.h`,
-  `console.h`, `error/code.h` → `errors.h`, and the five `*/host.h` →
-  `events.h`, `commands.h`, `logs.h`, `sandbox.h`, `engine.h`. No public header
-  includes lh any more.
-- **`AUTHUM_EXTERN_C_BEGIN` / `AUTHUM_EXTERN_C_END`** (`<authum/extern.h>`)
-  replace the `#ifdef __cplusplus` / `extern "C" {` pair in every header.
-- **`authum_unused(x)`** (`<authum/unused.h>`, in `<authum/client.h>`) replaces
-  `(void)x;` for parameters a handler does not need.
-- **Authum types on the API surface:** `authum_cptr` (`const void *`) for
-  `authum_array_push`, `authum_ptr` for `authum_crypto_wipe` and the SQL
-  handles, `authum_bool_t` for `authum_host_log_line`'s `is_error`. Examples
-  drop casts that converted nothing; `docs/module-style.md` gains the macro
-  case rule and the `printf` format of each Authum type.
-- **No platform code in `authum_client`.** Directories, page protection
-  (detours), symbols of loaded images (exported and ELF-local) and interface
-  addresses now come from lh's os layer (`lh_os_fs_dir_create`,
-  `lh_os_memory_protect`, `lh_os_shared_bind_name` / `_get_local_sym`,
-  `lh_os_net_interface_each_ip4`); `src/authum/api/os/` is gone, and so are
-  the per-platform filters and the `iphlpapi` / `dl` links (lh brings them).
-  Same behaviour — a library loaded by full path is still found by its file
-  name.
-- **`authum_cstr_parse_i32` / `_u32` count digits with lh**
-  (`lh_str_ptr_parse_ullong_digits`), same rules as before: spaces around,
-  a `+` (and `-` for i32), zero padding allowed. `array`, `cfg` and the
-  `authum_path_t` text stay Authum's: the array lives in the module's sandbox,
-  the cfg reader skips bad lines where lh's INI parser stops, and
-  `authum_path_t` is part of the host ABI.
-- **Ed25519 comes from lh.** `<authum/crypto/ed25519.h>` now wraps
-  `lh/crypto/ed25519.h` the way Rijndael and SHA wrap theirs; Monocypher moved
-  into lh (`lib/lh/lib/monocypher`) and `lib/monocypher` with the
-  `authum_monocypher` target is gone. Same API, same bytes; lh's symbols —
-  Monocypher's now among them — stay local to each module (`--exclude-libs`).
-
-### Added
-
 - **Entity-class trampolines** (`src/authum/gamedll/game_classes.cpp`, generated by
   `tools/gen-game-classes.py`): the engine resolves an entity's spawn function
   by its class name *in the game module* — the library it loaded, which is us —
@@ -399,7 +405,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   forwards to the game. Without them the engine silently skips the entities
   and the game dies on an empty entity hash (the failure Metamod-R hit on
   ReHLDS).
-
 - **Standalone build: Authum as the game library** (`authum.so`, Linux i386),
   no Metamod in between. The engine loads it where the game library used to
   be (`liblist.gam`: `gamedll_linux "addons/authum/authum.so"`), Authum loads
@@ -413,6 +418,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The hook budget never fitted.** The chain measured a handler with a 32-bit
+  counter while the clock is 64-bit, so the elapsed time was a huge number and
+  every handler looked like it had overrun its budget: it ran once, was dropped
+  from the chain and the core reported an overrun. The counter is 64-bit now, so
+  a handler that keeps to the budget stays where it is.
 - **`authum.message.*` and `authum.server.log` work again.** Without Metamod
   nothing hooked the game's engine calls, so these events never fired (a
   `DeathMsg` handler stayed silent). The game now gets the engine with
@@ -427,9 +437,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   loading at all.
 - The loader rejects the host image by name (`authum_mm`, `authum`), so the
   standalone image cannot be opened as its own child module.
+- `authum_net_ipv4_collect_internal` / `_external` list the interfaces on Windows too
+  (they were always empty there).
+
+## [3.0.0] - 2026-10-24
+
+### Fixed
+
 - Windows build (MinGW): `authum_logger_ensure_dir` used the POSIX two-argument
   `mkdir`; the symbol test looked for `libc.so.6`, which exists only on Linux.
-- `authum_net_ipv4_collect_internal` / `_external` list the interfaces on Windows too
+- `authum_net_ipv4_internal` / `_external` list the interfaces on Windows too
   (they were always empty there).
 - `authum_engine_query_cvar` had a raw NUL byte in a character literal, so git
   took `src/client/engine.c` for a binary file.
@@ -448,8 +465,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `configs/modules.list`, `logs/`. `authum_env_t` starts with `size`;
   `module` is the module's folder, with `module_config`, `module_lang`,
   `module_data` (created at load); `authum_host_t.module_dir` is gone.
-  `authum_host_join_config_path` → `modules/<name>/configs/<file>`,
-  `authum_host_join_data_path` → `modules/<name>/data/<file>`. A
+  `authum_host_config_path` → `modules/<name>/configs/<file>`,
+  `authum_host_data_path` → `modules/<name>/data/<file>`. A
   `modules.list` entry `qproto` loads `modules/qproto/qproto.so`; without
   the list every module folder is loaded. The release zip ships `configs/`.
 - Everything authum_client asks of the OS (directories, page protection,
@@ -459,7 +476,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `CMakePresets.json` with `linux32` and `windows-mingw32` (configure, build,
   test). Configure fails at once, with a hint, when the compiler cannot link
   with `-m32`, instead of at the first link.
-
 - **Logging is decided by Authum, not by each module.** Every module writes
   `modules/<module>/logs/YYYY-MM-DD.log` (a new file each day);
   Authum's own lines and every module's warnings and errors (tagged
@@ -502,26 +518,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `query_client_cvar` — each with `authum_engine_*` and `authum_host_*`
     wrappers. Players are addressed by entity index, as in `authum.client.*`.
 
-- `<authum/json.h>` and `<authum/sql.h>` run on lh (`lh/json`, `lh/sql`) linked
-  into `authum_client`; vendored cJSON (unused) and SQLite (`lib/cjson`,
-  `lib/sqlite`) are gone, SQLite 3.46.1 now comes with lh. The module API is the
-  same, and no lh type is in it; lh's symbols stay local to each module
-  (`--exclude-libs,liblh.a`). Needs lh `0.4.0` with JSON/SQL; `-DAUTHUM_LH_DIR`
-  builds against another lh tree.
-- JSON fields come from a strict RFC 8259 reader: a key inside a string value
-  is no longer found as a field, every escape is decoded (`\uXXXX` included),
-  and a number must be an integer to read as `i32` (`1.5` was read as `1`).
-- SQL on MySQL: `?` inside quotes, backquoted names and comments is no longer
-  replaced; text of any length (embedded NULs included) instead of 255 bytes
-  and a 2048-byte query; column indices are checked; server errors are kept for
-  every step. The connection is utf8mb4.
-- Host code follows lh's getter naming: `lh_os_module_get_path_as_const` is
-  `lh_os_module_get_path`.
-
 ### Added
 
 - Engine facade, more of what modules took from raw `engine_funcs`:
-  user messages (`authum_engine_message_get_id` / `_begin` / `_write_byte` …
+  user messages (`authum_engine_message_id` / `_begin` / `_write_byte` …
   `_write_string` / `_end`, destinations and argument kinds in
   `<authum/engine/message.h>`), `authum_engine_client_chat` (colored chat
   through the game's `SayText`), `cvar_register` (a module's own server cvar,
@@ -565,6 +565,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   bus with a types-only header), `deathnotice` (`DeathMsg`, colored chat,
   module cvars, refusing `kill`), `announcer` (timers, precache, HLDS log
   lines, entity fields). Built with `-Wall -Wextra`, warning-free.
+- `authum_host_query_cvar` / `authum_engine_query_cvar` — ask a client for a
+  cvar by entity index; the answer comes as `authum.client.cvar_value` with the
+  same `request_id`.
+
+## [2.0.1] - 2026-10-22
+
+### Changed
+
+- `<authum/json.h>` and `<authum/sql.h>` run on lh (`lh/json`, `lh/sql`) linked
+  into `authum_client`; vendored cJSON (unused) and SQLite (`lib/cjson`,
+  `lib/sqlite`) are gone, SQLite 3.46.1 now comes with lh. The module API is the
+  same, and no lh type is in it; lh's symbols stay local to each module
+  (`--exclude-libs,liblh.a`). Needs lh `0.4.0` with JSON/SQL; `-DAUTHUM_LH_DIR`
+  builds against another lh tree.
+- JSON fields come from a strict RFC 8259 reader: a key inside a string value
+  is no longer found as a field, every escape is decoded (`\uXXXX` included),
+  and a number must be an integer to read as `i32` (`1.5` was read as `1`).
+- SQL on MySQL: `?` inside quotes, backquoted names and comments is no longer
+  replaced; text of any length (embedded NULs included) instead of 255 bytes
+  and a 2048-byte query; column indices are checked; server errors are kept for
+  every step. The connection is utf8mb4.
+- Host code follows lh's getter naming: `lh_os_module_get_path_as_const` is
+  `lh_os_module_get_path`.
+
+### Added
+
 - More host events from Metamod hooks: `authum.client.command` (`ClientCommand`,
   a handler can block it), `authum.client.cvar_value` (`CvarValue2`, the answer
   to `QueryClientCvarValue2`), and `<authum/event/server.h>` with
@@ -573,9 +599,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `GetEntityAPI2_Post` and `GetNewDLLFunctions`.
 - `<authum/float.h>` — `authum_float_t` (mirrors `lh_float_t`); event payloads
   use it for `game_time` / `frame_time`.
-- `authum_host_query_cvar` / `authum_engine_query_cvar` — ask a client for a
-  cvar by entity index; the answer comes as `authum.client.cvar_value` with the
-  same `request_id`.
 - `authum_sql_stmt_bind_i64` / `authum_sql_stmt_column_i64` — 64-bit integers
   (SteamID64, row ids) in `<authum/sql.h>`.
 - `<authum/crypto/ed25519.h>` — Ed25519 (RFC 8032) key pair / sign / check +
@@ -590,7 +613,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `resume`: 5-byte `jmp rel32` detour on 32-bit x86 for engine-thread hooks
   (was `qproto_hook_patch_jmp` / `restore_bytes`). Client-side, no ABI bump.
 - `<authum/net.h>` — this machine's IPv4 addresses from its interfaces:
-  `authum_net_ipv4_collect_external` (public) and `authum_net_ipv4_collect_internal`
+  `authum_net_ipv4_external` (public) and `authum_net_ipv4_internal`
   (LAN / NAT side), plus `is_external` / `is_loopback` / `format`. For HLDS
   bound to every interface, where the engine only knows `0.0.0.0`.
   Linux only; elsewhere the lists are empty. Client-side, no ABI bump.
@@ -709,6 +732,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Apache-2.0; `lib/lh` pinned to branch `0.4.0`
 
 [Unreleased]: https://github.com/darwin128k/raspad-authum/compare/v4.0.0...HEAD
+[4.0.1]: https://github.com/darwin128k/raspad-authum/releases/tag/v4.0.1
 [4.0.0]: https://github.com/darwin128k/raspad-authum/releases/tag/v4.0.0
 [3.0.0]: https://github.com/darwin128k/raspad-authum/releases/tag/v3.0.0
 [2.0.1]: https://github.com/darwin128k/raspad-authum/releases/tag/v2.0.1

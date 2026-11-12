@@ -393,9 +393,9 @@ authum_engine_cvar_copy(const authum_engine_t *engine, const authum_char_t *name
 void
 authum_engine_kick(const authum_engine_t *engine, authum_i32_t userid, const authum_char_t *reason)
 {
-    authum_char_t clean[128];
     authum_usize_t n = 0u;
 
+    authum_char_t clean[128];
     if (!authum_null_eq(reason))
     {
         for (;

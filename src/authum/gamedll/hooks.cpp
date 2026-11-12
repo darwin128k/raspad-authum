@@ -143,12 +143,12 @@ h_client_connect(edict_t *entity, const authum_char_t *name, const authum_char_t
                  authum_char_t reject[128])
 {
     authum_event_client_t ev;
-    authum_hook_call_t call;
     client_fill(lh_addr_of(ev), entity, name);
     copy(ev.address, sizeof ev.address, address);
     authum_engine_host_set_client_address(ev.index, address);
     authum_unused(
         authum_events_host_publish_id(hook_event_id(hook_event_client_connect), lh_addr_of(ev)));
+    authum_hook_call_t call;
     lh_memory_std_set(lh_addr_of(call), 0, sizeof call);
     call.point = authum_hook_point_client_connect;
     call.index = ev.index;
@@ -157,7 +157,7 @@ h_client_connect(edict_t *entity, const authum_char_t *name, const authum_char_t
     call.proceed = authum_bool_true;
     authum_bool_t overran = authum_bool_false;
     if (!authum_hook_registry_call(authum_hook_registry(), authum_hook_point_client_connect,
-                                   lh_addr_of(call), &overran))
+                                   lh_addr_of(call), lh_addr_of(overran)))
     {
         authum_engine_host_set_client_address(ev.index, authum_null);
         copy(reject, 128,
@@ -180,10 +180,10 @@ void
 h_client_put_in_server(edict_t *entity)
 {
     authum_event_client_t ev;
-    authum_hook_call_t call;
     client_fill(lh_addr_of(ev), entity, authum_null);
     authum_unused(authum_events_host_publish_id(hook_event_id(hook_event_client_put_in_server),
                                                 lh_addr_of(ev)));
+    authum_hook_call_t call;
     lh_memory_std_set(lh_addr_of(call), 0, sizeof call);
     call.point = authum_hook_point_client_put_in_server;
     call.index = ev.index;
@@ -205,12 +205,12 @@ h_client_put_in_server(edict_t *entity)
 void
 h_client_user_info_changed(edict_t *entity, authum_char_t *infobuffer)
 {
-    authum_event_client_t ev;
     const authum_char_t *name = authum_null;
     if (lh_math_ne(infobuffer, authum_null))
     {
         name = g_engfuncs.pfnInfoKeyValue(infobuffer, lh_cast_const(authum_char_t *, "name"));
     }
+    authum_event_client_t ev;
     client_fill(lh_addr_of(ev), entity, name);
     authum_unused(authum_events_host_publish_id(hook_event_id(hook_event_client_info_changed),
                                                 lh_addr_of(ev)));
@@ -238,10 +238,10 @@ void
 h_client_kill(edict_t *entity)
 {
     authum_event_client_t ev;
-    authum_hook_call_t call;
     client_fill(lh_addr_of(ev), entity, authum_null);
     authum_unused(
         authum_events_host_publish_id(hook_event_id(hook_event_client_kill), lh_addr_of(ev)));
+    authum_hook_call_t call;
     lh_memory_std_set(lh_addr_of(call), 0, sizeof call);
     call.point = authum_hook_point_client_kill;
     call.index = ev.index;
@@ -264,12 +264,11 @@ void
 h_client_command(edict_t *entity)
 {
     authum_event_client_command_t ev;
-    authum_hook_call_t call;
-    authum_i32_t i;
     lh_memory_std_set(lh_addr_of(ev), 0, sizeof ev);
     client_fill(lh_addr_of(ev.client), entity, authum_null);
     ev.argc = g_engfuncs.pfnCmd_Argc();
-    for (i = 0; lh_math_lt(i, ev.argc) && lh_math_lt(i, authum_event_client_command_argv_max);
+    for (authum_i32_t i = 0;
+         lh_math_lt(i, ev.argc) && lh_math_lt(i, authum_event_client_command_argv_max);
          i = lh_math_add_one(i))
     {
         copy(ev.argv[i], sizeof ev.argv[i], g_engfuncs.pfnCmd_Argv(i));
@@ -277,6 +276,7 @@ h_client_command(edict_t *entity)
     copy(ev.args, sizeof ev.args, g_engfuncs.pfnCmd_Args());
     authum_unused(
         authum_events_host_publish_id(hook_event_id(hook_event_client_command), lh_addr_of(ev)));
+    authum_hook_call_t call;
     lh_memory_std_set(lh_addr_of(call), 0, sizeof call);
     call.point = authum_hook_point_client_command;
     call.index = ev.client.index;
@@ -331,7 +331,6 @@ h_spawn(edict_t *entity)
 void
 h_server_activate(edict_t *edicts, authum_i32_t edict_count, authum_i32_t client_max)
 {
-    authum_event_server_t ev;
     /* Call the game first: the map is spawned after it returns. */
     if (lh_math_ne(g_game_dll.pfnServerActivate, authum_null))
     {
@@ -339,6 +338,7 @@ h_server_activate(edict_t *edicts, authum_i32_t edict_count, authum_i32_t client
     }
     authum_engine_host_set_precache(authum_bool_false);
     authum_logs_reload();
+    authum_event_server_t ev;
     server_fill(lh_addr_of(ev));
     ev.edict_count = edict_count;
     ev.max_clients = client_max;

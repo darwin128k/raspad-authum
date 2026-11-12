@@ -16,9 +16,8 @@ authum_module_take_info(authum_module_t *self)
 {
     const authum_module_info_t *info;
     const authum_version_t required = AUTHUM_MODULE_ABI;
-    lh_ptr sym;
 
-    sym = lh_os_module_get_sym(self, AUTHUM_MODULE_INFO_SYM);
+    lh_ptr sym = lh_os_module_get_sym(self, AUTHUM_MODULE_INFO_SYM);
     if (lh_null_eq(sym))
     {
         lh_os_set_last_error_lit(authum_error_code_missing_info, "missing authum_module_info");
@@ -71,9 +70,7 @@ AUTHUM_MODULE_EXPORT const lh_os_module_ops_t authum_module_ops = {
 const authum_module_info_t *
 authum_module_get_info(const authum_module_t *self)
 {
-    lh_ptr data;
-
-    data = lh_os_module_get_data(self);
+    lh_ptr data = lh_os_module_get_data(self);
     if (lh_null_eq(data))
     {
         return lh_null;

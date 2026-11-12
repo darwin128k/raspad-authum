@@ -77,12 +77,11 @@ test_msg_id(const authum_char_t *name)
 authum_bool_t
 test_msg_begin(authum_i32_t dest, authum_i32_t msg_id, authum_i32_t index)
 {
-    authum_char_t line[64];
-
     if (index == 9)
     {
         return authum_bool_false; /* nobody in slot 9 */
     }
+    authum_char_t line[64];
     snprintf(line, sizeof line, "begin %d %d %d", (int)dest, (int)msg_id, (int)index);
     test_msg_log(line);
     return authum_bool_true;
@@ -214,12 +213,11 @@ test_ent_get_i32(authum_i32_t index, authum_i32_t field, authum_i32_t *out)
 
 TEST(authum_engine, reads_and_updates_entity_state)
 {
-    authum_engine_t engine;
     authum_float_t health = -1.0f;
     authum_float_t vector[3] = {1.0f, 2.0f, 3.0f};
     authum_i32_t flags = -1;
-    authum_char_t classname[16];
 
+    authum_engine_t engine;
     memset(&engine, 0, sizeof engine);
     engine.client_is_connected = test_ent_connected;
     engine.entity_get_float = test_ent_get_float;
@@ -245,6 +243,7 @@ TEST(authum_engine, reads_and_updates_entity_state)
     EXPECT_FALSE(authum_engine_entity_copy_vector(&engine, 1, authum_entity_vector_origin, vector));
     EXPECT_TRUE(vector[0] == 0.0f && vector[1] == 0.0f && vector[2] == 0.0f);
     EXPECT_FALSE(authum_engine_entity_set_float(&engine, 1, authum_entity_float_health, 1.0f));
+    authum_char_t classname[16];
     EXPECT_FALSE(authum_engine_entity_copy_classname(&engine, 1, classname, sizeof classname));
     EXPECT_STREQ(classname, "");
     EXPECT_EQ(authum_engine_entity_find_by_classname(&engine, 0, "player"), 0);

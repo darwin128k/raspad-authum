@@ -174,7 +174,6 @@ authum_bool_t
 authum_logger_open(authum_logger_t *self, const authum_host_t *host, const authum_char_t *name)
 {
     const authum_logger_channel_t *module;
-    authum_ptr journal;
 
     if (authum_null_eq(self))
     {
@@ -191,7 +190,7 @@ authum_logger_open(authum_logger_t *self, const authum_host_t *host, const authu
         authum_logger_set_module_channel(self, authum_null);
         return authum_bool_false;
     }
-    journal = ops->open(authum_logger_channel_get_owner(module), name);
+    authum_ptr journal = ops->open(authum_logger_channel_get_owner(module), name);
     if (authum_null_eq(journal))
     {
         authum_logger_set_module_channel(self, authum_null);
@@ -233,8 +232,6 @@ void
 authum_logger_log_v(authum_logger_t *self, authum_logger_level_t level, const authum_char_t *fmt,
                     va_list ap)
 {
-    authum_char_t buf[authum_logger_line_max];
-
     if (authum_logger_buffer_log_v(self, level, fmt, ap))
     {
         return;
@@ -244,6 +241,7 @@ authum_logger_log_v(authum_logger_t *self, authum_logger_level_t level, const au
     {
         return;
     }
+    authum_char_t buf[authum_logger_line_max];
     authum_cstr_format_v(buf, sizeof buf, fmt, ap);
     authum_logger_channel_write(authum_logger_get_channel(self), level, buf);
 }

@@ -54,9 +54,9 @@ authum_http_request_read(authum_http_server_t *server, authum_http_client_t *cli
     lh_http_parser_t parser;
     lh_http_parser_init(lh_addr_of(parser));
     lh_http_parser_set_limits(lh_addr_of(parser), sizeof client->input, sizeof client->input);
-    lh_http_request_t request;
     lh_str_view_t input = lh_str_view_initializer(client->input, client->used);
     lh_http_header_t headers[64];
+    lh_http_request_t request;
     lh_http_parse_status_t parsed =
         lh_http_parser_request(lh_addr_of(parser), input, lh_addr_of(request), headers, 64);
     if (lh_math_eq(parsed, lh_http_parse_incomplete))
@@ -171,8 +171,8 @@ authum_http_request_read(authum_http_server_t *server, authum_http_client_t *cli
         }
         client->ip_slot = slot;
     }
-    authum_char_t relative[2048];
     const authum_char_t *reason = authum_null;
+    authum_char_t relative[2048];
     if (!authum_http_resource_check(options, path, path_length, relative, sizeof relative,
                                     lh_addr_of(reason)))
     {

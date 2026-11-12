@@ -8,9 +8,6 @@
 TEST(authum_cstr, copy_truncates_to_capacity)
 {
     authum_char_t buf[4];
-    authum_i32_t i;
-    authum_u32_t u;
-    authum_bool_t b;
     EXPECT_TRUE(authum_cstr_copy(buf, sizeof buf, "abcdef"));
     EXPECT_STREQ(buf, "abc");
 }
@@ -20,10 +17,9 @@ static authum_usize_t
 format_v(authum_char_t *dst, authum_usize_t dst_size, const authum_char_t *fmt, ...)
 {
     va_list args;
-    authum_usize_t n;
 
     va_start(args, fmt);
-    n = authum_cstr_format_v(dst, dst_size, fmt, args);
+    authum_usize_t n = authum_cstr_format_v(dst, dst_size, fmt, args);
     va_end(args);
     return n;
 }
@@ -31,9 +27,6 @@ format_v(authum_char_t *dst, authum_usize_t dst_size, const authum_char_t *fmt, 
 TEST(authum_cstr, format_writes_the_supported_conversions)
 {
     authum_char_t buf[32];
-    authum_i32_t i;
-    authum_u32_t u;
-    authum_bool_t b;
     EXPECT_EQ(authum_cstr_format(buf, sizeof buf, "%s|%d|%u|%x|%X|%c|%%", "ab", -7, 42u, 255u, 255u,
                                  'Z'),
               18u);
@@ -43,9 +36,6 @@ TEST(authum_cstr, format_writes_the_supported_conversions)
 TEST(authum_cstr, format_cuts_a_result_that_does_not_fit)
 {
     authum_char_t buf[4];
-    authum_i32_t i;
-    authum_u32_t u;
-    authum_bool_t b;
     EXPECT_EQ(authum_cstr_format(buf, sizeof buf, "abcdef"), 3u);
     EXPECT_STREQ(buf, "abc");
 }
@@ -53,9 +43,6 @@ TEST(authum_cstr, format_cuts_a_result_that_does_not_fit)
 TEST(authum_cstr, format_refuses_an_unknown_conversion)
 {
     authum_char_t buf[8];
-    authum_i32_t i;
-    authum_u32_t u;
-    authum_bool_t b;
     EXPECT_EQ(authum_cstr_format(buf, sizeof buf, "%q"), 0u);
     EXPECT_STREQ(buf, "");
 }
@@ -63,29 +50,19 @@ TEST(authum_cstr, format_refuses_an_unknown_conversion)
 TEST(authum_cstr, format_v_writes_the_same_text)
 {
     authum_char_t buf[16];
-    authum_i32_t i;
-    authum_u32_t u;
-    authum_bool_t b;
     EXPECT_EQ(format_v(buf, sizeof buf, "%d of %u", -7, 42u), 8u);
     EXPECT_STREQ(buf, "-7 of 42");
 }
 
 TEST(authum_cstr, comparison_obeys_case_policy)
 {
-    authum_char_t buf[4];
-    authum_i32_t i;
-    authum_u32_t u;
-    authum_bool_t b;
     EXPECT_TRUE(authum_cstr_is_equal("Foo", "foo", authum_bool_true));
     EXPECT_FALSE(authum_cstr_is_equal("Foo", "foo", authum_bool_false));
 }
 
 TEST(authum_cstr, signed_parser_enforces_range_and_complete_input)
 {
-    authum_char_t buf[4];
     authum_i32_t i;
-    authum_u32_t u;
-    authum_bool_t b;
     EXPECT_TRUE(authum_cstr_parse_i32(" -42 ", &i) && i == -42);
     EXPECT_TRUE(authum_cstr_parse_i32("-2147483648", &i) && i == (-2147483647 - 1));
     EXPECT_FALSE(authum_cstr_parse_i32("2147483648", &i));
@@ -94,20 +71,14 @@ TEST(authum_cstr, signed_parser_enforces_range_and_complete_input)
 
 TEST(authum_cstr, unsigned_parser_enforces_range)
 {
-    authum_char_t buf[4];
-    authum_i32_t i;
     authum_u32_t u;
-    authum_bool_t b;
     EXPECT_TRUE(authum_cstr_parse_u32("4294967295", &u) && u == 4294967295u);
     EXPECT_FALSE(authum_cstr_parse_u32("4294967296", &u));
 }
 
 TEST(authum_cstr, signed_parser_accepts_sign_and_zero_padding)
 {
-    authum_char_t buf[4];
     authum_i32_t i;
-    authum_u32_t u;
-    authum_bool_t b;
     EXPECT_TRUE(authum_cstr_parse_i32("+5", &i) && i == 5);
     EXPECT_TRUE(authum_cstr_parse_i32("007", &i) && i == 7); /* zero padding is fine */
     EXPECT_TRUE(authum_cstr_parse_i32("-0", &i) && i == 0);
@@ -115,10 +86,7 @@ TEST(authum_cstr, signed_parser_accepts_sign_and_zero_padding)
 
 TEST(authum_cstr, signed_parser_refuses_missing_or_separated_digits)
 {
-    authum_char_t buf[4];
     authum_i32_t i;
-    authum_u32_t u;
-    authum_bool_t b;
     EXPECT_FALSE(authum_cstr_parse_i32("-", &i));
     EXPECT_FALSE(authum_cstr_parse_i32("", &i));
     EXPECT_FALSE(authum_cstr_parse_i32("  ", &i));
@@ -127,10 +95,7 @@ TEST(authum_cstr, signed_parser_refuses_missing_or_separated_digits)
 
 TEST(authum_cstr, unsigned_parser_accepts_whitespace_but_not_negative_sign)
 {
-    authum_char_t buf[4];
-    authum_i32_t i;
     authum_u32_t u;
-    authum_bool_t b;
     EXPECT_TRUE(authum_cstr_parse_u32("\t+7 ", &u) && u == 7u);
     EXPECT_FALSE(authum_cstr_parse_u32("-1", &u));
 }
@@ -147,9 +112,6 @@ TEST(authum_cstr, float_parser_takes_a_whole_number)
 
 TEST(authum_cstr, boolean_parser_accepts_known_spellings)
 {
-    authum_char_t buf[4];
-    authum_i32_t i;
-    authum_u32_t u;
     authum_bool_t b;
     EXPECT_TRUE(authum_cstr_parse_bool("Yes", &b) && b);
     EXPECT_TRUE(authum_cstr_parse_bool("off", &b) && !b);
@@ -198,12 +160,12 @@ TEST(authum_cstr, hex_bytes_both_ways)
 {
     const authum_byte_t bytes[3] = {0x0aU, 0x1bU, 0x2cU};
     authum_char_t text[8];
-    authum_byte_t back[3];
 
     EXPECT_EQ(
         authum_cstr_format_hex_bytes(bytes, sizeof bytes, text, sizeof text, authum_bool_false),
         6u);
     EXPECT_STREQ(text, "0a1b2c");
+    authum_byte_t back[3];
     EXPECT_TRUE(authum_cstr_parse_hex_bytes(text, back, sizeof back));
     EXPECT_EQ(back[0], 0x0aU);
     EXPECT_EQ(back[1], 0x1bU);

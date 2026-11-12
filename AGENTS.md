@@ -16,8 +16,10 @@ session; do not make the owner repeat them again.
   sources use LH freely, but no public `include/authum/` header includes an LH
   header or names an LH type: modules see only `authum_*` types and functions,
   and are built without LH.
-- **The module ABI is frozen at 2.0 (Authum 0.4.0).** 0.4.0 has no backward
-  compatibility; from 2.0 on nothing that exists changes or moves. New API is
+- **The module ABI is 4.0 (Authum 4.1.0).** Within a major nothing that exists
+  changes or moves. A new major is the owner's decision, and it gathers every
+  breaking change into one release, so modules are rewritten once (4.0: the
+  region, the opaque array, no `FILE *`). New API is
   only appended — to the end of a host table, or as a new table or a new
   structure — and bumps the minor. A structure a module fills in never grows: a
   new field is a new structure. Host tables carry no size; a module needs a host
@@ -111,8 +113,13 @@ session; do not make the owner repeat them again.
   uses it — not in a pile at the top of the function (that is the C89 habit).
   A variable the whole body works with may stay at the top of the function.
   `python tools/check-decls.py <paths>` reports the piles (two or more
-  declarations in a row at the start of a block); read the report and move the
-  variables that one statement uses.
+  declarations in a row that the next statement does not all use) and must
+  report 0; `--fix` moves each plain declaration down to the statement that
+  first uses it, joins it with its first assignment (`T x = ...;`) or puts a
+  counter into its `for` header, and drops plain variables nobody uses. In C++
+  it moves objects only with `--objects`, and lists their types: a constructor
+  that does work elsewhere (a scope guard) keeps its place, with a comment line
+  that says why.
 - **A loop counter lives in the `for` header.** A variable that belongs to the
   loop alone is declared in the header itself: `for (lh_usize_t i = 0; i < 8u;
   ++i)`. A separate `lh_usize_t i;` line above the loop is right only when the

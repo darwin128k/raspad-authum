@@ -66,8 +66,8 @@ test_events_for(authum_ptr owner)
 TEST(authum_events, forward_order_and_results)
 {
     int mod_a;
-    int mod_b;
     authum_events_t a = test_events_for(&mod_a);
+    int mod_b;
     authum_events_t b = test_events_for(&mod_b);
 
     g_trace[0] = '\0';
@@ -174,13 +174,13 @@ test_on_query(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 TEST(authum_events, query)
 {
     int provider;
-    int consumer;
     authum_events_t p = test_events_for(&provider);
+    int consumer;
     authum_events_t c = test_events_for(&consumer);
-    struct test_query q;
 
     EXPECT_TRUE(authum_events_subscribe(&p, "test.query", test_on_query, authum_null));
 
+    struct test_query q;
     memset(&q, 0, sizeof q);
     test_query_set_size(&q, sizeof q);
     test_query_set_in_index(&q, 3);
@@ -254,12 +254,12 @@ TEST(authum_events, a_client_event_is_a_message)
 {
     int owner;
     authum_events_t ev = test_events_for(&owner);
-    authum_event_client_t client;
 
     /* An event says what happened. Refusing a client is a hook
      * (::authum_hook_point_client_connect), not a field of the event. */
     EXPECT_TRUE(
         authum_events_subscribe(&ev, AUTHUM_EVENT_CLIENT_CONNECT, test_on_connect, authum_null));
+    authum_event_client_t client;
     memset(&client, 0, sizeof client);
     strcpy(test_client_get_name_mut(&client), "bad");
     authum_events_host_publish(AUTHUM_EVENT_CLIENT_CONNECT, &client);

@@ -59,7 +59,6 @@ authum_net_ipv4_add(lh_ptr user, const lh_net_ip4_t *address)
     authum_net_ipv4_list_t *list = lh_cast_reinterpret(authum_net_ipv4_list_t *, user);
     /* Host byte order, the way the rest of <authum/net.h> holds an address. */
     const authum_u32_t ip = lh_net_ip4_to_u32(address);
-    authum_usize_t i;
 
     if (authum_net_ipv4_is_loopback(ip) ||
         lh_math_ne(authum_net_ipv4_is_external(ip), list->external))
@@ -67,7 +66,8 @@ authum_net_ipv4_add(lh_ptr user, const lh_net_ip4_t *address)
         return;
     }
     /* Aliases repeat an address; count it once (only what fits is checked). */
-    for (i = 0u; lh_math_lt(i, list->count) && lh_math_lt(i, list->max); i = lh_math_add_one(i))
+    for (authum_usize_t i = 0u; lh_math_lt(i, list->count) && lh_math_lt(i, list->max);
+         i = lh_math_add_one(i))
     {
         if (lh_math_eq(list->out[i], ip))
         {

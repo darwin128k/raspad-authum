@@ -169,9 +169,9 @@ authum_bool_t
 authum_cfg_get_bool(authum_cfg_t *self, const authum_char_t *key, authum_bool_t default_value)
 {
     const authum_char_t *v;
-    authum_bool_t out;
 
     v = authum_cfg_get_value(self, key);
+    authum_bool_t out;
     if (authum_null_eq(v) || !authum_cstr_parse_bool(v, lh_addr_of(out)))
     {
         return default_value;
@@ -183,9 +183,9 @@ authum_i32_t
 authum_cfg_get_i32(authum_cfg_t *self, const authum_char_t *key, authum_i32_t default_value)
 {
     const authum_char_t *v;
-    authum_i32_t out;
 
     v = authum_cfg_get_value(self, key);
+    authum_i32_t out;
     if (authum_null_eq(v) || !authum_cstr_parse_i32(v, lh_addr_of(out)))
     {
         return default_value;
@@ -197,9 +197,9 @@ authum_u32_t
 authum_cfg_get_u32(authum_cfg_t *self, const authum_char_t *key, authum_u32_t default_value)
 {
     const authum_char_t *v;
-    authum_u32_t out;
 
     v = authum_cfg_get_value(self, key);
+    authum_u32_t out;
     if (authum_null_eq(v) || !authum_cstr_parse_u32(v, lh_addr_of(out)))
     {
         return default_value;
@@ -227,13 +227,13 @@ authum_bool_t
 authum_cfg_apply_bool(authum_cfg_t *self, const authum_char_t *key, authum_bool_t *out)
 {
     const authum_char_t *v;
-    authum_bool_t parsed;
 
     if (authum_null_eq(out))
     {
         return authum_bool_false;
     }
     v = authum_cfg_get_value(self, key);
+    authum_bool_t parsed;
     if (authum_null_eq(v) || !authum_cstr_parse_bool(v, lh_addr_of(parsed)))
     {
         return authum_bool_false;
@@ -246,13 +246,13 @@ authum_bool_t
 authum_cfg_apply_i32(authum_cfg_t *self, const authum_char_t *key, authum_i32_t *out)
 {
     const authum_char_t *v;
-    authum_i32_t parsed;
 
     if (authum_null_eq(out))
     {
         return authum_bool_false;
     }
     v = authum_cfg_get_value(self, key);
+    authum_i32_t parsed;
     if (authum_null_eq(v) || !authum_cstr_parse_i32(v, lh_addr_of(parsed)))
     {
         return authum_bool_false;
@@ -265,13 +265,13 @@ authum_bool_t
 authum_cfg_apply_u32(authum_cfg_t *self, const authum_char_t *key, authum_u32_t *out)
 {
     const authum_char_t *v;
-    authum_u32_t parsed;
 
     if (authum_null_eq(out))
     {
         return authum_bool_false;
     }
     v = authum_cfg_get_value(self, key);
+    authum_u32_t parsed;
     if (authum_null_eq(v) || !authum_cstr_parse_u32(v, lh_addr_of(parsed)))
     {
         return authum_bool_false;
@@ -323,13 +323,11 @@ authum_cfg_apply_item(authum_cfg_t *self, const authum_cfg_item_t *item)
 void
 authum_cfg_apply_items(authum_cfg_t *self, const authum_cfg_item_t *items, authum_usize_t count)
 {
-    authum_usize_t i;
-
     if (authum_null_eq(items))
     {
         return;
     }
-    for (i = 0u; lh_math_lt(i, count); i = lh_math_add_one(i))
+    for (authum_usize_t i = 0u; lh_math_lt(i, count); i = lh_math_add_one(i))
     {
         authum_unused(authum_cfg_apply_item(self, lh_addr_of(items[i])));
     }

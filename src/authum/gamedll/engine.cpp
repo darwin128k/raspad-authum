@@ -69,7 +69,6 @@ void
 engine_arg(authum_i32_t kind, authum_i32_t value, authum_float_t real, const authum_char_t *text)
 {
     authum_event_message_arg_t *arg;
-    authum_usize_t n;
 
     if (lh_math_ge(g_message.argc, authum_event_message_args_max))
     {
@@ -80,6 +79,7 @@ engine_arg(authum_i32_t kind, authum_i32_t value, authum_float_t real, const aut
     arg->value = value;
     arg->real = real;
     arg->text = 0u;
+    authum_usize_t n;
     if (lh_math_eq(kind, authum_message_arg_string))
     {
         text = lh_math_ne(text, authum_null) ? text : "";
@@ -103,11 +103,9 @@ engine_arg(authum_i32_t kind, authum_i32_t value, authum_float_t real, const aut
 void
 engine_send(const authum_event_message_t *ev, edict_t *target)
 {
-    authum_i32_t i;
-
     g_engfuncs.pfnMessageBegin(ev->dest, ev->msg_id, ev->has_origin ? ev->origin : authum_null,
                                target);
-    for (i = 0; lh_math_lt(i, ev->argc); i = lh_math_add_one(i))
+    for (authum_i32_t i = 0; lh_math_lt(i, ev->argc); i = lh_math_add_one(i))
     {
         const authum_event_message_arg_t *arg = lh_addr_of(ev->args[i]);
 
@@ -164,7 +162,6 @@ AUTHUM_GAME_CALL void
 engine_message_begin(authum_i32_t dest, authum_i32_t type, const authum_float_t *origin,
                      edict_t *target)
 {
-    authum_char_t event[engine_event_max];
     const authum_char_t *name =
         (lh_math_gt(type, 0) && lh_math_lt(type, engine_msg_max)) ? g_msg_names[type] : "";
 
@@ -174,6 +171,7 @@ engine_message_begin(authum_i32_t dest, authum_i32_t type, const authum_float_t 
         g_engfuncs.pfnMessageBegin(dest, type, origin, target);
         return;
     }
+    authum_char_t event[engine_event_max];
     if (lh_math_eq(g_msg_events[type], 0u))
     {
         lh_str_ptr_format_cstr(event, sizeof event, "%s%s", AUTHUM_EVENT_MESSAGE_PREFIX, name);
@@ -237,7 +235,6 @@ AUTHUM_GAME_CALL void
 engine_message_end(void)
 {
     /* Big (≈3 KB) but on the stack: a handler may send a message of its own. */
-    authum_event_message_t ev;
     edict_t *target = g_message_target;
     authum_event_id_t event = g_message_event;
 
@@ -247,6 +244,7 @@ engine_message_end(void)
         return;
     }
     g_message_open = false;
+    authum_event_message_t ev;
     lh_memory_std_copy(lh_addr_of(ev), lh_addr_of(g_message), sizeof ev);
     authum_unused(authum_events_host_publish_id(event, lh_addr_of(ev)));
     if (!ev.block)
@@ -260,20 +258,18 @@ engine_message_end(void)
 AUTHUM_GAME_CALL void
 engine_alert_message(ALERT_TYPE type, authum_char_t *fmt, ...)
 {
-    authum_char_t line[engine_log_max];
-    authum_event_server_log_t ev;
-    va_list args;
-    authum_usize_t n;
     lh_timestamp_t now = 0;
 
     if (lh_math_eq(fmt, authum_null))
     {
         return;
     }
+    va_list args;
     va_start(args, fmt);
     /* The game's mask may hold a conversion lh does not format (%e, %g, %o): the
        line then carries the mask itself, so it still says something, rather than
        coming out empty. */
+    authum_char_t line[engine_log_max];
     if (lh_math_eq(lh_str_ptr_format_text_size_v(fmt, args), LH_STR_PTR_INVALID))
     {
         authum_cstr_copy(line, sizeof line, fmt);
@@ -289,9 +285,10 @@ engine_alert_message(ALERT_TYPE type, authum_char_t *fmt, ...)
     {
         return;
     }
+    authum_event_server_log_t ev;
     lh_memory_std_set(lh_addr_of(ev), 0, sizeof ev);
     authum_cstr_copy(ev.text, sizeof ev.text, line);
-    n = lh_cast_static(authum_usize_t, lh_str_ptr_len(ev.text));
+    authum_usize_t n = lh_cast_static(authum_usize_t, lh_str_ptr_len(ev.text));
     while (lh_math_gt(n, 0u) && (lh_math_eq(ev.text[lh_math_sub(n, 1u)], lh_char_map_lf) ||
                                  lh_math_eq(ev.text[lh_math_sub(n, 1u)], lh_char_map_cr)))
     {

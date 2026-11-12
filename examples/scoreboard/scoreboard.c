@@ -52,9 +52,8 @@ scoreboard_on_changed(const authum_char_t *name, authum_ptr payload, authum_ptr 
 authum_bool_t
 scoreboard_cmd_show(const authum_command_t *cmd, authum_ptr user)
 {
-    scores_query_t q;
-
     authum_unused(user);
+    scores_query_t q;
     q.size = sizeof q;
     q.found = authum_bool_false;
     q.score = 0;

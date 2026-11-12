@@ -381,13 +381,13 @@ authum_loader_find(authum_module_t *self, const authum_char_t *name)
 {
     authum_module_t *child;
     const authum_module_info_t *info;
-    lh_str_view_t want;
 
     if (lh_null_eq(name) || lh_math_eq(name[0], lh_char_map_nul))
     {
         return lh_null;
     }
-    want = lh_initializer_of(lh_str_view_t, lh_str_view_initializer, name, lh_str_ptr_len(name));
+    lh_str_view_t want =
+        lh_initializer_of(lh_str_view_t, lh_str_view_initializer, name, lh_str_ptr_len(name));
     for (child = authum_loader_get_first(self); lh_null_ne(child);
          child = authum_loader_get_next(self, child))
     {
@@ -468,11 +468,10 @@ lh_bool_t
 authum_loader_reload_name(authum_module_t *self, const authum_char_t *name)
 {
     authum_module_t *child;
-    lh_fs_path_t path;
     const lh_fs_path_t *image;
-    lh_bool_t ok;
 
     child = authum_loader_find(self, name);
+    lh_fs_path_t path;
     lh_fs_path_init(lh_addr_of(path));
     if (lh_null_ne(child))
     {
@@ -493,7 +492,7 @@ authum_loader_reload_name(authum_module_t *self, const authum_char_t *name)
         lh_fs_path_deinit(lh_addr_of(path));
         return lh_bool_false;
     }
-    ok = authum_loader_load_logged(self, lh_addr_of(path));
+    lh_bool_t ok = authum_loader_load_logged(self, lh_addr_of(path));
     lh_fs_path_deinit(lh_addr_of(path));
     return ok;
 }

@@ -48,13 +48,12 @@ authum_bool_t
 authum_file_read(authum_file_t *self, authum_ptr buf, authum_usize_t size, authum_usize_t *read)
 {
     lh_os_fs_file_t *file = authum_file_backend(self);
-    lh_ssize_t count;
 
     if (authum_null_eq(file) || authum_null_eq(buf) || authum_null_eq(read))
     {
         return authum_bool_false;
     }
-    count = lh_os_fs_file_read(file, buf, size);
+    lh_ssize_t count = lh_os_fs_file_read(file, buf, size);
     if (count < 0)
     {
         return authum_bool_false;
@@ -68,13 +67,12 @@ authum_file_write(authum_file_t *self, authum_cptr buf, authum_usize_t size,
                   authum_usize_t *written)
 {
     lh_os_fs_file_t *file = authum_file_backend(self);
-    lh_ssize_t count;
 
     if (authum_null_eq(file) || authum_null_eq(buf) || authum_null_eq(written))
     {
         return authum_bool_false;
     }
-    count = lh_os_fs_file_write(file, lh_cast_const(lh_ptr, buf), size);
+    lh_ssize_t count = lh_os_fs_file_write(file, lh_cast_const(lh_ptr, buf), size);
     if (count < 0)
     {
         return authum_bool_false;
@@ -103,7 +101,7 @@ authum_file_read_all(authum_file_t *self, authum_ptr buf, authum_usize_t buf_siz
         {
             if (!authum_file_read(
                     self, lh_ptr_add_by_offset(lh_char_t, buf, lh_cast_static(lh_uaddr_t, total)),
-                    room, &count))
+                    room, lh_addr_of(count)))
             {
                 return authum_bool_false;
             }
@@ -115,7 +113,7 @@ authum_file_read_all(authum_file_t *self, authum_ptr buf, authum_usize_t buf_siz
             continue;
         }
         /* The buffer is full: one more byte tells whether the file fits. */
-        if (!authum_file_read(self, &extra, 1u, &count))
+        if (!authum_file_read(self, lh_addr_of(extra), 1u, lh_addr_of(count)))
         {
             return authum_bool_false;
         }

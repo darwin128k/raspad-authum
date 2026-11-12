@@ -30,9 +30,9 @@ AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
 const authum_char_t *
 chatfilter_find_word(const authum_char_t *text)
 {
-    authum_char_t lower[authum_hook_args_max];
     authum_usize_t i = 0u;
 
+    authum_char_t lower[authum_hook_args_max];
     for (; text[i] != '\0' && i < sizeof lower - 1u; ++i)
     {
         lower[i] = authum_char_to_lower(text[i]);
@@ -52,7 +52,6 @@ chatfilter_find_word(const authum_char_t *text)
 authum_bool_t
 chatfilter_on_command(authum_ptr user, authum_hook_call_t *call)
 {
-    authum_char_t auth_id[authum_event_client_auth_id_max];
     const authum_char_t *word;
 
     authum_unused(user);
@@ -70,6 +69,7 @@ chatfilter_on_command(authum_ptr user, authum_hook_call_t *call)
     call->proceed = authum_bool_false;
     authum_host_client_print(&g_chatfilter_host, call->index, authum_engine_print_chat,
                              "Your message was not sent: it contains a banned word.\n");
+    authum_char_t auth_id[authum_event_client_auth_id_max];
     if (!authum_host_client_copy_auth_id(&g_chatfilter_host, call->index, auth_id, sizeof auth_id))
     {
         authum_cstr_copy(auth_id, sizeof auth_id, "");

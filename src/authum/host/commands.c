@@ -41,11 +41,10 @@ authum_bool_t
 authum_commands_host_add(authum_ptr owner, const authum_char_t *scope,
                          const authum_command_def_t *def)
 {
-    lh_console_command_t command;
-
     lh_return_if(authum_null_eq(def) || !authum_commands_host_is_word(scope) ||
                      !authum_commands_host_is_word(authum_command_def_get_name(def)),
                  authum_bool_false);
+    lh_console_command_t command;
     lh_console_command_set_name(lh_addr_of(command), authum_command_def_get_name(def));
     lh_console_command_set_usage(lh_addr_of(command), authum_command_def_get_usage(def));
     lh_console_command_set_help(lh_addr_of(command), authum_command_def_get_help(def));
@@ -95,12 +94,12 @@ authum_commands_host_run(const authum_char_t *scope, const authum_char_t *name, 
 {
     lh_console_t *console = authum_commands_host_get_console();
     const lh_console_entry_t *ran = authum_null;
-    lh_console_result_t result;
 
     /* Hold one run open, so the command that ran stays readable for its usage line even
        when its handler removed it. */
     lh_console_set_depth(console, lh_math_add_one(lh_console_get_depth(console)));
-    result = lh_console_run(console, scope, name, argc, argv, print, out, lh_addr_of(ran));
+    lh_console_result_t result =
+        lh_console_run(console, scope, name, argc, argv, print, out, lh_addr_of(ran));
     if (lh_math_eq(result, lh_console_result_bad_usage))
     {
         authum_commands_host_print_entry(ran, print, out, "usage: ");

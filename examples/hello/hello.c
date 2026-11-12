@@ -46,11 +46,9 @@ hello_on_connect(const authum_char_t *name, authum_ptr payload, authum_ptr user)
 authum_bool_t
 hello_cmd_seen(const authum_command_t *cmd, authum_ptr user)
 {
-    authum_usize_t i;
-
     authum_unused(user);
     authum_command_printf(cmd, "%u connects since load:", authum_array_get_size(g_hello_seen));
-    for (i = 0u; i < authum_array_get_size(g_hello_seen); ++i)
+    for (authum_usize_t i = 0u; i < authum_array_get_size(g_hello_seen); ++i)
     {
         authum_command_printf(cmd, "  %s",
                               (const authum_char_t *)authum_array_get_at(g_hello_seen, i));

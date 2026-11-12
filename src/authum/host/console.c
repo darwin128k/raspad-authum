@@ -23,9 +23,9 @@ void
 authum_console_fail(authum_command_print_fn print, authum_ptr out, const authum_char_t *what,
                     const authum_char_t *name)
 {
-    authum_command_t cmd;
     const lh_os_error_desc_ptr desc = lh_os_get_last_error_desc();
 
+    authum_command_t cmd;
     lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
     cmd.print = print;
     cmd.out = out;
@@ -38,11 +38,11 @@ authum_console_fail(authum_command_print_fn print, authum_ptr out, const authum_
 void
 authum_console_list(authum_command_print_fn print, authum_ptr out)
 {
-    authum_command_t cmd;
     authum_module_t *child;
     const authum_module_info_t *info;
     authum_u32_t i = 0u;
 
+    authum_command_t cmd;
     lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
     cmd.print = print;
     cmd.out = out;
@@ -89,9 +89,9 @@ authum_console_help(authum_command_print_fn print, authum_ptr out)
 void
 authum_console_version(authum_command_print_fn print, authum_ptr out)
 {
-    authum_command_t cmd;
     const authum_version_t abi = AUTHUM_MODULE_ABI;
 
+    authum_command_t cmd;
     lh_memory_std_set(lh_addr_of(cmd), 0, sizeof cmd);
     cmd.print = print;
     cmd.out = out;

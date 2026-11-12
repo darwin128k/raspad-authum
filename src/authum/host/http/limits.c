@@ -94,10 +94,10 @@ authum_http_trusted_parse(authum_http_server_t *server, authum_char_t *error,
 
     lh_str_view_init(lh_addr_of(list), server->options.trusted_proxies);
 
-    lh_str_view_t entry;
     lh_usize_t pos = 0u;
     lh_bool_t had_separator = lh_bool_false;
 
+    lh_str_view_t entry;
     while (lh_str_view_split_next_of(lh_addr_of(list), separators, sizeof separators,
                                      lh_addr_of(pos), lh_addr_of(entry), lh_addr_of(had_separator)))
     {

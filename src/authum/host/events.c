@@ -47,13 +47,12 @@ authum_events_host_callback(authum_event_handler_fn fn)
 authum_event_id_t
 authum_events_host_resolve(authum_ptr owner, const authum_char_t *name)
 {
-    authum_usize_t length;
     authum_unused(owner);
     if (authum_null_eq(name))
     {
         return 0u;
     }
-    length = lh_str_ptr_len(name);
+    authum_usize_t length = lh_str_ptr_len(name);
     if (lh_math_eq(length, 0u) || lh_math_gt(length, AUTHUM_EVENT_NAME_LENGTH_MAX))
     {
         return 0u;

@@ -32,9 +32,9 @@ AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
 authum_i32_t
 stats_count_visit(const authum_char_t *auth_id, const authum_char_t *name, authum_i64_t now)
 {
-    authum_sql_stmt_t stmt;
     authum_i32_t visits = 0;
 
+    authum_sql_stmt_t stmt;
     if (!authum_sql_prepare(&g_stats_db, &stmt,
                             "INSERT INTO visits (auth_id, name, visits, last_seen) "
                             "VALUES (?, ?, 1, ?) "
@@ -97,7 +97,6 @@ stats_on_put_in_server(const authum_char_t *name, authum_ptr payload, authum_ptr
 authum_bool_t
 stats_cmd_top(const authum_command_t *cmd, authum_ptr user)
 {
-    authum_sql_stmt_t stmt;
     authum_i32_t count = 5;
     authum_i32_t place = 0;
 
@@ -107,6 +106,7 @@ stats_cmd_top(const authum_command_t *cmd, authum_ptr user)
     {
         return authum_bool_false; /* the host prints the usage line */
     }
+    authum_sql_stmt_t stmt;
     if (!authum_sql_prepare(
             &g_stats_db, &stmt,
             "SELECT name, auth_id, visits FROM visits ORDER BY visits DESC LIMIT ?"))
@@ -136,8 +136,6 @@ const authum_command_def_t g_stats_commands[] = {
 authum_bool_t
 stats_start(authum_host_t *host)
 {
-    authum_path_t path;
-
     if (authum_null_eq(host))
     {
         return authum_bool_false;
@@ -148,6 +146,7 @@ stats_start(authum_host_t *host)
 
     authum_sql_init(&g_stats_db);
     /* This module owns its SQLite directory. */
+    authum_path_t path;
     if (!authum_host_join_data_path(&g_stats_host, "stats.db", &path) ||
         !authum_path_ensure_dir(authum_host_get_module_data_path(&g_stats_host)) ||
         !authum_sql_open_sqlite(&g_stats_db, authum_path_get_cstr(&path)) ||

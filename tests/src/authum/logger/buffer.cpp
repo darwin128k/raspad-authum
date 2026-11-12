@@ -113,25 +113,24 @@ TEST(authum_logger_buffer, defers_worker_logging_until_game_thread_completion)
     saw_auto_message = 0;
     last_line[0] = 0;
     main_thread = thread_id();
-    int owner;
-    unsigned i;
     log_job_t job = {0};
     authum_logger_ops_t ops = {write_log, log_enabled, 0, 0};
     authum_logger_channel_t channel = {&ops, authum_null};
+    int owner;
     authum_tasks_t tasks = {authum_tasks_host_ops(), &owner};
     authum_logger_set_module_channel(&job.logger, &channel);
     job.host.logger = &channel;
     EXPECT_FALSE(authum_logger_buffer_init(&job.buffer, &job.logger, 0));
     EXPECT_TRUE(authum_logger_buffer_init(&job.buffer, &job.logger, 2));
     EXPECT_TRUE(authum_tasks_submit(&tasks, log_work, log_complete, authum_null, &job));
-    for (i = 0; i < 5000 && !std::atomic_load(&work_finished); ++i)
+    for (unsigned i = 0; i < 5000 && !std::atomic_load(&work_finished); ++i)
     {
         pause_ms();
     }
     EXPECT_TRUE(std::atomic_load(&work_finished));
     EXPECT_EQ(std::atomic_load(&written), 0);
     EXPECT_EQ(std::atomic_load(&enabled), 0);
-    for (i = 0; i < 5000 && !delivered; ++i)
+    for (unsigned i = 0; i < 5000 && !delivered; ++i)
     {
         authum_tasks_host_pump();
         pause_ms();

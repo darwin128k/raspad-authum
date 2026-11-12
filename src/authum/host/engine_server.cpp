@@ -169,13 +169,12 @@ authum_engine_client_userid_impl(authum_i32_t index)
 authum_i32_t
 authum_engine_client_index_by_userid_impl(authum_i32_t userid)
 {
-    authum_i32_t index;
-
     if (lh_math_le(userid, 0) || lh_math_eq(gpGlobals, authum_null))
     {
         return 0;
     }
-    for (index = 1; lh_math_le(index, gpGlobals->maxClients); index = lh_math_add_one(index))
+    for (authum_i32_t index = 1; lh_math_le(index, gpGlobals->maxClients);
+         index = lh_math_add_one(index))
     {
         if (lh_math_eq(authum_engine_client_userid_impl(index), userid))
         {
@@ -254,14 +253,13 @@ authum_engine_client_print_impl(authum_i32_t index, authum_i32_t kind, const aut
 {
     edict_t *entity;
     authum_bool_t sent = authum_bool_false;
-    authum_i32_t i;
 
     if (lh_math_eq(g_engfuncs.pfnClientPrintf, authum_null) || lh_math_eq(gpGlobals, authum_null))
     {
         return authum_bool_false;
     }
     /* index 0: everyone connected. */
-    for (i = (lh_math_eq(index, 0) ? 1 : index);
+    for (authum_i32_t i = (lh_math_eq(index, 0) ? 1 : index);
          lh_math_le(i, (lh_math_eq(index, 0) ? gpGlobals->maxClients : index));
          i = lh_math_add_one(i))
     {
@@ -760,8 +758,6 @@ authum_engine_entity_set_vector_impl(authum_i32_t index, authum_i32_t field,
     authum_float_t *slot = lh_math_ne(entity, authum_null)
                                ? authum_engine_entity_vector_field(lh_addr_of(entity->v), field)
                                : authum_null;
-    authum_float_t mins[3];
-    authum_float_t maxs[3];
 
     if (lh_math_eq(slot, authum_null))
     {
@@ -774,6 +770,8 @@ authum_engine_entity_set_vector_impl(authum_i32_t index, authum_i32_t field,
         g_engfuncs.pfnSetOrigin(entity, value);
         return authum_bool_true;
     }
+    authum_float_t mins[3];
+    authum_float_t maxs[3];
     if ((lh_math_eq(field, authum_entity_vector_mins) ||
          lh_math_eq(field, authum_entity_vector_maxs)) &&
         lh_math_ne(g_engfuncs.pfnSetSize, authum_null))

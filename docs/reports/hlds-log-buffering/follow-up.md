@@ -55,7 +55,7 @@ necessarily pass through the game DLL's `AlertMessage` hook).
 
 ### Completed feasibility experiment
 
-See [the isolated prototype and research](../tools/experiments/hlds-async-log/README.md).
+See [the isolated prototype and research](../../../tools/experiments/hlds-async-log/README.md).
 This Linux/glibc i386 preload prototype intercepts formatted writes to an
 explicitly selected log directory, queues owned record bytes, and writes and
 flushes from its own thread. It uses no engine offsets or byte patches.

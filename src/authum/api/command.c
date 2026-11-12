@@ -82,9 +82,8 @@ authum_command_print(const authum_command_t *cmd, const authum_char_t *line)
 void
 authum_command_printf(const authum_command_t *cmd, const authum_char_t *fmt, ...)
 {
-    va_list args;
-
     lh_return_if(authum_null_eq(cmd));
+    va_list args;
     va_start(args, fmt);
     lh_console_call_printf_v(authum_command_get_call(cmd), fmt, args);
     va_end(args);

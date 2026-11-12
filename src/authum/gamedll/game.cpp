@@ -76,16 +76,15 @@ authum_bool_t
 host_dir(authum_char_t *out, authum_usize_t out_size)
 {
     const lh_fs_path_t *image;
-    lh_fs_path_t parent;
-    lh_str_t scratch;
     const lh_str_ptr text;
-    authum_bool_t ok;
 
     image = lh_os_module_get_path(lh_addr_of(authum));
+    lh_fs_path_t parent;
     lh_fs_path_init(lh_addr_of(parent));
+    lh_str_t scratch;
     lh_str_init(lh_addr_of(scratch));
     text = lh_fs_path_to_cstr(image, lh_fs_path_style_posix, lh_addr_of(scratch));
-    ok = lh_null_ne(text) && lh_fs_path_parent(lh_addr_of(parent), image);
+    authum_bool_t ok = lh_null_ne(text) && lh_fs_path_parent(lh_addr_of(parent), image);
     if (ok)
     {
         const lh_str_ptr dir =
@@ -106,27 +105,20 @@ authum_bool_t
 read_gamedll_name(const authum_char_t *dir, authum_char_t *out, authum_usize_t out_size)
 {
     const authum_char_t *env = lh_os_env_get("AUTHUM_GAMEDLL");
-    authum_char_t path[600];
-    authum_char_t line[256];
-    lh_fs_path_t file_path;
-    lh_str_view_t view;
-    lh_str_view_t text_view;
-    lh_str_view_t line_view;
-    lh_str_t text;
-    lh_usize_t pos;
-    lh_usize_t limit;
-    lh_usize_t size;
-    bool found;
 
     if (lh_math_ne(env, authum_null) && lh_math_ne(env[0], lh_char_map_nul))
     {
         authum_cstr_copy(out, out_size, env);
         return true;
     }
+    authum_char_t path[600];
     lh_str_ptr_format_cstr(path, sizeof path, "%s/%s", dir, authum_gamedll_file);
+    lh_fs_path_t file_path;
     lh_fs_path_init(lh_addr_of(file_path));
+    lh_str_view_t view;
     lh_str_view_init(lh_addr_of(view), path);
     lh_fs_path_set(lh_addr_of(file_path), view, lh_os_system_fs_path_style_native());
+    lh_str_t text;
     lh_str_init(lh_addr_of(text));
     if (!lh_os_fs_file_read_all_by_path(lh_addr_of(file_path), lh_addr_of(text)))
     {
@@ -138,10 +130,14 @@ read_gamedll_name(const authum_char_t *dir, authum_char_t *out, authum_usize_t o
         return false;
     }
     /* The first line that says something is the name. */
+    lh_str_view_t text_view;
     lh_str_as_view(lh_addr_of(text), lh_addr_of(text_view));
-    limit = lh_cast_static(lh_usize_t, sizeof line - 1U);
-    pos = 0u;
-    found = false;
+    authum_char_t line[256];
+    lh_usize_t limit = lh_cast_static(lh_usize_t, sizeof line - 1U);
+    lh_usize_t pos = 0u;
+    bool found = false;
+    lh_str_view_t line_view;
+    lh_usize_t size;
     while (lh_str_view_split_next_line(lh_addr_of(text_view), lh_addr_of(pos),
                                        lh_addr_of(line_view)))
     {
@@ -183,18 +179,16 @@ read_gamedll_name(const authum_char_t *dir, authum_char_t *out, authum_usize_t o
 authum_bool_t
 open_game(const authum_char_t *path)
 {
-    lh_fs_path_t image;
-    lh_str_t text;
-    lh_str_view_t view;
-    lh_bool_t ok;
-
     lh_os_shared_init(lh_addr_of(g_game));
+    lh_fs_path_t image;
     lh_fs_path_init(lh_addr_of(image));
+    lh_str_t text;
     lh_str_init(lh_addr_of(text));
     lh_str_append(lh_addr_of(text), path, lh_str_ptr_len(path));
+    lh_str_view_t view;
     lh_str_as_view(lh_addr_of(text), lh_addr_of(view));
     lh_fs_path_set(lh_addr_of(image), view, lh_fs_path_style_posix);
-    ok = lh_os_shared_open(lh_addr_of(g_game), lh_addr_of(image));
+    lh_bool_t ok = lh_os_shared_open(lh_addr_of(g_game), lh_addr_of(image));
     if (ok)
     {
         g_game_open = true;
@@ -209,10 +203,6 @@ authum_bool_t
 gamedll_load(enginefuncs_t *engine_funcs, globalvars_t *globals)
 {
     authum_char_t game_dir[256] = "cstrike";
-    authum_char_t dir[512];
-    authum_char_t name[256];
-    authum_char_t full[800];
-    give_fn_t give;
 
     /* The engine runs from the HLDS root; the mod dir ("cstrike") is relative
      * to it, and so are the game DLL and the paths inside it. */
@@ -220,14 +210,17 @@ gamedll_load(enginefuncs_t *engine_funcs, globalvars_t *globals)
     {
         g_engfuncs.pfnGetGameDir(game_dir);
     }
+    authum_char_t dir[512];
     if (!host_dir(dir, sizeof dir))
     {
         authum_log_error("gamedll: cannot find Authum's own folder");
         return false;
     }
+    authum_char_t name[256];
     authum_unused(read_gamedll_name(dir, name, sizeof name)); /* e.g. "dlls/cs.so" */
 
     /* The path is relative to the game dir, the way liblist.gam resolves it. */
+    authum_char_t full[800];
     if (lh_math_eq(name[0], lh_char_map_slash))
     {
         authum_cstr_copy(full, sizeof full, name); /* absolute: as it is */
@@ -244,7 +237,7 @@ gamedll_load(enginefuncs_t *engine_funcs, globalvars_t *globals)
     }
     authum_log_info("gamedll: game DLL %s", full);
 
-    give = lh_cast_reinterpret(give_fn_t, gamedll_symbol("GiveFnptrsToDll"));
+    give_fn_t give = lh_cast_reinterpret(give_fn_t, gamedll_symbol("GiveFnptrsToDll"));
     if (lh_math_eq(give, authum_null))
     {
         authum_log_error("gamedll: game DLL has no GiveFnptrsToDll");
@@ -262,13 +255,13 @@ gamedll_entity_api(DLL_FUNCTIONS *out, authum_i32_t interface_version)
      * GetEntityAPI2 fills the same table but leaves the hash alone — and the
      * game then divides by zero on the first entity. */
     get_entity_api_t api1 = lh_cast_reinterpret(get_entity_api_t, gamedll_symbol("GetEntityAPI"));
-    get_entity_api2_t api2;
 
     if (lh_math_ne(api1, authum_null))
     {
         return lh_math_ne(api1(out, interface_version), 0);
     }
-    api2 = lh_cast_reinterpret(get_entity_api2_t, gamedll_symbol("GetEntityAPI2"));
+    get_entity_api2_t api2 =
+        lh_cast_reinterpret(get_entity_api2_t, gamedll_symbol("GetEntityAPI2"));
     if (lh_math_eq(api2, authum_null))
     {
         api2 = lh_cast_reinterpret(get_entity_api2_t,

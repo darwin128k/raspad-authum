@@ -36,10 +36,9 @@ AUTHUM_MODULE_EXPORT authum_module_info_t authum_module_info = {
 void
 scores_add(authum_i32_t index, authum_i32_t delta)
 {
-    scores_changed_t ev;
-
     g_scores[index] += delta;
     /* Publish a copy: subscribers cannot touch g_scores through it. */
+    scores_changed_t ev;
     ev.index = index;
     ev.score = g_scores[index];
     ev.delta = delta;
@@ -86,8 +85,8 @@ scores_cmd_add(const authum_command_t *cmd, authum_ptr user)
     {
         return authum_bool_false;
     }
-    authum_i32_t points;
     authum_unused(user);
+    authum_i32_t points;
     if (!authum_command_try_get_arg_i32(cmd, 1u, &points))
     {
         return authum_bool_false;

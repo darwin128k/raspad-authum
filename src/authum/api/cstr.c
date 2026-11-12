@@ -253,8 +253,6 @@ authum_cstr_parse_float(const authum_char_t *text, authum_float_t *out)
 authum_bool_t
 authum_cstr_parse_bool(const authum_char_t *text, authum_bool_t *out)
 {
-    authum_i32_t n;
-
     if (authum_null_eq(text) || authum_null_eq(out))
     {
         return authum_bool_false;
@@ -273,6 +271,7 @@ authum_cstr_parse_bool(const authum_char_t *text, authum_bool_t *out)
         lh_ptr_deref(out) = authum_bool_false;
         return authum_bool_true;
     }
+    authum_i32_t n;
     if (!authum_cstr_parse_i32(text, lh_addr_of(n)))
     {
         return authum_bool_false;
@@ -373,14 +372,13 @@ authum_cstr_parse_hex_bytes(const authum_char_t *text, authum_byte_t *out, authu
 authum_usize_t
 authum_cstr_format_u64(authum_u64_t value, authum_char_t *dst, authum_usize_t dst_size)
 {
-    authum_usize_t n;
-
     if (authum_null_eq(dst) || lh_math_is_zero(dst_size))
     {
         return 0u;
     }
     /* The lh formatters write no terminator: the room for it is reserved here. */
-    n = lh_str_ptr_format_ullong(lh_cast_static(lh_ullong_t, value), dst, dst_size - 1u);
+    authum_usize_t n =
+        lh_str_ptr_format_ullong(lh_cast_static(lh_ullong_t, value), dst, dst_size - 1u);
     if (lh_math_is_zero(n))
     {
         return 0u;
@@ -392,13 +390,12 @@ authum_cstr_format_u64(authum_u64_t value, authum_char_t *dst, authum_usize_t ds
 authum_usize_t
 authum_cstr_format_i64(authum_i64_t value, authum_char_t *dst, authum_usize_t dst_size)
 {
-    authum_usize_t n;
-
     if (authum_null_eq(dst) || lh_math_is_zero(dst_size))
     {
         return 0u;
     }
-    n = lh_str_ptr_format_sllong(lh_cast_static(lh_sllong_t, value), dst, dst_size - 1u);
+    authum_usize_t n =
+        lh_str_ptr_format_sllong(lh_cast_static(lh_sllong_t, value), dst, dst_size - 1u);
     if (lh_math_is_zero(n))
     {
         return 0u;
