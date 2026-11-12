@@ -45,6 +45,14 @@ Close an item by deleting it; what was done goes to the CHANGELOGs.
   `authum_test_threads`). Reproduce each, then decide: a real short buffer is fixed,
   a false positive is silenced in the source (a size the compiler can see), never by
   dropping the warning.
+- [ ] **AES on a Cortex-M4 is slow.** One AES-128 block takes 8 758 cycles to encrypt and
+  13 690 to decrypt on an STM32F407 (FIPS-197 vector passes); a table-driven
+  implementation on the same core takes about 600-1 000. Measure the portable path and fix
+  it at the root, as the text path was.
+- [ ] **`-Wtype-limits` in generic macros** on a bare-metal `-Wextra` build:
+  `lh_math_is_negative` and `lh_interval_*_is_*_overflow` compare unsigned values with 0
+  (`math/ops.h:192-210`, through `interval.h`, `deflate.c`, `gzip.c`, `chunked.c`,
+  `allocator.c`, `typed.c`). Harmless, but every board build prints it.
 - [ ] **Compression state machines.** The gzip header feed and the whole-buffer
   DEFLATE decoder still combine several transitions; split them into documented,
   tested bricks. The DEFLATE reader takes source bytes one at a time and retries an
