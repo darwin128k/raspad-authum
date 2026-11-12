@@ -422,6 +422,10 @@ def statement_starts(clean_lines, open_index, close_index):
     boundary = True
     for index in range(open_index + 1, close_index):
         clean = clean_lines[index]
+        # A preprocessor line is not a statement and leaves the boundary as it
+        # was: a declaration put before `#endif` would land inside the branch.
+        if clean.lstrip().startswith("#"):
+            continue
         if depth == 1 and paren == 0 and boundary and significant(clean):
             # `else` and `catch` continue the statement above them.
             if not re.match(r"\s*(?:else|catch)\b", clean):
