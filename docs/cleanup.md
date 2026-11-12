@@ -237,9 +237,14 @@ Close an item by deleting it; add new debt here instead of fixing it silently.
     characters, `-` and `.`): left as loops on purpose (owner, 2026-11-11). A shared
     brick would take a predicate callback, and each caller would then need a public
     predicate function of its own (no `static`) — more surface for no gain.
-- [ ] `lh_test_os` failed once under `ctest -j8` on Windows (2026-11-11) and passed
-  alone and in two full runs after; probably a socket test sharing a port with a
-  parallel one. Find the test and give it its own port.
+- [x] `lh_test_os` failed once under `ctest -j8` on Windows (2026-11-11). Found
+  2026-11-12: `socket_poll.wakes_across_threads_and_coalesces_notifications` reopens a
+  wake signal with `timeout_ms` 1000 and got `WSAETIMEDOUT` (10060) in the loopback
+  `connect` — under load a dropped SYN is resent only after 1 s, measured ~1090 ms.
+  Eight copies at once failed 12–19 of 48 runs. Every caller passed 1000, the HTTP
+  server of Authum and lh's web host too, so they could fail to start the same way.
+  Fixed in lh: `LH_OS_SYSTEM_NET_SOCKET_PAIR_TIMEOUT_MS` / `LH_OS_WAKE_OPEN_TIMEOUT_MS`
+  (5000 ms, the reason in their briefs), used by every caller; 0 of 80 failed after.
   - [x] `ui/shadow/shape.c`: the zero-fill loop is `lh_memory_set`, `|px - cx|` is
     `lh_math_abs` (2026-11-11).
   - [x] **Plain operators** (`==`, `+`, `++`): decided by the owner (2026-11-11) —

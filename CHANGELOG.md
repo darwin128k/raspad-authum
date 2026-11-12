@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   forgotten one; inside, it is lh's `lh_array_t` with the sandbox as its allocator
   (`lh_array_init_by`). No 3.x module loads; `examples/hello` and `docs/sandbox.md`
   show the new calls.
+- The HTTP server opens its wake signal with `LH_OS_WAKE_OPEN_TIMEOUT_MS` (5000 ms)
+  instead of 1000 ms: on a loaded Windows host the loopback connect behind it can wait
+  ~1 s for a resent SYN, and the server then failed to start.
 - A pointer is never used as a truth value: `!p` / `if (p)` / `p ? … : …` are
   `authum_null_eq(p)` / `!authum_null_eq(p)` (168 sites). The HTTP host's files get
   `authum/null.h` through `http/internal.h`.

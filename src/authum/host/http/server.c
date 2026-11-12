@@ -148,7 +148,7 @@ authum_http_server_create(const authum_http_options_t *options, const authum_cha
         }
     }
     authum_http_error_reset();
-    if (!lh_os_wake_open(lh_addr_of(server->wake), 1000))
+    if (!lh_os_wake_open(lh_addr_of(server->wake), LH_OS_WAKE_OPEN_TIMEOUT_MS))
     {
         authum_unused(lh_str_ptr_format_cstr(error, error_size, "HTTP wake signal: %s",
                                              authum_http_get_error_text()));
